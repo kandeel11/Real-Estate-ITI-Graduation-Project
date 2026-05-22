@@ -1,0 +1,40 @@
+<Solution>
+  <Folder Name="/src/" />
+  <Folder Name="/src/Host/">
+    <Project Path="src/Host/RealEstate.Host/RealEstate.Host.csproj" />
+  </Folder>
+  <Folder Name="/src/Modules/" />
+  <Folder Name="/src/Modules/AI/">
+    <Project Path="src/Modules/AI/AI.Application/AI.Application.csproj" />
+    <Project Path="src/Modules/AI/AI.Domain/AI.Domain.csproj" />
+    <Project Path="src/Modules/AI/AI.Infrastructure/AI.Infrastructure.csproj" />
+  </Folder>
+  <Folder Name="/src/Modules/Document/">
+    <Project Path="src/Modules/Document/Document.Application/Document.Application.csproj" />
+    <Project Path="src/Modules/Document/Document.Domain/Document.Domain.csproj" />
+    <Project Path="src/Modules/Document/Document.Infrastructure/Document.Infrastructure.csproj" />
+  </Folder>
+  <Folder Name="/src/Modules/Identity/">
+    <Project Path="src/Modules/Identity/Identity.Application/Identity.Application.csproj" />
+    <Project Path="src/Modules/Identity/Identity.Domain/Identity.Domain.csproj" />
+    <Project Path="src/Modules/Identity/Identity.Infrastructure/Identity.Infrastructure.csproj" />
+  </Folder>
+  <Folder Name="/src/Modules/Maintenance/">
+    <Project Path="src/Modules/Maintenance/Maintenance.Application/Maintenance.Application.csproj" />
+    <Project Path="src/Modules/Maintenance/Maintenance.Domain/Maintenance.Domain.csproj" />
+    <Project Path="src/Modules/Maintenance/Maintenance.Infrastructure/Maintenance.Infrastructure.csproj" />
+  </Folder>
+  <Folder Name="/src/Modules/Payment/">
+    <Project Path="src/Modules/Payment/Payment.Application/Payment.Application.csproj" />
+    <Project Path="src/Modules/Payment/Payment.Domain/Payment.Domain.csproj" />
+    <Project Path="src/Modules/Payment/Payment.Infrastructure/Payment.Infrastructure.csproj" />
+  </Folder>
+  <Folder Name="/src/Modules/Property/">
+    <Project Path="src/Modules/Property/Property.Application/Property.Application.csproj" />
+    <Project Path="src/Modules/Property/Property.Domain/Property.Domain.csproj" />
+    <Project Path="src/Modules/Property/Property.Infrastructure/Property.Infrastructure.csproj" />
+  </Folder>
+  <Folder Name="/src/Shared/">
+    <Project Path="src/Shared/RealEstate.Shared.Kernel/RealEstate.Shared.Kernel.csproj" />
+  </Folder>
+</Solution>
