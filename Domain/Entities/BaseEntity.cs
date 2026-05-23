@@ -7,11 +7,10 @@ namespace Domain.Entities
         public Guid Id { get; protected set; }
 
         // Audit Fields
-        public DateTime CreatedAt { get; set; } = DateTime.UtcNow;
-        public DateTime? UpdatedAt { get; set; }
-
+        public DateTime CreatedAt { get; protected set; } = DateTime.UtcNow;
+        public DateTime? UpdatedAt { get; protected set; }
         // Soft Delete Field
-        public DateTime? DeletedAt { get; set; }
+        public DateTime? DeletedAt { get; protected set; }
 
         // Helper property (Optional but useful in queries)
         public bool IsDeleted => DeletedAt.HasValue;
