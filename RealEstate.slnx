@@ -35,6 +35,7 @@
     <Project Path="src/Modules/Property/Property.Infrastructure/Property.Infrastructure.csproj" />
   </Folder>
   <Folder Name="/src/Shared/">
+    <Project Path="Domain/Domain.csproj" Id="d4d81e4b-128d-450d-b03c-8e482744951c" />
     <Project Path="src/Shared/RealEstate.Shared.Kernel/RealEstate.Shared.Kernel.csproj" />
   </Folder>
 </Solution>
