@@ -5,6 +5,12 @@
     <ProjectReference Include="..\..\..\Shared\RealEstate.Shared.Kernel\RealEstate.Shared.Kernel.csproj" />
   </ItemGroup>
 
+  <ItemGroup>
+    <Folder Include="DTOs\" />
+    <Folder Include="Features\" />
+    <Folder Include="Interfaces\" />
+  </ItemGroup>
+
   <PropertyGroup>
     <TargetFramework>net9.0</TargetFramework>
     <ImplicitUsings>enable</ImplicitUsings>
