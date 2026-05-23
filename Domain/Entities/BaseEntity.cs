@@ -4,7 +4,7 @@ namespace Domain.Entities
     public abstract class BaseEntity
     {
         // Primary Key
-        public Guid Id { get; protected set; } 
+        public Guid Id { get; protected set; } = Guid.NewGuid();
 
         // Audit Fields
         public DateTime CreatedAt { get; set; } = DateTime.UtcNow;
