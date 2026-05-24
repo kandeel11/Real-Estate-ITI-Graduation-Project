@@ -1,4 +1,5 @@
-﻿using AI.Application.Features.PropertyDescription.Commands.AcceptPropertyDescription;
+﻿using AI.Application.Features.Chatbot.Commands.SendMessage;
+using AI.Application.Features.PropertyDescription.Commands.AcceptPropertyDescription;
 using AI.Application.Features.PropertyDescription.Commands.GeneratePropertyDescription;
 using MediatR;
 using Microsoft.AspNetCore.Http;
@@ -8,11 +9,11 @@ namespace RealEstate.Host.Controllers
 {
     [Route("api/[controller]")]
     [ApiController]
-    public class Controllers : ControllerBase
+    public class AIController : ControllerBase
     {
         private readonly ISender _sender;
 
-        public Controllers(ISender sender)
+        public AIController(ISender sender)
         {
             _sender = sender;
         }
@@ -36,6 +37,16 @@ namespace RealEstate.Host.Controllers
             }
 
             return Ok(new { Message = "Property description has been successfully accepted." });
+        }
+
+        [HttpPost("chat")]
+        public async Task<IActionResult> Chat([FromBody] SendMessageCommand command, CancellationToken cancellationToken)
+        {
+            // Dispatch the command to the MediatR pipeline
+            var response = await _sender.Send(command, cancellationToken);
+
+            // Return HTTP 200 OK containing the session ID and the AI's reply
+            return Ok(response);
         }
     }
 }

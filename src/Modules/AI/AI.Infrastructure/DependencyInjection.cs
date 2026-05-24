@@ -2,6 +2,7 @@
 using AI.Application.Interfaces.Common;
 using AI.Infrastructure.Data.Interceptors;
 using AI.Infrastructure.Persistence.Contexts;
+using AI.Infrastructure.Plugins;
 using AI.Infrastructure.Services;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Configuration;
@@ -46,6 +47,7 @@ public static class DependencyInjection
                 modelId: aiSettings.ModelVersion,
                 apiKey: aiSettings.OpenAiApiKey
             );
+            builder.Plugins.AddFromType<PropertySearchPlugin>("PropertySearch");
 
             return builder.Build();
         });

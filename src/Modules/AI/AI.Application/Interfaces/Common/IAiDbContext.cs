@@ -29,7 +29,9 @@ namespace AI.Application.Interfaces.Common
         DbSet<BrokerPerformanceScore> BrokerPerformanceScores { get; }
         DbSet<CompanyAnalytics> CompanyAnalytics { get; }
         DbSet<AdminAnalyticsSnapshot> AdminAnalyticsSnapshots { get; }
-
+        // 5.Chatbot Sessions & Messages
+        DbSet<ChatbotMessage> ChatbotMessages { get; }
+        DbSet<ChatbotSession> ChatbotSessions { get; }
         // 
         Task<int> SaveChangesAsync(CancellationToken cancellationToken = default);
     }

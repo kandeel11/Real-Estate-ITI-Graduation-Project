@@ -13,6 +13,8 @@ namespace AI.Infrastructure.Persistence.Contexts
         public DbSet<OwnershipVerificationRequest> OwnershipVerificationRequests => Set<OwnershipVerificationRequest>();
 
         public DbSet<DuplicateDetectionLog> DuplicateDetectionLogs => Set<DuplicateDetectionLog>();
+        public DbSet<ChatbotSession> ChatbotSessions => Set<ChatbotSession>();
+        public DbSet<ChatbotMessage> ChatbotMessages => Set<ChatbotMessage>();
 
         public DbSet<AiDescriptionGeneration> AiDescriptionGenerations => Set<AiDescriptionGeneration>();
 

@@ -1,4 +1,6 @@
-﻿namespace AI.Application.Interfaces.Common
+﻿using AI.Application.DTOs;
+using Microsoft.SemanticKernel.ChatCompletion;
+namespace AI.Application.Interfaces.Common
 {
     public interface ISemanticKernelService
     {
@@ -9,5 +11,7 @@
         decimal area,
         List<string> amenities,
         CancellationToken cancellationToken);
+
+        Task<ChatbotAiResponse> SendChatMessageAsync(ChatHistory chatHistory, CancellationToken cancellationToken);
     }
 }

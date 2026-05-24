@@ -1,10 +1,4 @@
-﻿using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
-
-namespace AI.Application.DTOs
+﻿namespace AI.Application.DTOs
 {
     public record GeneratedDescriptionResponse(Guid GenerationId, string GeneratedTextEn,
     string GeneratedTextAr);
