@@ -85,11 +85,11 @@ public class PropertiesController : ControllerBase
     [HttpGet("{id:guid}")]
     public async Task<IActionResult> GetById(Guid id, CancellationToken ct = default)
     {
-        // Track the view asynchronously — fire and forget pattern with no IP here; tracking is best-effort
-        _ = _mediator.Send(new TrackPropertyViewCommand(id, null, null, ViewSource.Direct), ct);
-
         var result = await _mediator.Send(new GetPropertyByIdQuery(id), ct);
         if (result is null) return NotFound();
+
+        await _mediator.Send(new TrackPropertyViewCommand(id, null, null, ViewSource.Direct), ct);
+
         return Ok(result);
     }
 
