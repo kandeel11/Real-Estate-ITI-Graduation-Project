@@ -15,4 +15,9 @@
     <ProjectReference Include="..\..\..\Shared\RealEstate.Shared.Kernel\RealEstate.Shared.Kernel.csproj" />
   </ItemGroup>
 
+  <!-- Remove this exclusion after merging AI-Branch (provides PropertyDescriptionAcceptedEvent) -->
+  <ItemGroup>
+    <Compile Remove="Features\EventHandlers\PropertyDescriptionAcceptedEventHandler.cs" />
+  </ItemGroup>
+
 </Project>

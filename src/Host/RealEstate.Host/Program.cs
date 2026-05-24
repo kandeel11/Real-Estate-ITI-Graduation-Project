@@ -1,39 +1,47 @@
+using Microsoft.OpenApi.Models;
 using Property.Infrastructure;
 
-var builder = WebApplication.CreateBuilder(args);
+namespace RealEstate.Host;
 
-builder.Services.AddControllers();
-
-builder.Services.AddEndpointsApiExplorer();
-builder.Services.AddSwaggerGen(options =>
+public class Program
 {
-    options.SwaggerDoc("v1", new Microsoft.OpenApi.Models.OpenApiInfo
+    public static void Main(string[] args)
     {
-        Title = "Real Estate API",
-        Version = "v1",
-        Description = "Real Estate Management Platform — Property Module"
-    });
+        var builder = WebApplication.CreateBuilder(args);
 
-    // Map IFormFile parameters correctly for file upload endpoints
-    options.MapType<IFormFile>(() => new Microsoft.OpenApi.Models.OpenApiSchema
-    {
-        Type = "string",
-        Format = "binary"
-    });
-});
+        builder.Services.AddControllers();
 
-builder.Services.AddPropertyModule(builder.Configuration);
+        builder.Services.AddEndpointsApiExplorer();
+        builder.Services.AddSwaggerGen(options =>
+        {
+            options.SwaggerDoc("v1", new OpenApiInfo
+            {
+                Title = "Real Estate API",
+                Version = "v1",
+                Description = "Real Estate Management Platform — Property Module"
+            });
 
-var app = builder.Build();
+            options.MapType<IFormFile>(() => new OpenApiSchema
+            {
+                Type = "string",
+                Format = "binary"
+            });
+        });
 
-app.UseSwagger();
-app.UseSwaggerUI(options =>
-{
-    options.SwaggerEndpoint("/swagger/v1/swagger.json", "Real Estate API v1");
-    options.RoutePrefix = string.Empty; // Swagger UI at root: https://localhost:{port}/
-});
+        builder.Services.AddPropertyModule(builder.Configuration);
 
-app.UseHttpsRedirection();
-app.MapControllers();
+        var app = builder.Build();
 
-app.Run();
+        app.UseSwagger();
+        app.UseSwaggerUI(options =>
+        {
+            options.SwaggerEndpoint("/swagger/v1/swagger.json", "Real Estate API v1");
+            options.RoutePrefix = string.Empty;
+        });
+
+        app.UseHttpsRedirection();
+        app.MapControllers();
+
+        app.Run();
+    }
+}
