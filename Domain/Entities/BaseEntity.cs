@@ -4,7 +4,7 @@ namespace Domain.Entities
     public abstract class BaseEntity
     {
         // Primary Key
-        public Guid Id { get; protected set; }
+        public Guid Id { get; protected set; } 
 
         // Audit Fields
         public DateTime CreatedAt { get; protected set; } = DateTime.UtcNow;
@@ -37,6 +37,17 @@ namespace Domain.Entities
         public void ClearDomainEvents()
         {
             _domainEvents.Clear();
+        }
+        // --- End of Domain Events Management ---
+        // Methods to manage audit fields
+        public void MarkAsUpdated()
+        {
+            UpdatedAt = DateTime.UtcNow;
+        }
+
+        public void MarkAsDeleted()
+        {
+            DeletedAt = DateTime.UtcNow;
         }
 
     }
