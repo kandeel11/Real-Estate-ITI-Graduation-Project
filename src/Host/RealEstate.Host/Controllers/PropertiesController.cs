@@ -45,6 +45,7 @@ public class PropertiesController : ControllerBase
         [FromQuery] decimal? maxPrice,
         [FromQuery] int? minBedrooms,
         [FromQuery] int? maxBedrooms,
+        [FromQuery] int? bedrooms,
         [FromQuery] bool? isFurnished,
         [FromQuery] bool? petsAllowed,
         [FromQuery] decimal? latitude,
@@ -56,7 +57,7 @@ public class PropertiesController : ControllerBase
     {
         var result = await _mediator.Send(new SearchPropertiesQuery(
             city, district, propertyType, minPrice, maxPrice,
-            minBedrooms, maxBedrooms, isFurnished, petsAllowed,
+            minBedrooms, maxBedrooms, bedrooms, isFurnished, petsAllowed,
             latitude, longitude, radiusKm, page, pageSize), ct);
         return Ok(result);
     }

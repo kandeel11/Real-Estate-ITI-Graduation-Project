@@ -35,6 +35,7 @@ public class SearchCriteria
     public decimal? MaxPrice { get; init; }
     public int? MinBedrooms { get; init; }
     public int? MaxBedrooms { get; init; }
+    public int? Bedrooms { get; init; }
     public bool? IsFurnished { get; init; }
     public bool? PetsAllowed { get; init; }
     public decimal? Latitude { get; init; }

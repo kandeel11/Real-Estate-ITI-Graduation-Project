@@ -47,6 +47,9 @@ public class PropertyRepository : IPropertyRepository
         if (criteria.MaxBedrooms.HasValue)
             query = query.Where(p => p.Bedrooms <= criteria.MaxBedrooms.Value);
 
+        if (criteria.Bedrooms.HasValue)
+            query = query.Where(p => p.Bedrooms == criteria.Bedrooms.Value);
+
         if (criteria.IsFurnished.HasValue)
             query = query.Where(p => p.IsFurnished == criteria.IsFurnished.Value);
 

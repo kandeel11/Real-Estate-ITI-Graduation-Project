@@ -25,6 +25,7 @@ public class SearchPropertiesHandler : IRequestHandler<SearchPropertiesQuery, Pa
             MaxPrice = request.MaxPrice,
             MinBedrooms = request.MinBedrooms,
             MaxBedrooms = request.MaxBedrooms,
+            Bedrooms = request.Bedrooms,
             IsFurnished = request.IsFurnished,
             PetsAllowed = request.PetsAllowed,
             Latitude = request.Latitude,

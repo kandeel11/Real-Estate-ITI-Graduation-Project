@@ -12,6 +12,7 @@ public record SearchPropertiesQuery(
     decimal? MaxPrice,
     int? MinBedrooms,
     int? MaxBedrooms,
+    int? Bedrooms,
     bool? IsFurnished,
     bool? PetsAllowed,
     decimal? Latitude,
