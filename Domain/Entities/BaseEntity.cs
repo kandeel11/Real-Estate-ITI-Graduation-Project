@@ -14,7 +14,11 @@ namespace Domain.Entities
 
         // Helper property (Optional but useful in queries)
         public bool IsDeleted => DeletedAt.HasValue;
-        
+        protected BaseEntity()
+        {
+            Id = Guid.CreateVersion7(); //  sequential + unique + no clustering issue
+        }
+
         // --- Domain Events Management for CQRS/MediatR ---
         private readonly List<INotification> _domainEvents = new ();
         // Expose events as read-only collection
