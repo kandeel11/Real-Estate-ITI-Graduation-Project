@@ -29,7 +29,6 @@ namespace AI.Infrastructure.Plugins
             };
             var properties = await _repository.SearchAsync(criteria);
             return JsonSerializer.Serialize(properties);
-
             //return $"Found 1 available {propertyType ?? "property"} in {city} with {bedrooms} bedrooms. Price is 5000 EGP/month.";
         }
     }

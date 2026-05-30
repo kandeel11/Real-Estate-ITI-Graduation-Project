@@ -8,8 +8,8 @@
   <ItemGroup>
     <Folder Include="Persistence\Seeding\" />
     <Folder Include="Persistence\Repositories\" />
-  </ItemGroup>
 
+  </ItemGroup>
   <ItemGroup>
     <PackageReference Include="Microsoft.EntityFrameworkCore.Design" Version="9.0.16">
       <PrivateAssets>all</PrivateAssets>
@@ -22,14 +22,19 @@
     </PackageReference>
     <PackageReference Include="Microsoft.Extensions.Options.ConfigurationExtensions" Version="10.0.8" />
     <PackageReference Include="Microsoft.Extensions.Options.DataAnnotations" Version="10.0.8" />
+    <PackageReference Include="Microsoft.Extensions.VectorData.Abstractions" Version="10.6.0" />
     <PackageReference Include="Microsoft.SemanticKernel.Connectors.OpenAI" Version="1.76.0" />
+    <PackageReference Include="Microsoft.SemanticKernel.Connectors.Qdrant" Version="1.74.0-preview" />
     <PackageReference Include="Microsoft.SemanticKernel.Core" Version="1.76.0" />
+    <PackageReference Include="PdfPig" Version="0.1.14" />
   </ItemGroup>
 
   <PropertyGroup>
     <TargetFramework>net9.0</TargetFramework>
     <ImplicitUsings>enable</ImplicitUsings>
     <Nullable>enable</Nullable>
+	  <NoWarn>$(NoWarn);SKEXP0001;SKEXP0011;SKEXP0020;SKEXP0026</NoWarn>
+
   </PropertyGroup>
 
 </Project>

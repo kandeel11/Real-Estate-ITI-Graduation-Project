@@ -6,5 +6,7 @@
 
         public string OpenAiApiKey { get; set; } = string.Empty;
         public string ModelVersion { get; set; } = "gpt-5-mini";
+
+        public string EmbeddingModelVersion { get; set; } = string.Empty;
     }
 }

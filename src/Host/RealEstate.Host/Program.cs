@@ -1,3 +1,4 @@
+using AI.Application;
 using AI.Application.Features.PropertyDescription.Commands.GeneratePropertyDescription;
 using AI.Infrastructure;
 using Property.Infrastructure;
@@ -23,6 +24,13 @@ public class Program
             cfg.RegisterServicesFromAssemblies(loadedAssemblies);
         });
         builder.Services.AddPropertyModule(builder.Configuration);
+
+        builder.Services.AddAiApplication(builder.Configuration);
+        builder.Services.AddSwaggerGen(options =>
+        {
+            // Use full type name including namespace to prevent schema ID conflicts
+            options.CustomSchemaIds(type => type.FullName);
+        });
         // ==========================================
         // 2. Register MediatR (CQRS)
         // ==========================================
