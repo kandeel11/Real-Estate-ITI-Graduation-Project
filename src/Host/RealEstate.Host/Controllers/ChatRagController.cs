@@ -1,6 +1,7 @@
 ﻿using AI.Application.DTOs;
 using AI.Application.Features.Chat.Commands;
 using AI.Application.Features.Chat.Queries;
+using AI.Application.Interfaces.Common;
 using MediatR;
 using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Mvc;
@@ -14,12 +15,44 @@ namespace RealEstate.Host.Controllers
     {
         private readonly IMediator _mediator;
         private readonly ILogger<ChatRagController> _logger;
-        public ChatRagController(IMediator mediator, ILogger<ChatRagController> logger)
+        private readonly IContractDocumentService _ingestion;
+        public ChatRagController(IMediator mediator, ILogger<ChatRagController> logger, IContractDocumentService ingestion)
         {
             _mediator = mediator;
             _logger = logger;
+            _ingestion = ingestion;
         }
         /// <summary>
+        /// Upload a contract PDF — extracts, chunks, embeds and stores in Qdrant.
+        /// </summary>
+        [HttpPost("ingest")]
+        [ProducesResponseType(typeof(ContractIngestionResult), StatusCodes.Status200OK)]
+        [ProducesResponseType(StatusCodes.Status400BadRequest)]
+        public async Task<IActionResult> IngestAsync(
+            IFormFile file,
+            [FromQuery] Guid contractId,
+            CancellationToken cancellationToken)
+        {
+            if (file is null || file.Length == 0)
+                return BadRequest("No PDF file provided.");
+
+            if (!file.FileName.EndsWith(".pdf", StringComparison.OrdinalIgnoreCase))
+                return BadRequest("Only PDF files are supported.");
+
+            await using var stream = file.OpenReadStream();
+
+            var result = await _ingestion.IngestAsync(
+                pdfStream: stream,
+                request: new ContractIngestionRequest(
+                    ContractId: contractId,
+                    CollectionName: "contracts",
+                    FileName: file.FileName),
+                cancellationToken: cancellationToken);
+
+            return Ok(result);
+        }
+        /// <summary>
+
         /// Send a message — AI auto-searches contracts and responds.
         /// </summary>
         [HttpPost("message")]

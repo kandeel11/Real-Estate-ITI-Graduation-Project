@@ -41,8 +41,8 @@ public static class DependencyInjection
             .ValidateDataAnnotations()
             .ValidateOnStart();
 
-        // 1. Build the Kernel using configured options
-        services.AddSingleton(sp =>
+        // 1. Build the Kernel using configured options (Changed to AddScoped)
+        services.AddScoped(sp =>
         {
             var aiSettings = sp.GetRequiredService<IOptions<AiOptions>>().Value;
 
@@ -64,12 +64,29 @@ public static class DependencyInjection
             );
 #pragma warning restore SKEXP0010
 
-            builder.Plugins.AddFromType<PropertySearchPlugin>("PropertySearch");
-            builder.Plugins.AddFromType<ContractRetrievalPlugin>("ContractRetrieval");
+            // Resolve Plugins from the main DI container so they can access Scoped Repositories
+            var propertyPlugin = sp.GetRequiredService<PropertySearchPlugin>();
+            var contractPlugin = sp.GetRequiredService<ContractRetrievalPlugin>();
+
+            builder.Plugins.AddFromObject(propertyPlugin, "PropertySearch");
+            builder.Plugins.AddFromObject(contractPlugin, "ContractRetrieval");
 
             return builder.Build();
         });
 
+        // ====================================================================
+        // Register Plugins as Scoped Services in the DI Container
+        // ====================================================================
+        services.AddScoped<PropertySearchPlugin>();
+        services.AddScoped<ContractRetrievalPlugin>();
+
+        services.AddOptions<AzureDocumentIntelligenceOptions>()
+                .BindConfiguration(AzureDocumentIntelligenceOptions.SectionName)
+                .ValidateDataAnnotations()
+                .ValidateOnStart();
+
+        // Swap this line to switch extractor without touching anything else
+        services.AddSingleton<IDocumentExtractor, AzureDocumentIntelligenceExtractor>();
         // 2. Bridge: Extract SK services to make them available in the main DI Container
         services.AddTransient<IChatCompletionService>(sp =>
         {
