@@ -33,20 +33,23 @@ public sealed class ContractRetrievalPlugin
     // ────────────────────────────────────────────────────────────────────────
     // Function 1 — General search across ALL contracts
     // ────────────────────────────────────────────────────────────────────────
+    // AI.Infrastructure/Plugins/ContractRetrievalPlugin.cs
+    // Lower minScore — Arabic embeddings score lower than English
 
     [KernelFunction("search_contracts")]
     [Description("""
-        Searches all stored contracts using semantic similarity.
-        Use this when the user asks a general question about contract terms,
-        clauses, obligations, or conditions without specifying a contract.
-        Returns the most relevant text excerpts ranked by similarity score.
-        """)]
+    Searches all stored contracts using semantic similarity.
+    Use this when the user asks about contract terms, clauses,
+    party names, prices, dates, or any contract information.
+    Always call this before answering any contract-related question.
+    Returns the most relevant text excerpts ranked by similarity score.
+    """)]
     public async Task<string> SearchContractsAsync(
         [Description("The user's natural language question or search query")]
-        string query,
+    string query,
 
         [Description("Maximum number of results to return (default 5, max 10)")]
-        int topK = 5,
+    int topK = 5,
 
         Kernel? kernel = null)
     {
@@ -54,9 +57,9 @@ public sealed class ContractRetrievalPlugin
 
         var results = await _retrieval.SearchAsync(
             query: query,
-            collectionName: DefaultCollection,
+            collectionName: "contracts",
             topK: topK,
-            minScore: 0.70);
+            minScore: 0.30);   // ✅ lowered from 0.70 — Arabic text scores lower
 
         if (results.Count == 0)
             return "No relevant contract clauses found for your query.";
@@ -64,75 +67,64 @@ public sealed class ContractRetrievalPlugin
         return FormatResults(results);
     }
 
-    // ────────────────────────────────────────────────────────────────────────
-    // Function 2 — Targeted search within ONE specific contract
-    // ────────────────────────────────────────────────────────────────────────
-
     [KernelFunction("search_contract_by_id")]
     [Description("""
-        Searches within a specific contract using its unique ID.
-        Use this when the user refers to a particular contract by its ID
-        and asks about its specific clauses, terms, or obligations.
-        """)]
+    Searches within a specific contract using its unique ID.
+    Use this when the user refers to a specific contract by its ID.
+    IMPORTANT: Always use this function when a contractId is provided in the message.
+    """)]
     public async Task<string> SearchContractByIdAsync(
-        [Description("The unique GUID identifier of the contract to search within")]
-        string contractId,
+        [Description("The unique GUID identifier of the contract")]
+    string contractId,
 
-        [Description("The user's natural language question or search query")]
-        string query,
+        [Description("The user's question about the contract")]
+    string query,
 
-        [Description("Maximum number of results to return (default 5, max 10)")]
-        int topK = 5,
+        [Description("Maximum number of results to return (default 5)")]
+    int topK = 5,
 
         Kernel? kernel = null)
     {
         if (!Guid.TryParse(contractId, out var guid))
-            return $"Invalid contract ID format: '{contractId}'. Expected a valid GUID.";
+            return $"Invalid contract ID: '{contractId}'";
 
         topK = Math.Clamp(topK, 1, 10);
 
         var results = await _retrieval.SearchAsync(
             query: query,
-            collectionName: DefaultCollection,
+            collectionName: "contracts",
             topK: topK,
-            minScore: 0.70,
+            minScore: 0.30,    // ✅ lowered — Arabic scores lower
             contractId: guid);
 
         if (results.Count == 0)
-            return $"No relevant clauses found in contract '{contractId}' for your query.";
+            return $"No results found in contract '{contractId}'. " +
+                   $"Try search_contracts for a broader search.";
 
         return FormatResults(results);
     }
 
-    // ────────────────────────────────────────────────────────────────────────
-    // Function 3 — Strict legal search (higher similarity threshold)
-    // ────────────────────────────────────────────────────────────────────────
-
     [KernelFunction("search_contract_clauses_strict")]
     [Description("""
-        Searches contracts with a higher similarity threshold (0.85+).
-        Use this for precise legal questions where accuracy is critical,
-        such as exact obligation wording, penalty clauses, or legal definitions.
-        Prefer this over search_contracts when the user needs exact clause text.
-        """)]
+    Searches contracts with higher similarity threshold.
+    Use for precise legal questions needing exact clause text.
+    """)]
     public async Task<string> SearchContractClausesStrictAsync(
-        [Description("The precise legal question or clause type to search for")]
-        string query,
+        [Description("The precise legal question to search for")]
+    string query,
 
         Kernel? kernel = null)
     {
         var results = await _retrieval.SearchAsync(
             query: query,
-            collectionName: DefaultCollection,
+            collectionName: "contracts",
             topK: 3,
-            minScore: 0.85);   // strict threshold
+            minScore: 0.55);   // ✅ lowered from 0.85
 
         if (results.Count == 0)
             return "No highly relevant clauses found. Try search_contracts for broader results.";
-
         return FormatResults(results);
     }
-
     // ────────────────────────────────────────────────────────────────────────
     // Shared formatter
     // ────────────────────────────────────────────────────────────────────────

@@ -3,8 +3,10 @@ using AI.Application.Features.Chat.Commands;
 using AI.Application.Features.Chat.Queries;
 using AI.Application.Interfaces.Common;
 using MediatR;
+using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Mvc;
+using Qdrant.Client.Grpc;
 
 namespace RealEstate.Host.Controllers
 {
@@ -16,15 +18,21 @@ namespace RealEstate.Host.Controllers
         private readonly IMediator _mediator;
         private readonly ILogger<ChatRagController> _logger;
         private readonly IContractDocumentService _ingestion;
-        public ChatRagController(IMediator mediator, ILogger<ChatRagController> logger, IContractDocumentService ingestion)
+        private readonly IIndexManagementService _indexManager;  // ✅ replaces QdrantClient
+
+        public ChatRagController(IMediator mediator, ILogger<ChatRagController> logger, IContractDocumentService ingestion, IIndexManagementService indexManager)
         {
             _mediator = mediator;
             _logger = logger;
             _ingestion = ingestion;
+            _indexManager = indexManager;
         }
         /// <summary>
         /// Upload a contract PDF — extracts, chunks, embeds and stores in Qdrant.
         /// </summary>
+        [HttpGet("ping")]
+        [AllowAnonymous]
+        public IActionResult Ping() => Ok("alive");
         [HttpPost("ingest")]
         [ProducesResponseType(typeof(ContractIngestionResult), StatusCodes.Status200OK)]
         [ProducesResponseType(StatusCodes.Status400BadRequest)]
@@ -50,6 +58,15 @@ namespace RealEstate.Host.Controllers
                 cancellationToken: cancellationToken);
 
             return Ok(result);
+        }
+        [HttpPost("admin/fix-indexes")]
+        [ProducesResponseType(StatusCodes.Status200OK)]
+        public async Task<IActionResult> FixIndexesAsync(
+               [FromQuery] string collectionName = "contracts",
+               CancellationToken cancellationToken = default)
+        {
+            await _indexManager.EnsureIndexesAsync(collectionName, cancellationToken);
+            return Ok($"Indexes created ✅ on '{collectionName}' — test /api/ChatRag/message now");
         }
         /// <summary>
 

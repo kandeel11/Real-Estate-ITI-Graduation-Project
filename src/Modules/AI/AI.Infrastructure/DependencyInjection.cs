@@ -17,6 +17,7 @@ using Microsoft.SemanticKernel.ChatCompletion;
 using Microsoft.SemanticKernel.Embeddings;
 using Microsoft.SemanticKernel.Connectors.Qdrant;
 using Qdrant.Client;
+using System.Net.Http;
 
 namespace AI.Infrastructure;
 
@@ -38,98 +39,85 @@ public static class DependencyInjection
 
         services.AddOptions<AiOptions>()
            .BindConfiguration(AiOptions.SectionName)
-            .ValidateDataAnnotations()
-            .ValidateOnStart();
+            .ValidateDataAnnotations();
 
-        // 1. Build the Kernel using configured options (Changed to AddScoped)
-        services.AddScoped(sp =>
+        // ====================================================================
+        // 1. تسجيل Azure Embeddings كخدمة مستقلة (عشان نكسر الـ Deadlock تماماً)
+        // ====================================================================
+#pragma warning disable SKEXP0011
+        services.AddSingleton<ITextEmbeddingGenerationService>(sp =>
         {
             var aiSettings = sp.GetRequiredService<IOptions<AiOptions>>().Value;
 
-            if (string.IsNullOrEmpty(aiSettings.OpenAiApiKey))
-            {
-                throw new InvalidOperationException("OpenAI API Key is missing from configuration.");
-            }
-
-            var builder = Kernel.CreateBuilder();
-            builder.AddOpenAIChatCompletion(
-                modelId: aiSettings.ModelVersion,
-                apiKey: aiSettings.OpenAiApiKey
+            return new Microsoft.SemanticKernel.Connectors.AzureOpenAI.AzureOpenAITextEmbeddingGenerationService(
+                aiSettings.AzureEmbeddingDeploymentName,
+                aiSettings.AzureEmbeddingEndpoint,
+                aiSettings.AzureEmbeddingApiKey
             );
-
-#pragma warning disable SKEXP0010
-            builder.AddOpenAIEmbeddingGenerator(
-                modelId: "text-embedding-3-small",
-                apiKey: aiSettings.OpenAiApiKey
-            );
-#pragma warning restore SKEXP0010
-
-            // Resolve Plugins from the main DI container so they can access Scoped Repositories
-            var propertyPlugin = sp.GetRequiredService<PropertySearchPlugin>();
-            var contractPlugin = sp.GetRequiredService<ContractRetrievalPlugin>();
-
-            builder.Plugins.AddFromObject(propertyPlugin, "PropertySearch");
-            builder.Plugins.AddFromObject(contractPlugin, "ContractRetrieval");
-
-            return builder.Build();
         });
+#pragma warning restore SKEXP0011
 
         // ====================================================================
-        // Register Plugins as Scoped Services in the DI Container
+        // 2. تسجيل الـ Plugins (دلوقتي هيقدروا يقرأوا الـ Embeddings بأمان)
         // ====================================================================
         services.AddScoped<PropertySearchPlugin>();
         services.AddScoped<ContractRetrievalPlugin>();
+        services.AddScoped<IContractDocumentService, ContractDocumentService>();
 
-        services.AddOptions<AzureDocumentIntelligenceOptions>()
-                .BindConfiguration(AzureDocumentIntelligenceOptions.SectionName)
-                .ValidateDataAnnotations()
-                .ValidateOnStart();
+        // ====================================================================
+        // 3. بناء الـ Kernel (دمج Groq مع الـ Plugins والـ Embeddings)
+        // ====================================================================
+        services.AddScoped(sp =>
+        {
+            var aiSettings = sp.GetRequiredService<IOptions<AiOptions>>().Value;
+            var builder = Kernel.CreateBuilder();
 
-        // Swap this line to switch extractor without touching anything else
-        services.AddSingleton<IDocumentExtractor, AzureDocumentIntelligenceExtractor>();
-        // 2. Bridge: Extract SK services to make them available in the main DI Container
+            // إضافة Groq للـ Chat
+#pragma warning disable SKEXP0070
+            builder.AddOpenAIChatCompletion(
+                modelId: aiSettings.GroqModelId,
+                apiKey: aiSettings.GroqApiKey,
+                httpClient: new HttpClient { BaseAddress = new Uri("https://api.groq.com/openai/v1/") }
+            );
+#pragma warning restore SKEXP0070
+
+            // إضافة الـ Embeddings المستقلة جوه الـ Kernel
+            builder.Services.AddSingleton(sp.GetRequiredService<ITextEmbeddingGenerationService>());
+
+            // إضافة الـ Plugins
+            builder.Plugins.AddFromObject(sp.GetRequiredService<PropertySearchPlugin>());
+            builder.Plugins.AddFromObject(sp.GetRequiredService<ContractRetrievalPlugin>());
+
+            return builder.Build();
+        });
+        // AI.Infrastructure/DependencyInjection.cs — add registration
+
+        services.AddScoped<IIndexManagementService, IndexManagementService>();
+        // ====================================================================
+        // 
+        // ====================================================================
         services.AddTransient<IChatCompletionService>(sp =>
         {
             var kernel = sp.GetRequiredService<Kernel>();
             return kernel.GetRequiredService<IChatCompletionService>();
         });
 
-        services.AddTransient<ITextEmbeddingGenerationService>(sp =>
-        {
-            var kernel = sp.GetRequiredService<Kernel>();
-            return kernel.GetRequiredService<ITextEmbeddingGenerationService>();
-        });
+        services.AddOptions<AzureDocumentIntelligenceOptions>()
+                .BindConfiguration(AzureDocumentIntelligenceOptions.SectionName)
+                .ValidateDataAnnotations();
 
-        // 3. Configure MediatR
-        services.AddMediatR(cfg =>
-        {
-            // Application layer — Commands, Queries, Validators
-            cfg.RegisterServicesFromAssembly(
-                typeof(SendMessageCommand).Assembly);
-
-            // Infrastructure layer — Handlers that need SK/OpenAI packages
-            cfg.RegisterServicesFromAssembly(
-                typeof(SendMessageCommandHandler).Assembly);
-        });
-
-        // 4. Session management
+        services.AddSingleton<IDocumentExtractor, AzureDocumentIntelligenceExtractor>();
         services.AddSingleton<ISessionStore, InMemorySessionStore>();
-        // Production: services.AddSingleton<ISessionStore, RedisSessionStore>();
 
-        // 5. Qdrant and RAG Services Configuration
+        // ====================================================================
+        // Qdrant Vector Store
+        // ====================================================================
         var qdrantEndpoint = configuration["Qdrant:Endpoint"];
         var qdrantApiKey = configuration["Qdrant:ApiKey"];
 
-        if (string.IsNullOrEmpty(qdrantEndpoint) || string.IsNullOrEmpty(qdrantApiKey))
-        {
-            throw new ArgumentNullException("Qdrant configuration is missing in appsettings.json");
-        }
-
-        // Register the underlying Qdrant Client
         services.AddSingleton<QdrantClient>(sp =>
             new QdrantClient(host: qdrantEndpoint, apiKey: qdrantApiKey, https: true));
 
-        // Register the SK Qdrant Vector Store
 #pragma warning disable SKEXP0020
         services.AddSingleton(sp =>
         {
@@ -138,7 +126,6 @@ public static class DependencyInjection
         });
 #pragma warning restore SKEXP0020
 
-        // Register the contract retrieval service
         services.AddScoped<IContractRetrievalService, ContractRetrievalService>();
 
         return services;

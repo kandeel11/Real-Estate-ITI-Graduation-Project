@@ -81,6 +81,12 @@ public sealed class ContractDocumentService : IContractDocumentService
     // Chunking — now works on ExtractedPage instead of raw string
     // ────────────────────────────────────────────────────────────────────────
 
+    // AI.Infrastructure/Services/ContractDocumentService.cs
+
+    // ────────────────────────────────────────────────────────────────────────────
+    // Chunking — paragraph-aware, page-bound, token-efficient
+    // ────────────────────────────────────────────────────────────────────────────
+
     private static List<ContractChunk> ChunkPages(
         IReadOnlyList<ExtractedPage> pages,
         ContractIngestionRequest request)
@@ -90,25 +96,122 @@ public sealed class ContractDocumentService : IContractDocumentService
 
         foreach (var page in pages)
         {
-            var words = page.Text.Split(' ', StringSplitOptions.RemoveEmptyEntries);
+            // ── Split page into paragraphs first ─────────────────────────────────
+            // Respects natural paragraph breaks before word-level chunking
+            var paragraphs = SplitIntoParagraphs(page.Text);
 
-            for (var start = 0; start < words.Length; start += request.ChunkSize - request.ChunkOverlap)
+            foreach (var paragraph in paragraphs)
             {
-                var slice = words.Skip(start).Take(request.ChunkSize).ToArray();
-                if (slice.Length == 0) break;
+                var words = paragraph.Split(' ', StringSplitOptions.RemoveEmptyEntries);
 
-                chunks.Add(new ContractChunk(
-                    ChunkId: Guid.NewGuid(),
-                    ContractId: request.ContractId,
-                    PageNumber: page.PageNumber,
-                    ChunkIndex: chunkIndex++,
-                    Text: string.Join(' ', slice)));
+                // Paragraph fits in one chunk — no splitting needed
+                if (words.Length <= request.ChunkSize)
+                {
+                    if (words.Length == 0) continue;
 
-                if (start + request.ChunkSize >= words.Length) break;
+                    chunks.Add(new ContractChunk(
+                        ChunkId: Guid.NewGuid(),
+                        ContractId: request.ContractId,
+                        PageNumber: page.PageNumber,
+                        ChunkIndex: chunkIndex++,
+                        Text: string.Join(' ', words)));
+
+                    continue;
+                }
+
+                // Paragraph too large — sliding window within this paragraph only
+                // ✅ Never crosses page boundary
+                for (var start = 0; start < words.Length; start += request.ChunkSize - request.ChunkOverlap)
+                {
+                    var slice = words
+                        .Skip(start)
+                        .Take(request.ChunkSize)
+                        .ToArray();
+
+                    if (slice.Length < 10) break;   // skip tiny trailing chunks
+
+                    chunks.Add(new ContractChunk(
+                        ChunkId: Guid.NewGuid(),
+                        ContractId: request.ContractId,
+                        PageNumber: page.PageNumber,
+                        ChunkIndex: chunkIndex++,
+                        Text: string.Join(' ', slice)));
+
+                    if (start + request.ChunkSize >= words.Length) break;
+                }
             }
         }
 
         return chunks;
+    }
+
+    /// <summary>
+    /// Splits page text into meaningful paragraphs using blank lines,
+    /// numbered clauses, and Arabic paragraph markers as boundaries.
+    /// </summary>
+    private static List<string> SplitIntoParagraphs(string text)
+    {
+        // Split on:
+        // 1. Double newlines      → blank line between paragraphs
+        // 2. Numbered clauses     → "1." "2." "أولاً" "ثانياً"
+        // 3. [TABLE] markers      → table content stays separate
+        var rawParagraphs = text
+            .Split(
+                new[] { "\n\n", "\r\n\r\n" },
+                StringSplitOptions.RemoveEmptyEntries);
+
+        var result = new List<string>();
+
+        foreach (var para in rawParagraphs)
+        {
+            var trimmed = para.Trim();
+            if (string.IsNullOrWhiteSpace(trimmed)) continue;
+
+            // Further split on Arabic clause markers
+            var subParagraphs = SplitOnArabicClauses(trimmed);
+            result.AddRange(subParagraphs.Where(p => !string.IsNullOrWhiteSpace(p)));
+        }
+
+        // Fallback: if no paragraph breaks found, treat whole page as one paragraph
+        return result.Count > 0 ? result : [text.Trim()];
+    }
+
+    /// <summary>
+    /// Splits on Arabic ordinal markers commonly found in contracts.
+    /// e.g. "أولاً", "ثانياً", "البند الأول", "المادة الأولى"
+    /// </summary>
+    private static List<string> SplitOnArabicClauses(string text)
+    {
+        // Arabic contract clause markers
+        var markers = new[]
+        {
+        "أولاً",  "ثانياً",  "ثالثاً",  "رابعاً",
+        "خامساً", "سادساً",  "سابعاً",  "ثامناً",
+        "البند",  "المادة",  "الفصل",   "الباب",
+        "[TABLE]"
+    };
+
+        var lines = text.Split('\n', StringSplitOptions.RemoveEmptyEntries);
+        var result = new List<string>();
+        var buffer = new System.Text.StringBuilder();
+
+        foreach (var line in lines)
+        {
+            var isMarker = markers.Any(m => line.TrimStart().StartsWith(m));
+
+            if (isMarker && buffer.Length > 0)
+            {
+                result.Add(buffer.ToString().Trim());
+                buffer.Clear();
+            }
+
+            buffer.AppendLine(line);
+        }
+
+        if (buffer.Length > 0)
+            result.Add(buffer.ToString().Trim());
+
+        return result.Count > 1 ? result : [text];
     }
 
     private async Task<int> EmbedAndUpsertAsync(
@@ -148,19 +251,58 @@ public sealed class ContractDocumentService : IContractDocumentService
     }
 
     private async Task EnsureCollectionAsync(
+     string collectionName,
+     CancellationToken cancellationToken)
+    {
+        var exists = await _qdrant.CollectionExistsAsync(collectionName, cancellationToken);
+
+        if (!exists)
+        {
+            _logger.LogInformation("Creating Qdrant collection '{Collection}'", collectionName);
+
+            await _qdrant.CreateCollectionAsync(
+                collectionName: collectionName,
+                vectorsConfig: new VectorParams
+                {
+                    Size = EmbeddingDimension,
+                    Distance = Distance.Cosine
+                },
+                cancellationToken: cancellationToken);
+        }
+
+        // ✅ Always ensure indexes exist — runs even if collection already existed
+        await EnsurePayloadIndexesAsync(collectionName, cancellationToken);
+    }
+
+    private async Task EnsurePayloadIndexesAsync(
         string collectionName,
         CancellationToken cancellationToken)
     {
-        if (await _qdrant.CollectionExistsAsync(collectionName, cancellationToken)) return;
+        _logger.LogInformation(
+            "Ensuring payload indexes on '{Collection}'", collectionName);
 
-        await _qdrant.CreateCollectionAsync(
+        // ✅ contractId — Keyword index (required for filter by contractId)
+        await _qdrant.CreatePayloadIndexAsync(
             collectionName: collectionName,
-            vectorsConfig: new VectorParams
-            {
-                Size = EmbeddingDimension,
-                Distance = Distance.Cosine
-            },
+            fieldName: "contractId",
+            schemaType: PayloadSchemaType.Keyword,
             cancellationToken: cancellationToken);
+
+        // ✅ pageNumber — Integer index
+        await _qdrant.CreatePayloadIndexAsync(
+            collectionName: collectionName,
+            fieldName: "pageNumber",
+            schemaType: PayloadSchemaType.Integer,
+            cancellationToken: cancellationToken);
+
+        // ✅ chunkIndex — Integer index
+        await _qdrant.CreatePayloadIndexAsync(
+            collectionName: collectionName,
+            fieldName: "chunkIndex",
+            schemaType: PayloadSchemaType.Integer,
+            cancellationToken: cancellationToken);
+
+        _logger.LogInformation("Payload indexes ready on '{Collection}'", collectionName);
     }
 
     public async Task DeleteAsync(Guid contractId, CancellationToken cancellationToken = default)

@@ -1,5 +1,4 @@
 using AI.Application;
-using AI.Application.Features.PropertyDescription.Commands.GeneratePropertyDescription;
 using AI.Infrastructure;
 using Property.Infrastructure;
 
@@ -10,38 +9,32 @@ public class Program
     public static void Main(string[] args)
     {
         var builder = WebApplication.CreateBuilder(args);
+
+        // ── Controllers & Swagger ─────────────────────────────
         builder.Services.AddControllers();
         builder.Services.AddEndpointsApiExplorer();
-        builder.Services.AddMediatR(cfg =>
-        {
-            var loadedAssemblies = AppDomain.CurrentDomain.GetAssemblies()
-                .Where(a => !a.IsDynamic &&
-                            a.GetName().Name != null &&
-                            !a.GetName().Name!.StartsWith("Microsoft") &&
-                            !a.GetName().Name!.StartsWith("System"))
-                .ToArray();
-
-            cfg.RegisterServicesFromAssemblies(loadedAssemblies);
-        });
-        builder.Services.AddPropertyModule(builder.Configuration);
-
-        builder.Services.AddAiApplication(builder.Configuration);
         builder.Services.AddSwaggerGen(options =>
         {
-            // Use full type name including namespace to prevent schema ID conflicts
             options.CustomSchemaIds(type => type.FullName);
         });
-        // ==========================================
-        // 2. Register MediatR (CQRS)
-        // ==========================================
+
+         //── MediatR — ONE registration, scan all your assemblies ──
         builder.Services.AddMediatR(cfg =>
-        {          
-            cfg.RegisterServicesFromAssemblyContaining<GeneratePropertyDescriptionCommand>();
+        {
+            cfg.RegisterServicesFromAssemblies(
+                typeof(AI.Application.AssemblyMarker).Assembly,     // AI.Application
+                typeof(AI.Infrastructure.AssemblyMarker).Assembly,  // AI.Infrastructure
+                typeof(Property.Infrastructure.AssemblyMarker).Assembly // Property
+                                                                        // add more assemblies here as you add modules
+            );
         });
 
+        //// ── Module registrations ──────────────────────────────
+        builder.Services.AddPropertyModule(builder.Configuration);
+        builder.Services.AddAiApplication(builder.Configuration);
         builder.Services.AddAiInfrastructure(builder.Configuration);
-        // Add services to the container.
-        builder.Services.AddSwaggerGen();
+
+        // ── Build ─────────────────────────────────────────────
         var app = builder.Build();
 
         if (app.Environment.IsDevelopment())
@@ -49,14 +42,16 @@ public class Program
             app.UseSwagger();
             app.UseSwaggerUI(c =>
             {
-                c.SwaggerEndpoint("/swagger/v1/swagger.json", "Real Estate Management API v1");
+                c.SwaggerEndpoint("/swagger/v1/swagger.json", "Real Estate API v1");
             });
         }
-        // Configure the HTTP request pipeline.
-        app.UseAuthorization();
+
+        // ── Middleware pipeline (ORDER MATTERS) ───────────────
         app.UseHttpsRedirection();
+        app.UseRouting();           // ← THIS WAS MISSING — root cause
+        app.UseAuthentication();    // ← add when you wire up auth
+        app.UseAuthorization();
         app.MapControllers();
         app.Run();
     }
 }
-

@@ -30,54 +30,57 @@ public sealed class ContractRetrievalService : IContractRetrievalService
     }
 
     public async Task<IReadOnlyList<ContractSearchResult>> SearchAsync(
-        string query,
-        string collectionName,
-        int topK = 5,
-        double minScore = 0.70,
-        Guid? contractId = null,
-        CancellationToken cancellationToken = default)
+     string query,
+     string collectionName,
+     int topK = 5,
+     double minScore = 0.70,
+     Guid? contractId = null,
+     CancellationToken cancellationToken = default)
     {
         ArgumentException.ThrowIfNullOrWhiteSpace(query);
 
         _logger.LogInformation(
-            "Semantic search in '{Collection}' | topK={TopK} | query={Query}",
-            collectionName, topK, query);
+            "Semantic search in '{Collection}' | topK={TopK} | contractId={ContractId} | query={Query}",
+            collectionName, topK, contractId, query);
 
-        // ── 1. Embed the user query ──────────────────────────────────────────
+        // ── 1. Embed the query ───────────────────────────────────────────────────
         var embeddings = await _embeddings.GenerateEmbeddingsAsync(
             [query], cancellationToken: cancellationToken);
 
         var queryVector = embeddings[0].ToArray();
 
-        // ── 2. Build optional payload filter (scope to one contract) ─────────
+        // ── 2. Build filter — only when contractId is provided ───────────────────
+        // ✅ Use Match.Keyword (not Match.Text) for Keyword-indexed fields
         Filter? filter = contractId.HasValue
             ? new Filter
             {
                 Must =
                 {
-                    new Condition
+                new Condition
+                {
+                    Field = new FieldCondition
                     {
-                        Field = new FieldCondition
+                        Key   = "contractId",
+                        Match = new Match
                         {
-                            Key   = "contractId",
-                            Match = new Match { Text = contractId.Value.ToString() }
+                            Keyword = contractId.Value.ToString()  // ✅ Keyword not Text
                         }
                     }
+                }
                 }
             }
             : null;
 
-        // ── 3. Query Qdrant ──────────────────────────────────────────────────
+        // ── 3. Search Qdrant ─────────────────────────────────────────────────────
         var hits = await _qdrant.SearchAsync(
             collectionName: collectionName,
             vector: queryVector,
             filter: filter,
             limit: (ulong)topK,
             scoreThreshold: (float)minScore,
-           payloadSelector: true,
             cancellationToken: cancellationToken);
 
-        // ── 4. Map to domain model ───────────────────────────────────────────
+        // ── 4. Map results ───────────────────────────────────────────────────────
         var results = hits
             .OrderByDescending(h => h.Score)
             .Select(h => new ContractSearchResult(
@@ -89,7 +92,7 @@ public sealed class ContractRetrievalService : IContractRetrievalService
             .ToList();
 
         _logger.LogInformation(
-            "Search returned {Count} results (min score {MinScore})",
+            "Search returned {Count} results (minScore={MinScore})",
             results.Count, minScore);
 
         return results;

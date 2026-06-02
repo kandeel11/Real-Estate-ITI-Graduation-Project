@@ -9,7 +9,7 @@ using Microsoft.Extensions.Logging;
 using Microsoft.SemanticKernel;
 using Microsoft.SemanticKernel.ChatCompletion;
 using Microsoft.SemanticKernel.Connectors.OpenAI;   // ✅ lives in Infrastructure
-
+using Microsoft.SemanticKernel.Connectors.OpenAI;
 namespace AI.Infrastructure.Features.Chat;
 
 public sealed class SendMessageCommandHandler
@@ -21,16 +21,19 @@ public sealed class SendMessageCommandHandler
     private readonly ILogger<SendMessageCommandHandler> _logger;
 
     private const string SystemPrompt = """
-        You are a legal AI assistant specialized in analyzing contracts.
-        You have access to a contract database through semantic search tools.
+        You are a legal AI assistant specialized in analyzing Arabic and English contracts.
 
-        Guidelines:
-        - Always search the contract database before answering questions about clauses or terms.
-        - Cite the page number and contract ID when referencing specific clauses.
-        - If you cannot find relevant information, clearly state that.
-        - Be precise and professional in your legal language.
-        - Never fabricate contract terms — only use what the search returns.
+        CRITICAL RULES — you MUST follow these:
+        1. ALWAYS call search_contract_by_id or search_contracts BEFORE answering ANY question.
+        2. NEVER say you cannot find information without calling a search function first.
+        3. If a Contract ID is provided in the message (format: [Contract ID: xxx]), 
+           ALWAYS use search_contract_by_id with that exact ID.
+        4. If search returns no results, call search_contracts as a fallback.
+        5. Answer based ONLY on what the search returns — cite page numbers.
+        6. The contracts may be in Arabic — search using the same language as the question.
+        7. NEVER apologize or say information is unavailable before searching first.
         """;
+
 
     public SendMessageCommandHandler(
         Kernel kernel,

@@ -10,7 +10,7 @@ namespace AI.Application.DTOs
      Guid ContractId,
      string CollectionName,       // e.g. "contracts"
      string FileName,
-     int ChunkSize = 512,   // tokens per chunk
-     int ChunkOverlap = 64     // overlap between consecutive chunks
+     int ChunkSize = 150,   // tokens per chunk
+     int ChunkOverlap = 20     // overlap between consecutive chunks
  );
 }

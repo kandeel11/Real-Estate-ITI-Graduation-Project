@@ -48,7 +48,8 @@ namespace AI.Application.Features.PropertyDescription.Commands.GeneratePropertyD
                 PromptText = "System prompt generated in SemanticKernelService",
                 GeneratedTextEn = aiResult.EnDescription,
                 GeneratedTextAr = aiResult.ArDescription,
-                ModelVersion = _aiOptions.ModelVersion,
+                //ModelVersion = _aiOptions.ModelVersion,
+                ModelVersion=_aiOptions.GroqModelId,
                 TokensUsed = aiResult.TokensUsed,
                 IsAccepted = false
             };
