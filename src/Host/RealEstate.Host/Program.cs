@@ -1,6 +1,7 @@
 using AI.Application.Features.PropertyDescription.Commands.GeneratePropertyDescription;
 using AI.Infrastructure;
 using Property.Infrastructure;
+using Maintenance.Infrastructure;
 
 namespace RealEstate.Host;
 
@@ -23,6 +24,7 @@ public class Program
             cfg.RegisterServicesFromAssemblies(loadedAssemblies);
         });
         builder.Services.AddPropertyModule(builder.Configuration);
+        builder.Services.AddMaintenanceModule(builder.Configuration);
         // ==========================================
         // 2. Register MediatR (CQRS)
         // ==========================================
