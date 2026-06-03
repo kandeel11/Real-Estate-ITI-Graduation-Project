@@ -652,8 +652,16 @@ namespace AI.Infrastructure.Migrations
                     b.Property<string>("AiOcrExtractedId")
                         .HasColumnType("nvarchar(max)");
 
+                    b.Property<string>("AiOcrExtractedIdExpiry")
+                        .HasMaxLength(50)
+                        .HasColumnType("nvarchar(50)");
+
                     b.Property<string>("AiOcrExtractedName")
                         .HasColumnType("nvarchar(max)");
+
+                    b.Property<string>("AiOcrExtractedOwnerName")
+                        .HasMaxLength(300)
+                        .HasColumnType("nvarchar(300)");
 
                     b.Property<DateTime>("CreatedAt")
                         .HasColumnType("datetime2");

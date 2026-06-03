@@ -5,6 +5,7 @@
   </Folder>
   <Folder Name="/src/Modules/" />
   <Folder Name="/src/Modules/AI/">
+    <File Path="../../../../Downloads/OwnershipVerification_Module_AzureDI.md" />
     <Project Path="src/Modules/AI/AI.Application/AI.Application.csproj" />
     <Project Path="src/Modules/AI/AI.Domain/AI.Domain.csproj" />
     <Project Path="src/Modules/AI/AI.Infrastructure/AI.Infrastructure.csproj" />

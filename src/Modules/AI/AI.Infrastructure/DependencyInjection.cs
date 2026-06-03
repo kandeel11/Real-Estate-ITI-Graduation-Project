@@ -1,10 +1,12 @@
 ﻿using AI.Application.Common.Options;
 using AI.Application.Features.Chat.Commands;
+using AI.Application.Features.OwnershipVerification.Interfaces;
 using AI.Application.Interfaces;
 using AI.Application.Interfaces.Common;
 using AI.Infrastructure.Data.Interceptors;
 using AI.Infrastructure.Features.Chat;
 using AI.Infrastructure.Persistence.Contexts;
+using AI.Infrastructure.Persistence.Repositories;
 using AI.Infrastructure.Plugins;
 using AI.Infrastructure.Services;
 using MediatR;
@@ -108,6 +110,7 @@ public static class DependencyInjection
 
         services.AddSingleton<IDocumentExtractor, AzureDocumentIntelligenceExtractor>();
         services.AddSingleton<ISessionStore, InMemorySessionStore>();
+        services.AddScoped<ILeaseExtractionService, LeaseExtractionService>();
 
         // ====================================================================
         // Qdrant Vector Store
@@ -127,6 +130,17 @@ public static class DependencyInjection
 #pragma warning restore SKEXP0020
 
         services.AddScoped<IContractRetrievalService, ContractRetrievalService>();
+
+        // ====================================================================
+        // Ownership Verification Services
+        // ====================================================================
+        services.AddOptions<VerificationOptions>()
+                .BindConfiguration(VerificationOptions.SectionName)
+                .ValidateDataAnnotations();
+
+        services.AddScoped<IOwnershipAiService, AzureDocumentIntelligenceOwnershipAiService>();
+        services.AddScoped<IOwnershipVerifyRepository, OwnershipVerifyRepository>();
+        services.AddScoped<IDocumentStorageService, InMemoryDocumentStorageService>();
 
         return services;
     }
