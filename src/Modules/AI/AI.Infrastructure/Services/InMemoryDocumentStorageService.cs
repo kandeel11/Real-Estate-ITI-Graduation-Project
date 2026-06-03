@@ -1,4 +1,5 @@
 using AI.Application.Features.OwnershipVerification.Interfaces;
+using AI.Application.Interfaces.Common;
 
 namespace AI.Infrastructure.Services
 {
@@ -29,6 +30,21 @@ namespace AI.Infrastructure.Services
         {
             _storage.Remove(storagePath);
             return Task.CompletedTask;
+        }
+
+        public Task<string> UploadAsync(string blobFolder, string fileName, string mediaType, byte[] content, CancellationToken ct = default)
+        {
+            throw new NotImplementedException();
+        }
+
+        public Task<string> GetSecureUrlAsync(string blobPath, TimeSpan? expiry = null, CancellationToken ct = default)
+        {
+            throw new NotImplementedException();
+        }
+
+        public Task DeleteAsync(string blobPath, CancellationToken ct = default)
+        {
+            throw new NotImplementedException();
         }
     }
 }

@@ -1,102 +1,118 @@
 ﻿using AI.Application.Common.Options;
-using AI.Application.Features.Chat.Commands;
 using AI.Application.Features.OwnershipVerification.Interfaces;
 using AI.Application.Interfaces;
 using AI.Application.Interfaces.Common;
 using AI.Infrastructure.Data.Interceptors;
-using AI.Infrastructure.Features.Chat;
 using AI.Infrastructure.Persistence.Contexts;
 using AI.Infrastructure.Persistence.Repositories;
 using AI.Infrastructure.Plugins;
 using AI.Infrastructure.Services;
-using MediatR;
+using AI.Infrastructure.Storage;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Options;
 using Microsoft.SemanticKernel;
 using Microsoft.SemanticKernel.ChatCompletion;
-using Microsoft.SemanticKernel.Embeddings;
 using Microsoft.SemanticKernel.Connectors.Qdrant;
+using Microsoft.SemanticKernel.Embeddings;
 using Qdrant.Client;
-using System.Net.Http;
 
 namespace AI.Infrastructure;
 
 public static class DependencyInjection
 {
+
+    private static IServiceCollection AddStorageServices(
+        this IServiceCollection services,
+        IConfiguration configuration)
+    {
+        services.AddOptions<AzureBlobOptions>()
+                .BindConfiguration(AzureBlobOptions.SectionName)
+                .ValidateDataAnnotations()
+                .ValidateOnStart();
+
+        // ✅ Registered as Singleton — BlobContainerClient is thread-safe
+        services.AddSingleton<IDocumentStorageService, AzureBlobDocumentStorageService>();
+
+        return services;
+    }
+
     public static IServiceCollection AddAiInfrastructure(this IServiceCollection services, IConfiguration configuration)
     {
         var connectionString = configuration.GetConnectionString("DefaultConnection");
 
+        // ====================================================================
+        // Database & Interceptors Registration
+        // ====================================================================
         services.AddScoped<AuditEntitiesInterceptor>();
         services.AddDbContext<AiDbContext>((sp, options) =>
         {
             var interceptor = sp.GetRequiredService<AuditEntitiesInterceptor>();
             options.UseSqlServer(connectionString).AddInterceptors(interceptor);
         });
+        services
+    .AddStorageServices(configuration);
 
         services.AddTransient<ISemanticKernelService, SemanticKernelService>();
         services.AddScoped<IAiDbContext>(provider => provider.GetRequiredService<AiDbContext>());
-
+        
+        // Bind AI Configuration Options
         services.AddOptions<AiOptions>()
            .BindConfiguration(AiOptions.SectionName)
-            .ValidateDataAnnotations();
+           .ValidateDataAnnotations()
+           ;
 
         // ====================================================================
-        // 1. تسجيل Azure Embeddings كخدمة مستقلة (عشان نكسر الـ Deadlock تماماً)
+        // 1. Register OpenAI Embeddings as a Standalone Service
         // ====================================================================
 #pragma warning disable SKEXP0011
         services.AddSingleton<ITextEmbeddingGenerationService>(sp =>
         {
             var aiSettings = sp.GetRequiredService<IOptions<AiOptions>>().Value;
 
-            return new Microsoft.SemanticKernel.Connectors.AzureOpenAI.AzureOpenAITextEmbeddingGenerationService(
-                aiSettings.AzureEmbeddingDeploymentName,
-                aiSettings.AzureEmbeddingEndpoint,
-                aiSettings.AzureEmbeddingApiKey
+            return new Microsoft.SemanticKernel.Connectors.OpenAI.OpenAITextEmbeddingGenerationService(
+                aiSettings.EmbeddingModelVersion, // e.g., "text-embedding-3-small"
+                aiSettings.OpenAiApiKey
             );
         });
 #pragma warning restore SKEXP0011
 
         // ====================================================================
-        // 2. تسجيل الـ Plugins (دلوقتي هيقدروا يقرأوا الـ Embeddings بأمان)
+        // 2. Register Semantic Kernel Plugins
         // ====================================================================
         services.AddScoped<PropertySearchPlugin>();
         services.AddScoped<ContractRetrievalPlugin>();
         services.AddScoped<IContractDocumentService, ContractDocumentService>();
 
         // ====================================================================
-        // 3. بناء الـ Kernel (دمج Groq مع الـ Plugins والـ Embeddings)
+        // 3. Build Semantic Kernel (Configured for OpenAI Chat)
         // ====================================================================
         services.AddScoped(sp =>
         {
             var aiSettings = sp.GetRequiredService<IOptions<AiOptions>>().Value;
             var builder = Kernel.CreateBuilder();
 
-            // إضافة Groq للـ Chat
-#pragma warning disable SKEXP0070
+            // Register OpenAI Chat Completion Service
             builder.AddOpenAIChatCompletion(
-                modelId: aiSettings.GroqModelId,
-                apiKey: aiSettings.GroqApiKey,
-                httpClient: new HttpClient { BaseAddress = new Uri("https://api.groq.com/openai/v1/") }
+                modelId: aiSettings.ModelVersion, // e.g., "gpt-4o-mini"
+                apiKey: aiSettings.OpenAiApiKey
             );
-#pragma warning restore SKEXP0070
 
-            // إضافة الـ Embeddings المستقلة جوه الـ Kernel
+            // Inject the standalone Embeddings service into the Kernel
             builder.Services.AddSingleton(sp.GetRequiredService<ITextEmbeddingGenerationService>());
 
-            // إضافة الـ Plugins
+            // Register Plugins to the Kernel
             builder.Plugins.AddFromObject(sp.GetRequiredService<PropertySearchPlugin>());
             builder.Plugins.AddFromObject(sp.GetRequiredService<ContractRetrievalPlugin>());
 
             return builder.Build();
         });
-        // AI.Infrastructure/DependencyInjection.cs — add registration
 
         services.AddScoped<IIndexManagementService, IndexManagementService>();
+
         // ====================================================================
-        // 
+        // Shared AI Services & Session Stores
         // ====================================================================
         services.AddTransient<IChatCompletionService>(sp =>
         {
@@ -113,7 +129,7 @@ public static class DependencyInjection
         services.AddScoped<ILeaseExtractionService, LeaseExtractionService>();
 
         // ====================================================================
-        // Qdrant Vector Store
+        // Qdrant Vector Store Integration
         // ====================================================================
         var qdrantEndpoint = configuration["Qdrant:Endpoint"];
         var qdrantApiKey = configuration["Qdrant:ApiKey"];
@@ -132,7 +148,7 @@ public static class DependencyInjection
         services.AddScoped<IContractRetrievalService, ContractRetrievalService>();
 
         // ====================================================================
-        // Ownership Verification Services
+        // Ownership Verification Module Services
         // ====================================================================
         services.AddOptions<VerificationOptions>()
                 .BindConfiguration(VerificationOptions.SectionName)
@@ -140,7 +156,7 @@ public static class DependencyInjection
 
         services.AddScoped<IOwnershipAiService, AzureDocumentIntelligenceOwnershipAiService>();
         services.AddScoped<IOwnershipVerifyRepository, OwnershipVerifyRepository>();
-        services.AddScoped<IDocumentStorageService, InMemoryDocumentStorageService>();
+        //services.AddScoped<IDocumentStorageService, InMemoryDocumentStorageService>();
 
         return services;
     }
