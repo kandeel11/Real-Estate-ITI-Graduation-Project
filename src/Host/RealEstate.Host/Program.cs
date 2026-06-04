@@ -1,12 +1,15 @@
 using AI.Application.Features.PropertyDescription.Commands.GeneratePropertyDescription;
 using AI.Infrastructure;
 using Property.Infrastructure;
+using Subscription.Infrastructure;
+using Subscription.Infrastructure.Persistence;
+using Subscription.Infrastructure.Seed;
 
 namespace RealEstate.Host;
 
 public class Program
 {
-    public static void Main(string[] args)
+    public static async Task Main(string[] args)
     {
         var builder = WebApplication.CreateBuilder(args);
         builder.Services.AddControllers();
@@ -23,6 +26,7 @@ public class Program
             cfg.RegisterServicesFromAssemblies(loadedAssemblies);
         });
         builder.Services.AddPropertyModule(builder.Configuration);
+        builder.Services.AddSubscriptionModule(builder.Configuration);
         // ==========================================
         // 2. Register MediatR (CQRS)
         // ==========================================
@@ -36,6 +40,12 @@ public class Program
         builder.Services.AddSwaggerGen();
         var app = builder.Build();
 
+        using (var scope = app.Services.CreateScope())
+        {
+            var subscriptionDb = scope.ServiceProvider.GetRequiredService<SubscriptionDbContext>();
+            await SubscriptionPlanSeed.SeedAsync(subscriptionDb);
+        }
+
         if (app.Environment.IsDevelopment())
         {
             app.UseSwagger();
@@ -45,6 +55,7 @@ public class Program
             });
         }
         // Configure the HTTP request pipeline.
+        app.UseAuthentication();
         app.UseAuthorization();
         app.UseHttpsRedirection();
         app.MapControllers();

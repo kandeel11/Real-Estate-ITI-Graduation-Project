@@ -1,6 +1,7 @@
 using MediatR;
 using Microsoft.AspNetCore.Mvc;
 using Property.Application.Features.Commands.AddPropertyAmenity;
+using Property.Application.Features.Commands.RequestAiDescription;
 using Property.Application.Features.Commands.AddPropertyMedia;
 using Property.Application.Features.Commands.CreateProperty;
 using Property.Application.Features.Commands.DeleteProperty;
@@ -194,6 +195,13 @@ public class PropertiesController : ControllerBase
     {
         await _mediator.Send(new SetAiDuplicateScoreCommand(id, request.Confidence), ct);
         return NoContent();
+    }
+
+    [HttpPost("{id:guid}/request-ai-description")]
+    public async Task<IActionResult> RequestAiDescription(Guid id, [FromBody] OwnerRequest request, CancellationToken ct = default)
+    {
+        await _mediator.Send(new PropertyAiDescriptionRequestCommand(id, request.RequestingUserId), ct);
+        return Accepted(new { message = "AI description is being generated. It will appear shortly.", propertyId = id });
     }
 
     [HttpPut("{id:guid}/ai-description")]

@@ -200,6 +200,7 @@ public class Property : BaseEntity
         AiGeneratedDescriptionEn = descriptionEn;
         AiGeneratedDescriptionAr = descriptionAr;
         UpdatedAt = DateTime.UtcNow;
+        AddDomainEvent(new PropertyAiDescriptionSetEvent(Id, OwnerId, CompanyId));
     }
 
     public void MarkAsRented()
