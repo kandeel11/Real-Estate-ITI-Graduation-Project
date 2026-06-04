@@ -1,5 +1,8 @@
-using Document.Application.Commands.Lease;
+using Document.Application.Commands.Lease.ConfirmLease;
+using Document.Application.Commands.Lease.TerminateLease;
+using Document.Application.Commands.Lease.UploadLeaseContract;
 using Document.Application.Queries.Lease;
+using Document.Application.Queries.Lease.GetLeaseById;
 using MediatR;
 using Microsoft.AspNetCore.Mvc;
 
@@ -15,9 +18,9 @@ public class LeasesController : ControllerBase
     [HttpPost("upload")]
     public async Task<IActionResult> Upload([FromForm] Guid leadId, IFormFile file)
     {
-        var ownerId = Guid.NewGuid(); 
-        var leaseId = await _mediator.Send(new UploadLeaseContractCommand(leadId, ownerId, file));
-        return Ok(new { leaseId });
+        var ownerId = Guid.NewGuid();
+        var result = await _mediator.Send(new UploadLeaseContractCommand(leadId, ownerId, file));
+        return Ok(result);
     }
 
     [HttpGet("{id}")]
@@ -29,10 +32,14 @@ public class LeasesController : ControllerBase
     }
 
     [HttpPost("{id}/confirm")]
-    public async Task<IActionResult> Confirm(Guid id)
+    public async Task<IActionResult> Confirm(Guid id, [FromBody] ConfirmLeaseRequest req)
     {
-        var ownerId = Guid.NewGuid(); // مؤقتاً للتيست
-        await _mediator.Send(new ConfirmLeaseCommand(id, ownerId));
+        var ownerId = Guid.NewGuid();
+        await _mediator.Send(new ConfirmLeaseCommand(
+            id, ownerId,
+            req.RentAmount, req.SecurityDeposit,
+            req.StartDate, req.EndDate,
+            req.PaymentDayOfMonth));
         return NoContent();
     }
 
@@ -43,3 +50,10 @@ public class LeasesController : ControllerBase
         return NoContent();
     }
 }
+
+public record ConfirmLeaseRequest(
+    decimal? RentAmount,
+    decimal? SecurityDeposit,
+    DateOnly? StartDate,
+    DateOnly? EndDate,
+    int? PaymentDayOfMonth);

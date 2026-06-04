@@ -1,4 +1,7 @@
-﻿namespace Document.Domain.Events;
+﻿using Document.Domain.Entities;
+using MediatR;
+
+namespace Document.Domain.Events;
 
 public abstract class DomainEvent
 {
@@ -36,5 +39,22 @@ public class RatingApprovedEvent : DomainEvent
     public int RatingValue { get; init; }
 }
 
-public record LeaseUploadedEvent(Guid LeaseId, string ContractFileUrl, Guid OwnerId);
-public record LeaseActivatedEvent(Guid LeaseId, Guid PropertyId, Guid TenantId, Guid OwnerId);
+public record LeaseUploadedEvent(
+    Guid LeaseId,
+    string ContractFileUrl,
+    Guid OwnerId) : INotification;
+
+public record LeaseExtractionCompletedEvent(
+    Guid LeaseId,
+    decimal? RentAmount,
+    decimal? SecurityDeposit,
+    DateOnly? StartDate,
+    DateOnly? EndDate,
+    int? PaymentDayOfMonth,
+    decimal? Confidence) : INotification;
+
+public record LeaseActivatedEvent(
+    Guid LeaseId,
+    Guid PropertyId,
+    Guid TenantId,
+    Guid OwnerId) : INotification;
