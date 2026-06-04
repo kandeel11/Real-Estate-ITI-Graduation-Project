@@ -1,26 +1,53 @@
+using AI.Application;
+using AI.Infrastructure;
+using Property.Infrastructure;
 using Document.Infrastructure;
 
-var builder = WebApplication.CreateBuilder(args);
+namespace RealEstate.Host;
 
-builder.Services.AddControllers();
-builder.Services.AddEndpointsApiExplorer();
-builder.Services.AddSwaggerGen(c =>
+public class Program
 {
-    c.SwaggerDoc("v1", new() { Title = "RealEstate API", Version = "v1" });
-});
+    public static void Main(string[] args)
+    {
+        var builder = WebApplication.CreateBuilder(args);
 
-builder.Services.AddDocumentModule(builder.Configuration);
+        builder.Services.AddControllers();
+        builder.Services.AddEndpointsApiExplorer();
+        builder.Services.AddSwaggerGen(options =>
+        {
+            options.CustomSchemaIds(type => type.FullName);
+        });
 
-var app = builder.Build();
+        builder.Services.AddMediatR(cfg =>
+        {
+            cfg.RegisterServicesFromAssemblies(
+                typeof(AI.Application.AssemblyMarker).Assembly,
+                typeof(AI.Infrastructure.AssemblyMarker).Assembly,
+                typeof(Property.Infrastructure.AssemblyMarker).Assembly
+            );
+        });
 
-if (app.Environment.IsDevelopment())
-{
-    app.UseSwagger();
-    app.UseSwaggerUI();
+        builder.Services.AddPropertyModule(builder.Configuration);
+        builder.Services.AddAiApplication(builder.Configuration);
+        builder.Services.AddAiInfrastructure(builder.Configuration);
+        builder.Services.AddDocumentModule(builder.Configuration);
+
+        var app = builder.Build();
+
+        if (app.Environment.IsDevelopment())
+        {
+            app.UseSwagger();
+            app.UseSwaggerUI(c =>
+            {
+                c.SwaggerEndpoint("/swagger/v1/swagger.json", "Real Estate API v1");
+            });
+        }
+
+        app.UseHttpsRedirection();
+        app.UseRouting();
+        app.UseAuthentication();
+        app.UseAuthorization();
+        app.MapControllers();
+        app.Run();
+    }
 }
-
-app.UseHttpsRedirection();
-app.UseAuthorization();
-app.MapControllers();
-
-app.Run();

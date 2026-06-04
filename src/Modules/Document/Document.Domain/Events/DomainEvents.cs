@@ -35,3 +35,6 @@ public class RatingApprovedEvent : DomainEvent
     public Guid? MaintenanceCompanyId { get; init; }
     public int RatingValue { get; init; }
 }
+
+public record LeaseUploadedEvent(Guid LeaseId, string ContractFileUrl, Guid OwnerId);
+public record LeaseActivatedEvent(Guid LeaseId, Guid PropertyId, Guid TenantId, Guid OwnerId);

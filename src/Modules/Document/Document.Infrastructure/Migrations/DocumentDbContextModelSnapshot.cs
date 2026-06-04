@@ -18,7 +18,7 @@ namespace Document.Infrastructure.Migrations
 #pragma warning disable 612, 618
             modelBuilder
                 .HasDefaultSchema("document")
-                .HasAnnotation("ProductVersion", "9.0.5")
+                .HasAnnotation("ProductVersion", "9.0.16")
                 .HasAnnotation("Relational:MaxIdentifierLength", 128);
 
             SqlServerModelBuilderExtensions.UseIdentityColumns(modelBuilder);
@@ -184,6 +184,96 @@ namespace Document.Infrastructure.Migrations
                     b.HasIndex("Status");
 
                     b.ToTable("leads", "document");
+                });
+
+            modelBuilder.Entity("Document.Domain.Entities.Lease", b =>
+                {
+                    b.Property<Guid>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("uniqueidentifier");
+
+                    b.Property<Guid?>("BrokerId")
+                        .HasColumnType("uniqueidentifier");
+
+                    b.Property<DateTime?>("ConfirmedAt")
+                        .HasColumnType("datetime2");
+
+                    b.Property<Guid?>("ConfirmedById")
+                        .HasColumnType("uniqueidentifier");
+
+                    b.Property<string>("ContractFileUrl")
+                        .IsRequired()
+                        .HasColumnType("nvarchar(max)");
+
+                    b.Property<DateTime>("CreatedAt")
+                        .HasColumnType("datetime2");
+
+                    b.Property<DateTime?>("DeletedAt")
+                        .HasColumnType("datetime2");
+
+                    b.Property<DateOnly?>("EndDate")
+                        .HasColumnType("date");
+
+                    b.Property<decimal?>("ExtractionConfidence")
+                        .HasColumnType("decimal(5,2)");
+
+                    b.Property<string>("ExtractionStatus")
+                        .IsRequired()
+                        .HasMaxLength(50)
+                        .HasColumnType("nvarchar(50)");
+
+                    b.Property<Guid?>("InquiryId")
+                        .HasColumnType("uniqueidentifier");
+
+                    b.Property<bool>("IsActive")
+                        .HasColumnType("bit");
+
+                    b.Property<Guid?>("LeadId")
+                        .HasColumnType("uniqueidentifier");
+
+                    b.Property<Guid>("OwnerId")
+                        .HasColumnType("uniqueidentifier");
+
+                    b.Property<DateTime?>("OwnerSignedAt")
+                        .HasColumnType("datetime2");
+
+                    b.Property<int?>("PaymentDayOfMonth")
+                        .HasColumnType("int");
+
+                    b.Property<Guid>("PropertyId")
+                        .HasColumnType("uniqueidentifier");
+
+                    b.Property<decimal?>("RentAmount")
+                        .HasColumnType("decimal(12,2)");
+
+                    b.Property<decimal?>("SecurityDeposit")
+                        .HasColumnType("decimal(12,2)");
+
+                    b.Property<DateOnly?>("StartDate")
+                        .HasColumnType("date");
+
+                    b.Property<Guid>("TenantId")
+                        .HasColumnType("uniqueidentifier");
+
+                    b.Property<DateTime?>("TenantSignedAt")
+                        .HasColumnType("datetime2");
+
+                    b.Property<DateTime?>("TerminatedAt")
+                        .HasColumnType("datetime2");
+
+                    b.Property<string>("TerminationReason")
+                        .HasColumnType("nvarchar(max)");
+
+                    b.Property<DateTime>("UpdatedAt")
+                        .HasColumnType("datetime2");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("InquiryId");
+
+                    b.HasIndex("LeadId");
+
+                    b.ToTable("leases", "document");
                 });
 
             modelBuilder.Entity("Document.Domain.Entities.Message", b =>
@@ -392,6 +482,23 @@ namespace Document.Infrastructure.Migrations
                         .IsRequired();
 
                     b.Navigation("Inquiry");
+                });
+
+            modelBuilder.Entity("Document.Domain.Entities.Lease", b =>
+                {
+                    b.HasOne("Document.Domain.Entities.Inquiry", "Inquiry")
+                        .WithMany()
+                        .HasForeignKey("InquiryId")
+                        .OnDelete(DeleteBehavior.SetNull);
+
+                    b.HasOne("Document.Domain.Entities.Lead", "Lead")
+                        .WithMany()
+                        .HasForeignKey("LeadId")
+                        .OnDelete(DeleteBehavior.SetNull);
+
+                    b.Navigation("Inquiry");
+
+                    b.Navigation("Lead");
                 });
 
             modelBuilder.Entity("Document.Domain.Entities.Message", b =>
