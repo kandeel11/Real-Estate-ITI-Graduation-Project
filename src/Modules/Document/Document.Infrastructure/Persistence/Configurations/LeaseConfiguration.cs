@@ -26,6 +26,6 @@ public class LeaseConfiguration : IEntityTypeConfiguration<Lease>
         builder.HasOne(x => x.Lead)
             .WithMany()
             .HasForeignKey(x => x.LeadId)
-            .OnDelete(DeleteBehavior.SetNull);
+            .OnDelete(DeleteBehavior.NoAction);
     }
 }

@@ -1,7 +1,6 @@
 ﻿using Document.Application.Interfaces;
 using Document.Domain.Enums;
-using RealEstate.Shared.Kernel.Interfaces;
-
+using Document.Infrastructure.Repositories;
 namespace Document.Infrastructure.Services;
 
 public class NotificationService : INotificationService

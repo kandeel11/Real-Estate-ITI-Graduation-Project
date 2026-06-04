@@ -1,9 +1,7 @@
 ﻿using Document.Application.DTOs;
 using Document.Application.Interfaces;
-using Document.Domain.Entities;
 using Document.Domain.Enums;
 using MediatR;
-using RealEstate.Shared.Kernel.Interfaces;
 
 namespace Document.Application.Commands.Inquiry;
 

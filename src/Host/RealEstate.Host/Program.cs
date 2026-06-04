@@ -23,7 +23,9 @@ public class Program
             cfg.RegisterServicesFromAssemblies(
                 typeof(AI.Application.AssemblyMarker).Assembly,
                 typeof(AI.Infrastructure.AssemblyMarker).Assembly,
-                typeof(Property.Infrastructure.AssemblyMarker).Assembly
+                typeof(Property.Infrastructure.AssemblyMarker).Assembly,
+                typeof(Document.Infrastructure.AssemblyMarker).Assembly,
+                typeof(Document.Application.AssemblyMarker).Assembly
             );
         });
 

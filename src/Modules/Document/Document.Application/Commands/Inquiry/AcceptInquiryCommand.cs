@@ -4,7 +4,7 @@ using Document.Application.Interfaces;
 using Document.Domain.Enums;
 using Document.Domain.Events;
 using MediatR;
-using RealEstate.Shared.Kernel.Interfaces;
+using Document.Application.Interfaces;
 
 namespace Document.Application.Commands.Inquiry;
 

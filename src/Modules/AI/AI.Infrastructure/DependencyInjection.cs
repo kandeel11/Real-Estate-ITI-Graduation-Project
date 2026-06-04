@@ -93,6 +93,7 @@ public static class DependencyInjection
             var aiSettings = sp.GetRequiredService<IOptions<AiOptions>>().Value;
             var builder = Kernel.CreateBuilder();
 
+
             // Register OpenAI Chat Completion Service
             builder.AddOpenAIChatCompletion(
                 modelId: aiSettings.ModelVersion, // e.g., "gpt-4o-mini"

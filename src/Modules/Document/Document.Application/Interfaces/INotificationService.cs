@@ -1,8 +1,7 @@
 ﻿using Document.Domain.Enums;
 
-namespace RealEstate.Shared.Kernel.Interfaces;
+namespace Document.Application.Interfaces;
 
- 
 public interface INotificationService
 {
     Task CreateInAppAsync(

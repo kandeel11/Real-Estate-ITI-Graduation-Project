@@ -494,7 +494,7 @@ namespace Document.Infrastructure.Migrations
                     b.HasOne("Document.Domain.Entities.Lead", "Lead")
                         .WithMany()
                         .HasForeignKey("LeadId")
-                        .OnDelete(DeleteBehavior.SetNull);
+                        .OnDelete(DeleteBehavior.NoAction);
 
                     b.Navigation("Inquiry");
 

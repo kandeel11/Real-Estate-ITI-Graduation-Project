@@ -1,5 +1,7 @@
-﻿using Document.Application.Interfaces;
+﻿using Document.Application.Commands.Lease;
+using Document.Application.Interfaces;
 using Document.Infrastructure.Persistence;
+using Document.Infrastructure.Repositories;
 using Document.Infrastructure.Services;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Configuration;
@@ -18,7 +20,10 @@ public static class DocumentModule
         // Register interfaces
         services.AddScoped<IDocumentDbContext>(sp => sp.GetRequiredService<DocumentDbContext>());
         services.AddScoped<IAzureBlobService, AzureBlobService>();
-
+        services.AddScoped<IInquiryRepository, InquiryRepository>();
+        services.AddScoped<INotificationRepository, NotificationRepository>();
+        services.AddScoped<INotificationService, NotificationService>();
+        //services.AddMediatR();
         return services;
     }
 }

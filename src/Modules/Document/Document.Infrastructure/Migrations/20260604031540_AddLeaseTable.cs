@@ -51,14 +51,14 @@ namespace Document.Infrastructure.Migrations
                         principalSchema: "document",
                         principalTable: "inquiries",
                         principalColumn: "Id",
-                        onDelete: ReferentialAction.SetNull);
+                        onDelete: ReferentialAction.NoAction);
                     table.ForeignKey(
                         name: "FK_leases_leads_LeadId",
                         column: x => x.LeadId,
                         principalSchema: "document",
                         principalTable: "leads",
                         principalColumn: "Id",
-                        onDelete: ReferentialAction.SetNull);
+                        onDelete: ReferentialAction.NoAction);
                 });
 
             migrationBuilder.CreateIndex(
