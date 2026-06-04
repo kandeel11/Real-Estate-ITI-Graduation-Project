@@ -15,7 +15,7 @@ public class LeasesController : ControllerBase
     [HttpPost("upload")]
     public async Task<IActionResult> Upload([FromForm] Guid leadId, IFormFile file)
     {
-        var ownerId = Guid.NewGuid(); // مؤقتاً للتيست
+        var ownerId = Guid.NewGuid(); 
         var leaseId = await _mediator.Send(new UploadLeaseContractCommand(leadId, ownerId, file));
         return Ok(new { leaseId });
     }
