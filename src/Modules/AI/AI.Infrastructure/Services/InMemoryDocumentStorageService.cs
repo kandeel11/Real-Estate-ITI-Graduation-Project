@@ -46,5 +46,10 @@ namespace AI.Infrastructure.Services
         {
             throw new NotImplementedException();
         }
+
+        public Task<byte[]> DownloadAsync(string blobPath, CancellationToken ct = default)
+        {
+            throw new NotImplementedException();
+        }
     }
 }

@@ -3,9 +3,7 @@ using MediatR;
 using Microsoft.Extensions.Logging;
 using RealEstate.Shared.Kernel.Shared.IntegrationEvents;
 using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Text;
+using System.Threading;
 using System.Threading.Tasks;
 
 namespace AI.Application.Features.PropertyDescription.Commands.AcceptPropertyDescription
@@ -30,6 +28,7 @@ namespace AI.Application.Features.PropertyDescription.Commands.AcceptPropertyDes
         {
             _logger.LogInformation("Attempting to accept AI description generation with ID: {GenerationId}", request.GenerationId);
 
+            // 1. Fetch the generated draft
             var generationRecord = await _context.AiDescriptionGenerations.FindAsync(
                 new object[] { request.GenerationId },
                 cancellationToken);
@@ -40,23 +39,30 @@ namespace AI.Application.Features.PropertyDescription.Commands.AcceptPropertyDes
                 return false;
             }
 
+            // 2. Idempotency check: Skip if already accepted
             if (generationRecord.IsAccepted)
             {
-                _logger.LogInformation("AI description generation with ID: {GenerationId} is already accepted.", request.GenerationId);
-                return true; 
+                return true;
             }
 
+            // 3. Mark as accepted in the AI database
             generationRecord.IsAccepted = true;
 
+            // PRO TIP: If you want to track user edits to improve AI prompts later, 
+            // you can save the edited text to new columns in your database here:
+            // generationRecord.EditedTextEn = request.FinalTextEn;
+            // generationRecord.EditedTextAr = request.FinalTextAr;
 
             await _context.SaveChangesAsync(cancellationToken);
 
+            // 4. Publish integration event with the FINAL EDITED TEXT, not the original AI text
+            // The Property Module will listen to this event and save these exact strings.
             var integrationEvent = new PropertyDescriptionAcceptedEvent(
                 generationRecord.PropertyId,
-                generationRecord.GeneratedTextEn,
-                generationRecord.GeneratedTextAr
+                request.FinalTextEn, // Passing the user's updated English text
+                request.FinalTextAr  // Passing the user's updated Arabic text
             );
-            
+
             await _eventPublisher.Publish(integrationEvent, cancellationToken);
 
             _logger.LogInformation("Successfully accepted AI description generation with ID: {GenerationId}", request.GenerationId);

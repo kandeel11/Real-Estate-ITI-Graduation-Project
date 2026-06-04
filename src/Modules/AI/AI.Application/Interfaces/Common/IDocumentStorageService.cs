@@ -17,7 +17,9 @@ public interface IDocumentStorageService
         string blobPath,     // path stored in DB
         TimeSpan? expiry = null,   // default 1 hour
         CancellationToken ct = default);
-
+    Task<byte[]> DownloadAsync(
+        string blobPath,
+        CancellationToken ct = default);
     /// <summary>Deletes a blob by its stored path</summary>
     Task DeleteAsync(
         string blobPath,

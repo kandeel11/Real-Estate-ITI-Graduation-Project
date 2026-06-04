@@ -1,7 +1,8 @@
 using AI.Application;
 using AI.Infrastructure;
-using Property.Infrastructure;
+//using AI.Infrastructure.EventHandlers;
 using Document.Infrastructure;
+using Property.Infrastructure;
 
 namespace RealEstate.Host;
 
@@ -20,12 +21,15 @@ public class Program
 
         builder.Services.AddMediatR(cfg =>
         {
+
             cfg.RegisterServicesFromAssemblies(
                 typeof(AI.Application.AssemblyMarker).Assembly,
                 typeof(AI.Infrastructure.AssemblyMarker).Assembly,
                 typeof(Property.Infrastructure.AssemblyMarker).Assembly,
                 typeof(Document.Infrastructure.AssemblyMarker).Assembly,
                 typeof(Document.Application.AssemblyMarker).Assembly
+                //,typeof(LeaseUploadedEventHandler).Assembly
+
             );
         });
 
