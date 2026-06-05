@@ -6,5 +6,19 @@ using System.Threading.Tasks;
 
 namespace Maintenance.Domain.Enums
 {
-    public enum TicketStatus { Open, Assigned, InProgress, Resolved, Closed, Cancelled }
+    public enum TicketStatus {
+        Draft,
+        Submitted,
+        UnderAiReview,
+        AiEvaluated,
+        WaitingForOwnerDecision,
+        WaitingForTenantDecision,
+        AssignedToVendor,
+        VendorAccepted,
+        InProgress,
+        AwaitingPayment,
+        Completed,
+        Cancelled,
+        Rejected
+    }
 }
