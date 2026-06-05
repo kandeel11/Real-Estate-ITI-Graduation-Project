@@ -19,6 +19,11 @@ public record SubscriptionPlanDto
     public bool HasAiChatbot { get; init; }
     public bool HasAiLeadPrioritization { get; init; }
     public bool HasAiDescriptionGenerator { get; init; }
+    public int MaxSavedListings { get; init; }
+    public int MaxSavedSearches { get; init; }
+    public int MaxInquiriesPerMonth { get; init; }
+    public bool HasEarlyAccessListings { get; init; }
+    public bool HasPriorityBrokerResponse { get; init; }
     public bool IsActive { get; init; }
     public DateTime CreatedAt { get; init; }
 }

@@ -21,8 +21,8 @@ public class SubscriptionPlansController : ControllerBase
     }
 
     [HttpGet]
-    public async Task<IActionResult> GetActive(CancellationToken ct)
-        => Ok(await _mediator.Send(new GetActivePlansQuery(), ct));
+    public async Task<IActionResult> GetActive([FromQuery] string? audience, CancellationToken ct)
+        => Ok(await _mediator.Send(new GetActivePlansQuery(audience), ct));
 
     [HttpGet("{id:guid}")]
     public async Task<IActionResult> GetById(Guid id, CancellationToken ct)

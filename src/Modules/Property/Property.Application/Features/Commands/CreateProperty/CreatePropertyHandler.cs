@@ -21,6 +21,10 @@ public class CreatePropertyHandler : IRequestHandler<CreatePropertyCommand, Guid
         if (!allowed)
             throw new InvalidOperationException(reason);
 
+        var isDuplicate = await _repository.ExistsByOwnerAndTitleAsync(request.OwnerId, request.Title, cancellationToken);
+        if (isDuplicate)
+            throw new InvalidOperationException($"You already have a property listed with the title '{request.Title}'.");
+
         var property = Domain.Entities.Property.Create(
             request.OwnerId,
             request.CompanyId,

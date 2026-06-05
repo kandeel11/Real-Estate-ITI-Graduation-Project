@@ -5,5 +5,7 @@ public enum SubscriptionTier
     FreeIndividual,
     PremiumIndividual,
     FreeCompany,
-    PremiumCompany
+    PremiumCompany,
+    FreeTenant,
+    PremiumTenant
 }

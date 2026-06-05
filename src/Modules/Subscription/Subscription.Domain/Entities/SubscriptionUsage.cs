@@ -13,6 +13,11 @@ public class SubscriptionUsage : BaseEntity
     public int AiRequestsUsed { get; private set; }
     public decimal StorageUsedGb { get; private set; }
 
+    // Tenant counters
+    public int SavedListingsUsed { get; private set; }
+    public int SavedSearchesUsed { get; private set; }
+    public int InquiriesUsed { get; private set; }
+
     public Subscription Subscription { get; private set; } = null!;
 
     private SubscriptionUsage() { }
@@ -27,7 +32,10 @@ public class SubscriptionUsage : BaseEntity
             PropertiesUsed = 0,
             BrokersUsed = 0,
             AiRequestsUsed = 0,
-            StorageUsedGb = 0m
+            StorageUsedGb = 0m,
+            SavedListingsUsed = 0,
+            SavedSearchesUsed = 0,
+            InquiriesUsed = 0
         };
     }
 
@@ -52,6 +60,36 @@ public class SubscriptionUsage : BaseEntity
     public void AddStorage(decimal gb)
     {
         StorageUsedGb += gb;
+        UpdatedAt = DateTime.UtcNow;
+    }
+
+    public void IncrementSavedListings()
+    {
+        SavedListingsUsed++;
+        UpdatedAt = DateTime.UtcNow;
+    }
+
+    public void DecrementSavedListings()
+    {
+        if (SavedListingsUsed > 0) SavedListingsUsed--;
+        UpdatedAt = DateTime.UtcNow;
+    }
+
+    public void IncrementSavedSearches()
+    {
+        SavedSearchesUsed++;
+        UpdatedAt = DateTime.UtcNow;
+    }
+
+    public void DecrementSavedSearches()
+    {
+        if (SavedSearchesUsed > 0) SavedSearchesUsed--;
+        UpdatedAt = DateTime.UtcNow;
+    }
+
+    public void IncrementInquiries()
+    {
+        InquiriesUsed++;
         UpdatedAt = DateTime.UtcNow;
     }
 }

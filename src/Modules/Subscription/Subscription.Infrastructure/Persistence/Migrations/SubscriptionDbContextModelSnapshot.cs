@@ -233,7 +233,17 @@ namespace Subscription.Infrastructure.Persistence.Migrations
                         .HasColumnType("bit")
                         .HasDefaultValue(false);
 
+                    b.Property<bool>("HasEarlyAccessListings")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("bit")
+                        .HasDefaultValue(false);
+
                     b.Property<bool>("HasFeaturedListings")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("bit")
+                        .HasDefaultValue(false);
+
+                    b.Property<bool>("HasPriorityBrokerResponse")
                         .ValueGeneratedOnAdd()
                         .HasColumnType("bit")
                         .HasDefaultValue(false);
@@ -249,8 +259,23 @@ namespace Subscription.Infrastructure.Persistence.Migrations
                     b.Property<int>("MaxBrokers")
                         .HasColumnType("int");
 
+                    b.Property<int>("MaxInquiriesPerMonth")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("int")
+                        .HasDefaultValue(0);
+
                     b.Property<int>("MaxProperties")
                         .HasColumnType("int");
+
+                    b.Property<int>("MaxSavedListings")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("int")
+                        .HasDefaultValue(0);
+
+                    b.Property<int>("MaxSavedSearches")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("int")
+                        .HasDefaultValue(0);
 
                     b.Property<int>("MaxStorageGb")
                         .HasColumnType("int");
@@ -306,6 +331,11 @@ namespace Subscription.Infrastructure.Persistence.Migrations
                     b.Property<DateTime?>("DeletedAt")
                         .HasColumnType("datetime2");
 
+                    b.Property<int>("InquiriesUsed")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("int")
+                        .HasDefaultValue(0);
+
                     b.Property<DateTime>("PeriodEnd")
                         .HasColumnType("datetime2");
 
@@ -313,6 +343,16 @@ namespace Subscription.Infrastructure.Persistence.Migrations
                         .HasColumnType("datetime2");
 
                     b.Property<int>("PropertiesUsed")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("int")
+                        .HasDefaultValue(0);
+
+                    b.Property<int>("SavedListingsUsed")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("int")
+                        .HasDefaultValue(0);
+
+                    b.Property<int>("SavedSearchesUsed")
                         .ValueGeneratedOnAdd()
                         .HasColumnType("int")
                         .HasDefaultValue(0);

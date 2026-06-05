@@ -33,6 +33,11 @@ public class GetAllPlansHandler : IRequestHandler<GetAllPlansQuery, List<Subscri
             HasAiChatbot = p.HasAiChatbot,
             HasAiLeadPrioritization = p.HasAiLeadPrioritization,
             HasAiDescriptionGenerator = p.HasAiDescriptionGenerator,
+            MaxSavedListings = p.MaxSavedListings,
+            MaxSavedSearches = p.MaxSavedSearches,
+            MaxInquiriesPerMonth = p.MaxInquiriesPerMonth,
+            HasEarlyAccessListings = p.HasEarlyAccessListings,
+            HasPriorityBrokerResponse = p.HasPriorityBrokerResponse,
             IsActive = p.IsActive,
             CreatedAt = p.CreatedAt
         }).ToList();

@@ -24,6 +24,15 @@ public class SubscriptionPlan : BaseEntity
 
     public bool IsActive { get; private set; } = true;
 
+    // Tenant-specific limits (0 for non-tenant plans)
+    public int MaxSavedListings { get; protected set; }
+    public int MaxSavedSearches { get; protected set; }
+    public int MaxInquiriesPerMonth { get; protected set; }
+
+    // Tenant-specific feature flags (false for non-tenant plans)
+    public bool HasEarlyAccessListings { get; protected set; }
+    public bool HasPriorityBrokerResponse { get; protected set; }
+
     private readonly List<PlanFeature> _features = new();
     public ICollection<PlanFeature> Features => _features.AsReadOnly();
 
@@ -43,7 +52,12 @@ public class SubscriptionPlan : BaseEntity
         bool hasAiPriceEstimation,
         bool hasAiChatbot,
         bool hasAiLeadPrioritization,
-        bool hasAiDescriptionGenerator)
+        bool hasAiDescriptionGenerator,
+        int maxSavedListings = 0,
+        int maxSavedSearches = 0,
+        int maxInquiriesPerMonth = 0,
+        bool hasEarlyAccessListings = false,
+        bool hasPriorityBrokerResponse = false)
     {
         return new SubscriptionPlan
         {
@@ -61,6 +75,11 @@ public class SubscriptionPlan : BaseEntity
             HasAiChatbot = hasAiChatbot,
             HasAiLeadPrioritization = hasAiLeadPrioritization,
             HasAiDescriptionGenerator = hasAiDescriptionGenerator,
+            MaxSavedListings = maxSavedListings,
+            MaxSavedSearches = maxSavedSearches,
+            MaxInquiriesPerMonth = maxInquiriesPerMonth,
+            HasEarlyAccessListings = hasEarlyAccessListings,
+            HasPriorityBrokerResponse = hasPriorityBrokerResponse,
             IsActive = true
         };
     }

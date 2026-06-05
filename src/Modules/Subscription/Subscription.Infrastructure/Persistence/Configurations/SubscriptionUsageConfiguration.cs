@@ -18,6 +18,9 @@ public class SubscriptionUsageConfiguration : IEntityTypeConfiguration<Subscript
         builder.Property(x => x.BrokersUsed).IsRequired().HasDefaultValue(0);
         builder.Property(x => x.AiRequestsUsed).IsRequired().HasDefaultValue(0);
         builder.Property(x => x.StorageUsedGb).IsRequired().HasPrecision(10, 4).HasDefaultValue(0m);
+        builder.Property(x => x.SavedListingsUsed).IsRequired().HasDefaultValue(0);
+        builder.Property(x => x.SavedSearchesUsed).IsRequired().HasDefaultValue(0);
+        builder.Property(x => x.InquiriesUsed).IsRequired().HasDefaultValue(0);
         builder.Property(x => x.CreatedAt).IsRequired();
         builder.Property(x => x.UpdatedAt);
         builder.Property(x => x.DeletedAt);

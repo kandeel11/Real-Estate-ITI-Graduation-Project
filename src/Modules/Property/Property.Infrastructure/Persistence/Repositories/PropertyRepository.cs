@@ -244,6 +244,12 @@ public class PropertyRepository : IPropertyRepository
             })
             .ToListAsync(ct);
 
+    public async Task<bool> ExistsByOwnerAndTitleAsync(Guid ownerId, string title, CancellationToken ct = default)
+        => await _context.Properties.AnyAsync(
+            p => p.OwnerId == ownerId &&
+                 p.Title.ToLower() == title.ToLower() &&
+                 p.DeletedAt == null, ct);
+
     public async Task AddAsync(Domain.Entities.Property property, CancellationToken ct = default)
         => await _context.Properties.AddAsync(property, ct);
 

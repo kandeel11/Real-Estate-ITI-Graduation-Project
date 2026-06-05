@@ -28,6 +28,11 @@ public class SubscriptionPlanConfiguration : IEntityTypeConfiguration<Subscripti
         builder.Property(x => x.HasAiChatbot).IsRequired().HasDefaultValue(false);
         builder.Property(x => x.HasAiLeadPrioritization).IsRequired().HasDefaultValue(false);
         builder.Property(x => x.HasAiDescriptionGenerator).IsRequired().HasDefaultValue(false);
+        builder.Property(x => x.MaxSavedListings).IsRequired().HasDefaultValue(0);
+        builder.Property(x => x.MaxSavedSearches).IsRequired().HasDefaultValue(0);
+        builder.Property(x => x.MaxInquiriesPerMonth).IsRequired().HasDefaultValue(0);
+        builder.Property(x => x.HasEarlyAccessListings).IsRequired().HasDefaultValue(false);
+        builder.Property(x => x.HasPriorityBrokerResponse).IsRequired().HasDefaultValue(false);
         builder.Property(x => x.IsActive).IsRequired().HasDefaultValue(true);
         builder.Property(x => x.CreatedAt).IsRequired();
         builder.Property(x => x.UpdatedAt);
