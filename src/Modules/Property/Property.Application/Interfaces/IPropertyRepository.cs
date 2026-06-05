@@ -8,6 +8,7 @@ public interface IPropertyRepository
 {
     Task<Property.Domain.Entities.Property?> GetByIdAsync(Guid id, CancellationToken ct = default);
     Task<PagedResult<PropertySummaryDto>> SearchAsync(SearchCriteria criteria, CancellationToken ct = default);
+    Task<List<PropertySummaryDto>> GetAllAsync(CancellationToken ct = default);
     Task<List<PropertySummaryDto>> GetByOwnerAsync(Guid ownerId, CancellationToken ct = default);
     Task<List<PropertySummaryDto>> GetPendingVerificationAsync(CancellationToken ct = default);
     Task<List<PropertySummaryDto>> GetFeaturedAsync(CancellationToken ct = default);

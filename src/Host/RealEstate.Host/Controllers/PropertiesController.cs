@@ -16,6 +16,7 @@ using Property.Application.Features.Commands.SubmitPropertyForReview;
 using Property.Application.Features.Commands.SyndicateProperty;
 using Property.Application.Features.Commands.TrackPropertyView;
 using Property.Application.Features.Commands.UpdateProperty;
+using Property.Application.Features.Queries.GetAllProperties;
 using Property.Application.Features.Queries.GetFeaturedProperties;
 using Property.Application.Features.Queries.GetPendingVerification;
 using Property.Application.Features.Queries.GetPropertiesByOwner;
@@ -36,6 +37,10 @@ public class PropertiesController : ControllerBase
     {
         _mediator = mediator;
     }
+
+    [HttpGet]
+    public async Task<IActionResult> GetAll(CancellationToken ct = default)
+        => Ok(await _mediator.Send(new GetAllPropertiesQuery(), ct));
 
     [HttpGet("search")]
     public async Task<IActionResult> Search(

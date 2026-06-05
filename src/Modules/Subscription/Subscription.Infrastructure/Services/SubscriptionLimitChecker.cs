@@ -23,8 +23,10 @@ public class SubscriptionLimitChecker : ISubscriptionLimitChecker
     public async Task<(bool Allowed, string Reason)> CheckPropertyLimitAsync(Guid userId, Guid? companyId, CancellationToken ct = default)
     {
         var (subscription, plan, usage) = await ResolveAsync(userId, companyId, ct);
+
+        // No subscription yet (Identity not wired) — allow until auto-assignment is live
         if (subscription is null || plan is null)
-            return (false, "No active subscription found.");
+            return (true, string.Empty);
 
         if (usage.PropertiesUsed >= plan.MaxProperties)
             return (false, $"Property limit of {plan.MaxProperties} reached. Upgrade your plan to add more.");
@@ -35,6 +37,7 @@ public class SubscriptionLimitChecker : ISubscriptionLimitChecker
     public async Task IncrementPropertyUsageAsync(Guid userId, Guid? companyId, CancellationToken ct = default)
     {
         var (_, _, usage) = await ResolveAsync(userId, companyId, ct);
+        if (usage is null) return;
         usage.IncrementProperties();
         await _usageRepo.UpdateAsync(usage, ct);
     }
@@ -43,7 +46,7 @@ public class SubscriptionLimitChecker : ISubscriptionLimitChecker
     {
         var (subscription, plan, usage) = await ResolveAsync(Guid.Empty, companyId, ct);
         if (subscription is null || plan is null)
-            return (false, "No active subscription found for this company.");
+            return (true, string.Empty);
 
         if (usage.BrokersUsed >= plan.MaxBrokers)
             return (false, $"Broker limit of {plan.MaxBrokers} reached. Upgrade your plan to add more brokers.");
@@ -54,6 +57,7 @@ public class SubscriptionLimitChecker : ISubscriptionLimitChecker
     public async Task IncrementBrokerUsageAsync(Guid companyId, CancellationToken ct = default)
     {
         var (_, _, usage) = await ResolveAsync(Guid.Empty, companyId, ct);
+        if (usage is null) return;
         usage.IncrementBrokers();
         await _usageRepo.UpdateAsync(usage, ct);
     }
@@ -62,7 +66,7 @@ public class SubscriptionLimitChecker : ISubscriptionLimitChecker
     {
         var (subscription, plan, usage) = await ResolveAsync(userId, companyId, ct);
         if (subscription is null || plan is null)
-            return (false, "No active subscription found.");
+            return (true, string.Empty);
 
         if (usage.AiRequestsUsed >= plan.MaxAiRequestsPerMonth)
             return (false, $"AI request limit of {plan.MaxAiRequestsPerMonth}/month reached. Upgrade your plan for more AI features.");
@@ -73,6 +77,7 @@ public class SubscriptionLimitChecker : ISubscriptionLimitChecker
     public async Task IncrementAiUsageAsync(Guid userId, Guid? companyId, CancellationToken ct = default)
     {
         var (_, _, usage) = await ResolveAsync(userId, companyId, ct);
+        if (usage is null) return;
         usage.IncrementAiUsage();
         await _usageRepo.UpdateAsync(usage, ct);
     }
