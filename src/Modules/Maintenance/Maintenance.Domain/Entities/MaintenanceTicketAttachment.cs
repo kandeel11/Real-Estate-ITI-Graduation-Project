@@ -15,8 +15,11 @@ namespace Maintenance.Domain.Entities
         public string FileUrl { get; private set; } = default!;
         public string FileType { get; private set; } = default!;
         public int FileSizeKb { get; private set; }
+
         public MaintenanceTicket Ticket { get; private set; } = default!;
+
         protected MaintenanceTicketAttachment() { }
+
         public static MaintenanceTicketAttachment Create(
             Guid ticketId, string fileUrl, string fileType, int fileSizeKb, Guid uploadedById)
             => new()
@@ -27,6 +30,7 @@ namespace Maintenance.Domain.Entities
                 FileSizeKb = fileSizeKb,
                 UploadedById = uploadedById
             };
+
         public void Remove() => MarkAsDeleted();
     }
 }
