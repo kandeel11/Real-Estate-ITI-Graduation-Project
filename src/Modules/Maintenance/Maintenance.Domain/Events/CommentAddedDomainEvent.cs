@@ -7,5 +7,6 @@ using System.Threading.Tasks;
 
 namespace Maintenance.Domain.Events
 {
+
     public record CommentAddedDomainEvent(Guid CommentId, Guid TicketId, Guid AuthorUserId) : INotification;
 }
