@@ -147,7 +147,7 @@ public static class DependencyInjection
 #pragma warning restore SKEXP0020
 
         services.AddScoped<IContractRetrievalService, ContractRetrievalService>();
-
+        services.AddScoped<IPropertyDuplicateCheckService, PropertyDuplicateCheckService>();
         // ====================================================================
         // Ownership Verification Module Services
         // ====================================================================

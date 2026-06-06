@@ -32,6 +32,16 @@ public class ConfirmLeaseHandler : IRequestHandler<ConfirmLeaseCommand>
         await _db.SaveChangesAsync(ct);
 
         await _publisher.Publish(
-            new LeaseActivatedEvent(lease.Id, lease.PropertyId, lease.TenantId, lease.OwnerId), ct);
+
+    new LeaseActivatedEvent(
+        lease.Id,
+        lease.PropertyId,
+        lease.OwnerId,
+        lease.RentAmount ?? 0m,                   
+        lease.PaymentDayOfMonth ?? 1,             
+        lease.StartDate.GetValueOrDefault(),      
+        lease.EndDate.GetValueOrDefault(),        
+        lease.ContractFileUrl ?? string.Empty     
+    ), ct);
     }
 }

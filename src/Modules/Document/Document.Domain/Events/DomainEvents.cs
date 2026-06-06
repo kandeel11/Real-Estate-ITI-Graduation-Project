@@ -53,8 +53,13 @@ public record LeaseExtractionCompletedEvent(
     int? PaymentDayOfMonth,
     decimal? Confidence) : INotification;
 
-public record LeaseActivatedEvent(
+public sealed record LeaseActivatedEvent(
     Guid LeaseId,
     Guid PropertyId,
-    Guid TenantId,
-    Guid OwnerId) : INotification;
+    Guid OwnerId,
+    decimal RentAmount,
+    int PaymentDayOfMonth,
+    DateOnly StartDate,
+    DateOnly EndDate,
+    string BlobPath      // Mohamed reads this to embed into Qdrant
+) : INotification;

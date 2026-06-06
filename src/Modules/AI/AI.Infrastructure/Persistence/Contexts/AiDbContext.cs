@@ -15,7 +15,7 @@ namespace AI.Infrastructure.Persistence.Contexts
         public DbSet<DuplicateDetectionLog> DuplicateDetectionLogs => Set<DuplicateDetectionLog>();
         public DbSet<ChatbotSession> ChatbotSessions => Set<ChatbotSession>();
         public DbSet<ChatbotMessage> ChatbotMessages => Set<ChatbotMessage>();
-
+        public DbSet<LeaseExtractionRequest> LeaseExtractionRequests {  get; }
         public DbSet<AiDescriptionGeneration> AiDescriptionGenerations => Set<AiDescriptionGeneration>();
 
         public DbSet<AiChatbotSession> AiChatbotSessions => Set<AiChatbotSession>();

@@ -129,8 +129,8 @@ public sealed class AzureBlobDocumentStorageService : IDocumentStorageService
     // Downlaod
     // ─────────────────────────────────────────────────────────────────────────
     public async Task<byte[]> DownloadAsync(
-    string blobPath,
-    CancellationToken ct = default)
+     string blobPath,
+     CancellationToken ct = default)
     {
         var blobClient = _container.GetBlobClient(blobPath);
         var response = await blobClient.DownloadContentAsync(ct);
@@ -141,7 +141,6 @@ public sealed class AzureBlobDocumentStorageService : IDocumentStorageService
 
         return bytes;
     }
-
     // ─────────────────────────────────────────────────────────────────────────
     // Delete
     // ─────────────────────────────────────────────────────────────────────────
