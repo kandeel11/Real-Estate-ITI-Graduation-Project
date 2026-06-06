@@ -1,26 +1,25 @@
-﻿using AI.Domain.Entities;
+﻿// AI.Infrastructure/Persistence/Configurations/AiSearchQueryConfiguration.cs
+
+using AI.Domain.Entities;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Metadata.Builders;
 
-namespace AI.Infrastructure.Persistence.Configurations
+namespace AI.Infrastructure.Persistence.Configurations;
+
+public sealed class AiSearchQueryConfiguration
+    : IEntityTypeConfiguration<AiSearchQuery>
 {
-    public class AiSearchQueryConfiguration : IEntityTypeConfiguration<AiSearchQuery>
+    public void Configure(EntityTypeBuilder<AiSearchQuery> b)
     {
-        public void Configure(EntityTypeBuilder<AiSearchQuery> builder)
-        {
-            builder.ToTable("ai_search_queries", "ai");
-            builder.HasKey(x => x.Id);
-            builder.Property(x => x.Id).HasDefaultValueSql("NEWSEQUENTIALID()");
+        b.ToTable("ai_search_queries", "ai");
+        b.HasKey(x => x.Id);
 
-            builder.Property(x => x.UserId).IsRequired(false);
-            builder.Property(x => x.RawQuery).IsRequired();
+        b.Property(x => x.RawQuery).IsRequired().HasMaxLength(1000);
+        b.Property(x => x.Language).IsRequired().HasMaxLength(10);
+        b.Property(x => x.ParsedFilters).IsRequired().HasColumnType("jsonb");
+        b.Property(x => x.ParsingConfidence).HasPrecision(5, 4);
 
-            builder.Property(x => x.ParsedFilters).IsRequired();
-
-            builder.Property(x => x.SessionId).HasMaxLength(255);
-            builder.Property(x => x.IpAddress).HasMaxLength(50);
-
-            builder.HasQueryFilter(x => x.DeletedAt == null);
-        }
+        b.HasIndex(x => x.UserId).HasDatabaseName("ix_ai_search_queries_user");
+        b.HasIndex(x => x.CreatedAt).HasDatabaseName("ix_ai_search_queries_date");
     }
 }

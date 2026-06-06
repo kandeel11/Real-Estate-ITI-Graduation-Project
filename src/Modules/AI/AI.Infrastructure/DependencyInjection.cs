@@ -145,7 +145,8 @@ public static class DependencyInjection
             return new QdrantVectorStore(client, ownsClient: false);
         });
 #pragma warning restore SKEXP0020
-
+        services.AddScoped<ISmartSearchService, SmartSearchService>();
+        //services.AddScoped<ISavedSearchRepository, SavedSearchRepository>();
         services.AddScoped<IContractRetrievalService, ContractRetrievalService>();
         services.AddScoped<IPropertyDuplicateCheckService, PropertyDuplicateCheckService>();
         // ====================================================================

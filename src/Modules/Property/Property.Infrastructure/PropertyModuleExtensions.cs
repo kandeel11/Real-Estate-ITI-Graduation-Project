@@ -1,3 +1,4 @@
+using AI.Application.Interfaces;
 using Azure.Storage.Blobs;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Configuration;
@@ -16,6 +17,10 @@ public static class PropertyModuleExtensions
         this IServiceCollection services,
         IConfiguration configuration)
     {
+        // Properties.Infrastructure — register PropertyFilterService
+        //services.AddScoped<
+        //    AI.Application.Interfaces.IPropertyFilterService,
+        //    PropertyFilterService>();
         services.AddDbContext<PropertyDbContext>(options =>
             options.UseSqlServer(
                 configuration.GetConnectionString("DefaultConnection"),
