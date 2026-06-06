@@ -334,4 +334,9 @@ public class PropertyRepository : IPropertyRepository
 
     public Task SaveChangesAsync(CancellationToken ct = default)
         => _context.SaveChangesAsync(ct);
+
+    public IQueryable<Domain.Entities.Property> GetQueryable()
+    {
+        return _context.Properties.AsQueryable();
+    }
 }

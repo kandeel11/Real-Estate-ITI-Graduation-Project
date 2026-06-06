@@ -77,5 +77,10 @@ public class PropertyConfiguration : IEntityTypeConfiguration<Domain.Entities.Pr
         builder.HasIndex(x => x.City);
         builder.HasIndex(x => x.Status);
         builder.HasIndex(x => x.IsFeatured);
+
+        builder.HasMany(x => x.Media)
+               .WithOne() 
+               .HasForeignKey("PropertyId")
+               .OnDelete(DeleteBehavior.NoAction); 
     }
 }

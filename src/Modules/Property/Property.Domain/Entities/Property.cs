@@ -47,8 +47,10 @@ public class Property : BaseEntity
 
     public int ViewsCount { get; private set; }
     public int InquiriesCount { get; private set; }
-
+    public ICollection<PropertyMedia> Media { get; private set; } = new List<PropertyMedia>();
     private Property() { }
+
+
 
     public static Property Create(
         Guid ownerId,

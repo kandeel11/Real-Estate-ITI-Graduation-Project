@@ -4,8 +4,9 @@ using MediatR;
 namespace AI.Application.Features.Chat.Commands
 {
     public sealed record SendMessageCommand(
-     string SessionId,
+     Guid? SessionId,    // ← Guid? not string?
+     Guid UserId,
      string Message,
-     Guid? ContractId    // optional — scopes search to one contract
+     Guid? ContractId
  ) : IRequest<SendMessageResult>;
 }

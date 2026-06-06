@@ -27,6 +27,7 @@ public interface IPropertyRepository
     Task<PropertyAmenity?> GetPropertyAmenityAsync(Guid propertyId, Guid amenityId, CancellationToken ct = default);
     Task RemovePropertyAmenityAsync(PropertyAmenity propertyAmenity, CancellationToken ct = default);
     Task SaveChangesAsync(CancellationToken ct = default);
+    IQueryable<Domain.Entities.Property> GetQueryable();
 }
 
 public class SearchCriteria

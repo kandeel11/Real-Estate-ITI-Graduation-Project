@@ -57,7 +57,7 @@ public sealed class SendMessageCommandHandler
 
         // ── 1. Restore or create conversation history ────────────────────────
         var history = await _sessions.GetOrCreateAsync(
-            command.SessionId, SystemPrompt, cancellationToken);
+            command.SessionId.ToString(), SystemPrompt, cancellationToken);
 
         // ── 2. Inject contract scope hint if provided ────────────────────────
         var userMessage = command.ContractId.HasValue
@@ -86,7 +86,7 @@ public sealed class SendMessageCommandHandler
 
         // ── 5. Persist updated history ───────────────────────────────────────
         history.AddAssistantMessage(response.Content ?? string.Empty);
-        await _sessions.SaveAsync(command.SessionId, history, cancellationToken);
+        await _sessions.SaveAsync(command.SessionId.ToString(), history, cancellationToken);
 
         // ── 6. Extract token usage ───────────────────────────────────────────
         var usage = response.Metadata
@@ -99,7 +99,7 @@ public sealed class SendMessageCommandHandler
             usage?.OutputTokenCount ?? 0);
 
         return new SendMessageResult(
-            SessionId: command.SessionId,
+            SessionId: command.SessionId.ToString(),
             Answer: response.Content ?? string.Empty,
             PromptTokens: usage?.InputTokenCount ?? 0,
             CompletionTokens: usage?.OutputTokenCount ?? 0);

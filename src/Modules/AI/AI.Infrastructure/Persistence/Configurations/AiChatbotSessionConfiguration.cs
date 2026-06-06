@@ -1,28 +1,34 @@
-﻿using AI.Domain.Entities;
+﻿// AI.Infrastructure/Persistence/Configurations/AiChatbotSessionConfiguration.cs
+
+using AI.Domain.Entities;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Metadata.Builders;
 
-namespace AI.Infrastructure.Persistence.Configurations
+namespace AI.Infrastructure.Persistence.Configurations;
+
+public sealed class AiChatbotSessionConfiguration
+    : IEntityTypeConfiguration<AiChatbotSession>
 {
-    public class AiChatbotSessionConfiguration : IEntityTypeConfiguration<AiChatbotSession>
+    public void Configure(EntityTypeBuilder<AiChatbotSession> b)
     {
-        public void Configure(EntityTypeBuilder<AiChatbotSession> builder)
-        {
-            builder.ToTable("ai_chatbot_sessions", "ai");
-            builder.HasKey(x => x.Id);
-            builder.Property(x => x.Id).HasDefaultValueSql("NEWSEQUENTIALID()");
+        b.ToTable("AiChatbotSessions");
 
-            builder.Property(x => x.SessionToken).HasMaxLength(255).IsRequired();
-            builder.HasIndex(x => x.SessionToken).IsUnique();
+        b.HasKey(x => x.Id);
 
-            builder.Property(x => x.UserId).IsRequired();
+        b.Property(x => x.SessionToken)
+         .IsRequired()
+         .HasMaxLength(200);
 
-            builder.HasMany(x => x.Messages)
-                .WithOne(x => x.Session)
-                .HasForeignKey(x => x.SessionId)
-                .OnDelete(DeleteBehavior.Cascade);
+        b.HasMany(x => x.Messages)
+         .WithOne(x => x.Session)
+         .HasForeignKey(x => x.SessionId)
+         .OnDelete(DeleteBehavior.Cascade);
 
-            builder.HasQueryFilter(x => x.DeletedAt == null);
-        }
+        b.HasIndex(x => x.UserId)
+         .HasDatabaseName("IX_AiChatbotSessions_UserId");
+
+        b.HasIndex(x => x.SessionToken)
+         .IsUnique()
+         .HasDatabaseName("IX_AiChatbotSessions_SessionToken");
     }
 }

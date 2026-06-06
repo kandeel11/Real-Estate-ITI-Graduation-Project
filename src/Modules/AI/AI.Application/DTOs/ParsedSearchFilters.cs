@@ -9,7 +9,6 @@ namespace AI.Application.DTOs;
 public sealed record ParsedSearchFilters(
     // Property type
     string? PropertyType,       // Apartment, Villa, Office, Shop, Studio
-    string? ListingType,        // "For Rent" | "For Sale"
 
     // Location
     string? City,

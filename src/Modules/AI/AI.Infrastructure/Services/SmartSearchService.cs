@@ -149,7 +149,6 @@ public sealed class SmartSearchService : ISmartSearchService
 
             var filters = new ParsedSearchFilters(
                 PropertyType: GetString("propertyType"),
-                ListingType: GetString("listingType"),
                 City: GetString("city"),
                 District: GetString("district"),
                 NearbyLandmark: GetString("nearbyLandmark"),
@@ -180,7 +179,7 @@ public sealed class SmartSearchService : ISmartSearchService
 
             // Return empty filters — fallback to show all properties
             return new ParsedSearchFilters(
-                PropertyType: null, ListingType: null,
+                PropertyType: null,
                 City: null, District: null,
                 NearbyLandmark: null, Bedrooms: null,
                 Bathrooms: null, MinArea: null,

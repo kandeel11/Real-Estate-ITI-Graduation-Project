@@ -326,6 +326,9 @@ namespace Property.Infrastructure.Migrations
                     b.Property<Guid>("PropertyId")
                         .HasColumnType("uniqueidentifier");
 
+                    b.Property<Guid?>("PropertyId1")
+                        .HasColumnType("uniqueidentifier");
+
                     b.Property<int>("SortOrder")
                         .ValueGeneratedOnAdd()
                         .HasColumnType("int")
@@ -340,6 +343,8 @@ namespace Property.Infrastructure.Migrations
                     b.HasKey("Id");
 
                     b.HasIndex("PropertyId");
+
+                    b.HasIndex("PropertyId1");
 
                     b.ToTable("property_media", "property");
                 });
@@ -375,6 +380,15 @@ namespace Property.Infrastructure.Migrations
                         .HasForeignKey("PropertyId")
                         .OnDelete(DeleteBehavior.Cascade)
                         .IsRequired();
+
+                    b.HasOne("Property.Domain.Entities.Property", null)
+                        .WithMany("Media")
+                        .HasForeignKey("PropertyId1");
+                });
+
+            modelBuilder.Entity("Property.Domain.Entities.Property", b =>
+                {
+                    b.Navigation("Media");
                 });
 #pragma warning restore 612, 618
         }

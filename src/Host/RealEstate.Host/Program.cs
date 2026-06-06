@@ -2,6 +2,7 @@ using AI.Application;
 using AI.Infrastructure;
 //using AI.Infrastructure.EventHandlers;
 using Document.Infrastructure;
+using Microsoft.EntityFrameworkCore;
 using Property.Infrastructure;
 using Subscription.Infrastructure;
 using Subscription.Infrastructure.Persistence;
@@ -50,6 +51,7 @@ public class Program
         using (var scope = app.Services.CreateScope())
         {
             var subscriptionDb = scope.ServiceProvider.GetRequiredService<SubscriptionDbContext>();
+            await subscriptionDb.Database.MigrateAsync();
             await SubscriptionPlanSeed.SeedAsync(subscriptionDb);
         }
 
