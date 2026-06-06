@@ -13,6 +13,7 @@ public interface IPropertyRepository
     Task<List<PropertySummaryDto>> GetPendingVerificationAsync(CancellationToken ct = default);
     Task<List<PropertySummaryDto>> GetFeaturedAsync(CancellationToken ct = default);
     Task<bool> ExistsByOwnerAndTitleAsync(Guid ownerId, string title, CancellationToken ct = default);
+    Task<bool> ExistsByOwnerAndAddressAsync(Guid ownerId, string address, int apartmentNumber, CancellationToken ct = default);
     Task AddAsync(Property.Domain.Entities.Property property, CancellationToken ct = default);
     Task<List<PropertyMediaDto>> GetMediaAsync(Guid propertyId, CancellationToken ct = default);
     Task<PropertyMedia?> GetMediaByIdAsync(Guid mediaId, CancellationToken ct = default);

@@ -13,7 +13,6 @@ using Property.Application.Features.Commands.SetFeatured;
 using Property.Application.Features.Commands.SetPrimaryMedia;
 using Property.Application.Features.Commands.SetVerificationStatus;
 using Property.Application.Features.Commands.SubmitPropertyForReview;
-using Property.Application.Features.Commands.SyndicateProperty;
 using Property.Application.Features.Commands.TrackPropertyView;
 using Property.Application.Features.Commands.UpdateProperty;
 using Property.Application.Features.Queries.GetAllProperties;
@@ -124,6 +123,7 @@ public class PropertiesController : ControllerBase
             request.Latitude,
             request.Longitude,
             request.Address,
+            request.ApartmentNumber,
             request.City,
             request.District,
             request.ListingSource), ct);
@@ -154,6 +154,7 @@ public class PropertiesController : ControllerBase
             request.Latitude,
             request.Longitude,
             request.Address,
+            request.ApartmentNumber,
             request.City,
             request.District,
             request.ListingBrokerId), ct);
@@ -188,12 +189,6 @@ public class PropertiesController : ControllerBase
         return NoContent();
     }
 
-    [HttpPost("{id:guid}/syndicate")]
-    public async Task<IActionResult> Syndicate(Guid id, [FromBody] OwnerRequest request, CancellationToken ct = default)
-    {
-        await _mediator.Send(new SyndicatePropertyCommand(id, request.RequestingUserId), ct);
-        return NoContent();
-    }
 
     [HttpPut("{id:guid}/ai-duplicate-score")]
     public async Task<IActionResult> SetAiDuplicateScore(Guid id, [FromBody] SetAiDuplicateScoreRequest request, CancellationToken ct = default)
@@ -299,6 +294,7 @@ public record CreatePropertyRequest(
     decimal Latitude,
     decimal Longitude,
     string Address,
+    int? ApartmentNumber,
     string City,
     string District,
     ListingSource ListingSource
@@ -323,6 +319,7 @@ public record UpdatePropertyRequest(
     decimal Latitude,
     decimal Longitude,
     string Address,
+    int? ApartmentNumber,
     string City,
     string District,
     Guid? ListingBrokerId

@@ -35,22 +35,6 @@ public static class PropertyModuleExtensions
             services.AddScoped<IMediaStorageService, NullMediaStorageService>();
         }
 
-        var zillowBaseUrl = configuration["Zillow:BaseUrl"];
-        if (!string.IsNullOrEmpty(zillowBaseUrl))
-        {
-            services.AddHttpClient<IPropertySyndicationService, ZillowSyndicationClient>(client =>
-            {
-                client.BaseAddress = new Uri(zillowBaseUrl);
-                var apiKey = configuration["Zillow:ApiKey"];
-                if (!string.IsNullOrEmpty(apiKey))
-                    client.DefaultRequestHeaders.Add("X-Api-Key", apiKey);
-            });
-        }
-        else
-        {
-            services.AddScoped<IPropertySyndicationService, NullPropertySyndicationService>();
-        }
-
         // Register MediatR handlers from Property.Application assembly
         services.AddMediatR(cfg =>
             cfg.RegisterServicesFromAssembly(typeof(CreatePropertyCommand).Assembly));

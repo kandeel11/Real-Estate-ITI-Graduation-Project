@@ -21,9 +21,12 @@ public class CreatePropertyHandler : IRequestHandler<CreatePropertyCommand, Guid
         if (!allowed)
             throw new InvalidOperationException(reason);
 
-        var isDuplicate = await _repository.ExistsByOwnerAndTitleAsync(request.OwnerId, request.Title, cancellationToken);
-        if (isDuplicate)
+        if (await _repository.ExistsByOwnerAndTitleAsync(request.OwnerId, request.Title, cancellationToken))
             throw new InvalidOperationException($"You already have a property listed with the title '{request.Title}'.");
+
+        if (request.ApartmentNumber is not null &&
+            await _repository.ExistsByOwnerAndAddressAsync(request.OwnerId, request.Address, request.ApartmentNumber.Value, cancellationToken))
+            throw new InvalidOperationException($"You already have apartment '{request.ApartmentNumber}' at '{request.Address}' listed.");
 
         var property = Domain.Entities.Property.Create(
             request.OwnerId,
@@ -46,6 +49,7 @@ public class CreatePropertyHandler : IRequestHandler<CreatePropertyCommand, Guid
             request.Latitude,
             request.Longitude,
             request.Address,
+            request.ApartmentNumber,
             request.City,
             request.District,
             request.ListingSource
