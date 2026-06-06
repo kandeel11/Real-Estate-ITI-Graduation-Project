@@ -1,9 +1,7 @@
-using Document.Application.Interfaces;
+using Document.Application.Interfaces; 
 using MediatR;
 
-namespace Document.Application.Commands.Lease;
-
-public record TerminateLeaseCommand(Guid LeaseId, string Reason) : IRequest;
+namespace Document.Application.Commands.Lease.TerminateLease;
 
 public class TerminateLeaseHandler : IRequestHandler<TerminateLeaseCommand>
 {
@@ -13,7 +11,7 @@ public class TerminateLeaseHandler : IRequestHandler<TerminateLeaseCommand>
     public async Task Handle(TerminateLeaseCommand cmd, CancellationToken ct)
     {
         var lease = await _db.Leases.FindAsync(new object[] { cmd.LeaseId }, ct)
-            ?? throw new InvalidOperationException("Lease not found");
+            ?? throw new Exception("Lease not found");
 
         lease.IsActive = false;
         lease.TerminatedAt = DateTime.UtcNow;
