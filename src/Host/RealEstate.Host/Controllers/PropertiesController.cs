@@ -1,6 +1,7 @@
 using MediatR;
 using Microsoft.AspNetCore.Mvc;
 using Property.Application.Features.Commands.AddPropertyAmenity;
+using Property.Application.Features.Commands.RequestAiDescription;
 using Property.Application.Features.Commands.AddPropertyMedia;
 using Property.Application.Features.Commands.CreateProperty;
 using Property.Application.Features.Commands.DeleteProperty;
@@ -12,9 +13,9 @@ using Property.Application.Features.Commands.SetFeatured;
 using Property.Application.Features.Commands.SetPrimaryMedia;
 using Property.Application.Features.Commands.SetVerificationStatus;
 using Property.Application.Features.Commands.SubmitPropertyForReview;
-using Property.Application.Features.Commands.SyndicateProperty;
 using Property.Application.Features.Commands.TrackPropertyView;
 using Property.Application.Features.Commands.UpdateProperty;
+using Property.Application.Features.Queries.GetAllProperties;
 using Property.Application.Features.Queries.GetFeaturedProperties;
 using Property.Application.Features.Queries.GetPendingVerification;
 using Property.Application.Features.Queries.GetPropertiesByOwner;
@@ -35,6 +36,10 @@ public class PropertiesController : ControllerBase
     {
         _mediator = mediator;
     }
+
+    [HttpGet]
+    public async Task<IActionResult> GetAll(CancellationToken ct = default)
+        => Ok(await _mediator.Send(new GetAllPropertiesQuery(), ct));
 
     [HttpGet("search")]
     public async Task<IActionResult> Search(
@@ -118,6 +123,7 @@ public class PropertiesController : ControllerBase
             request.Latitude,
             request.Longitude,
             request.Address,
+            request.ApartmentNumber,
             request.City,
             request.District,
             request.ListingSource), ct);
@@ -148,6 +154,7 @@ public class PropertiesController : ControllerBase
             request.Latitude,
             request.Longitude,
             request.Address,
+            request.ApartmentNumber,
             request.City,
             request.District,
             request.ListingBrokerId), ct);
@@ -182,18 +189,19 @@ public class PropertiesController : ControllerBase
         return NoContent();
     }
 
-    [HttpPost("{id:guid}/syndicate")]
-    public async Task<IActionResult> Syndicate(Guid id, [FromBody] OwnerRequest request, CancellationToken ct = default)
-    {
-        await _mediator.Send(new SyndicatePropertyCommand(id, request.RequestingUserId), ct);
-        return NoContent();
-    }
 
     [HttpPut("{id:guid}/ai-duplicate-score")]
     public async Task<IActionResult> SetAiDuplicateScore(Guid id, [FromBody] SetAiDuplicateScoreRequest request, CancellationToken ct = default)
     {
         await _mediator.Send(new SetAiDuplicateScoreCommand(id, request.Confidence), ct);
         return NoContent();
+    }
+
+    [HttpPost("{id:guid}/request-ai-description")]
+    public async Task<IActionResult> RequestAiDescription(Guid id, [FromBody] OwnerRequest request, CancellationToken ct = default)
+    {
+        await _mediator.Send(new PropertyAiDescriptionRequestCommand(id, request.RequestingUserId), ct);
+        return Accepted(new { message = "AI description is being generated. It will appear shortly.", propertyId = id });
     }
 
     [HttpPut("{id:guid}/ai-description")]
@@ -286,6 +294,7 @@ public record CreatePropertyRequest(
     decimal Latitude,
     decimal Longitude,
     string Address,
+    int? ApartmentNumber,
     string City,
     string District,
     ListingSource ListingSource
@@ -310,6 +319,7 @@ public record UpdatePropertyRequest(
     decimal Latitude,
     decimal Longitude,
     string Address,
+    int? ApartmentNumber,
     string City,
     string District,
     Guid? ListingBrokerId

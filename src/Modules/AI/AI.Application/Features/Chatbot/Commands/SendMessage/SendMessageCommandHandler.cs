@@ -23,7 +23,7 @@ namespace AI.Application.Features.Chatbot.Commands.SendMessage
         }
         public async Task<SendMessageResponse> Handle(SendMessageCommand request, CancellationToken cancellationToken)
         {
-            ChatbotSession session;
+            ChatbotSession? session;
             var chatHistory = new ChatHistory();
 
             // ==========================================

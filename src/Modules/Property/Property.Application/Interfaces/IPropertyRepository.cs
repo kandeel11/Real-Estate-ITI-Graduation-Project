@@ -8,9 +8,12 @@ public interface IPropertyRepository
 {
     Task<Property.Domain.Entities.Property?> GetByIdAsync(Guid id, CancellationToken ct = default);
     Task<PagedResult<PropertySummaryDto>> SearchAsync(SearchCriteria criteria, CancellationToken ct = default);
+    Task<List<PropertySummaryDto>> GetAllAsync(CancellationToken ct = default);
     Task<List<PropertySummaryDto>> GetByOwnerAsync(Guid ownerId, CancellationToken ct = default);
     Task<List<PropertySummaryDto>> GetPendingVerificationAsync(CancellationToken ct = default);
     Task<List<PropertySummaryDto>> GetFeaturedAsync(CancellationToken ct = default);
+    Task<bool> ExistsByOwnerAndTitleAsync(Guid ownerId, string title, CancellationToken ct = default);
+    Task<bool> ExistsByOwnerAndAddressAsync(Guid ownerId, string address, int apartmentNumber, CancellationToken ct = default);
     Task AddAsync(Property.Domain.Entities.Property property, CancellationToken ct = default);
     Task<List<PropertyMediaDto>> GetMediaAsync(Guid propertyId, CancellationToken ct = default);
     Task<PropertyMedia?> GetMediaByIdAsync(Guid mediaId, CancellationToken ct = default);

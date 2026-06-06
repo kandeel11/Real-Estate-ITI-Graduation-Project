@@ -18,7 +18,7 @@ namespace Property.Infrastructure.Migrations
 #pragma warning disable 612, 618
             modelBuilder
                 .HasDefaultSchema("property")
-                .HasAnnotation("ProductVersion", "9.0.5")
+                .HasAnnotation("ProductVersion", "9.0.16")
                 .HasAnnotation("Relational:MaxIdentifierLength", 128);
 
             SqlServerModelBuilderExtensions.UseIdentityColumns(modelBuilder);
@@ -82,6 +82,9 @@ namespace Property.Infrastructure.Migrations
 
                     b.Property<string>("AiGeneratedDescriptionEn")
                         .HasColumnType("nvarchar(max)");
+
+                    b.Property<int?>("ApartmentNumber")
+                        .HasColumnType("int");
 
                     b.Property<decimal>("AreaSqm")
                         .HasPrecision(10, 2)

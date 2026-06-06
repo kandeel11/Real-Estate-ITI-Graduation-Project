@@ -41,6 +41,7 @@ public class PropertyConfiguration : IEntityTypeConfiguration<Domain.Entities.Pr
         builder.Property(x => x.Latitude).IsRequired().HasPrecision(10, 7);
         builder.Property(x => x.Longitude).IsRequired().HasPrecision(10, 7);
         builder.Property(x => x.Address).IsRequired().HasMaxLength(500);
+        builder.Property(x => x.ApartmentNumber);
         builder.Property(x => x.City).IsRequired().HasMaxLength(200);
         builder.Property(x => x.District).IsRequired().HasMaxLength(200);
 
