@@ -6,6 +6,7 @@ using Document.Infrastructure.Services;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
+using RealEstate.Shared.Kernel.Interfaces;
 
 namespace Document.Infrastructure;
 
@@ -23,7 +24,8 @@ public static class DocumentModule
         services.AddScoped<IInquiryRepository, InquiryRepository>();
         services.AddScoped<INotificationRepository, NotificationRepository>();
         services.AddScoped<INotificationService, NotificationService>();
-        //services.AddMediatR();
+	    services.AddScoped<ILeaseService, LeaseService>();
+	 //services.AddMediatR();
 	services.AddSignalR();
         return services;
     }
