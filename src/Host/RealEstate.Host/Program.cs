@@ -12,6 +12,7 @@ using Microsoft.AspNetCore.Authentication.JwtBearer;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.IdentityModel.Tokens;
 using Property.Infrastructure;
+using Maintenance.Infrastructure;
 using RealEstate.Host.Services;
 using Subscription.Infrastructure;
 using Subscription.Infrastructure.Persistence;
@@ -105,6 +106,7 @@ public class Program
         // ==========================================
         builder.Services.AddIdentityModule(builder.Configuration);
         builder.Services.AddPropertyModule(builder.Configuration);
+        builder.Services.AddMaintenanceModule(builder.Configuration);
         builder.Services.AddSubscriptionModule(builder.Configuration);
 
         // ==========================================
