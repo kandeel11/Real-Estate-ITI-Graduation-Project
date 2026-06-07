@@ -19,10 +19,18 @@ public class AuthController(IMediator mediator) : ControllerBase
     [HttpPost("register")]
     [AllowAnonymous]
     public async Task<IActionResult> Register(
-        [FromBody] RegisterIndividualUserCommand cmd, CancellationToken ct)
+        [FromBody] RegisterRequest request, CancellationToken ct)
     {
         try
         {
+            var cmd = new RegisterIndividualUserCommand(
+                FullName: request.FullName,
+                Email: request.Email,
+                Password: request.Password,
+                Phone: request.Phone,
+                Role: request.Role,
+                NationalIdNumber: request.NationalIdNumber);
+
             var userId = await mediator.Send(cmd, ct);
             return Created("", new { userId });
         }
@@ -126,6 +134,14 @@ public class AuthController(IMediator mediator) : ControllerBase
         return result is null ? NotFound() : Ok(result);
     }
 }
+
+public record RegisterRequest(
+    string FullName,
+    string Email,
+    string Password,
+    string Phone,
+    string Role,
+    string? NationalIdNumber = null);
 
 public record LoginRequest(string Email, string Password);
 public record RefreshRequest(string RefreshToken);

@@ -11,6 +11,7 @@ public class RegisterIndividualUserHandler
     : IRequestHandler<RegisterIndividualUserCommand, Guid>
 {
     private readonly IUserRepository _userRepo;
+    private readonly IBrokerRepository _brokerRepo;
     private readonly IPasswordHasher _hasher;
     private readonly IEmailVerificationService _emailService;
     private readonly IPublisher _publisher;
@@ -18,12 +19,14 @@ public class RegisterIndividualUserHandler
 
     public RegisterIndividualUserHandler(
         IUserRepository userRepo,
+        IBrokerRepository brokerRepo,
         IPasswordHasher hasher,
         IEmailVerificationService emailService,
         IPublisher publisher,
         ILogger<RegisterIndividualUserHandler> logger)
     {
         _userRepo = userRepo;
+        _brokerRepo = brokerRepo;
         _hasher = hasher;
         _emailService = emailService;
         _publisher = publisher;
@@ -51,6 +54,22 @@ public class RegisterIndividualUserHandler
 
         await _userRepo.AddAsync(user, cancellationToken);
         await _userRepo.SaveChangesAsync(cancellationToken);
+
+        // Create Broker entity for individual brokers (CompanyId = null)
+        if (roleEnum == UserRole.Broker)
+        {
+            // Auto-generate license number for demo (format: BROKER-{UserId})
+            var licenseSuffix = user.Id.ToString("N").Substring(0, 8).ToUpper();
+            var generatedLicense = $"DEMO-{licenseSuffix}";
+
+            var broker = Broker.Create(
+                userId: user.Id,
+                companyId: null,  // Individual broker (no company)
+                licenseNumber: generatedLicense);
+
+            await _brokerRepo.AddAsync(broker, cancellationToken);
+            await _brokerRepo.SaveChangesAsync(cancellationToken);
+        }
 
         _ = _emailService.SendVerificationEmailAsync(user, CancellationToken.None);
 
