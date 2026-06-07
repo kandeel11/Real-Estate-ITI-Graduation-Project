@@ -42,6 +42,14 @@ public class SubscriptionLimitChecker : ISubscriptionLimitChecker
         await _usageRepo.UpdateAsync(usage, ct);
     }
 
+    public async Task DecrementPropertyUsageAsync(Guid userId, Guid? companyId, CancellationToken ct = default)
+    {
+        var (_, _, usage) = await ResolveAsync(userId, companyId, ct);
+        if (usage is null) return;
+        usage.DecrementProperties();
+        await _usageRepo.UpdateAsync(usage, ct);
+    }
+
     public async Task<(bool Allowed, string Reason)> CheckBrokerLimitAsync(Guid companyId, CancellationToken ct = default)
     {
         var (subscription, plan, usage) = await ResolveAsync(Guid.Empty, companyId, ct);

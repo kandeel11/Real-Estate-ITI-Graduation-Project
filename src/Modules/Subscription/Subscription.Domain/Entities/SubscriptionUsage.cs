@@ -51,6 +51,12 @@ public class SubscriptionUsage : BaseEntity
         UpdatedAt = DateTime.UtcNow;
     }
 
+    public void DecrementProperties()
+    {
+        if (PropertiesUsed > 0) PropertiesUsed--;
+        UpdatedAt = DateTime.UtcNow;
+    }
+
     public void IncrementBrokers()
     {
         BrokersUsed++;

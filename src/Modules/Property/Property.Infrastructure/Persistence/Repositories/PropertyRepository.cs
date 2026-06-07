@@ -87,6 +87,8 @@ public class PropertyRepository : IPropertyRepository
             {
                 Id = p.Id,
                 OwnerId = p.OwnerId,
+                CompanyId = p.CompanyId,
+                ListingBrokerId = p.ListingBrokerId,
                 Title = p.Title,
                 TitleAr = p.TitleAr,
                 PropertyType = p.PropertyType.ToString(),
@@ -127,6 +129,8 @@ public class PropertyRepository : IPropertyRepository
             {
                 Id = p.Id,
                 OwnerId = p.OwnerId,
+                CompanyId = p.CompanyId,
+                ListingBrokerId = p.ListingBrokerId,
                 Title = p.Title,
                 TitleAr = p.TitleAr,
                 PropertyType = p.PropertyType.ToString(),
@@ -159,6 +163,42 @@ public class PropertyRepository : IPropertyRepository
             {
                 Id = p.Id,
                 OwnerId = p.OwnerId,
+                CompanyId = p.CompanyId,
+                ListingBrokerId = p.ListingBrokerId,
+                Title = p.Title,
+                TitleAr = p.TitleAr,
+                PropertyType = p.PropertyType.ToString(),
+                Price = p.Price,
+                Bedrooms = p.Bedrooms,
+                Bathrooms = p.Bathrooms,
+                AreaSqm = p.AreaSqm,
+                IsFurnished = p.IsFurnished,
+                PetsAllowed = p.PetsAllowed,
+                City = p.City,
+                District = p.District,
+                Latitude = p.Latitude,
+                Longitude = p.Longitude,
+                Status = p.Status.ToString(),
+                IsFeatured = p.IsFeatured,
+                PrimaryImageUrl = _context.PropertyMedia
+                    .Where(m => m.PropertyId == p.Id && m.IsPrimary)
+                    .Select(m => m.MediaUrl)
+                    .FirstOrDefault(),
+                ViewsCount = p.ViewsCount,
+                CreatedAt = p.CreatedAt
+            })
+            .ToListAsync(ct);
+
+    public async Task<List<PropertySummaryDto>> GetByCompanyAsync(Guid companyId, CancellationToken ct = default)
+        => await _context.Properties
+            .Where(p => p.CompanyId == companyId)
+            .OrderByDescending(p => p.CreatedAt)
+            .Select(p => new PropertySummaryDto
+            {
+                Id = p.Id,
+                OwnerId = p.OwnerId,
+                CompanyId = p.CompanyId,
+                ListingBrokerId = p.ListingBrokerId,
                 Title = p.Title,
                 TitleAr = p.TitleAr,
                 PropertyType = p.PropertyType.ToString(),
@@ -191,6 +231,8 @@ public class PropertyRepository : IPropertyRepository
             {
                 Id = p.Id,
                 OwnerId = p.OwnerId,
+                CompanyId = p.CompanyId,
+                ListingBrokerId = p.ListingBrokerId,
                 Title = p.Title,
                 TitleAr = p.TitleAr,
                 PropertyType = p.PropertyType.ToString(),
@@ -220,6 +262,8 @@ public class PropertyRepository : IPropertyRepository
             {
                 Id = p.Id,
                 OwnerId = p.OwnerId,
+                CompanyId = p.CompanyId,
+                ListingBrokerId = p.ListingBrokerId,
                 Title = p.Title,
                 TitleAr = p.TitleAr,
                 PropertyType = p.PropertyType.ToString(),

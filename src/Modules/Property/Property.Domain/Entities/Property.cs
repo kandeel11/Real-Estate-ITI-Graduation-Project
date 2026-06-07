@@ -210,6 +210,12 @@ public class Property : BaseEntity
         AddDomainEvent(new PropertyAiDescriptionSetEvent(Id, OwnerId, CompanyId));
     }
 
+    public void AssignBroker(Guid? brokerId)
+    {
+        ListingBrokerId = brokerId;
+        UpdatedAt = DateTime.UtcNow;
+    }
+
     public void MarkAsRented()
     {
         if (Status != PropertyStatus.Active)
@@ -217,7 +223,7 @@ public class Property : BaseEntity
 
         Status = PropertyStatus.Rented;
         UpdatedAt = DateTime.UtcNow;
-        AddDomainEvent(new PropertyRentedEvent(Id, OwnerId));
+        AddDomainEvent(new PropertyRentedEvent(Id, OwnerId, CompanyId));
     }
 
     public void MarkAsInactive()

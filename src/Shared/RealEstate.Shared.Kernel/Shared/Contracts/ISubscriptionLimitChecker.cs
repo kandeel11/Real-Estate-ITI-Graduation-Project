@@ -9,6 +9,7 @@ public interface ISubscriptionLimitChecker
 {
     Task<(bool Allowed, string Reason)> CheckPropertyLimitAsync(Guid userId, Guid? companyId, CancellationToken ct = default);
     Task IncrementPropertyUsageAsync(Guid userId, Guid? companyId, CancellationToken ct = default);
+    Task DecrementPropertyUsageAsync(Guid userId, Guid? companyId, CancellationToken ct = default);
 
     Task<(bool Allowed, string Reason)> CheckBrokerLimitAsync(Guid companyId, CancellationToken ct = default);
     Task IncrementBrokerUsageAsync(Guid companyId, CancellationToken ct = default);

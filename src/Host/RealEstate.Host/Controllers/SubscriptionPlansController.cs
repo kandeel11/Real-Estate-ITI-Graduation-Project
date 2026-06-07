@@ -1,4 +1,5 @@
 using MediatR;
+using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using Subscription.Application.Commands.CreatePlan;
 using Subscription.Application.Commands.DeactivatePlan;
@@ -21,10 +22,12 @@ public class SubscriptionPlansController : ControllerBase
     }
 
     [HttpGet]
+    [AllowAnonymous]
     public async Task<IActionResult> GetActive([FromQuery] string? audience, CancellationToken ct)
         => Ok(await _mediator.Send(new GetActivePlansQuery(audience), ct));
 
     [HttpGet("{id:guid}")]
+    [AllowAnonymous]
     public async Task<IActionResult> GetById(Guid id, CancellationToken ct)
     {
         var plan = await _mediator.Send(new GetPlanByIdQuery(id), ct);
@@ -32,10 +35,12 @@ public class SubscriptionPlansController : ControllerBase
     }
 
     [HttpGet("admin/all")]
+    [Authorize(Policy = "AdminOnly")]
     public async Task<IActionResult> GetAll(CancellationToken ct)
         => Ok(await _mediator.Send(new GetAllPlansQuery(), ct));
 
     [HttpPost]
+    [Authorize(Policy = "AdminOnly")]
     public async Task<IActionResult> Create([FromBody] CreatePlanCommand command, CancellationToken ct)
     {
         var id = await _mediator.Send(command, ct);
@@ -43,6 +48,7 @@ public class SubscriptionPlansController : ControllerBase
     }
 
     [HttpPut("{id:guid}/features")]
+    [Authorize(Policy = "AdminOnly")]
     public async Task<IActionResult> UpdateFeatures(Guid id, [FromBody] UpdatePlanFeaturesCommand command, CancellationToken ct)
     {
         var withId = command with { PlanId = id };
@@ -51,6 +57,7 @@ public class SubscriptionPlansController : ControllerBase
     }
 
     [HttpDelete("{id:guid}")]
+    [Authorize(Policy = "AdminOnly")]
     public async Task<IActionResult> Deactivate(Guid id, CancellationToken ct)
     {
         await _mediator.Send(new DeactivatePlanCommand(id), ct);

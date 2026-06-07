@@ -1,4 +1,5 @@
 using MediatR;
+using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using Property.Application.Features.Queries.GetAllAmenities;
 using Property.Application.Features.Queries.GetPropertyAmenities;
@@ -17,6 +18,7 @@ public class AmenitiesController : ControllerBase
     }
 
     [HttpGet]
+    [AllowAnonymous]
     public async Task<IActionResult> GetAll(CancellationToken ct = default)
     {
         var result = await _mediator.Send(new GetAllAmenitiesQuery(), ct);
@@ -24,6 +26,7 @@ public class AmenitiesController : ControllerBase
     }
 
     [HttpGet("property/{propertyId:guid}")]
+    [AllowAnonymous]
     public async Task<IActionResult> GetByProperty(Guid propertyId, CancellationToken ct = default)
     {
         var result = await _mediator.Send(new GetPropertyAmenitiesQuery(propertyId), ct);

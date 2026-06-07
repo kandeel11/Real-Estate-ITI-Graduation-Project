@@ -3,6 +3,7 @@ using AI.Application.Features.Chatbot.Commands.SendMessage;
 using AI.Application.Features.PropertyDescription.Commands.AcceptPropertyDescription;
 using AI.Application.Features.PropertyDescription.Commands.GeneratePropertyDescription;
 using MediatR;
+using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 
 namespace RealEstate.Host.Controllers
@@ -18,6 +19,7 @@ namespace RealEstate.Host.Controllers
             _sender = sender;
         }
         [HttpPost("generate-property-description")]
+        [Authorize]
         public async Task<IActionResult> GeneratePropertyDescription(
         [FromBody] GeneratePropertyDescriptionCommand command,
         CancellationToken cancellationToken)
@@ -26,6 +28,7 @@ namespace RealEstate.Host.Controllers
             return Ok(response);
         }
         [HttpPatch("{id:guid}/accept")]
+        [Authorize]
         public async Task<IActionResult> AcceptDescription(
      Guid id,
      [FromBody] AcceptDescriptionRequest request, // Receives the edited texts from the UI
@@ -49,6 +52,7 @@ namespace RealEstate.Host.Controllers
         }
 
         [HttpPost("chat")]
+        [AllowAnonymous]
         public async Task<IActionResult> Chat([FromBody] SendMessageCommand command, CancellationToken cancellationToken)
         {
             // Dispatch the command to the MediatR pipeline

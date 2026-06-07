@@ -1,0 +1,50 @@
+using FluentValidation;
+using Identity.Application.Commands.RegisterIndividualUser;
+using Identity.Application.Interfaces;
+using Identity.Infrastructure.Persistence;
+using Identity.Infrastructure.Repositories;
+using Identity.Infrastructure.Services;
+using Microsoft.EntityFrameworkCore;
+using Microsoft.Extensions.Configuration;
+using Microsoft.Extensions.DependencyInjection;
+
+namespace Identity.Infrastructure;
+
+public static class IdentityModuleExtensions
+{
+    public static IServiceCollection AddIdentityModule(
+        this IServiceCollection services,
+        IConfiguration configuration)
+    {
+        services.AddDbContext<IdentityDbContext>(options =>
+            options.UseSqlServer(
+                configuration.GetConnectionString("DefaultConnection"),
+                sql => sql.MigrationsHistoryTable("__EFMigrationsHistory", "identity")
+                          .MigrationsAssembly(typeof(IdentityDbContext).Assembly.FullName)));
+
+        services.Configure<JwtOptions>(configuration.GetSection("Jwt"));
+
+        services.AddMediatR(cfg =>
+        {
+            cfg.RegisterServicesFromAssembly(typeof(RegisterIndividualUserCommand).Assembly);
+            cfg.RegisterServicesFromAssembly(typeof(AssemblyMarker).Assembly);
+        });
+
+        services.AddScoped<IUserRepository, UserRepository>();
+        services.AddScoped<ICompanyRepository, CompanyRepository>();
+        services.AddScoped<IBrokerRepository, BrokerRepository>();
+        services.AddScoped<IRefreshTokenRepository, RefreshTokenRepository>();
+        services.AddScoped<IMaintenanceCompanyRepository, MaintenanceCompanyRepository>();
+
+        services.AddSingleton<IPasswordHasher, BCryptPasswordHasher>();
+        services.AddSingleton<IJwtService, JwtService>();
+        services.AddScoped<ICurrentUserService, CurrentUserService>();
+        services.AddScoped<IEmailVerificationService, EmailVerificationService>();
+
+        services.AddHttpContextAccessor();
+
+        services.AddValidatorsFromAssembly(typeof(RegisterIndividualUserCommand).Assembly);
+
+        return services;
+    }
+}
