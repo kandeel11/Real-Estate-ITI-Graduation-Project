@@ -18,7 +18,8 @@ using Subscription.Infrastructure;
 using Subscription.Infrastructure.Persistence;
 using Subscription.Infrastructure.Seed;
 using System.IdentityModel.Tokens.Jwt;
-using System.Text;
+using System.Text; 
+using AI.Infrastructure.Persistence.Contexts;
 
 namespace RealEstate.Host;
 
@@ -171,6 +172,8 @@ public class Program
         using (var scope = app.Services.CreateScope())
         {
             var subscriptionDb = scope.ServiceProvider.GetRequiredService<SubscriptionDbContext>();
+            var AiDB = scope.ServiceProvider.GetRequiredService<AiDbContext>();
+            await AiDB.Database.MigrateAsync();
             await subscriptionDb.Database.MigrateAsync();
             await SubscriptionPlanSeed.SeedAsync(subscriptionDb);
 

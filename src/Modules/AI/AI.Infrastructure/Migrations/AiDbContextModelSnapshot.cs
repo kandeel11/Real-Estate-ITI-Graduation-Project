@@ -92,8 +92,7 @@ namespace AI.Infrastructure.Migrations
                 {
                     b.Property<Guid>("Id")
                         .ValueGeneratedOnAdd()
-                        .HasColumnType("uniqueidentifier")
-                        .HasDefaultValueSql("NEWSEQUENTIALID()");
+                        .HasColumnType("uniqueidentifier");
 
                     b.Property<string>("Content")
                         .IsRequired()
@@ -121,17 +120,17 @@ namespace AI.Infrastructure.Migrations
 
                     b.HasKey("Id");
 
-                    b.HasIndex("SessionId");
+                    b.HasIndex("SessionId")
+                        .HasDatabaseName("IX_AiChatbotMessages_SessionId");
 
-                    b.ToTable("ai_chatbot_messages", "ai");
+                    b.ToTable("AiChatbotMessages", "ai");
                 });
 
             modelBuilder.Entity("AI.Domain.Entities.AiChatbotSession", b =>
                 {
                     b.Property<Guid>("Id")
                         .ValueGeneratedOnAdd()
-                        .HasColumnType("uniqueidentifier")
-                        .HasDefaultValueSql("NEWSEQUENTIALID()");
+                        .HasColumnType("uniqueidentifier");
 
                     b.Property<DateTime>("CreatedAt")
                         .HasColumnType("datetime2");
@@ -147,8 +146,8 @@ namespace AI.Infrastructure.Migrations
 
                     b.Property<string>("SessionToken")
                         .IsRequired()
-                        .HasMaxLength(255)
-                        .HasColumnType("nvarchar(255)");
+                        .HasMaxLength(200)
+                        .HasColumnType("nvarchar(200)");
 
                     b.Property<DateTime?>("UpdatedAt")
                         .HasColumnType("datetime2");
@@ -159,9 +158,13 @@ namespace AI.Infrastructure.Migrations
                     b.HasKey("Id");
 
                     b.HasIndex("SessionToken")
-                        .IsUnique();
+                        .IsUnique()
+                        .HasDatabaseName("IX_AiChatbotSessions_SessionToken");
 
-                    b.ToTable("ai_chatbot_sessions", "ai");
+                    b.HasIndex("UserId")
+                        .HasDatabaseName("IX_AiChatbotSessions_UserId");
+
+                    b.ToTable("AiChatbotSessions", "ai");
                 });
 
             modelBuilder.Entity("AI.Domain.Entities.AiDescriptionGeneration", b =>
