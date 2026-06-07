@@ -11,6 +11,7 @@ public class MaintenancePaymentConfiguration : IEntityTypeConfiguration<Maintena
     {
         b.ToTable("maintenance_payments");
         b.HasKey(x => x.Id);
+        b.Property(x => x.Id).ValueGeneratedNever();
         b.Property(x => x.TicketId).IsRequired();
         b.HasIndex(x => x.TicketId).IsUnique();
         b.Property(x => x.PayerId).IsRequired();

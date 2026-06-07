@@ -10,6 +10,7 @@ public class MaintenanceTicketCommentConfiguration : IEntityTypeConfiguration<Ma
     {
         b.ToTable("maintenance_ticket_comments");
         b.HasKey(x => x.Id);
+        b.Property(x => x.Id).ValueGeneratedNever();
         b.Property(x => x.TicketId).IsRequired();
         b.Property(x => x.UserId).IsRequired();
         b.Property(x => x.UserRole).IsRequired().HasConversion<string>();

@@ -10,6 +10,7 @@ public class TicketAiEvaluationConfiguration : IEntityTypeConfiguration<TicketAi
     {
         b.ToTable("maintenance_ticket_ai_evaluations");
         b.HasKey(x => x.Id);
+        b.Property(x => x.Id).ValueGeneratedNever();
         b.Property(x => x.TicketId).IsRequired();
         b.HasIndex(x => x.TicketId).IsUnique();
         b.Property(x => x.ResponsibleParty).IsRequired().HasMaxLength(50);

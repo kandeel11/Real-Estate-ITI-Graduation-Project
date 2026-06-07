@@ -11,6 +11,7 @@ public class TicketVendorAssignmentConfiguration : IEntityTypeConfiguration<Tick
     {
         b.ToTable("maintenance_ticket_vendor_assignments");
         b.HasKey(x => x.Id);
+        b.Property(x => x.Id).ValueGeneratedNever();
         b.Property(x => x.TicketId).IsRequired();
         b.Property(x => x.VendorId).IsRequired();
         b.Property(x => x.AssignedById).IsRequired();

@@ -10,6 +10,7 @@ public class MaintenanceTicketAttachmentConfiguration : IEntityTypeConfiguration
     {
         b.ToTable("maintenance_ticket_attachments");
         b.HasKey(x => x.Id);
+        b.Property(x => x.Id).ValueGeneratedNever();
         b.Property(x => x.TicketId).IsRequired();
         b.Property(x => x.UploadedById).IsRequired();
         b.Property(x => x.FileUrl).IsRequired().HasMaxLength(500);

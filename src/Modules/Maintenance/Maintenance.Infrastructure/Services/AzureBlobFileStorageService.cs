@@ -1,5 +1,6 @@
 ﻿using Azure.Storage.Blobs;
 using Azure.Storage.Blobs.Models;
+using Azure.Storage.Sas;
 using Maintenance.Application.Interfaces;
 using Maintenance.Infrastructure.Settings;
 using Microsoft.AspNetCore.Http;
@@ -16,8 +17,9 @@ public class AzureBlobFileStorageService(IOptions<AzureStorageSettings> options)
     {
         var container = _client.GetBlobContainerClient(_containerName);
 
-        // Creates the container if it doesn't exist yet and makes blobs publicly readable
-        await container.CreateIfNotExistsAsync(PublicAccessType.Blob, cancellationToken: ct);
+        // ← was PublicAccessType.Blob — your account forbids that
+        // None = private container, access via SAS URL only
+        await container.CreateIfNotExistsAsync(PublicAccessType.None, cancellationToken: ct);
 
         var extension = Path.GetExtension(file.FileName);
         var blobName = $"{folder}/{Guid.NewGuid()}{extension}";
@@ -29,19 +31,22 @@ public class AzureBlobFileStorageService(IOptions<AzureStorageSettings> options)
             new BlobHttpHeaders { ContentType = file.ContentType },
             cancellationToken: ct);
 
-        // Returns the full public URL e.g.
-        // https://ACCOUNT.blob.core.windows.net/maintenance/maintenance/uuid.jpg
-        return blob.Uri.ToString();
+        // Generate a SAS URL valid for 1 year — gives read access without making the container public
+        var sasUri = blob.GenerateSasUri(
+            BlobSasPermissions.Read,
+            DateTimeOffset.UtcNow.AddYears(1));
+
+        return sasUri.ToString();
     }
 
     public async Task DeleteAsync(string fileUrl, CancellationToken ct = default)
     {
         var container = _client.GetBlobContainerClient(_containerName);
 
-        // Extract the blob name from the full URL.
-        // URL format: https://ACCOUNT.blob.core.windows.net/CONTAINER/folder/filename
-        // uri.Segments = [ "/", "CONTAINER/", "folder/", "filename" ]
-        // We skip "/" and "CONTAINER/" → join the rest → "folder/filename"
+        // SAS URL format: https://ACCOUNT.blob.core.windows.net/CONTAINER/folder/file.jpg?sv=...
+        // uri.AbsolutePath gives only the path part without the query string (SAS token)
+        // Segments: [ "/", "CONTAINER/", "folder/", "file.jpg" ]
+        // Skip "/" and "CONTAINER/" → "folder/file.jpg" = the blob name
         var uri = new Uri(fileUrl);
         var blobName = string.Join(string.Empty, uri.Segments.Skip(2));
 

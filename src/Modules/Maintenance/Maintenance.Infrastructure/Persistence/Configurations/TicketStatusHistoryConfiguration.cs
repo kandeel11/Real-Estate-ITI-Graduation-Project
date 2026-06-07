@@ -10,6 +10,7 @@ public class TicketStatusHistoryConfiguration : IEntityTypeConfiguration<TicketS
     {
         b.ToTable("maintenance_ticket_status_history");
         b.HasKey(x => x.Id);
+        b.Property(x => x.Id).ValueGeneratedNever();
         b.Property(x => x.TicketId).IsRequired();
         b.Property(x => x.FromStatus).IsRequired().HasConversion<string>();
         b.Property(x => x.ToStatus).IsRequired().HasConversion<string>();

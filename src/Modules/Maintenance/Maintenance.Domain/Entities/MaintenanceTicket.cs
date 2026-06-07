@@ -17,7 +17,7 @@ namespace Maintenance.Domain.Entities
         public Guid OwnerId { get; private set; }
         public Guid? MaintenanceCompanyId { get; private set; }
 
-        public string TicketNumber { get; private set; } = default!;
+        public string? TicketNumber { get; private set; } = default!;
         public string Title { get; private set; } = default!;
         public string Description { get; private set; } = default!;
         public TicketPriority Priority { get; private set; }
@@ -33,9 +33,9 @@ namespace Maintenance.Domain.Entities
         public DateTime? ResolvedAt { get; private set; }
         public DateTime? ClosedAt { get; private set; }
 
-        public ICollection<MaintenanceTicketAttachment> Attachments { get; private set; } = [];
-        public ICollection<MaintenanceTicketComment> Comments { get; private set; } = [];
-        public ICollection<TicketStatusHistory> StatusHistory { get; private set; } = [];
+        public ICollection<MaintenanceTicketAttachment> Attachments { get; private set; } = new List<MaintenanceTicketAttachment>();
+        public ICollection<MaintenanceTicketComment> Comments { get; private set; } = new List<MaintenanceTicketComment>();
+        public ICollection<TicketStatusHistory> StatusHistory { get; private set; } = new List<TicketStatusHistory>();
         public TicketAiEvaluation? AiEvaluation { get; private set; }
         public TicketVendorAssignment? CurrentVendorAssignment { get; private set; }
         public MaintenancePayment? Payment { get; private set; }
@@ -57,7 +57,6 @@ namespace Maintenance.Domain.Entities
                 Description = description,
                 Priority = priority,
                 Status = TicketStatus.Draft,
-                TicketNumber = string.Empty
             };
             ticket.AddDomainEvent(new TicketCreatedDomainEvent(ticket.Id, tenantId, propertyId));
             return ticket;

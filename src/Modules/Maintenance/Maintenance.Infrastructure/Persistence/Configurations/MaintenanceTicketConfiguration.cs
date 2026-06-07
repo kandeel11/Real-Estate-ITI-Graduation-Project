@@ -11,9 +11,10 @@ public class MaintenanceTicketConfiguration : IEntityTypeConfiguration<Maintenan
     {
         b.ToTable("maintenance_tickets");
         b.HasKey(x => x.Id);
+        b.Property(x => x.Id).ValueGeneratedNever();
         b.HasQueryFilter(x => x.DeletedAt == null);
 
-        b.Property(x => x.TicketNumber).IsRequired().HasMaxLength(20);
+        b.Property(x => x.TicketNumber).HasMaxLength(20);
         b.HasIndex(x => x.TicketNumber).IsUnique();
         b.Property(x => x.PropertyId).IsRequired();
         b.Property(x => x.TenantId).IsRequired();
