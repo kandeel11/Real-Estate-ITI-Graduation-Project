@@ -1,3 +1,338 @@
-import { Routes } from '@angular/router';
+/**
+ * Application Root Routes Configuration
+ * Implements lazy loading for layout components and 5 isolated dashboards
+ * Each dashboard is protected by role-based functional guards
+ */
 
-export const routes: Routes = [];
+import { Routes } from '@angular/router';
+import { roleGuard } from './core/guards/role.guard';
+
+export const routes: Routes = [
+  // ==================== PUBLIC LAYOUT (No Auth Required) ====================
+  {
+    path: '',
+    loadComponent: () =>
+      import('./layouts/public-layout/public-layout.component').then(
+        (m) => m.PublicLayoutComponent
+      ),
+    children: [
+      {
+        path: '',
+        loadComponent: () =>
+          import('./features/properties/property-list/property-list.component').then(
+            (m) => m.PropertyListComponent
+          ),
+      },
+      {
+        path: 'properties/search',
+        loadComponent: () =>
+          import('./features/properties/property-search/property-search.component').then(
+            (m) => m.PropertySearchComponent
+          ),
+      },
+      {
+        path: 'properties/:id',
+        loadComponent: () =>
+          import('./features/properties/property-detail/property-detail.component').then(
+            (m) => m.PropertyDetailComponent
+          ),
+      },
+      {
+        path: 'ai/chat',
+        loadComponent: () =>
+          import('./features/ai/chat-rag/chat-rag.component').then(
+            (m) => m.ChatRagComponent
+          ),
+      },
+    ],
+  },
+
+  // ==================== AUTH LAYOUT (Login, Register, OTP) ====================
+  {
+    path: 'auth',
+    loadComponent: () =>
+      import('./layouts/auth-layout/auth-layout.component').then(
+        (m) => m.AuthLayoutComponent
+      ),
+    children: [
+      {
+        path: 'login',
+        loadComponent: () =>
+          import('./features/auth/login/login.component').then(
+            (m) => m.LoginComponent
+          ),
+      },
+      {
+        path: 'register',
+        loadComponent: () =>
+          import('./features/auth/register/register.component').then(
+            (m) => m.RegisterComponent
+          ),
+      },
+      {
+        path: 'verify-email',
+        loadComponent: () =>
+          import('./features/auth/verify-email/verify-email.component').then(
+            (m) => m.VerifyEmailComponent
+          ),
+      },
+      {
+        path: 'verify-otp',
+        loadComponent: () =>
+          import('./features/auth/verify-otp/verify-otp.component').then(
+            (m) => m.VerifyOtpComponent
+          ),
+      },
+      {
+        path: 'forgot-password',
+        loadComponent: () =>
+          import('./features/auth/forgot-password/forgot-password.component').then(
+            (m) => m.ForgotPasswordComponent
+          ),
+      },
+    ],
+  },
+
+  // ==================== DASHBOARD LAYOUT WITH ROLE-BASED ACCESS ====================
+  {
+    path: 'dashboard',
+    loadComponent: () =>
+      import('./layouts/dashboard-layout/dashboard-layout.component').then(
+        (m) => m.DashboardLayoutComponent
+      ),
+    canActivate: [roleGuard],
+    children: [
+      // ============ ADMIN DASHBOARD ============
+      {
+        path: 'admin',
+        canActivate: [roleGuard],
+        data: { expectedRole: 'admin' },
+        loadComponent: () =>
+          import('./dashboards/admin/admin-dashboard.component').then(
+            (m) => m.AdminDashboardComponent
+          ),
+        children: [
+          {
+            path: 'overview',
+            loadComponent: () =>
+              import(
+                './dashboards/admin/pages/overview/overview.component'
+              ).then((m) => m.OverviewComponent),
+          },
+          {
+            path: 'users',
+            loadComponent: () =>
+              import(
+                './dashboards/admin/pages/users-management/users-management.component'
+              ).then((m) => m.UsersManagementComponent),
+          },
+          {
+            path: 'companies',
+            loadComponent: () =>
+              import(
+                './dashboards/admin/pages/companies-management/companies-management.component'
+              ).then((m) => m.CompaniesManagementComponent),
+          },
+          {
+            path: 'moderation',
+            loadComponent: () =>
+              import(
+                './dashboards/admin/pages/moderation/moderation.component'
+              ).then((m) => m.ModerationComponent),
+          },
+          {
+            path: 'reports',
+            loadComponent: () =>
+              import(
+                './dashboards/admin/pages/reports/reports.component'
+              ).then((m) => m.ReportsComponent),
+          },
+        ],
+      },
+
+      // ============ COMPANY DASHBOARD ============
+      {
+        path: 'company',
+        canActivate: [roleGuard],
+        data: { expectedRole: 'company' },
+        loadComponent: () =>
+          import('./dashboards/company/company-dashboard.component').then(
+            (m) => m.CompanyDashboardComponent
+          ),
+        children: [
+          {
+            path: 'overview',
+            loadComponent: () =>
+              import(
+                './dashboards/company/pages/overview/overview.component'
+              ).then((m) => m.OverviewComponent),
+          },
+          {
+            path: 'properties',
+            loadComponent: () =>
+              import(
+                './dashboards/company/pages/properties/properties.component'
+              ).then((m) => m.PropertiesComponent),
+          },
+          {
+            path: 'brokers',
+            loadComponent: () =>
+              import(
+                './dashboards/company/pages/brokers/brokers.component'
+              ).then((m) => m.BrokersComponent),
+          },
+          {
+            path: 'leases',
+            loadComponent: () =>
+              import(
+                './dashboards/company/pages/leases/leases.component'
+              ).then((m) => m.LeasesComponent),
+          },
+          {
+            path: 'subscriptions',
+            loadComponent: () =>
+              import(
+                './dashboards/company/pages/subscriptions/subscriptions.component'
+              ).then((m) => m.SubscriptionsComponent),
+          },
+        ],
+      },
+
+      // ============ BROKER DASHBOARD ============
+      {
+        path: 'broker',
+        canActivate: [roleGuard],
+        data: { expectedRole: 'broker' },
+        loadComponent: () =>
+          import('./dashboards/broker/broker-dashboard.component').then(
+            (m) => m.BrokerDashboardComponent
+          ),
+        children: [
+          {
+            path: 'overview',
+            loadComponent: () =>
+              import(
+                './dashboards/broker/pages/overview/overview.component'
+              ).then((m) => m.OverviewComponent),
+          },
+          {
+            path: 'listings',
+            loadComponent: () =>
+              import(
+                './dashboards/broker/pages/listings/listings.component'
+              ).then((m) => m.ListingsComponent),
+          },
+          {
+            path: 'performance',
+            loadComponent: () =>
+              import(
+                './dashboards/broker/pages/performance/performance.component'
+              ).then((m) => m.PerformanceComponent),
+          },
+          {
+            path: 'commissions',
+            loadComponent: () =>
+              import(
+                './dashboards/broker/pages/commissions/commissions.component'
+              ).then((m) => m.CommissionsComponent),
+          },
+        ],
+      },
+
+      // ============ TENANT DASHBOARD ============
+      {
+        path: 'tenant',
+        canActivate: [roleGuard],
+        data: { expectedRole: 'tenant' },
+        loadComponent: () =>
+          import('./dashboards/tenant/tenant-dashboard.component').then(
+            (m) => m.TenantDashboardComponent
+          ),
+        children: [
+          {
+            path: 'overview',
+            loadComponent: () =>
+              import(
+                './dashboards/tenant/pages/overview/overview.component'
+              ).then((m) => m.OverviewComponent),
+          },
+          {
+            path: 'my-property',
+            loadComponent: () =>
+              import(
+                './dashboards/tenant/pages/my-property/my-property.component'
+              ).then((m) => m.MyPropertyComponent),
+          },
+          {
+            path: 'lease',
+            loadComponent: () =>
+              import(
+                './dashboards/tenant/pages/lease/lease.component'
+              ).then((m) => m.LeaseComponent),
+          },
+          {
+            path: 'maintenance-requests',
+            loadComponent: () =>
+              import(
+                './dashboards/tenant/pages/maintenance-requests/maintenance-requests.component'
+              ).then((m) => m.MaintenanceRequestsComponent),
+          },
+          {
+            path: 'payments',
+            loadComponent: () =>
+              import(
+                './dashboards/tenant/pages/payments/payments.component'
+              ).then((m) => m.PaymentsComponent),
+          },
+        ],
+      },
+
+      // ============ MAINTENANCE COMPANY DASHBOARD ============
+      {
+        path: 'maintenance-company',
+        canActivate: [roleGuard],
+        data: { expectedRole: 'maintenance-company' },
+        loadComponent: () =>
+          import(
+            './dashboards/maintenance-company/maintenance-company-dashboard.component'
+          ).then((m) => m.MaintenanceCompanyDashboardComponent),
+        children: [
+          {
+            path: 'overview',
+            loadComponent: () =>
+              import(
+                './dashboards/maintenance-company/pages/overview/overview.component'
+              ).then((m) => m.OverviewComponent),
+          },
+          {
+            path: 'tickets',
+            loadComponent: () =>
+              import(
+                './dashboards/maintenance-company/pages/tickets/tickets.component'
+              ).then((m) => m.TicketsComponent),
+          },
+          {
+            path: 'work-orders',
+            loadComponent: () =>
+              import(
+                './dashboards/maintenance-company/pages/work-orders/work-orders.component'
+              ).then((m) => m.WorkOrdersComponent),
+          },
+          {
+            path: 'reports',
+            loadComponent: () =>
+              import(
+                './dashboards/maintenance-company/pages/reports/reports.component'
+              ).then((m) => m.ReportsComponent),
+          },
+        ],
+      },
+    ],
+  },
+
+  // ==================== CATCH-ALL ROUTE ====================
+  {
+    path: '**',
+    redirectTo: '',
+  },
+];
