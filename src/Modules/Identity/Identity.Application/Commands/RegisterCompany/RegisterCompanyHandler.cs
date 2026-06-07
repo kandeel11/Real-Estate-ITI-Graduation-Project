@@ -66,7 +66,7 @@ public class RegisterCompanyHandler
         await _userRepo.SaveChangesAsync(cancellationToken);
         await _companyRepo.SaveChangesAsync(cancellationToken);
 
-        _ = _emailService.SendVerificationEmailAsync(adminUser, CancellationToken.None);
+        _ = _emailService.SendVerificationLinkAsync(adminUser, CancellationToken.None);
 
         try
         {
