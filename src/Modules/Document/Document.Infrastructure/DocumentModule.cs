@@ -24,6 +24,7 @@ public static class DocumentModule
         services.AddScoped<INotificationRepository, NotificationRepository>();
         services.AddScoped<INotificationService, NotificationService>();
         //services.AddMediatR();
+	services.AddSignalR();
         return services;
     }
 }

@@ -3,6 +3,9 @@ using AI.Infrastructure;
 //using AI.Infrastructure.EventHandlers;
 using Document.Infrastructure;
 using Property.Infrastructure;
+using Document.Infrastructure.Hubs;
+using Document.Infrastructure.Hubs;
+using Microsoft.AspNetCore.SignalR;
 
 namespace RealEstate.Host;
 
@@ -54,6 +57,7 @@ public class Program
         app.UseAuthentication();
         app.UseAuthorization();
         app.MapControllers();
+	    app.MapHub<DocumentChatHub>("/hubs/chat");
         app.Run();
     }
 }
