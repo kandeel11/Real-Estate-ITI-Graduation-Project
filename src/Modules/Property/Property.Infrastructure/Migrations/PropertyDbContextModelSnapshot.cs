@@ -18,7 +18,7 @@ namespace Property.Infrastructure.Migrations
 #pragma warning disable 612, 618
             modelBuilder
                 .HasDefaultSchema("property")
-                .HasAnnotation("ProductVersion", "9.0.5")
+                .HasAnnotation("ProductVersion", "9.0.16")
                 .HasAnnotation("Relational:MaxIdentifierLength", 128);
 
             SqlServerModelBuilderExtensions.UseIdentityColumns(modelBuilder);
@@ -82,6 +82,9 @@ namespace Property.Infrastructure.Migrations
 
                     b.Property<string>("AiGeneratedDescriptionEn")
                         .HasColumnType("nvarchar(max)");
+
+                    b.Property<int?>("ApartmentNumber")
+                        .HasColumnType("int");
 
                     b.Property<decimal>("AreaSqm")
                         .HasPrecision(10, 2)
@@ -323,6 +326,9 @@ namespace Property.Infrastructure.Migrations
                     b.Property<Guid>("PropertyId")
                         .HasColumnType("uniqueidentifier");
 
+                    b.Property<Guid?>("PropertyId1")
+                        .HasColumnType("uniqueidentifier");
+
                     b.Property<int>("SortOrder")
                         .ValueGeneratedOnAdd()
                         .HasColumnType("int")
@@ -337,6 +343,8 @@ namespace Property.Infrastructure.Migrations
                     b.HasKey("Id");
 
                     b.HasIndex("PropertyId");
+
+                    b.HasIndex("PropertyId1");
 
                     b.ToTable("property_media", "property");
                 });
@@ -372,6 +380,15 @@ namespace Property.Infrastructure.Migrations
                         .HasForeignKey("PropertyId")
                         .OnDelete(DeleteBehavior.Cascade)
                         .IsRequired();
+
+                    b.HasOne("Property.Domain.Entities.Property", null)
+                        .WithMany("Media")
+                        .HasForeignKey("PropertyId1");
+                });
+
+            modelBuilder.Entity("Property.Domain.Entities.Property", b =>
+                {
+                    b.Navigation("Media");
                 });
 #pragma warning restore 612, 618
         }

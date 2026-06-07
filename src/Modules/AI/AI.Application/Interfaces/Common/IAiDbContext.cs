@@ -1,38 +1,56 @@
-﻿using AI.Domain.Entities;
+﻿// AI.Application/Interfaces/Common/IAiDbContext.cs
+
+using AI.Domain.Entities;
 using Microsoft.EntityFrameworkCore;
-using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
+using Microsoft.EntityFrameworkCore.Infrastructure;
 
-namespace AI.Application.Interfaces.Common
+namespace AI.Application.Interfaces.Common;
+
+public interface IAiDbContext
 {
-    public interface IAiDbContext
-    {
-        // 1. Verification & Duplicate Detection
-        DbSet<OwnershipVerificationRequest> OwnershipVerificationRequests { get; }
-        DbSet<DuplicateDetectionLog> DuplicateDetectionLogs { get; }
+    // ── Ownership Verification ────────────────────────────────────────────────
+    DbSet<OwnershipVerificationRequest> OwnershipVerificationRequests { get; }
 
-        // 2. Chatbot & Content Generation
-        DbSet<AiDescriptionGeneration> AiDescriptionGenerations { get; }
-        DbSet<AiChatbotSession> AiChatbotSessions { get; }
-        DbSet<AiChatbotMessage> AiChatbotMessages { get; }
+    // ── Duplicate Detection ───────────────────────────────────────────────────
+    DbSet<DuplicateDetectionLog> DuplicateDetectionLogs { get; }
 
-        // 3. Search & Pricing
-        DbSet<AiSearchQuery> AiSearchQueries { get; }
-        DbSet<SavedSearch> SavedSearches { get; }
-        DbSet<AiPriceEstimation> AiPriceEstimations { get; }
+    // ── Lease Extraction ──────────────────────────────────────────────────────
+    DbSet<LeaseExtractionRequest> LeaseExtractionRequests { get; }
 
-        // 4. Analytics & Usage Logs
-        DbSet<AiUsageLog> AiUsageLogs { get; }
-        DbSet<BrokerPerformanceScore> BrokerPerformanceScores { get; }
-        DbSet<CompanyAnalytics> CompanyAnalytics { get; }
-        DbSet<AdminAnalyticsSnapshot> AdminAnalyticsSnapshots { get; }
-        // 5.Chatbot Sessions & Messages
-        DbSet<ChatbotMessage> ChatbotMessages { get; }
-        DbSet<ChatbotSession> ChatbotSessions { get; }
-        // 
-        Task<int> SaveChangesAsync(CancellationToken cancellationToken = default);
-    }
+    // ── AI Description Generator ──────────────────────────────────────────────
+    DbSet<AiDescriptionGeneration> AiDescriptionGenerations { get; }
+
+    // ── AI Chatbot ────────────────────────────────────────────────────────────
+    DbSet<AiChatbotSession> AiChatbotSessions { get; }
+    DbSet<AiChatbotMessage> AiChatbotMessages { get; }
+
+    // ── Smart Search ──────────────────────────────────────────────────────────
+    DbSet<AiSearchQuery> AiSearchQueries { get; }
+    DbSet<SavedSearch> SavedSearches { get; }
+
+    // ── Price Estimation ──────────────────────────────────────────────────────
+    DbSet<AiPriceEstimation> AiPriceEstimations { get; }
+
+    // ── Broker Performance ────────────────────────────────────────────────────
+    DbSet<BrokerPerformanceScore> BrokerPerformanceScores { get; }
+
+    // ── Company Analytics ─────────────────────────────────────────────────────
+    DbSet<CompanyAnalytics> CompanyAnalytics { get; }
+    DbSet<AdminAnalyticsSnapshot> AdminAnalyticsSnapshots { get; }
+
+    // ── AI Usage Logs ─────────────────────────────────────────────────────────
+    DbSet<AiUsageLog> AiUsageLogs { get; }
+
+    // ── EF Core operations ───────────────────────────────────────────────────
+    Task<int> SaveChangesAsync(CancellationToken cancellationToken = default);
+
+    Task<int> SaveChangesAsync(
+        bool acceptAllChangesOnSuccess,
+        CancellationToken cancellationToken = default);
+
+    /// <summary>
+    /// Gives handlers access to Database for transactions and raw SQL.
+    /// e.g. await _context.Database.BeginTransactionAsync()
+    /// </summary>
+    DatabaseFacade Database { get; }
 }

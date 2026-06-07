@@ -17,6 +17,10 @@ namespace AI.Domain.Entities
         public string? AiOcrExtractedName { get; set; }
         public string? AiOcrExtractedId { get; set; }
 
+        // NEW: From Azure Document Intelligence extraction
+        public string? AiOcrExtractedIdExpiry { get; set; }
+        public string? AiOcrExtractedOwnerName { get; set; }
+
         public Guid? AdminReviewerId { get; set; }
         public string? AdminReviewNotes { get; set; }
         public DateTime? AdminReviewedAt { get; set; }

@@ -1,25 +1,25 @@
-﻿using AI.Domain.Entities;
+﻿// AI.Infrastructure/Persistence/Configurations/SavedSearchConfiguration.cs
+
+using AI.Domain.Entities;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Metadata.Builders;
 
-namespace AI.Infrastructure.Persistence.Configurations
+namespace AI.Infrastructure.Persistence.Configurations;
+
+public sealed class SavedSearchConfiguration
+    : IEntityTypeConfiguration<SavedSearch>
 {
-    public class SavedSearchConfiguration : IEntityTypeConfiguration<SavedSearch>
+    public void Configure(EntityTypeBuilder<SavedSearch> b)
     {
-        public void Configure(EntityTypeBuilder<SavedSearch> builder)
-        {
-            builder.ToTable("saved_searches", "ai");
-            builder.HasKey(x => x.Id);
-            builder.Property(x => x.Id).HasDefaultValueSql("NEWSEQUENTIALID()");
+        b.ToTable("saved_searches", "ai");
+        b.HasKey(x => x.Id);
 
-            builder.Property(x => x.UserId).IsRequired();
-            builder.Property(x => x.Name).HasMaxLength(200).IsRequired();
+        b.Property(x => x.Name).IsRequired().HasMaxLength(200);
+        b.Property(x => x.RawQuery).IsRequired().HasMaxLength(1000);
+        b.Property(x => x.ParsedFilters).IsRequired().HasColumnType("nvarchar(Max)");
 
-            builder.Property(x => x.Filters).IsRequired();
-
-            builder.Property(x => x.NotifyOnMatch).HasDefaultValue(false);
-
-            builder.HasQueryFilter(x => x.DeletedAt == null);
-        }
+        b.HasIndex(x => x.UserId).HasDatabaseName("ix_saved_searches_user");
+        b.HasIndex(x => new { x.IsActive, x.NotifyOnMatch })
+         .HasDatabaseName("ix_saved_searches_active_notify");
     }
 }

@@ -23,6 +23,7 @@ public record UpdatePropertyCommand(
     decimal Latitude,
     decimal Longitude,
     string Address,
+    int? ApartmentNumber,
     string City,
     string District,
     Guid? ListingBrokerId

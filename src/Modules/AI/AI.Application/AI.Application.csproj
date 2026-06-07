@@ -6,7 +6,10 @@
   </ItemGroup>
 
   <ItemGroup>
+    <PackageReference Include="FluentValidation" Version="12.1.1" />
+    <PackageReference Include="FluentValidation.DependencyInjectionExtensions" Version="12.1.1" />
     <PackageReference Include="Microsoft.EntityFrameworkCore" Version="9.0.16" />
+    <PackageReference Include="Microsoft.Extensions.Configuration" Version="10.0.8" />
     <PackageReference Include="Microsoft.SemanticKernel.Core" Version="1.76.0" />
   </ItemGroup>
 

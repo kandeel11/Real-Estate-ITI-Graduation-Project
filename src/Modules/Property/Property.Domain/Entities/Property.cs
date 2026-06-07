@@ -31,6 +31,7 @@ public class Property : BaseEntity
     public decimal Latitude { get; private set; }
     public decimal Longitude { get; private set; }
     public string Address { get; private set; } = string.Empty;
+    public int? ApartmentNumber { get; private set; }
     public string City { get; private set; } = string.Empty;
     public string District { get; private set; } = string.Empty;
 
@@ -46,8 +47,10 @@ public class Property : BaseEntity
 
     public int ViewsCount { get; private set; }
     public int InquiriesCount { get; private set; }
-
+    public ICollection<PropertyMedia> Media { get; private set; } = new List<PropertyMedia>();
     private Property() { }
+
+
 
     public static Property Create(
         Guid ownerId,
@@ -70,6 +73,7 @@ public class Property : BaseEntity
         decimal latitude,
         decimal longitude,
         string address,
+        int? apartmentNumber,
         string city,
         string district,
         ListingSource listingSource)
@@ -96,6 +100,7 @@ public class Property : BaseEntity
             Latitude = latitude,
             Longitude = longitude,
             Address = address,
+            ApartmentNumber = apartmentNumber,
             City = city,
             District = district,
             ListingSource = listingSource,
@@ -123,6 +128,7 @@ public class Property : BaseEntity
         decimal latitude,
         decimal longitude,
         string address,
+        int? apartmentNumber,
         string city,
         string district,
         Guid? listingBrokerId)
@@ -146,6 +152,7 @@ public class Property : BaseEntity
         Latitude = latitude;
         Longitude = longitude;
         Address = address;
+        ApartmentNumber = apartmentNumber;
         City = city;
         District = district;
         ListingBrokerId = listingBrokerId;
@@ -200,6 +207,13 @@ public class Property : BaseEntity
         AiGeneratedDescriptionEn = descriptionEn;
         AiGeneratedDescriptionAr = descriptionAr;
         UpdatedAt = DateTime.UtcNow;
+        AddDomainEvent(new PropertyAiDescriptionSetEvent(Id, OwnerId, CompanyId));
+    }
+
+    public void AssignBroker(Guid? brokerId)
+    {
+        ListingBrokerId = brokerId;
+        UpdatedAt = DateTime.UtcNow;
     }
 
     public void MarkAsRented()
@@ -209,7 +223,7 @@ public class Property : BaseEntity
 
         Status = PropertyStatus.Rented;
         UpdatedAt = DateTime.UtcNow;
-        AddDomainEvent(new PropertyRentedEvent(Id, OwnerId));
+        AddDomainEvent(new PropertyRentedEvent(Id, OwnerId, CompanyId));
     }
 
     public void MarkAsInactive()

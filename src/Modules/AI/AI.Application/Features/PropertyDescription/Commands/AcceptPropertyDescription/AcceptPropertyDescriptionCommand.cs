@@ -7,6 +7,7 @@ using System.Threading.Tasks;
 
 namespace AI.Application.Features.PropertyDescription.Commands.AcceptPropertyDescription
 {
-    public record AcceptPropertyDescriptionCommand(Guid GenerationId) : IRequest<bool>;
-    
+    public record AcceptPropertyDescriptionCommand(Guid GenerationId,
+        string FinalTextEn, 
+        string FinalTextAr) : IRequest<bool>;
 }

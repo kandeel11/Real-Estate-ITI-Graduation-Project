@@ -49,6 +49,7 @@ namespace AI.Application.Features.PropertyDescription.Commands.GeneratePropertyD
                 GeneratedTextEn = aiResult.EnDescription,
                 GeneratedTextAr = aiResult.ArDescription,
                 ModelVersion = _aiOptions.ModelVersion,
+                //ModelVersion =_aiOptions.GroqModelId,
                 TokensUsed = aiResult.TokensUsed,
                 IsAccepted = false
             };
