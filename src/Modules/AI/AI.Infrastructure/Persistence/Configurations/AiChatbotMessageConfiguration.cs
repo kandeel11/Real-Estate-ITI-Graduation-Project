@@ -1,24 +1,29 @@
-﻿using AI.Domain.Entities;
+﻿// AI.Infrastructure/Persistence/Configurations/AiChatbotMessageConfiguration.cs
+
+using AI.Domain.Entities;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Metadata.Builders;
 
-namespace AI.Infrastructure.Persistence.Configurations
+namespace AI.Infrastructure.Persistence.Configurations;
+
+public sealed class AiChatbotMessageConfiguration
+    : IEntityTypeConfiguration<AiChatbotMessage>
 {
-    public class AiChatbotMessageConfiguration : IEntityTypeConfiguration<AiChatbotMessage>
+    public void Configure(EntityTypeBuilder<AiChatbotMessage> b)
     {
-        public void Configure(EntityTypeBuilder<AiChatbotMessage> builder)
-        {
-            builder.ToTable("ai_chatbot_messages", "ai");
-            builder.HasKey(x => x.Id);
-            builder.Property(x => x.Id).HasDefaultValueSql("NEWSEQUENTIALID()");
+        b.ToTable("AiChatbotMessages");
 
-            builder.Property(x => x.Role)
-                .HasConversion<string>()
-                .HasMaxLength(20)
-                .IsRequired();
+        b.HasKey(x => x.Id);
 
-            builder.Property(x => x.Content).IsRequired();
+        b.Property(x => x.Role)
+         .IsRequired()
+         .HasMaxLength(20);           // "user" | "assistant"
 
-        }
+        b.Property(x => x.Content)
+         .IsRequired()
+         .HasColumnType("nvarchar(max)");
+
+        b.HasIndex(x => x.SessionId)
+         .HasDatabaseName("IX_AiChatbotMessages_SessionId");
     }
 }

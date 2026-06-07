@@ -271,41 +271,45 @@ namespace AI.Infrastructure.Migrations
                 {
                     b.Property<Guid>("Id")
                         .ValueGeneratedOnAdd()
-                        .HasColumnType("uniqueidentifier")
-                        .HasDefaultValueSql("NEWSEQUENTIALID()");
+                        .HasColumnType("uniqueidentifier");
 
                     b.Property<DateTime>("CreatedAt")
                         .HasColumnType("datetime2");
 
-                    b.Property<DateTime?>("DeletedAt")
-                        .HasColumnType("datetime2");
-
-                    b.Property<string>("IpAddress")
-                        .HasMaxLength(50)
-                        .HasColumnType("nvarchar(50)");
+                    b.Property<string>("Language")
+                        .IsRequired()
+                        .HasMaxLength(10)
+                        .HasColumnType("nvarchar(10)");
 
                     b.Property<string>("ParsedFilters")
                         .IsRequired()
-                        .HasColumnType("nvarchar(max)");
+                        .HasColumnType("nvarchar(Max)");
+
+                    b.Property<decimal>("ParsingConfidence")
+                        .HasPrecision(5, 4)
+                        .HasColumnType("decimal(5,4)");
 
                     b.Property<string>("RawQuery")
                         .IsRequired()
-                        .HasColumnType("nvarchar(max)");
+                        .HasMaxLength(1000)
+                        .HasColumnType("nvarchar(1000)");
 
-                    b.Property<int>("ResultsCount")
+                    b.Property<int>("ResultCount")
                         .HasColumnType("int");
 
-                    b.Property<string>("SessionId")
-                        .HasMaxLength(255)
-                        .HasColumnType("nvarchar(255)");
-
-                    b.Property<DateTime?>("UpdatedAt")
-                        .HasColumnType("datetime2");
+                    b.Property<int>("TokensUsed")
+                        .HasColumnType("int");
 
                     b.Property<Guid?>("UserId")
                         .HasColumnType("uniqueidentifier");
 
                     b.HasKey("Id");
+
+                    b.HasIndex("CreatedAt")
+                        .HasDatabaseName("ix_ai_search_queries_date");
+
+                    b.HasIndex("UserId")
+                        .HasDatabaseName("ix_ai_search_queries_user");
 
                     b.ToTable("ai_search_queries", "ai");
                 });
@@ -618,6 +622,39 @@ namespace AI.Infrastructure.Migrations
                     b.ToTable("duplicate_detection_logs", "ai");
                 });
 
+            modelBuilder.Entity("AI.Domain.Entities.LeaseExtractionRequest", b =>
+                {
+                    b.Property<Guid>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("uniqueidentifier");
+
+                    b.Property<DateTime>("CreatedAt")
+                        .HasColumnType("datetime2");
+
+                    b.Property<string>("ErrorMessage")
+                        .HasColumnType("nvarchar(max)");
+
+                    b.Property<Guid>("LeaseId")
+                        .HasColumnType("uniqueidentifier");
+
+                    b.Property<decimal?>("OverallConfidence")
+                        .HasColumnType("decimal(18,2)");
+
+                    b.Property<string>("RawAiResponse")
+                        .HasColumnType("nvarchar(max)");
+
+                    b.Property<string>("Status")
+                        .IsRequired()
+                        .HasColumnType("nvarchar(max)");
+
+                    b.Property<DateTime>("UpdatedAt")
+                        .HasColumnType("datetime2");
+
+                    b.HasKey("Id");
+
+                    b.ToTable("LeaseExtractionRequests", "ai");
+                });
+
             modelBuilder.Entity("AI.Domain.Entities.OwnershipVerificationRequest", b =>
                 {
                     b.Property<Guid>("Id")
@@ -652,8 +689,16 @@ namespace AI.Infrastructure.Migrations
                     b.Property<string>("AiOcrExtractedId")
                         .HasColumnType("nvarchar(max)");
 
+                    b.Property<string>("AiOcrExtractedIdExpiry")
+                        .HasMaxLength(50)
+                        .HasColumnType("nvarchar(50)");
+
                     b.Property<string>("AiOcrExtractedName")
                         .HasColumnType("nvarchar(max)");
+
+                    b.Property<string>("AiOcrExtractedOwnerName")
+                        .HasMaxLength(300)
+                        .HasColumnType("nvarchar(300)");
 
                     b.Property<DateTime>("CreatedAt")
                         .HasColumnType("datetime2");
@@ -687,21 +732,13 @@ namespace AI.Infrastructure.Migrations
                 {
                     b.Property<Guid>("Id")
                         .ValueGeneratedOnAdd()
-                        .HasColumnType("uniqueidentifier")
-                        .HasDefaultValueSql("NEWSEQUENTIALID()");
+                        .HasColumnType("uniqueidentifier");
 
                     b.Property<DateTime>("CreatedAt")
                         .HasColumnType("datetime2");
 
-                    b.Property<DateTime?>("DeletedAt")
-                        .HasColumnType("datetime2");
-
-                    b.Property<string>("Filters")
-                        .IsRequired()
-                        .HasColumnType("nvarchar(max)");
-
-                    b.Property<DateTime?>("LastMatchedAt")
-                        .HasColumnType("datetime2");
+                    b.Property<bool>("IsActive")
+                        .HasColumnType("bit");
 
                     b.Property<string>("Name")
                         .IsRequired()
@@ -709,17 +746,30 @@ namespace AI.Infrastructure.Migrations
                         .HasColumnType("nvarchar(200)");
 
                     b.Property<bool>("NotifyOnMatch")
-                        .ValueGeneratedOnAdd()
-                        .HasColumnType("bit")
-                        .HasDefaultValue(false);
+                        .HasColumnType("bit");
 
-                    b.Property<DateTime?>("UpdatedAt")
+                    b.Property<string>("ParsedFilters")
+                        .IsRequired()
+                        .HasColumnType("nvarchar(Max)");
+
+                    b.Property<string>("RawQuery")
+                        .IsRequired()
+                        .HasMaxLength(1000)
+                        .HasColumnType("nvarchar(1000)");
+
+                    b.Property<DateTime>("UpdatedAt")
                         .HasColumnType("datetime2");
 
                     b.Property<Guid>("UserId")
                         .HasColumnType("uniqueidentifier");
 
                     b.HasKey("Id");
+
+                    b.HasIndex("UserId")
+                        .HasDatabaseName("ix_saved_searches_user");
+
+                    b.HasIndex("IsActive", "NotifyOnMatch")
+                        .HasDatabaseName("ix_saved_searches_active_notify");
 
                     b.ToTable("saved_searches", "ai");
                 });

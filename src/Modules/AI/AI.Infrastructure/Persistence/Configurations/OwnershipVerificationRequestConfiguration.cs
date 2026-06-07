@@ -26,6 +26,15 @@ namespace AI.Infrastructure.Persistence.Configurations
             builder.Property(x => x.OwnerId).IsRequired();
             builder.Property(x => x.AdminReviewerId).IsRequired(false);
 
+            // NEW: Azure DI extracted fields
+            builder.Property(x => x.AiOcrExtractedIdExpiry)
+                .HasMaxLength(50)
+                .IsRequired(false);
+
+            builder.Property(x => x.AiOcrExtractedOwnerName)
+                .HasMaxLength(300)
+                .IsRequired(false);
+
             builder.HasQueryFilter(x => x.DeletedAt == null);
         }
     }

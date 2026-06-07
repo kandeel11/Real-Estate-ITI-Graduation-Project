@@ -43,6 +43,10 @@ public class PropertyDetailDto
     public int ViewsCount { get; init; }
     public int InquiriesCount { get; init; }
 
+    // Enriched after query — populated by PropertyEnrichmentService in Host
+    public string? ListingDisplayName { get; set; }
+    public string? ListingBrokerName { get; set; }
+
     public DateTime CreatedAt { get; init; }
     public DateTime? UpdatedAt { get; init; }
 

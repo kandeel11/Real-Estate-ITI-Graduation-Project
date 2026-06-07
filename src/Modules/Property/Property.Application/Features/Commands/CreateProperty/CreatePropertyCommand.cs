@@ -24,6 +24,7 @@ public record CreatePropertyCommand(
     decimal Latitude,
     decimal Longitude,
     string Address,
+    int? ApartmentNumber,
     string City,
     string District,
     ListingSource ListingSource
