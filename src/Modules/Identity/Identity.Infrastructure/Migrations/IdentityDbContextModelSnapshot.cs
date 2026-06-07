@@ -328,6 +328,18 @@ namespace Identity.Infrastructure.Migrations
                         .HasMaxLength(255)
                         .HasColumnType("nvarchar(255)");
 
+                    b.Property<int>("EmailOtpAttempts")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("int")
+                        .HasDefaultValue(0);
+
+                    b.Property<DateTime?>("EmailOtpExpiresAt")
+                        .HasColumnType("datetime2");
+
+                    b.Property<string>("EmailOtpHash")
+                        .HasMaxLength(100)
+                        .HasColumnType("nvarchar(100)");
+
                     b.Property<string>("EmailVerificationToken")
                         .HasMaxLength(255)
                         .HasColumnType("nvarchar(255)");
@@ -354,6 +366,9 @@ namespace Identity.Infrastructure.Migrations
                         .HasDefaultValue(false);
 
                     b.Property<DateTime?>("LastLoginAt")
+                        .HasColumnType("datetime2");
+
+                    b.Property<DateTime?>("LastOtpRequestedAt")
                         .HasColumnType("datetime2");
 
                     b.Property<string>("NationalIdNumber")

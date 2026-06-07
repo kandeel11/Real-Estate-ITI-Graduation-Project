@@ -1,6 +1,9 @@
 using FluentValidation;
 using Identity.Application.Commands.RegisterIndividualUser;
+using Identity.Application.Features.Auth.Otp.SendOtp;
 using Identity.Application.Interfaces;
+using Identity.Application.Interfaces.Common;
+using Identity.Infrastructure.Email;
 using Identity.Infrastructure.Persistence;
 using Identity.Infrastructure.Repositories;
 using Identity.Infrastructure.Services;
@@ -23,13 +26,16 @@ public static class IdentityModuleExtensions
                           .MigrationsAssembly(typeof(IdentityDbContext).Assembly.FullName)));
 
         services.Configure<JwtOptions>(configuration.GetSection("Jwt"));
+        
 
+        services.AddValidatorsFromAssembly(typeof(SendOtpHandler).Assembly);
         services.AddMediatR(cfg =>
         {
             cfg.RegisterServicesFromAssembly(typeof(RegisterIndividualUserCommand).Assembly);
             cfg.RegisterServicesFromAssembly(typeof(AssemblyMarker).Assembly);
-        });
-
+            cfg.RegisterServicesFromAssembly(typeof(SendOtpHandler).Assembly);
+    });
+        services.AddScoped<IUnitOfWork, UnitOfWork>();
         services.AddScoped<IUserRepository, UserRepository>();
         services.AddScoped<ICompanyRepository, CompanyRepository>();
         services.AddScoped<IBrokerRepository, BrokerRepository>();
@@ -44,6 +50,23 @@ public static class IdentityModuleExtensions
         services.AddHttpContextAccessor();
 
         services.AddValidatorsFromAssembly(typeof(RegisterIndividualUserCommand).Assembly);
+        services.AddMemoryCache();
+
+        // Email config
+        services.Configure<EmailSettings>(configuration.GetSection("EmailSettings"));
+
+        // Core services
+        services.AddSingleton<IEmailSender, SmtpEmailSender>();
+        services.AddSingleton<IEmailTemplateRenderer, ScribanEmailTemplateRenderer>();
+        services.AddSingleton<IOtpGenerator, OtpGenerator>();
+
+        // Scoped because it uses the DbContext through IUserRepository
+        services.AddScoped<IEmailVerificationService, EmailVerificationService>();
+        services.AddScoped<IEmailJobs, EmailJobs>();
+
+        // Hangfire wrapper
+        services.AddSingleton<IEmailJobScheduler, HangfireEmailJobScheduler>();
+
 
         return services;
     }

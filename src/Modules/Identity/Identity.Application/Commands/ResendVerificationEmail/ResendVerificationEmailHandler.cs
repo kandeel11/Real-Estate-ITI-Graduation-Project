@@ -22,6 +22,6 @@ public class ResendVerificationEmailHandler : IRequestHandler<ResendVerification
         user.RegenerateVerificationToken();
         await _userRepo.SaveChangesAsync(cancellationToken);
 
-        _ = _emailService.SendVerificationEmailAsync(user, CancellationToken.None);
+        _ = _emailService.SendVerificationLinkAsync(user, CancellationToken.None);
     }
 }

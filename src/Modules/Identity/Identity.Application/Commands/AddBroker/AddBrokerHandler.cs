@@ -61,7 +61,7 @@ public class AddBrokerHandler : IRequestHandler<AddBrokerCommand, Guid>
 
         await _limitChecker.IncrementBrokerUsageAsync(request.CompanyId, cancellationToken);
 
-        _ = _emailService.SendVerificationEmailAsync(user, CancellationToken.None);
+        _ = _emailService.SendVerificationLinkAsync(user, CancellationToken.None);
 
         return broker.Id;
     }

@@ -1,9 +1,10 @@
 using AI.Application;
 using AI.Infrastructure;
 using Document.Infrastructure;
+using Hangfire;
+using Hangfire.SqlServer;
 using Identity.Application;
 using Identity.Infrastructure;
-using RealEstate.Host.Services;
 using Identity.Infrastructure.Persistence;
 using Identity.Infrastructure.Seed;
 using Identity.Infrastructure.Services;
@@ -11,6 +12,7 @@ using Microsoft.AspNetCore.Authentication.JwtBearer;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.IdentityModel.Tokens;
 using Property.Infrastructure;
+using RealEstate.Host.Services;
 using Subscription.Infrastructure;
 using Subscription.Infrastructure.Persistence;
 using Subscription.Infrastructure.Seed;
@@ -127,7 +129,39 @@ public class Program
         builder.Services.AddAiInfrastructure(builder.Configuration);
         builder.Services.AddDocumentModule(builder.Configuration);
 
+        // ==========================================
+        // Hangfire (for background jobs) +Email service
+        // ==========================================
+        // RealEstate.Host/Program.cs
+
+        builder.Services.AddHangfire(config => config
+            .SetDataCompatibilityLevel(CompatibilityLevel.Version_180)
+            .UseSimpleAssemblyNameTypeSerializer()
+            .UseRecommendedSerializerSettings()
+            .UseSqlServerStorage(
+                builder.Configuration.GetConnectionString("DefaultConnection"),
+                new SqlServerStorageOptions
+                {
+                    CommandBatchMaxTimeout = TimeSpan.FromMinutes(5),
+                    SlidingInvisibilityTimeout = TimeSpan.FromMinutes(5),
+                    QueuePollInterval = TimeSpan.Zero,
+                    UseRecommendedIsolationLevel = true,
+                    DisableGlobalLocks = true
+                }));
+
+        builder.Services.AddHangfireServer(options =>
+        {
+            options.WorkerCount = Environment.ProcessorCount * 2;
+            options.Queues = new[] { "emails", "default" };
+        });
+
         var app = builder.Build();
+
+        // لوحة تحكم Hangfire
+        app.UseHangfireDashboard("/hangfire", new DashboardOptions
+        {
+            Authorization = new[] { new HangfireDashboardAuthFilter() } // عمل Authorization
+        });
 
         // ==========================================
         // Database migrations + seeding

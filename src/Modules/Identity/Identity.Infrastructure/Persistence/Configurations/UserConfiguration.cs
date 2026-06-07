@@ -35,5 +35,8 @@ public class UserConfiguration : IEntityTypeConfiguration<User>
 
         builder.HasIndex(x => x.Email).IsUnique();
         builder.HasIndex(x => x.Role);
+        builder.Property(x => x.EmailOtpHash).HasMaxLength(100);
+        builder.Property(x => x.EmailOtpExpiresAt);
+        builder.Property(x => x.EmailOtpAttempts).HasDefaultValue(0);
     }
 }
