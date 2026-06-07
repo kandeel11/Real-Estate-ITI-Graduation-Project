@@ -5,11 +5,12 @@ using Identity.Application.Commands.RegisterCompany;
 using Identity.Application.Commands.RegisterIndividualUser;
 using Identity.Application.Commands.ResendVerificationEmail;
 using Identity.Application.Commands.VerifyEmail;
+using Identity.Application.Features.Auth.Otp.SendOtp;
+using Identity.Application.Features.Auth.Otp.VerifyOtp;
 using Identity.Application.Queries.GetCurrentUser;
 using MediatR;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
-
 namespace RealEstate.Host.Controllers;
 
 [ApiController]
@@ -132,6 +133,27 @@ public class AuthController(IMediator mediator) : ControllerBase
     {
         var result = await mediator.Send(new GetCurrentUserQuery(), ct);
         return result is null ? NotFound() : Ok(result);
+    }
+    [HttpPost("send-otp")]
+    [ProducesResponseType(typeof(SendOtpResponse), StatusCodes.Status200OK)]
+    public async Task<IActionResult> SendOtp(
+        [FromBody] SendOtpCommand command,
+        CancellationToken ct)
+    {
+        var result = await mediator.Send(command, ct);
+        return Ok(result);
+    }
+
+    /// <summary>POST /api/auth/verify-otp</summary>
+    [HttpPost("verify-otp")]
+    [ProducesResponseType(typeof(VerifyOtpResponse), StatusCodes.Status200OK)]
+    [ProducesResponseType(StatusCodes.Status400BadRequest)]
+    public async Task<IActionResult> VerifyOtp(
+        [FromBody] VerifyOtpCommand command,
+        CancellationToken ct)
+    {
+        var result = await mediator.Send(command, ct);
+        return result.Success ? Ok(result) : BadRequest(result);
     }
 }
 

@@ -7,6 +7,14 @@
   </PropertyGroup>
 
   <ItemGroup>
+    <Compile Remove="Commands\Otp\SendOtp\SendOtpCommandValidator.cs" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <None Include="Commands\Otp\SendOtp\SendOtpCommandValidator.cs" />
+  </ItemGroup>
+
+  <ItemGroup>
     <PackageReference Include="MediatR" Version="14.1.0" />
     <PackageReference Include="FluentValidation" Version="11.11.0" />
   </ItemGroup>

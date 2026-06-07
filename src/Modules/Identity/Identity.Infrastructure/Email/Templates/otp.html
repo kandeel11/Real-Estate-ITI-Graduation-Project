@@ -1,0 +1,11 @@
+<h2 style="margin-top: 0; color: #0f172a; font-size: 20px;">Verify your identity</h2>
+<p style="margin: 0 0 20px 0;">Hello <strong>{{ name }}</strong>,</p>
+<p style="margin: 0 0 24px 0;">Please use the verification code below to securely access your account. This ensures your data remains protected.</p>
+
+<div style="background-color: #f8fafc; border: 1px dashed #cbd5e1; border-radius: 8px; padding: 24px; text-align: center; margin-bottom: 24px;">
+    <span style="font-family: Consolas, monospace; font-size: 36px; font-weight: 700; letter-spacing: 12px; color: #4F46E5;">{{ code }}</span>
+</div>
+
+<p style="margin: 0 0 0 0; font-size: 14px; color: #64748b;">
+    This code will expire in <strong>{{ expires_in_minutes }} minutes</strong>. If you didn't request this code, you can safely ignore this email.
+</p>
