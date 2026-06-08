@@ -1,4 +1,4 @@
-import { Component } from '@angular/core';
+import { Component,HostListener, signal } from '@angular/core';
 
 @Component({
   selector: 'app-navbar',
@@ -7,5 +7,10 @@ import { Component } from '@angular/core';
   styleUrl: './navbar.component.css'
 })
 export class NavbarComponent {
+ scrolled = signal(false);
 
+  @HostListener('window:scroll')
+  onScroll() {
+    this.scrolled.set(window.scrollY > 10);
+  }
 }
