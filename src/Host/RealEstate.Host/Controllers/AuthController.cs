@@ -11,6 +11,7 @@ using Identity.Application.Queries.GetCurrentUser;
 using MediatR;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
+
 namespace RealEstate.Host.Controllers;
 
 [ApiController]
@@ -131,9 +132,17 @@ public class AuthController(IMediator mediator) : ControllerBase
     [Authorize]
     public async Task<IActionResult> GetCurrentUser(CancellationToken ct)
     {
-        var result = await mediator.Send(new GetCurrentUserQuery(), ct);
-        return result is null ? NotFound() : Ok(result);
+        try
+        {
+            var result = await mediator.Send(new GetCurrentUserQuery(), ct);
+            return Ok(result);
+        }
+        catch (UnauthorizedAccessException ex)
+        {
+            return Unauthorized(new { error = ex.Message });
+        }
     }
+
     [HttpPost("send-otp")]
     [ProducesResponseType(typeof(SendOtpResponse), StatusCodes.Status200OK)]
     public async Task<IActionResult> SendOtp(
@@ -144,7 +153,6 @@ public class AuthController(IMediator mediator) : ControllerBase
         return Ok(result);
     }
 
-    /// <summary>POST /api/auth/verify-otp</summary>
     [HttpPost("verify-otp")]
     [ProducesResponseType(typeof(VerifyOtpResponse), StatusCodes.Status200OK)]
     [ProducesResponseType(StatusCodes.Status400BadRequest)]

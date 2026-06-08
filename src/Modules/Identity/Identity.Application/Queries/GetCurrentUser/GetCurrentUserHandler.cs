@@ -20,7 +20,8 @@ public class GetCurrentUserHandler : IRequestHandler<GetCurrentUserQuery, UserDt
         if (_currentUser.UserId is null) return null;
 
         var user = await _userRepo.GetByIdAsync(_currentUser.UserId.Value, cancellationToken);
-        if (user is null) return null;
+
+        if (user is null) throw new UnauthorizedAccessException("User no longer exists.");
 
         return new UserDto(
             user.Id, user.Email, user.FullName, user.Phone,
