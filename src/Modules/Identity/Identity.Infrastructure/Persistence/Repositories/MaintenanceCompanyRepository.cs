@@ -14,6 +14,11 @@ public class MaintenanceCompanyRepository : IMaintenanceCompanyRepository
     public async Task<MaintenanceCompany?> GetByIdAsync(Guid id, CancellationToken ct = default) =>
         await _context.MaintenanceCompanies.FirstOrDefaultAsync(m => m.Id == id, ct);
 
+    public async Task<List<MaintenanceCompany>> GetByServiceTypeAsync(string serviceType, CancellationToken ct = default) =>
+        await _context.MaintenanceCompanies
+            .Where(m => m.IsActive && m.ServiceTypes.Contains(serviceType))
+            .ToListAsync(ct);
+
     public async Task<bool> ExistsByEmailAsync(string email, CancellationToken ct = default) =>
         await _context.MaintenanceCompanies.AnyAsync(m => m.Email == email.Trim().ToLowerInvariant(), ct);
 

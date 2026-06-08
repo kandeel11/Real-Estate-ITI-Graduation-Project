@@ -1,5 +1,6 @@
 using Identity.Application.Commands.RegisterMaintenanceCompany;
 using Identity.Application.Commands.ToggleMaintenanceCompany;
+using Identity.Application.Queries.GetMaintenanceCompaniesByService;
 using MediatR;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
@@ -51,6 +52,16 @@ public class MaintenanceCompaniesController(IMediator mediator) : ControllerBase
         {
             return BadRequest(new { error = ex.Message });
         }
+    }
+
+    [HttpGet]
+    [AllowAnonymous]
+    public async Task<IActionResult> GetByServiceType(
+        [FromQuery] string serviceType,
+        CancellationToken ct)
+    {
+        var result = await mediator.Send(new GetMaintenanceCompaniesByServiceQuery(serviceType), ct);
+        return Ok(result);
     }
 }
 
