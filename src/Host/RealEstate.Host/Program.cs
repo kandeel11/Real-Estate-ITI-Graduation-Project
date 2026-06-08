@@ -19,6 +19,7 @@ using Subscription.Infrastructure.Persistence;
 using Subscription.Infrastructure.Seed;
 using System.IdentityModel.Tokens.Jwt;
 using System.Text;
+using Payment.Infrastructure;
 
 namespace RealEstate.Host;
 
@@ -108,6 +109,7 @@ public class Program
         builder.Services.AddPropertyModule(builder.Configuration);
         builder.Services.AddMaintenanceModule(builder.Configuration);
         builder.Services.AddSubscriptionModule(builder.Configuration);
+        builder.Services.AddPaymentModule(builder.Configuration);
 
         // ==========================================
         // MediatR — scan all module assemblies
