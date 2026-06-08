@@ -13,6 +13,7 @@ public interface IMaintenanceTicketRepository
     Task<List<MaintenanceTicket>> GetPendingAiEvaluationAsync(CancellationToken ct = default);
     Task<int> CountAsync(CancellationToken ct = default);
     Task AddAsync(MaintenanceTicket ticket, CancellationToken ct = default);
-    Task AddAttachmentAsync(MaintenanceTicketAttachment attachment, CancellationToken ct = default); // ← new
+    Task AddAttachmentAsync(MaintenanceTicketAttachment attachment, CancellationToken ct = default);
+    Task<MaintenanceTicketAttachment?> GetAttachmentByIdAsync(Guid attachmentId, CancellationToken ct = default);
     Task SaveChangesAsync(CancellationToken ct = default);
 }

@@ -48,9 +48,11 @@ public class MaintenanceTicketRepository(MaintenanceDbContext db) : IMaintenance
     public async Task AddAsync(MaintenanceTicket ticket, CancellationToken ct = default)
         => await db.MaintenanceTickets.AddAsync(ticket, ct);
 
-    // ← Adds attachment directly to the DbSet — bypasses ticket collection tracking
     public async Task AddAttachmentAsync(MaintenanceTicketAttachment attachment, CancellationToken ct = default)
         => await db.Attachments.AddAsync(attachment, ct);
+
+    public Task<MaintenanceTicketAttachment?> GetAttachmentByIdAsync(Guid attachmentId, CancellationToken ct = default)
+    => db.Attachments.FirstOrDefaultAsync(a => a.Id == attachmentId, ct);
 
     public Task SaveChangesAsync(CancellationToken ct = default)
         => db.SaveChangesAsync(ct);
