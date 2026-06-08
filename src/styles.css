@@ -1,8 +1,189 @@
-/* You can add global styles to this file, and also import other style files */
+/* ================================================
+   GOOGLE FONTS
+   ================================================ */
+@import url('https://fonts.googleapis.com/css2?family=Manrope:wght@400;500;600;700;800&display=swap');
+@import url('https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&display=swap');
+
+/* ================================================
+   CSS VARIABLES — paste these in :root
+   ================================================ */
+:root {
+
+  /* --- Core colors --- */
+  --color-primary:               #3525cd;
+  --color-primary-container:     #4f46e5;
+  --color-primary-fixed:         #e2dfff;
+  --color-primary-fixed-dim:     #c3c0ff;
+  --color-on-primary:            #ffffff;
+  --color-on-primary-fixed:      #0f0069;
+  --color-on-primary-fixed-variant: #3323cc;
+  --color-on-primary-container:  #dad7ff;
+  --color-inverse-primary:       #c3c0ff;
+
+  /* --- Secondary --- */
+  --color-secondary:             #545f73;
+  --color-secondary-fixed:       #d8e3fb;
+  --color-secondary-fixed-dim:   #bcc7de;
+  --color-secondary-container:   #d5e0f8;
+  --color-on-secondary:          #ffffff;
+  --color-on-secondary-fixed:    #111c2d;
+  --color-on-secondary-fixed-variant: #3c475a;
+  --color-on-secondary-container: #586377;
+
+  /* --- Tertiary --- */
+  --color-tertiary:              #46494a;
+  --color-tertiary-container:    #5e6061;
+  --color-tertiary-fixed:        #e1e3e4;
+  --color-tertiary-fixed-dim:    #c5c7c8;
+  --color-on-tertiary:           #ffffff;
+  --color-on-tertiary-fixed:     #191c1d;
+  --color-on-tertiary-fixed-variant: #454748;
+  --color-on-tertiary-container: #dadbdc;
+
+  /* --- Surface --- */
+  --color-background:            #f8f9ff;
+  --color-surface:               #f8f9ff;
+  --color-surface-bright:        #f8f9ff;
+  --color-surface-dim:           #cbdbf5;
+  --color-surface-variant:       #d3e4fe;
+  --color-surface-tint:          #4d44e3;
+  --color-surface-container-lowest:  #ffffff;
+  --color-surface-container-low:     #eff4ff;
+  --color-surface-container:         #e5eeff;
+  --color-surface-container-high:    #dce9ff;
+  --color-surface-container-highest: #d3e4fe;
+
+  /* --- On surface --- */
+  --color-on-surface:            #0b1c30;
+  --color-on-surface-variant:    #464555;
+  --color-on-background:         #0b1c30;
+  --color-inverse-surface:       #213145;
+  --color-inverse-on-surface:    #eaf1ff;
+
+  /* --- Outline --- */
+  --color-outline:               #777587;
+  --color-outline-variant:       #c7c4d8;
+
+  /* --- Error --- */
+  --color-error:                 #ba1a1a;
+  --color-error-container:       #ffdad6;
+  --color-on-error:              #ffffff;
+  --color-on-error-container:    #93000a;
+
+  /* ================================================
+     TYPOGRAPHY
+     ================================================ */
+  --font-family:         'Manrope', sans-serif;
+  --font-icons:          'Material Symbols Outlined';
+
+  --font-display-lg-size:    48px;
+  --font-display-lg-weight:  700;
+  --font-display-lg-leading: 1.2;
+  --font-display-lg-spacing: -0.02em;
+
+  --font-headline-lg-size:    32px;
+  --font-headline-lg-weight:  600;
+  --font-headline-lg-leading: 1.3;
+
+  --font-headline-lg-mobile-size:    24px;
+  --font-headline-lg-mobile-weight:  600;
+  --font-headline-lg-mobile-leading: 1.3;
+
+  --font-headline-md-size:    24px;
+  --font-headline-md-weight:  600;
+  --font-headline-md-leading: 1.4;
+
+  --font-body-lg-size:    18px;
+  --font-body-lg-weight:  400;
+  --font-body-lg-leading: 1.6;
+
+  --font-body-md-size:    16px;
+  --font-body-md-weight:  400;
+  --font-body-md-leading: 1.6;
+
+  --font-label-md-size:    14px;
+  --font-label-md-weight:  500;
+  --font-label-md-leading: 1.4;
+  --font-label-md-spacing: 0.01em;
+
+  --font-label-sm-size:    12px;
+  --font-label-sm-weight:  600;
+  --font-label-sm-leading: 1.2;
+
+  /* ================================================
+     SPACING
+     ================================================ */
+  --spacing-stack-sm:      8px;
+  --spacing-stack-md:      16px;
+  --spacing-stack-lg:      24px;
+  --spacing-gutter:        24px;
+  --spacing-section:       80px;
+  --container-max-width:   1280px;
+
+  /* ================================================
+     BORDER RADIUS
+     ================================================ */
+  --radius-sm:   0.25rem;   /* 4px  — default */
+  --radius-md:   0.5rem;    /* 8px  — lg      */
+  --radius-lg:   0.75rem;   /* 12px — xl      */
+  --radius-full: 9999px;
+
+  /* ================================================
+     SHADOWS & EFFECTS
+     ================================================ */
+  --shadow-soft:  0 4px 12px rgba(79, 70, 229, 0.08);
+  --shadow-hover: 0 8px 24px rgba(79, 70, 229, 0.12);
+  --transition-default: 0.2s ease;
+}
+
+/* ================================================
+   BASE RESET
+   ================================================ */
+*, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
 body {
-    margin: 0;
-    padding: 0;
-    font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
-    background-color: #f8f9fa;
-    /* لون الـ Light Mode الأساسي */
+  font-family:      var(--font-family);
+  font-size:        var(--font-body-md-size);
+  font-weight:      var(--font-body-md-weight);
+  line-height:      var(--font-body-md-leading);
+  color:            var(--color-on-surface);
+  background-color: var(--color-background);
+  overflow-x:       hidden;
+  -webkit-font-smoothing: antialiased;
+}
+
+/* ================================================
+   UTILITY CLASSES
+   ================================================ */
+.container {
+  width: 100%;
+  max-width: var(--container-max-width);
+  margin-inline: auto;
+  padding-inline: var(--spacing-gutter);
+}
+
+.material-symbols-outlined {
+  font-family: var(--font-icons);
+  font-variation-settings: 'FILL' 0, 'wght' 400;
+  font-size: inherit;
+  line-height: 1;
+  vertical-align: middle;
+}
+
+/* Hover lift effect — add to cards */
+.hover-lift {
+  transition: transform var(--transition-default),
+              box-shadow var(--transition-default);
+  &:hover {
+    transform: translateY(-2px);
+    box-shadow: var(--shadow-hover);
+  }
+}
+
+/* Glass panel */
+.glass-panel {
+  background: rgba(255, 255, 255, 0.7);
+  backdrop-filter: blur(12px);
+  -webkit-backdrop-filter: blur(12px);
+  border: 1px solid rgba(255, 255, 255, 0.5);
 }
