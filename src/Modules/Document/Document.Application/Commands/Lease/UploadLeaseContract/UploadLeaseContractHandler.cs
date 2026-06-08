@@ -23,7 +23,7 @@ public class UploadLeaseContractHandler : IRequestHandler<UploadLeaseContractCom
             ?? throw new Exception("Lead not found");
 
         using var stream = cmd.File.OpenReadStream();
-        var fileUrl = await _blob.UploadAsync(stream, cmd.File.FileName);
+        var blobName  = await _blob.UploadAsync(stream, cmd.File.FileName);
 
         var lease = new Document.Domain.Entities.Lease
         {
@@ -32,7 +32,7 @@ public class UploadLeaseContractHandler : IRequestHandler<UploadLeaseContractCom
             TenantId = lead.TenantId,
             OwnerId = cmd.OwnerId,
             LeadId = cmd.LeadId,
-            ContractFileUrl = fileUrl,
+            ContractFileUrl = blobName,
             ExtractionStatus = LeaseExtractionStatus.Pending,
             CreatedAt = DateTime.UtcNow,
             UpdatedAt = DateTime.UtcNow
@@ -40,7 +40,7 @@ public class UploadLeaseContractHandler : IRequestHandler<UploadLeaseContractCom
         _db.Leases.Add(lease);
         await _db.SaveChangesAsync(ct);
 
-        await _publisher.Publish(new LeaseUploadedEvent(lease.Id, fileUrl, cmd.OwnerId), ct);
+        await _publisher.Publish(new LeaseUploadedEvent(lease.Id, blobName, cmd.OwnerId), ct);
 
         var updated = await _db.Leases.FindAsync(new object[] { lease.Id }, ct);
 

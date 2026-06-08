@@ -48,36 +48,33 @@ namespace AI.Infrastructure.Services
         /// Main entry point: analyze National ID and ownership proof documents.
         /// </summary>
         public async Task<AiVerificationResult> AnalyzeAsync(
-            byte[] nationalIdFile,
-            string nationalIdMimeType,
-            byte[] ownershipProofFile,
-            string ownershipProofMimeType,
-            string ownerName,
-            CancellationToken ct = default
-        )
+     byte[] nationalIdFile,
+     string nationalIdMimeType,
+     byte[] ownershipProofFile,
+     string ownershipProofMimeType,
+     string ownerName,
+     PropertyLocationDto expectedLocation,
+     CancellationToken ct = default)
         {
             _logger.LogInformation("Starting ownership verification analysis");
 
             try
             {
-                // Step 1: Extract National ID data using prebuilt-idDocument
-                _logger.LogInformation("Analyzing National ID document");
                 var idData = await ExtractNationalIdDataAsync(nationalIdFile, ct);
-
-                // Step 2: Extract ownership proof text using prebuilt-layout
-                _logger.LogInformation("Analyzing ownership proof document");
                 var ownershipText = await ExtractOwnershipProofTextAsync(ownershipProofFile, ct);
 
-                // Step 3: Use Claude to analyze and compare
-                _logger.LogInformation("Performing Claude-based analysis");
-                var claudeAnalysis = await PerformClaudeAnalysisAsync(
-                    ownerName,
-                    idData,
-                    ownershipText,
-                    ct
-                );
+                var aiResult = await PerformClaudeAnalysisAsync(
+                    ownerName, idData, ownershipText, expectedLocation, ct);
 
-                return claudeAnalysis;
+                // 🆕 location comparison happens in code (not Claude) for determinism
+                aiResult.LocationMatch = ScoreLocation(aiResult, expectedLocation);
+                aiResult.LocationMatchScore = aiResult.LocationMatch.AverageScore();
+                aiResult.LocationMismatchFlag = aiResult.LocationMatchScore < _verificationOptions.LocationMatchThreshold;
+
+                // 🆕 fold location into overall confidence + recommendation
+                AdjustConfidenceForLocation(aiResult);
+
+                return aiResult;
             }
             catch (Exception ex)
             {
@@ -174,8 +171,8 @@ namespace AI.Infrastructure.Services
                     foreach (var paragraph in paragraphsOnPage)
                     {
                         // Skip headers/footers
-                        if (paragraph.Role != "pageHeader" && 
-                            paragraph.Role != "pageFooter" && 
+                        if (paragraph.Role != "pageHeader" &&
+                            paragraph.Role != "pageFooter" &&
                             paragraph.Role != "pageNumber")
                         {
                             textContent.AppendLine(paragraph.Content);
@@ -203,6 +200,7 @@ namespace AI.Infrastructure.Services
             string submittedOwnerName,
             Dictionary<string, string> idData,
             string ownershipProofText,
+            PropertyLocationDto expectedLocation,
             CancellationToken ct
         )
         {
@@ -210,7 +208,7 @@ namespace AI.Infrastructure.Services
             var extractedIdExpiry = idData.TryGetValue("ExpirationDate", out var expiry) ? expiry : null;
 
             // Build prompt for Claude
-            var prompt = BuildAnalysisPrompt(submittedOwnerName, extractedOwnerName, extractedIdExpiry, ownershipProofText);
+            var prompt = BuildAnalysisPrompt(submittedOwnerName, extractedOwnerName, extractedIdExpiry, ownershipProofText, expectedLocation);
 
             _logger.LogInformation("Sending analysis prompt to Claude");
 
@@ -231,41 +229,54 @@ namespace AI.Infrastructure.Services
         /// Build a structured prompt for Claude to analyze ownership documents.
         /// </summary>
         private string BuildAnalysisPrompt(
-            string submittedOwnerName,
-            string extractedIdName,
-            string? idExpiry,
-            string ownershipProofText
-        )
+     string submittedOwnerName,
+     string extractedIdName,
+     string? idExpiry,
+     string ownershipProofText,
+     PropertyLocationDto expectedLocation)
         {
             return $@"
 You are an expert document analyst specializing in real estate ownership verification.
 
 SUBMITTED OWNER NAME: {submittedOwnerName}
-EXTRACTED ID NAME: {extractedIdName}
-ID EXPIRY DATE: {idExpiry ?? "Not found"}
+EXTRACTED ID NAME:    {extractedIdName}
+ID EXPIRY DATE:       {idExpiry ?? "Not found"}
+
+EXPECTED PROPERTY LOCATION (from listing):
+- Country:     {expectedLocation.Country}
+- Governorate: {expectedLocation.Governorate}
+- City:        {expectedLocation.City}
+- District:    {expectedLocation.District ?? "N/A"}
+- Address:     {expectedLocation.AddressLine}
+
 OWNERSHIP PROOF TEXT (first 3 pages):
 ---
 {ownershipProofText}
 ---
 
-Analyze the documents and provide a JSON response with the following structure:
-{{
-  ""nameMatchScore"": <0-100>,
-  ""authenticityScore"": <0-100>,
-  ""overallConfidenceScore"": <0-100>,
-  ""fakeDetectionFlag"": <true/false>,
-  ""recommendation"": ""AUTO_VERIFY | MANUAL_REVIEW | REJECT"",
-  ""analysisNotes"": ""Brief explanation of findings""
-}}
+Tasks:
+1) Verify the owner name matches between the ID and the submitted name.
+2) Detect signs of tampering or inconsistencies in the documents.
+3) Extract the property location mentioned in the contract/deed:
+   - country, governorate, city, district, full address
+   - Look in both Arabic and English. Egyptian contracts often write 'محافظة', 'مدينة', 'حي', 'شارع', 'عنوان'.
+   - Do NOT just copy the expected location; only extract what the contract actually says.
+   - If a field is not mentioned in the contract, return null for it.
 
-Consider:
-1. How closely the submitted name matches the extracted ID name (fuzzy match ok for minor spelling differences)
-2. Whether the ID is expired (expiry date vs today)
-3. Whether the ownership proof text mentions the owner's name
-4. Any signs of document tampering or inconsistencies
-5. Overall authenticity of the documents
+Return ONLY valid JSON, no markdown:
 
-Return ONLY valid JSON, no additional text.
+  ""nameMatchScore"":          <0-100>,
+  ""authenticityScore"":       <0-100>,
+  ""overallConfidenceScore"":  <0-100>,
+  ""fakeDetectionFlag"":       <true|false>,
+  ""recommendation"":          ""AUTO_VERIFY|MANUAL_REVIEW|REJECT"",
+  ""analysisNotes"":           ""..."",
+  ""extractedCountry"":        ""..."" | null,
+  ""extractedGovernorate"":    ""..."" | null,
+  ""extractedCity"":           ""..."" | null,
+  ""extractedDistrict"":       ""..."" | null,
+  ""extractedAddress"":        ""..."" | null
+
 ";
         }
 
@@ -331,6 +342,66 @@ Return ONLY valid JSON, no additional text.
             var last = idData.TryGetValue("LastName", out var l) ? l : "";
 
             return $"{first} {last}".Trim();
+        }
+    
+    // ─────────────────────────────────────────────────────────────────────────
+// Location comparison (deterministic, runs in C# — not Claude)
+// ─────────────────────────────────────────────────────────────────────────
+
+private LocationMatchDetails ScoreLocation(
+    AiVerificationResult ai,
+    PropertyLocationDto expected)
+        {
+            var details = new LocationMatchDetails
+            {
+                CountryScore = LocationScorer.Similarity(ai.ExtractedCountry, expected.Country),
+                GovernorateScore = LocationScorer.Similarity(ai.ExtractedGovernorate, expected.Governorate),
+                CityScore = LocationScorer.Similarity(ai.ExtractedCity, expected.City),
+                DistrictScore = LocationScorer.Similarity(ai.ExtractedDistrict, expected.District),
+                AddressScore = LocationScorer.Similarity(ai.ExtractedAddress, expected.AddressLine),
+            };
+
+            var notes = new List<string>();
+            if (details.CountryScore < 60) notes.Add("Country mismatch");
+            if (details.GovernorateScore < 60) notes.Add("Governorate mismatch");
+            if (details.CityScore < 60) notes.Add("City mismatch");
+            if (details.DistrictScore < 50) notes.Add("District mismatch");
+            if (details.AddressScore < 50) notes.Add("Address very different");
+
+            details.Notes = notes.Count == 0
+                ? "All location fields aligned"
+                : string.Join("; ", notes);
+
+            return details;
+        }
+
+        private void AdjustConfidenceForLocation(AiVerificationResult r)
+        {
+            // Final confidence is capped by location match
+            r.ConfidenceScore = Math.Min(r.ConfidenceScore, r.LocationMatchScore + 20);
+
+            if (r.LocationMatchScore < _verificationOptions.LocationRejectThreshold)
+            {
+                r.Recommendation = "REJECT";
+                r.FakeDetectionFlag = true;
+                r.AnalysisNotes +=
+                    $"\n[Location] REJECTED — location mismatch " +
+                    $"({r.LocationMatchScore:F0}/100). {r.LocationMatch?.Notes}";
+            }
+            else if (r.LocationMatchScore < _verificationOptions.LocationManualReviewThreshold)
+            {
+                if (r.Recommendation == "AUTO_VERIFY")
+                    r.Recommendation = "MANUAL_REVIEW";
+
+                r.AnalysisNotes +=
+                    $"\n[Location] Forced manual review — partial location match " +
+                    $"({r.LocationMatchScore:F0}/100). {r.LocationMatch?.Notes}";
+            }
+            else
+            {
+                r.AnalysisNotes +=
+                    $"\n[Location] OK — match score {r.LocationMatchScore:F0}/100.";
+            }
         }
     }
 }

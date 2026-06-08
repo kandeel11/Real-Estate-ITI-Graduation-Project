@@ -26,5 +26,7 @@ public record UpdatePropertyCommand(
     int? ApartmentNumber,
     string City,
     string District,
+    string ownerShipStatus, // e.g. "verified", "pending", "rejected"
+    string governorate,
     Guid? ListingBrokerId
 ) : IRequest;

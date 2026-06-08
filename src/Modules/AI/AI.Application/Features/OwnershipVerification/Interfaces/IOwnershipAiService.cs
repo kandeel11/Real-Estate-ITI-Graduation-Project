@@ -14,12 +14,12 @@ namespace AI.Application.Features.OwnershipVerification.Interfaces
         /// Analyze ownership documents and return AI verification result.
         /// </summary>
         Task<AiVerificationResult> AnalyzeAsync(
-            byte[] nationalIdFile,
-            string nationalIdMimeType,
-            byte[] ownershipProofFile,
-            string ownershipProofMimeType,
-            string ownerName,
-            CancellationToken ct = default
-        );
+       byte[] nationalIdFile,
+       string nationalIdMimeType,
+       byte[] ownershipProofFile,
+       string ownershipProofMimeType,
+       string ownerName,
+       PropertyLocationDto expectedLocation,    // 🆕
+       CancellationToken ct = default);
     }
 }
