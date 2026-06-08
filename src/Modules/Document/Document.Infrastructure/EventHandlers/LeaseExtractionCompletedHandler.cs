@@ -1,4 +1,4 @@
-using Document.Application.Events;
+using AI.Application.Events;
 using Document.Domain.Enums;
 using Document.Infrastructure.Persistence;
 using MediatR;
@@ -16,13 +16,13 @@ public class LeaseExtractionCompletedHandler : INotificationHandler<LeaseExtract
         var lease = await _db.Leases.FindAsync(new object[] { evt.LeaseId }, ct);
         if (lease == null) return;
 
-        lease.RentAmount = evt.ExtractedData.RentAmount;
-        lease.SecurityDeposit = evt.ExtractedData.SecurityDeposit;
-        lease.StartDate = evt.ExtractedData.StartDate;
-        lease.EndDate = evt.ExtractedData.EndDate;
-        lease.PaymentDayOfMonth = evt.ExtractedData.PaymentDayOfMonth;
+        lease.RentAmount = decimal.TryParse(evt.ExtractedData.RentAmount.Value, out var rent) ? rent : null;
+        lease.SecurityDeposit = decimal.TryParse(evt.ExtractedData.SecurityDeposit.Value, out var dep) ? dep : null;
+        lease.StartDate = DateOnly.TryParse(evt.ExtractedData.StartDate.Value, out var start) ? start : null;
+        lease.EndDate = DateOnly.TryParse(evt.ExtractedData.EndDate.Value, out var end) ? end : null;
+        lease.PaymentDayOfMonth = int.TryParse(evt.ExtractedData.PaymentDayOfMonth.Value, out var day) ? day : null;
         lease.ExtractionStatus = LeaseExtractionStatus.Extracted;
-        lease.ExtractionConfidence = evt.ExtractedData.Confidence;
+        lease.ExtractionConfidence = evt.ExtractedData.OverallConfidence;
         lease.UpdatedAt = DateTime.UtcNow;
 
         await _db.SaveChangesAsync(ct);

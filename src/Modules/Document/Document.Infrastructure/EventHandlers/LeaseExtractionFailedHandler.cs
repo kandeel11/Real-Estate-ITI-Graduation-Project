@@ -1,4 +1,4 @@
-using Document.Application.Events;
+using AI.Application.Events;
 using Document.Domain.Enums;
 using Document.Infrastructure.Persistence;
 using MediatR;
