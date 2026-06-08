@@ -3,6 +3,7 @@ using AI.Application.Features.OwnershipVerification.Interfaces;
 using AI.Application.Interfaces;
 using AI.Application.Interfaces.Common;
 using AI.Infrastructure.Data.Interceptors;
+using AI.Infrastructure.Handlers;
 using AI.Infrastructure.Persistence.Contexts;
 using AI.Infrastructure.Persistence.Repositories;
 using AI.Infrastructure.Plugins;
@@ -145,7 +146,14 @@ public static class DependencyInjection
             return new QdrantVectorStore(client, ownsClient: false);
         });
 #pragma warning restore SKEXP0020
+        services.AddScoped<ISmartSearchService, SmartSearchService>();
+        //services.AddScoped<ISavedSearchRepository, SavedSearchRepository>();
+        services.AddScoped<ISavedSearchRepository, SavedSearchRepository>();
 
+        // ── MediatR — auto-registers ALL handlers ─────────────────────────────────────
+        services.AddMediatR(cfg =>
+            cfg.RegisterServicesFromAssembly(
+                typeof(SmartSearchHandler).Assembly));
         services.AddScoped<IContractRetrievalService, ContractRetrievalService>();
         services.AddScoped<IPropertyDuplicateCheckService, PropertyDuplicateCheckService>();
         // ====================================================================

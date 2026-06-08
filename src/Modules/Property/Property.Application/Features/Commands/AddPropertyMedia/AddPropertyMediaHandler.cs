@@ -24,7 +24,7 @@ public class AddPropertyMediaHandler : IRequestHandler<AddPropertyMediaCommand, 
             throw new UnauthorizedAccessException("Only the property owner can upload media.");
 
         var mediaUrl = await _storageService.UploadAsync(
-            request.FileStream, request.FileName, request.ContentType, cancellationToken);
+            request.PropertyId, request.FileStream, request.FileName, request.ContentType, cancellationToken);
 
         var media = PropertyMedia.Create(
             request.PropertyId,

@@ -1,7 +1,9 @@
+using AI.Application.Interfaces;
 using Azure.Storage.Blobs;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
+using Properties.Infrastructure.Services;
 using Property.Application.Features.Commands.CreateProperty;
 using Property.Application.Interfaces;
 using Property.Infrastructure.Persistence.Contexts;
@@ -16,6 +18,10 @@ public static class PropertyModuleExtensions
         this IServiceCollection services,
         IConfiguration configuration)
     {
+        // Properties.Infrastructure — register PropertyFilterService
+        services.AddScoped<
+            AI.Application.Interfaces.IPropertyFilterService,
+            PropertyFilterService>();
         services.AddDbContext<PropertyDbContext>(options =>
             options.UseSqlServer(
                 configuration.GetConnectionString("DefaultConnection"),
@@ -33,22 +39,6 @@ public static class PropertyModuleExtensions
         else
         {
             services.AddScoped<IMediaStorageService, NullMediaStorageService>();
-        }
-
-        var zillowBaseUrl = configuration["Zillow:BaseUrl"];
-        if (!string.IsNullOrEmpty(zillowBaseUrl))
-        {
-            services.AddHttpClient<IPropertySyndicationService, ZillowSyndicationClient>(client =>
-            {
-                client.BaseAddress = new Uri(zillowBaseUrl);
-                var apiKey = configuration["Zillow:ApiKey"];
-                if (!string.IsNullOrEmpty(apiKey))
-                    client.DefaultRequestHeaders.Add("X-Api-Key", apiKey);
-            });
-        }
-        else
-        {
-            services.AddScoped<IPropertySyndicationService, NullPropertySyndicationService>();
         }
 
         // Register MediatR handlers from Property.Application assembly

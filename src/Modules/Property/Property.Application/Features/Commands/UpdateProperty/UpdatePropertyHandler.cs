@@ -38,6 +38,7 @@ public class UpdatePropertyHandler : IRequestHandler<UpdatePropertyCommand>
             request.Latitude,
             request.Longitude,
             request.Address,
+            request.ApartmentNumber,
             request.City,
             request.District,
             request.ListingBrokerId

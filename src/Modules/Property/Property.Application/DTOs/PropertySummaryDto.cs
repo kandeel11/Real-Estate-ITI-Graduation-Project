@@ -4,6 +4,8 @@ public class PropertySummaryDto
 {
     public Guid Id { get; init; }
     public Guid OwnerId { get; init; }
+    public Guid? CompanyId { get; init; }
+    public Guid? ListingBrokerId { get; init; }
     public string Title { get; init; } = string.Empty;
     public string TitleAr { get; init; } = string.Empty;
     public string PropertyType { get; init; } = string.Empty;
@@ -22,4 +24,8 @@ public class PropertySummaryDto
     public string? PrimaryImageUrl { get; init; }
     public int ViewsCount { get; init; }
     public DateTime CreatedAt { get; init; }
+
+    // Enriched after query — populated by PropertyEnrichmentService in Host
+    public string? ListingDisplayName { get; set; }
+    public string? ListingBrokerName { get; set; }
 }

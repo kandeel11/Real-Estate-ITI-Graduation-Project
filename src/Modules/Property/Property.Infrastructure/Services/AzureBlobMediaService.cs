@@ -14,12 +14,12 @@ public class AzureBlobMediaService : IMediaStorageService
         _blobServiceClient = blobServiceClient;
     }
 
-    public async Task<string> UploadAsync(Stream fileStream, string fileName, string contentType, CancellationToken ct = default)
+    public async Task<string> UploadAsync(Guid propertyId, Stream fileStream, string fileName, string contentType, CancellationToken ct = default)
     {
         var containerClient = _blobServiceClient.GetBlobContainerClient(ContainerName);
         await containerClient.CreateIfNotExistsAsync(PublicAccessType.Blob, cancellationToken: ct);
 
-        var blobName = $"{Guid.CreateVersion7()}-{fileName}";
+        var blobName = $"{propertyId}/{Guid.CreateVersion7()}-{fileName}";
         var blobClient = containerClient.GetBlobClient(blobName);
 
         await blobClient.UploadAsync(fileStream, new BlobHttpHeaders { ContentType = contentType }, cancellationToken: ct);
