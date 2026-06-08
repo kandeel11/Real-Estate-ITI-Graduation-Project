@@ -1,4 +1,5 @@
 using Identity.Application.Commands.RegisterMaintenanceCompany;
+using Identity.Application.Commands.ToggleMaintenanceCompany;
 using MediatR;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
@@ -10,9 +11,6 @@ namespace RealEstate.Host.Controllers;
 [Authorize(Policy = "AdminOnly")]
 public class MaintenanceCompaniesController(IMediator mediator) : ControllerBase
 {
-    /// <summary>
-    /// Admin creates a maintenance company account. Auto-verified — no separate verification step.
-    /// </summary>
     [HttpPost]
     public async Task<IActionResult> Create(
         [FromBody] CreateMaintenanceCompanyRequest request,
@@ -34,6 +32,20 @@ public class MaintenanceCompaniesController(IMediator mediator) : ControllerBase
                 companyId,
                 message = "Maintenance company created. The account is active and verified. Share the email and temp password with the company."
             });
+        }
+        catch (InvalidOperationException ex)
+        {
+            return BadRequest(new { error = ex.Message });
+        }
+    }
+
+    [HttpPut("{id:guid}/toggle")]
+    public async Task<IActionResult> Toggle(Guid id, CancellationToken ct)
+    {
+        try
+        {
+            var isActive = await mediator.Send(new ToggleMaintenanceCompanyCommand(id), ct);
+            return Ok(new { isActive, message = isActive ? "Company activated." : "Company suspended." });
         }
         catch (InvalidOperationException ex)
         {
