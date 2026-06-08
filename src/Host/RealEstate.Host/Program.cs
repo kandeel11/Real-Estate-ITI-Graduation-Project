@@ -15,6 +15,7 @@ using Microsoft.AspNetCore.Authentication.JwtBearer;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.IdentityModel.Tokens;
 using Property.Infrastructure;
+using Property.Infrastructure.Persistence.Contexts;
 using RealEstate.Host.Services;
 using Subscription.Infrastructure;
 using Subscription.Infrastructure.Persistence;
@@ -149,6 +150,8 @@ public class Program
         {
             var subscriptionDb = scope.ServiceProvider.GetRequiredService<SubscriptionDbContext>();
             var AiDB = scope.ServiceProvider.GetRequiredService<AiDbContext>();
+            var PropertyDb = scope.ServiceProvider.GetRequiredService<PropertyDbContext>();
+            await PropertyDb.Database.MigrateAsync();
             await AiDB.Database.MigrateAsync();
             await subscriptionDb.Database.MigrateAsync();
             await SubscriptionPlanSeed.SeedAsync(subscriptionDb);

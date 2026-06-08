@@ -41,7 +41,9 @@ public class UpdatePropertyHandler : IRequestHandler<UpdatePropertyCommand>
             request.ApartmentNumber,
             request.City,
             request.District,
-            request.ListingBrokerId
+
+            request.ListingBrokerId,
+                request.ownerShipStatus
         );
 
         await _repository.SaveChangesAsync(cancellationToken);
