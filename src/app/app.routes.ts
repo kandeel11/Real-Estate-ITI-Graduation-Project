@@ -9,7 +9,13 @@ export const routes: Routes = [
       import('./layout/main-layout/main-layout.component').then(
         (m) => m.MainLayoutComponent
       ),
-    children: [],
+    children: [
+      {
+        path: '',
+        loadComponent: () =>
+          import('./features/home/home').then((m) => m.HomeComponent),
+      },
+    ],
   },
 
   // ==================== AUTH ROUTES ====================

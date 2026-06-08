@@ -176,3 +176,14 @@ body {
   transform:  translateY(-2px);
   box-shadow: var(--shadow-hover);
 }
+
+/* ─── Scroll-triggered fade-up animation ─── */
+.in-view {
+  opacity: 0;
+  transform: translateY(28px);
+  transition: opacity 0.55s ease, transform 0.55s ease;
+}
+.in-view.visible {
+  opacity: 1;
+  transform: none;
+}
