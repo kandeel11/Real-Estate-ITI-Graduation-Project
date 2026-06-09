@@ -4,6 +4,7 @@ using AI.Application.Features.OwnershipVerification.Commands.SubmitVerification;
 using AI.Application.Features.OwnershipVerification.DTOs;
 using AI.Application.Features.OwnershipVerification.Queries.GetPendingAdminReviews;
 using AI.Application.Features.OwnershipVerification.Queries.GetVerificationStatus;
+using Identity.Application.Interfaces;
 using MediatR;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
@@ -12,28 +13,36 @@ namespace RealEstate.Host.Controllers
 {
     [Route("api/[controller]")]
     [ApiController]
-    //[Authorize]
+    [Authorize]
     public class OwnershipVerificationsController : ControllerBase
     {
         private readonly IMediator _mediator;
+        private readonly ICurrentUserService _currentUser;
 
-        public OwnershipVerificationsController(IMediator mediator)
+        public OwnershipVerificationsController(IMediator mediator, ICurrentUserService currentUser)
         {
             _mediator = mediator;
+            _currentUser = currentUser;
         }
 
         /// <summary>
         /// Submit a new ownership verification request with National ID and ownership proof documents.
+        /// Only property owners can submit — brokers do not need to provide ownership verification.
         /// </summary>
         [HttpPost("submit")]
         [ProducesResponseType(typeof(VerificationStatusDto), StatusCodes.Status200OK)]
         [ProducesResponseType(StatusCodes.Status400BadRequest)]
+        [ProducesResponseType(StatusCodes.Status403Forbidden)]
         [ProducesResponseType(StatusCodes.Status409Conflict)]
         public async Task<IActionResult> SubmitVerification(
             [FromForm] SubmitVerificationRequest request,
             CancellationToken cancellationToken
         )
         {
+            // ✅ Brokers cannot submit ownership verification
+            if (_currentUser.Role == "broker")
+                return StatusCode(StatusCodes.Status403Forbidden, new { error = "Brokers do not need to provide ownership verification. Only property owners are required to verify ownership." });
+
             // Validate files
             if (request.NationalIdFile == null || request.NationalIdFile.Length == 0)
                 return BadRequest("National ID file is required");
@@ -57,14 +66,21 @@ namespace RealEstate.Host.Controllers
             }
 
             var command = new SubmitOwnershipVerificationCommand(
-                PropertyId: request.PropertyId,
-                OwnerId: request.OwnerId,
-                OwnerName: request.OwnerName,
-                NationalIdFile: nationalIdBytes,
-                NationalIdMimeType: request.NationalIdFile.ContentType ?? "image/jpeg",
-                OwnershipProofFile: ownershipProofBytes,
-                OwnershipProofMimeType: request.OwnershipProofFile.ContentType ?? "application/pdf"
-            );
+     PropertyId: request.PropertyId,
+     OwnerId: request.OwnerId,
+     OwnerName: request.OwnerName,
+     NationalIdFile: nationalIdBytes,
+     NationalIdMimeType: request.NationalIdFile.ContentType ?? "image/jpeg",
+     OwnershipProofFile: ownershipProofBytes,
+     OwnershipProofMimeType: request.OwnershipProofFile.ContentType ?? "application/pdf",
+
+     // 👇 قم بتمرير المتغيرات الجديدة هنا
+     Country: request.Country,
+     Governorate: request.Governorate,
+     City: request.City,
+     District: request.District,
+     Address: request.Address
+ );
 
             try
             {
@@ -181,6 +197,9 @@ namespace RealEstate.Host.Controllers
     /// <summary>
     /// Request model for submitting ownership verification.
     /// </summary>
+    /// <summary>
+    /// Request model for submitting ownership verification.
+    /// </summary>
     public class SubmitVerificationRequest
     {
         public Guid PropertyId { get; set; }
@@ -188,8 +207,14 @@ namespace RealEstate.Host.Controllers
         public string OwnerName { get; set; }
         public IFormFile NationalIdFile { get; set; }
         public IFormFile OwnershipProofFile { get; set; }
-    }
 
+        // 👇 أضف هذه الخصائص الجديدة
+        public string Country { get; set; }
+        public string Governorate { get; set; }
+        public string City { get; set; }
+        public string? District { get; set; }
+        public string Address { get; set; }
+    }
     /// <summary>
     /// Request model for admin review (approve/reject).
     /// </summary>

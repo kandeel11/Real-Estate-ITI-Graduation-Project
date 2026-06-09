@@ -10,6 +10,11 @@ namespace AI.Application.Features.OwnershipVerification.Commands.SubmitVerificat
         byte[] NationalIdFile,
         string NationalIdMimeType,
         byte[] OwnershipProofFile,
-        string OwnershipProofMimeType
+        string OwnershipProofMimeType,
+         string Country,
+    string Governorate,
+    string City,
+    string? District,
+    string Address
     ) : IRequest<VerificationStatusDto>;
 }

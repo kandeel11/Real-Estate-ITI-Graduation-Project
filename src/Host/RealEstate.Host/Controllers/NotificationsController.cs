@@ -3,7 +3,8 @@ using Document.Application.Queries.Notification;
 using Identity.Application.Interfaces;
 using MediatR;
 using Microsoft.AspNetCore.Authorization;
-using Microsoft.AspNetCore.Mvc;
+using Document.Application.Commands.Notification.MarkNotificationRead;
+using Document.Application.Queries.Notification.GetNotificationsByUser;
 
 namespace RealEstate.Host.Controllers;
 

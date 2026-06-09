@@ -52,15 +52,32 @@ public sealed class LeaseUploadedEventHandler
 
         try
         {
-            var uri = new Uri(notification.ContractFileUrl);
-            var blobUriBuilder = new Azure.Storage.Blobs.BlobUriBuilder(uri);
+            //var uri = new Uri(notification.ContractFileUrl);
+            //var blobUriBuilder = new Azure.Storage.Blobs.BlobUriBuilder(uri);
 
             // ده هيطلعلك اسم الملف بس (مثلاً: file.pdf أو leases/file.pdf)
-            string cleanBlobName = blobUriBuilder.BlobName;
+            //string cleanBlobName = blobUriBuilder.BlobName;
 
-            // 2. ابعت الاسم النظيف لدالة التحميل
-            var pdfBytes = await _storage.DownloadAsync(
-                cleanBlobName, cancellationToken);
+            //// 2. ابعت الاسم النظيف لدالة التحميل
+            //var pdfBytes = await _storage.DownloadAsync(
+            //    cleanBlobName, cancellationToken);
+            string cleanBlobName;
+
+            // Safely check if the incoming string is an absolute URI
+            if (Uri.TryCreate(notification.ContractFileUrl, UriKind.Absolute, out Uri uri))
+            {
+                // It's a full URL (e.g., https://...), extract the blob name safely
+                var blobUriBuilder = new Azure.Storage.Blobs.BlobUriBuilder(uri);
+                cleanBlobName = blobUriBuilder.BlobName;
+            }
+            else
+            {
+                // It's already a file name or relative path (e.g., "file.pdf" or "leases/file.pdf")
+                cleanBlobName = notification.ContractFileUrl;
+            }
+
+            // Pass the clean blob name to the storage service
+            var pdfBytes = await _storage.DownloadAsync(cleanBlobName, cancellationToken);
             // ── 2. Download PDF from Azure Blob ───────────────────────────────
             //var pdfBytes = await _storage.DownloadAsync(
             //    notification.ContractFileUrl, cancellationToken);

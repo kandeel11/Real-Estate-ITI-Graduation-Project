@@ -104,6 +104,10 @@ namespace Property.Infrastructure.Migrations
                     b.Property<Guid?>("CompanyId")
                         .HasColumnType("uniqueidentifier");
 
+                    b.Property<string>("Country")
+                        .IsRequired()
+                        .HasColumnType("nvarchar(max)");
+
                     b.Property<DateTime>("CreatedAt")
                         .HasColumnType("datetime2");
 
@@ -128,6 +132,10 @@ namespace Property.Infrastructure.Migrations
 
                     b.Property<int>("FloorNumber")
                         .HasColumnType("int");
+
+                    b.Property<string>("Governorate")
+                        .IsRequired()
+                        .HasColumnType("nvarchar(max)");
 
                     b.Property<int>("InquiriesCount")
                         .ValueGeneratedOnAdd()
@@ -157,8 +165,24 @@ namespace Property.Infrastructure.Migrations
                         .HasPrecision(10, 7)
                         .HasColumnType("decimal(10,7)");
 
+                    b.Property<string>("NationalIdBlobPath")
+                        .IsRequired()
+                        .HasColumnType("nvarchar(max)");
+
+                    b.Property<string>("OwnerFullName")
+                        .IsRequired()
+                        .HasColumnType("nvarchar(max)");
+
                     b.Property<Guid>("OwnerId")
                         .HasColumnType("uniqueidentifier");
+
+                    b.Property<string>("OwnerShipStatus")
+                        .IsRequired()
+                        .HasColumnType("nvarchar(max)");
+
+                    b.Property<string>("OwnershipProofBlobPath")
+                        .IsRequired()
+                        .HasColumnType("nvarchar(max)");
 
                     b.Property<bool>("PetsAllowed")
                         .HasColumnType("bit");

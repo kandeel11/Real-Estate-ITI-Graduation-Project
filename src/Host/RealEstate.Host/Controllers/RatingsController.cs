@@ -4,7 +4,9 @@ using Document.Application.Queries.Rating;
 using Identity.Application.Interfaces;
 using MediatR;
 using Microsoft.AspNetCore.Authorization;
-using Microsoft.AspNetCore.Mvc;
+using Document.Application.Commands.Rating.CreateRating;
+using Document.Application.Commands.Rating.ModerateRating;
+using Document.Application.Queries.Rating.GetRatingsByTarget;
 
 namespace RealEstate.Host.Controllers;
 

@@ -55,13 +55,18 @@ namespace AI.Application.Features.OwnershipVerification.Commands.SubmitVerificat
             {
                 // Call AI service for analysis
                 var aiResult = await _aiService.AnalyzeAsync(
-                    request.NationalIdFile,
-                    request.NationalIdMimeType,
-                    request.OwnershipProofFile,
-                    request.OwnershipProofMimeType,
-                    request.OwnerName,
-                    cancellationToken
-                );
+     nationalIdFile: request.NationalIdFile,
+     nationalIdMimeType: request.NationalIdMimeType,
+     ownershipProofFile: request.OwnershipProofFile,
+     ownershipProofMimeType: request.OwnershipProofMimeType,
+     ownerName: request.OwnerName,
+     expectedLocation: new PropertyLocationDto(
+                                 Country: request.Country,
+                                 Governorate: request.Governorate,
+                                 City: request.City,
+                                 District: request.District,
+                                 AddressLine: request.Address),
+     ct: cancellationToken);
 
                 // Update with AI results
                 verificationRequest.AiConfidenceScore = aiResult.ConfidenceScore;
@@ -88,7 +93,7 @@ namespace AI.Application.Features.OwnershipVerification.Commands.SubmitVerificat
                         cancellationToken
                     );
                 }
-                else if (aiResult.ConfidenceScore >= _options.AutoVerificationThreshold)
+                else if (aiResult.ConfidenceScore >= _options.AutoVerifyMinConfidence)
                 {
                     verificationRequest.Status = VerificationStatus.AiVerified;
 

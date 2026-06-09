@@ -703,14 +703,56 @@ namespace AI.Infrastructure.Migrations
                         .HasMaxLength(300)
                         .HasColumnType("nvarchar(300)");
 
+                    b.Property<DateTime?>("CompletedAt")
+                        .HasColumnType("datetime2");
+
                     b.Property<DateTime>("CreatedAt")
                         .HasColumnType("datetime2");
 
                     b.Property<DateTime?>("DeletedAt")
                         .HasColumnType("datetime2");
 
+                    b.Property<string>("ExtractedAddress")
+                        .HasColumnType("nvarchar(max)");
+
+                    b.Property<string>("ExtractedCity")
+                        .HasColumnType("nvarchar(max)");
+
+                    b.Property<string>("ExtractedCountry")
+                        .HasColumnType("nvarchar(max)");
+
+                    b.Property<string>("ExtractedDistrict")
+                        .HasColumnType("nvarchar(max)");
+
+                    b.Property<string>("ExtractedGovernorate")
+                        .HasColumnType("nvarchar(max)");
+
+                    b.Property<string>("FailureReason")
+                        .HasColumnType("nvarchar(max)");
+
+                    b.Property<string>("LocationMatchNotes")
+                        .HasColumnType("nvarchar(max)");
+
+                    b.Property<decimal?>("LocationMatchScore")
+                        .HasColumnType("decimal(18,2)");
+
+                    b.Property<bool?>("LocationMismatchFlag")
+                        .HasColumnType("bit");
+
+                    b.Property<string>("NationalIdBlobPath")
+                        .IsRequired()
+                        .HasColumnType("nvarchar(max)");
+
+                    b.Property<string>("OwnerFullName")
+                        .IsRequired()
+                        .HasColumnType("nvarchar(max)");
+
                     b.Property<Guid>("OwnerId")
                         .HasColumnType("uniqueidentifier");
+
+                    b.Property<string>("OwnershipProofBlobPath")
+                        .IsRequired()
+                        .HasColumnType("nvarchar(max)");
 
                     b.Property<Guid>("PropertyId")
                         .HasColumnType("uniqueidentifier");

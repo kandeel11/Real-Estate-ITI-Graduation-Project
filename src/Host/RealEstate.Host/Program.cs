@@ -1,6 +1,8 @@
 using AI.Application;
 using AI.Infrastructure;
+using AI.Infrastructure.Persistence.Contexts;
 using Document.Infrastructure;
+using Document.Infrastructure.Hubs;
 using Hangfire;
 using Hangfire.SqlServer;
 using Identity.Application;
@@ -8,11 +10,12 @@ using Identity.Infrastructure;
 using Identity.Infrastructure.Persistence;
 using Identity.Infrastructure.Seed;
 using Identity.Infrastructure.Services;
+using Maintenance.Infrastructure;
 using Microsoft.AspNetCore.Authentication.JwtBearer;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.IdentityModel.Tokens;
 using Property.Infrastructure;
-using Maintenance.Infrastructure;
+using Property.Infrastructure.Persistence.Contexts;
 using RealEstate.Host.Services;
 using Subscription.Infrastructure;
 using Subscription.Infrastructure.Persistence;
@@ -26,7 +29,6 @@ public class Program
 {
     public static async Task Main(string[] args)
     {
-        // Prevent ASP.NET from remapping JWT claim names (e.g. "sub" → NameIdentifier)
         JwtSecurityTokenHandler.DefaultInboundClaimTypeMap.Clear();
         JwtSecurityTokenHandler.DefaultMapInboundClaims = false;
 
@@ -37,8 +39,6 @@ public class Program
         builder.Services.AddSwaggerGen(options =>
         {
             options.CustomSchemaIds(type => type.FullName);
-
-            // Allow entering Bearer token in Swagger UI
             options.AddSecurityDefinition("Bearer", new Microsoft.OpenApi.Models.OpenApiSecurityScheme
             {
                 Name = "Authorization",
@@ -64,9 +64,6 @@ public class Program
             });
         });
 
-        // ==========================================
-        // JWT Authentication
-        // ==========================================
         var jwtOptions = builder.Configuration.GetSection("Jwt").Get<JwtOptions>()
             ?? new JwtOptions { SigningKey = "default-dev-key-change-in-production-32chars" };
 
@@ -87,9 +84,6 @@ public class Program
                 };
             });
 
-        // ==========================================
-        // Authorization Policies
-        // ==========================================
         builder.Services.AddAuthorization(options =>
         {
             options.AddPolicy("AdminOnly", p => p.RequireRole("admin"));
@@ -101,17 +95,11 @@ public class Program
             options.AddPolicy("InternalServiceOnly", p => p.RequireClaim("service_type"));
         });
 
-        // ==========================================
-        // Modules
-        // ==========================================
         builder.Services.AddIdentityModule(builder.Configuration);
         builder.Services.AddPropertyModule(builder.Configuration);
         builder.Services.AddMaintenanceModule(builder.Configuration);
         builder.Services.AddSubscriptionModule(builder.Configuration);
 
-        // ==========================================
-        // MediatR — scan all module assemblies
-        // ==========================================
         builder.Services.AddMediatR(cfg =>
         {
             cfg.RegisterServicesFromAssemblies(
@@ -126,15 +114,9 @@ public class Program
         });
 
         builder.Services.AddScoped<PropertyEnrichmentService>();
-
         builder.Services.AddAiApplication(builder.Configuration);
         builder.Services.AddAiInfrastructure(builder.Configuration);
         builder.Services.AddDocumentModule(builder.Configuration);
-
-        // ==========================================
-        // Hangfire (for background jobs) +Email service
-        // ==========================================
-        // RealEstate.Host/Program.cs
 
         builder.Services.AddHangfire(config => config
             .SetDataCompatibilityLevel(CompatibilityLevel.Version_180)
@@ -159,18 +141,18 @@ public class Program
 
         var app = builder.Build();
 
-        // لوحة تحكم Hangfire
         app.UseHangfireDashboard("/hangfire", new DashboardOptions
         {
-            Authorization = new[] { new HangfireDashboardAuthFilter() } // عمل Authorization
+            Authorization = new[] { new HangfireDashboardAuthFilter() }
         });
 
-        // ==========================================
-        // Database migrations + seeding
-        // ==========================================
         using (var scope = app.Services.CreateScope())
         {
             var subscriptionDb = scope.ServiceProvider.GetRequiredService<SubscriptionDbContext>();
+            var AiDB = scope.ServiceProvider.GetRequiredService<AiDbContext>();
+            var PropertyDb = scope.ServiceProvider.GetRequiredService<PropertyDbContext>();
+            await PropertyDb.Database.MigrateAsync();
+            await AiDB.Database.MigrateAsync();
             await subscriptionDb.Database.MigrateAsync();
             await SubscriptionPlanSeed.SeedAsync(subscriptionDb);
 
@@ -192,6 +174,7 @@ public class Program
         app.UseAuthentication();
         app.UseAuthorization();
         app.MapControllers();
+        app.MapHub<DocumentChatHub>("/hubs/chat");
         app.Run();
     }
 }
