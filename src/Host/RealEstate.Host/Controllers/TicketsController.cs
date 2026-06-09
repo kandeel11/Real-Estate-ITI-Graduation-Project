@@ -1,5 +1,4 @@
 ﻿using Identity.Application.Interfaces;
-using MediatR;
 using Maintenance.Application.Features.Commands.AcceptAssignment;
 using Maintenance.Application.Features.Commands.AddComment;
 using Maintenance.Application.Features.Commands.AssignVendor;
@@ -11,6 +10,8 @@ using Maintenance.Application.Features.Commands.CreateTicket;
 using Maintenance.Application.Features.Commands.DeleteTicket;
 using Maintenance.Application.Features.Commands.MakeDecision;
 using Maintenance.Application.Features.Commands.RejectAssignment;
+using Maintenance.Application.Features.Queries.GetVendorTickets;
+using Maintenance.Application.Features.Commands.StartWork;
 using Maintenance.Application.Features.Commands.SubmitTicket;
 using Maintenance.Application.Features.Commands.UpdateTicket;
 using Maintenance.Application.Features.Commands.UploadAttachment;
@@ -19,6 +20,7 @@ using Maintenance.Application.Features.Queries.GetPayment;
 using Maintenance.Application.Features.Queries.GetTicketById;
 using Maintenance.Application.Features.Queries.GetTickets;
 using Maintenance.Domain.Enums;
+using MediatR;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 
@@ -124,6 +126,12 @@ public class TicketsController(ISender sender, ICurrentUserService currentUser) 
     }
 
     // ── Vendor Assignment ──────────────────────────────────────────
+    [HttpGet("vendor/{vendorId:guid}")]
+    public async Task<IActionResult> GetVendorTickets(Guid vendorId)
+    {
+        var result = await sender.Send(new GetVendorTicketsQuery(vendorId));
+        return Ok(result);
+    }
 
     [HttpPost("{id:guid}/assign-vendor")]
     [Authorize(Roles = "owner,tenant")]
@@ -239,6 +247,14 @@ public class TicketsController(ISender sender, ICurrentUserService currentUser) 
     {
         var result = await sender.Send(new GetPaymentQuery(id));
         return result is null ? NotFound() : Ok(result);
+    }
+
+
+    [HttpPost("{id:guid}/start-work")]
+    public async Task<IActionResult> StartWork(Guid id)
+    {
+        await sender.Send(new StartWorkCommand(id));
+        return Ok(new { message = "Work started. Status is now InProgress." });
     }
 }
 
