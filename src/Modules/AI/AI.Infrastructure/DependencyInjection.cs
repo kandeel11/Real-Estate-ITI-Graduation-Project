@@ -85,6 +85,8 @@ public static class DependencyInjection
         services.AddScoped<PropertySearchPlugin>();
         services.AddScoped<ContractRetrievalPlugin>();
         services.AddScoped<IContractDocumentService, ContractDocumentService>();
+        services.AddScoped<IBlobStorage,AzureBlobStorage>();
+        //services.AddScoped<IOwnershipAiService, OwnershipAiService>();
 
         // ====================================================================
         // 3. Build Semantic Kernel (Configured for OpenAI Chat)

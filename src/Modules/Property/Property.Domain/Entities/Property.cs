@@ -27,6 +27,10 @@ public class Property : BaseEntity
     public int YearBuilt { get; private set; }
     public bool IsFurnished { get; private set; }
     public bool PetsAllowed { get; private set; }
+    public string Country { get; private set; } = string.Empty;
+    public string Governorate { get; private set; } = string.Empty;
+
+
 
     public decimal Latitude { get; private set; }
     public decimal Longitude { get; private set; }
@@ -34,7 +38,10 @@ public class Property : BaseEntity
     public int? ApartmentNumber { get; private set; }
     public string City { get; private set; } = string.Empty;
     public string District { get; private set; } = string.Empty;
-
+    public string OwnerFullName { get; private set; } = string.Empty;
+    public string NationalIdBlobPath { get; private set; } = string.Empty;
+    public string OwnershipProofBlobPath { get; private set; } = string.Empty;
+    public string OwnerShipStatus { get; private set; } = "Pending"; // e.g. "verified", "pending", "rejected"
     public ListingSource ListingSource { get; private set; }
     public PropertyStatus Status { get; private set; }
 
@@ -74,12 +81,19 @@ public class Property : BaseEntity
         decimal longitude,
         string address,
         int? apartmentNumber,
+        string country, string governorate,
+        string ownerShipStatus,
+        string ownerFullName,
+    string nationalIdBlobPath,
+    string ownershipProofBlobPath,
         string city,
         string district,
+
         ListingSource listingSource)
     {
         var property = new Property
         {
+
             OwnerId = ownerId,
             CompanyId = companyId,
             ListingBrokerId = listingBrokerId,
@@ -100,9 +114,15 @@ public class Property : BaseEntity
             Latitude = latitude,
             Longitude = longitude,
             Address = address,
+            OwnerFullName = ownerFullName,
+            NationalIdBlobPath = nationalIdBlobPath,
+            OwnershipProofBlobPath = ownershipProofBlobPath,
+            OwnerShipStatus = ownerShipStatus,
             ApartmentNumber = apartmentNumber,
             City = city,
             District = district,
+            Country = country,
+            Governorate = governorate,
             ListingSource = listingSource,
             Status = PropertyStatus.Draft,
             VerificationStatus = VerificationStatus.Pending
@@ -131,7 +151,8 @@ public class Property : BaseEntity
         int? apartmentNumber,
         string city,
         string district,
-        Guid? listingBrokerId)
+        Guid? listingBrokerId,
+        string? ownerShipStatus)
     {
         bool sensitiveFieldChanged = Price != price || Description != description;
 
@@ -156,6 +177,7 @@ public class Property : BaseEntity
         City = city;
         District = district;
         ListingBrokerId = listingBrokerId;
+        OwnerShipStatus = ownerShipStatus;
         UpdatedAt = DateTime.UtcNow;
 
         if (sensitiveFieldChanged && Status == PropertyStatus.Active)

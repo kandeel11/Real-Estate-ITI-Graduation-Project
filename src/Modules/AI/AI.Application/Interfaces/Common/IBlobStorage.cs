@@ -1,0 +1,21 @@
+﻿// AI.Application/Interfaces/Common/IBlobStorage.cs
+namespace AI.Application.Interfaces.Common;
+
+public interface IBlobStorage
+{
+    /// <summary>Downloads a blob and returns its bytes + content type.</summary>
+    Task<DocumentDownload> DownloadAsync(
+      string blobPath,
+      CancellationToken ct = default);
+}
+
+public sealed record BlobDownloadResult(
+    byte[] Content,
+    string ContentType,
+    string FileName);
+
+public sealed record DocumentDownload(
+    byte[] Content,
+    string ContentType,
+    string FileName,
+    long SizeBytes);

@@ -1,17 +1,16 @@
 using Identity.Application.Interfaces;
 using MediatR;
-using RealEstate.Host.Services;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using Property.Application.Features.Commands.AddPropertyAmenity;
-using Property.Application.Features.Commands.AssignBroker;
-using Property.Application.Features.Commands.MarkAsRented;
-using Property.Application.Features.Commands.RequestAiDescription;
 using Property.Application.Features.Commands.AddPropertyMedia;
+using Property.Application.Features.Commands.AssignBroker;
 using Property.Application.Features.Commands.CreateProperty;
 using Property.Application.Features.Commands.DeleteProperty;
+using Property.Application.Features.Commands.MarkAsRented;
 using Property.Application.Features.Commands.RemovePropertyAmenity;
 using Property.Application.Features.Commands.RemovePropertyMedia;
+using Property.Application.Features.Commands.RequestAiDescription;
 using Property.Application.Features.Commands.SetAiDescription;
 using Property.Application.Features.Commands.SetAiDuplicateScore;
 using Property.Application.Features.Commands.SetFeatured;
@@ -27,7 +26,10 @@ using Property.Application.Features.Queries.GetPropertiesByOwner;
 using Property.Application.Features.Queries.GetPropertyAnalytics;
 using Property.Application.Features.Queries.GetPropertyById;
 using Property.Application.Features.Queries.SearchProperties;
+using Property.Application.Interfaces;
 using Property.Domain.Enums;
+using RealEstate.Host.Services;
+using static Property.Application.Interfaces.IMediaStorageService;
 
 namespace RealEstate.Host.Controllers;
 
@@ -38,12 +40,14 @@ public class PropertiesController : ControllerBase
     private readonly IMediator _mediator;
     private readonly ICurrentUserService _currentUser;
     private readonly PropertyEnrichmentService _enrichment;
+    private readonly IMediaStorageService _docs;
 
-    public PropertiesController(IMediator mediator, ICurrentUserService currentUser, PropertyEnrichmentService enrichment)
+    public PropertiesController(IMediator mediator, ICurrentUserService currentUser, PropertyEnrichmentService enrichment, IMediaStorageService docs)
     {
         _mediator = mediator;
         _currentUser = currentUser;
         _enrichment = enrichment;
+        _docs = docs;
     }
 
     [HttpGet]
@@ -134,40 +138,117 @@ public class PropertiesController : ControllerBase
         return Ok(result);
     }
 
+    // Properties.Api/Controllers/PropertiesController.cs
+
     [HttpPost]
     [Authorize(Policy = "OwnerOrAdmin")]
-    public async Task<IActionResult> Create([FromBody] CreatePropertyRequest request, CancellationToken ct = default)
+    [Consumes("multipart/form-data")]                                    // 🆕 multipart
+    [RequestSizeLimit(50 * 1024 * 1024)]                                 // 50 MB cap
+    public async Task<IActionResult> Create(
+        [FromForm] CreatePropertyRequest request,
+        CancellationToken ct = default)
     {
         var ownerId = _currentUser.UserId;
-        if (ownerId is null) return Unauthorized(new { error = "User not authenticated." });
+        if (ownerId is null)
+            return Unauthorized(new { error = "User not authenticated." });
 
+        // 🔍 Determine submission type from role
+        var isOwnerSubmission = _currentUser.IsInRole("owner");          // ⬅ adjust to your role constants
+        var isBrokerSubmission = _currentUser.IsInRole("broker");
+
+        string? nationalIdBlobPath = null;
+        string? ownershipProofBlobPath = null;
+
+        if (isOwnerSubmission)
+        {
+            // ── Owner path: REQUIRE both files + owner name ──────────
+            if (request.NationalIdFile is null || request.NationalIdFile.Length == 0)
+                return BadRequest(new { error = "National ID file is required for owner submissions." });
+
+            if (request.OwnershipProofFile is null || request.OwnershipProofFile.Length == 0)
+                return BadRequest(new { error = "Ownership proof file is required for owner submissions." });
+
+            if (string.IsNullOrWhiteSpace(request.OwnerFullName))
+                return BadRequest(new { error = "Owner full name is required." });
+
+            // Validate file types
+            var allowedTypes = new[] { "application/pdf", "image/jpeg", "image/png", "image/bmp", "image/tiff" };
+            if (!allowedTypes.Contains(request.NationalIdFile.ContentType) ||
+                !allowedTypes.Contains(request.OwnershipProofFile.ContentType))
+                return BadRequest(new { error = "Documents must be PDF or image (JPEG/PNG/BMP/TIFF)." });
+
+            // Upload to blob storage in parallel
+            var folder = $"ownership/{ownerId.Value}";
+            var idTask = UploadAsync(_currentUser.UserId, request.NationalIdFile, MediaCategory.Ownership, ct);
+            var proofTask = UploadAsync(_currentUser.UserId, request.OwnershipProofFile, MediaCategory.Ownership, ct);
+            await Task.WhenAll(idTask, proofTask);
+
+            nationalIdBlobPath = await idTask;
+            ownershipProofBlobPath = await proofTask;
+        }
+        else if (isBrokerSubmission)
+        {
+            // ── Broker path: files NOT required, skip verification ───
+            // (blob paths stay null → handler skips PropertyCreatedEvent)
+        }
+
+        // ── Build & send command ─────────────────────────────────────
         var id = await _mediator.Send(new CreatePropertyCommand(
-            ownerId.Value,
-            request.CompanyId ?? _currentUser.CompanyId,
-            request.ListingBrokerId,
-            request.Title,
-            request.TitleAr,
-            request.Description,
-            request.DescriptionAr,
-            request.PropertyType,
-            request.Price,
-            request.Bedrooms,
-            request.Bathrooms,
-            request.AreaSqm,
-            request.FloorNumber,
-            request.TotalFloors,
-            request.YearBuilt,
-            request.IsFurnished,
-            request.PetsAllowed,
-            request.Latitude,
-            request.Longitude,
-            request.Address,
-            request.ApartmentNumber,
-            request.City,
-            request.District,
-            request.ListingSource), ct);
+       OwnerId: ownerId.Value,
+       CompanyId: request.CompanyId ?? _currentUser.CompanyId,
+       ListingBrokerId: request.ListingBrokerId,
+       Title: request.Title,
+       TitleAr: request.TitleAr,
+       Description: request.Description,
+       DescriptionAr: request.DescriptionAr,
+       PropertyType: request.PropertyType,
+       Price: request.Price,
+       Bedrooms: request.Bedrooms,
+       Bathrooms: request.Bathrooms,
+       AreaSqm: request.AreaSqm,
+       FloorNumber: request.FloorNumber,
+       TotalFloors: request.TotalFloors,
+       YearBuilt: request.YearBuilt,
+       IsFurnished: request.IsFurnished,
+       PetsAllowed: request.PetsAllowed,
+       Latitude: request.Latitude,
+       Longitude: request.Longitude,
+       Address: request.Address,
+       ApartmentNumber: request.ApartmentNumber,
+       Country: request.Country,
+       Governorate: request.Governorate,
+
+       // 👇 هذا هو السطر الذي كان ينقصك لحل المشكلة
+       ownerShipStatus: "Pending", // يمكنك تغييره إلى request.OwnerShipStatus إذا كان قادماً من الـ Request
+
+       City: request.City,
+       District: request.District,
+       ListingSource: request.ListingSource,
+       IsOwnerSubmission: isOwnerSubmission,
+       OwnerFullName: request.OwnerFullName,
+       NationalIdBlobPath: nationalIdBlobPath,
+       OwnershipProofBlobPath: ownershipProofBlobPath), ct);
 
         return CreatedAtAction(nameof(GetById), new { id }, new { id });
+    }
+
+    // ─── Helper for upload ────────────────────────────────────────────
+    // ─── Helper for ownership document upload ─────────────────────────
+    private async Task<string> UploadAsync(
+        Guid? OwnerId,
+        IFormFile file,
+        MediaCategory category,
+        CancellationToken ct)
+    {
+        using var stream = file.OpenReadStream();
+
+        return await _docs.UploadAsync(
+            OwnerId: _currentUser.UserId,
+            fileStream: stream,
+            fileName: file.FileName,
+            contentType: file.ContentType,
+            category: category,
+            ct: ct);
     }
 
     [HttpPut("{id:guid}")]
@@ -200,6 +281,8 @@ public class PropertiesController : ControllerBase
             request.ApartmentNumber,
             request.City,
             request.District,
+            request.Country,
+            request.Governorate,
             request.ListingBrokerId), ct);
         return NoContent();
     }
@@ -401,6 +484,10 @@ public class PropertiesController : ControllerBase
 
 // --- Request DTOs ---
 
+// Property.Application/Features/Commands/CreateProperty/CreatePropertyRequest.cs
+
+
+
 public record CreatePropertyRequest(
     Guid? CompanyId,
     Guid? ListingBrokerId,
@@ -422,11 +509,17 @@ public record CreatePropertyRequest(
     decimal Longitude,
     string Address,
     int? ApartmentNumber,
+    string Country,            // 🆕 needed for location verification
+    string Governorate,        // 🆕 needed for location verification
     string City,
     string District,
-    ListingSource ListingSource
-);
+    ListingSource ListingSource,
 
+    // 🆕 Ownership documents (only required when owner submits)
+    string? OwnerFullName,
+    IFormFile? NationalIdFile,
+    IFormFile? OwnershipProofFile
+);
 public record UpdatePropertyRequest(
     string Title,
     string TitleAr,
@@ -446,11 +539,12 @@ public record UpdatePropertyRequest(
     decimal Longitude,
     string Address,
     int? ApartmentNumber,
+    string Country,            // 🆕
+    string Governorate,        // 🆕
     string City,
     string District,
     Guid? ListingBrokerId
 );
-
 public record SetVerificationRequest(VerificationStatus VerificationStatus, string? RejectionReason);
 
 public record SetFeaturedRequest(bool IsFeatured, DateTime? FeaturedUntil);

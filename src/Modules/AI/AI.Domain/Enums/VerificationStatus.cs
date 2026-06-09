@@ -12,6 +12,7 @@ namespace AI.Domain.Enums
         AiVerified,
         ManuallyVerified,
         RequiresManualReview,
-        Rejected
+        Rejected,
+        Failed,
     }
 }
