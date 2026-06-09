@@ -35,8 +35,6 @@ public class UpdatePropertyHandler : IRequestHandler<UpdatePropertyCommand>
             request.YearBuilt,
             request.IsFurnished,
             request.PetsAllowed,
-            request.Latitude,
-            request.Longitude,
             request.Address,
             request.ApartmentNumber,
             request.City,

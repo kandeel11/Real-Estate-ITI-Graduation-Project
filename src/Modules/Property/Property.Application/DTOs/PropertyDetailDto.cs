@@ -11,8 +11,6 @@ public class PropertyDetailDto
     public string TitleAr { get; init; } = string.Empty;
     public string Description { get; init; } = string.Empty;
     public string DescriptionAr { get; init; } = string.Empty;
-    public string? AiGeneratedDescriptionEn { get; init; }
-    public string? AiGeneratedDescriptionAr { get; init; }
 
     public string PropertyType { get; init; } = string.Empty;
     public decimal Price { get; init; }
@@ -25,8 +23,6 @@ public class PropertyDetailDto
     public bool IsFurnished { get; init; }
     public bool PetsAllowed { get; init; }
 
-    public decimal Latitude { get; init; }
-    public decimal Longitude { get; init; }
     public string Address { get; init; } = string.Empty;
     public string City { get; init; } = string.Empty;
     public string District { get; init; } = string.Empty;

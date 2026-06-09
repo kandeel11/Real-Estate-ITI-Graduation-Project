@@ -14,8 +14,6 @@ public class Property : BaseEntity
     public string TitleAr { get; private set; } = string.Empty;
     public string Description { get; private set; } = string.Empty;
     public string DescriptionAr { get; private set; } = string.Empty;
-    public string? AiGeneratedDescriptionEn { get; private set; }
-    public string? AiGeneratedDescriptionAr { get; private set; }
 
     public PropertyType PropertyType { get; private set; }
     public decimal Price { get; private set; }
@@ -32,8 +30,6 @@ public class Property : BaseEntity
 
 
 
-    public decimal Latitude { get; private set; }
-    public decimal Longitude { get; private set; }
     public string Address { get; private set; } = string.Empty;
     public int? ApartmentNumber { get; private set; }
     public string City { get; private set; } = string.Empty;
@@ -77,8 +73,6 @@ public class Property : BaseEntity
         int yearBuilt,
         bool isFurnished,
         bool petsAllowed,
-        decimal latitude,
-        decimal longitude,
         string address,
         int? apartmentNumber,
         string country, string governorate,
@@ -111,8 +105,6 @@ public class Property : BaseEntity
             YearBuilt = yearBuilt,
             IsFurnished = isFurnished,
             PetsAllowed = petsAllowed,
-            Latitude = latitude,
-            Longitude = longitude,
             Address = address,
             OwnerFullName = ownerFullName,
             NationalIdBlobPath = nationalIdBlobPath,
@@ -145,8 +137,6 @@ public class Property : BaseEntity
         int yearBuilt,
         bool isFurnished,
         bool petsAllowed,
-        decimal latitude,
-        decimal longitude,
         string address,
         int? apartmentNumber,
         string city,
@@ -170,8 +160,6 @@ public class Property : BaseEntity
         YearBuilt = yearBuilt;
         IsFurnished = isFurnished;
         PetsAllowed = petsAllowed;
-        Latitude = latitude;
-        Longitude = longitude;
         Address = address;
         ApartmentNumber = apartmentNumber;
         City = city;
@@ -226,8 +214,9 @@ public class Property : BaseEntity
 
     public void SetAiDescription(string? descriptionEn, string? descriptionAr)
     {
-        AiGeneratedDescriptionEn = descriptionEn;
-        AiGeneratedDescriptionAr = descriptionAr;
+        // Merged model: the accepted AI text becomes the listing's main description.
+        if (!string.IsNullOrWhiteSpace(descriptionEn)) Description = descriptionEn;
+        if (!string.IsNullOrWhiteSpace(descriptionAr)) DescriptionAr = descriptionAr;
         UpdatedAt = DateTime.UtcNow;
         AddDomainEvent(new PropertyAiDescriptionSetEvent(Id, OwnerId, CompanyId));
     }

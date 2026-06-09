@@ -6,12 +6,10 @@ namespace Property.Application.Features.Commands.SetVerificationStatus;
 public class SetVerificationStatusHandler : IRequestHandler<SetVerificationStatusCommand>
 {
     private readonly IPropertyRepository _repository;
-    private readonly IPublisher _publisher;
 
-    public SetVerificationStatusHandler(IPropertyRepository repository, IPublisher publisher)
+    public SetVerificationStatusHandler(IPropertyRepository repository)
     {
         _repository = repository;
-        _publisher = publisher;
     }
 
     public async Task Handle(SetVerificationStatusCommand request, CancellationToken cancellationToken)
@@ -21,11 +19,7 @@ public class SetVerificationStatusHandler : IRequestHandler<SetVerificationStatu
 
         property.SetVerificationStatus(request.VerificationStatus, request.RejectionReason);
 
+        // PropertyActivatedEvent (when activated) is dispatched by DispatchDomainEventsInterceptor after save.
         await _repository.SaveChangesAsync(cancellationToken);
-
-        foreach (var domainEvent in property.DomainEvents)
-            await _publisher.Publish(domainEvent, cancellationToken);
-
-        property.ClearDomainEvents();
     }
 }

@@ -19,6 +19,7 @@ using Property.Application.Features.Commands.SetVerificationStatus;
 using Property.Application.Features.Commands.SubmitPropertyForReview;
 using Property.Application.Features.Commands.TrackPropertyView;
 using Property.Application.Features.Commands.UpdateProperty;
+using Property.Application.Features.Queries.GetActiveProperties;
 using Property.Application.Features.Queries.GetAllProperties;
 using Property.Application.Features.Queries.GetFeaturedProperties;
 using Property.Application.Features.Queries.GetPendingVerification;
@@ -50,11 +51,22 @@ public class PropertiesController : ControllerBase
         _docs = docs;
     }
 
+    // Admin-only: returns ALL properties including Draft/Rejected. Public callers should
+    // use GET /api/properties/active or /search (which only expose Active listings).
     [HttpGet]
-    [AllowAnonymous]
+    [Authorize(Policy = "AdminOnly")]
     public async Task<IActionResult> GetAll(CancellationToken ct = default)
     {
         var result = await _mediator.Send(new GetAllPropertiesQuery(), ct);
+        await _enrichment.EnrichAsync(result, ct);
+        return Ok(result);
+    }
+
+    [HttpGet("active")]
+    [AllowAnonymous]
+    public async Task<IActionResult> GetActive(CancellationToken ct = default)
+    {
+        var result = await _mediator.Send(new GetActivePropertiesQuery(), ct);
         await _enrichment.EnrichAsync(result, ct);
         return Ok(result);
     }
@@ -72,9 +84,6 @@ public class PropertiesController : ControllerBase
         [FromQuery] int? bedrooms,
         [FromQuery] bool? isFurnished,
         [FromQuery] bool? petsAllowed,
-        [FromQuery] decimal? latitude,
-        [FromQuery] decimal? longitude,
-        [FromQuery] double? radiusKm,
         [FromQuery] int page = 1,
         [FromQuery] int pageSize = 20,
         CancellationToken ct = default)
@@ -82,7 +91,7 @@ public class PropertiesController : ControllerBase
         var result = await _mediator.Send(new SearchPropertiesQuery(
             city, district, propertyType, minPrice, maxPrice,
             minBedrooms, maxBedrooms, bedrooms, isFurnished, petsAllowed,
-            latitude, longitude, radiusKm, page, pageSize), ct);
+            page, pageSize), ct);
         await _enrichment.EnrichAsync(result.Items, ct);
         return Ok(result);
     }
@@ -199,8 +208,9 @@ public class PropertiesController : ControllerBase
        ListingBrokerId: request.ListingBrokerId,
        Title: request.Title,
        TitleAr: request.TitleAr,
-       Description: request.Description,
-       DescriptionAr: request.DescriptionAr,
+       // Descriptions come from the AI flow later; start empty.
+       Description: string.Empty,
+       DescriptionAr: string.Empty,
        PropertyType: request.PropertyType,
        Price: request.Price,
        Bedrooms: request.Bedrooms,
@@ -211,8 +221,6 @@ public class PropertiesController : ControllerBase
        YearBuilt: request.YearBuilt,
        IsFurnished: request.IsFurnished,
        PetsAllowed: request.PetsAllowed,
-       Latitude: request.Latitude,
-       Longitude: request.Longitude,
        Address: request.Address,
        ApartmentNumber: request.ApartmentNumber,
        Country: request.Country,
@@ -275,8 +283,6 @@ public class PropertiesController : ControllerBase
             request.YearBuilt,
             request.IsFurnished,
             request.PetsAllowed,
-            request.Latitude,
-            request.Longitude,
             request.Address,
             request.ApartmentNumber,
             request.City,
@@ -493,8 +499,8 @@ public record CreatePropertyRequest(
     Guid? ListingBrokerId,
     string Title,
     string TitleAr,
-    string Description,
-    string DescriptionAr,
+    // Description/DescriptionAr are NOT collected here — they are produced by the AI
+    // description flow (request-ai-description → accept) after the property exists.
     PropertyType PropertyType,
     decimal Price,
     int Bedrooms,
@@ -505,8 +511,6 @@ public record CreatePropertyRequest(
     int YearBuilt,
     bool IsFurnished,
     bool PetsAllowed,
-    decimal Latitude,
-    decimal Longitude,
     string Address,
     int? ApartmentNumber,
     string Country,            // 🆕 needed for location verification
@@ -535,8 +539,6 @@ public record UpdatePropertyRequest(
     int YearBuilt,
     bool IsFurnished,
     bool PetsAllowed,
-    decimal Latitude,
-    decimal Longitude,
     string Address,
     int? ApartmentNumber,
     string Country,            // 🆕

@@ -56,25 +56,6 @@ public class PropertyRepository : IPropertyRepository
         if (criteria.PetsAllowed.HasValue)
             query = query.Where(p => p.PetsAllowed == criteria.PetsAllowed.Value);
 
-        if (criteria.Latitude.HasValue && criteria.Longitude.HasValue && criteria.RadiusKm.HasValue)
-        {
-            var lat = (double)criteria.Latitude.Value;
-            var lon = (double)criteria.Longitude.Value;
-            var radiusKm = criteria.RadiusKm.Value;
-
-            // Haversine approximation using bounding box pre-filter
-            double latDelta = radiusKm / 111.0;
-            double lonDelta = radiusKm / (111.0 * Math.Cos(lat * Math.PI / 180.0));
-
-            var minLat = (decimal)(lat - latDelta);
-            var maxLat = (decimal)(lat + latDelta);
-            var minLon = (decimal)(lon - lonDelta);
-            var maxLon = (decimal)(lon + lonDelta);
-
-            query = query.Where(p =>
-                p.Latitude >= minLat && p.Latitude <= maxLat &&
-                p.Longitude >= minLon && p.Longitude <= maxLon);
-        }
 
         var totalCount = await query.CountAsync(ct);
 
@@ -100,8 +81,6 @@ public class PropertyRepository : IPropertyRepository
                 PetsAllowed = p.PetsAllowed,
                 City = p.City,
                 District = p.District,
-                Latitude = p.Latitude,
-                Longitude = p.Longitude,
                 Status = p.Status.ToString(),
                 IsFeatured = p.IsFeatured,
                 PrimaryImageUrl = _context.PropertyMedia
@@ -142,8 +121,6 @@ public class PropertyRepository : IPropertyRepository
                 PetsAllowed = p.PetsAllowed,
                 City = p.City,
                 District = p.District,
-                Latitude = p.Latitude,
-                Longitude = p.Longitude,
                 Status = p.Status.ToString(),
                 IsFeatured = p.IsFeatured,
                 PrimaryImageUrl = _context.PropertyMedia
@@ -176,8 +153,6 @@ public class PropertyRepository : IPropertyRepository
                 PetsAllowed = p.PetsAllowed,
                 City = p.City,
                 District = p.District,
-                Latitude = p.Latitude,
-                Longitude = p.Longitude,
                 Status = p.Status.ToString(),
                 IsFeatured = p.IsFeatured,
                 PrimaryImageUrl = _context.PropertyMedia
@@ -210,8 +185,6 @@ public class PropertyRepository : IPropertyRepository
                 PetsAllowed = p.PetsAllowed,
                 City = p.City,
                 District = p.District,
-                Latitude = p.Latitude,
-                Longitude = p.Longitude,
                 Status = p.Status.ToString(),
                 IsFeatured = p.IsFeatured,
                 PrimaryImageUrl = _context.PropertyMedia
@@ -244,8 +217,6 @@ public class PropertyRepository : IPropertyRepository
                 PetsAllowed = p.PetsAllowed,
                 City = p.City,
                 District = p.District,
-                Latitude = p.Latitude,
-                Longitude = p.Longitude,
                 Status = p.Status.ToString(),
                 IsFeatured = p.IsFeatured,
                 ViewsCount = p.ViewsCount,
@@ -275,8 +246,6 @@ public class PropertyRepository : IPropertyRepository
                 PetsAllowed = p.PetsAllowed,
                 City = p.City,
                 District = p.District,
-                Latitude = p.Latitude,
-                Longitude = p.Longitude,
                 Status = p.Status.ToString(),
                 IsFeatured = p.IsFeatured,
                 PrimaryImageUrl = _context.PropertyMedia

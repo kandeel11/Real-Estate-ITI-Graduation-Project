@@ -43,9 +43,6 @@ public class SearchCriteria
     public int? Bedrooms { get; init; }
     public bool? IsFurnished { get; init; }
     public bool? PetsAllowed { get; init; }
-    public decimal? Latitude { get; init; }
-    public decimal? Longitude { get; init; }
-    public double? RadiusKm { get; init; }
     public int Page { get; init; } = 1;
     public int PageSize { get; init; } = 20;
 }

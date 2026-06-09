@@ -48,19 +48,22 @@ namespace AI.Application.Features.PropertyDescription.Commands.AcceptPropertyDes
             // 3. Mark as accepted in the AI database
             generationRecord.IsAccepted = true;
 
-            // PRO TIP: If you want to track user edits to improve AI prompts later, 
-            // you can save the edited text to new columns in your database here:
-            // generationRecord.EditedTextEn = request.FinalTextEn;
-            // generationRecord.EditedTextAr = request.FinalTextAr;
-
             await _context.SaveChangesAsync(cancellationToken);
 
-            // 4. Publish integration event with the FINAL EDITED TEXT, not the original AI text
-            // The Property Module will listen to this event and save these exact strings.
+            // 4. Use the owner's edited text if they provided any; otherwise accept the
+            //    stored AI draft as-is (no need to resend the text just to accept it).
+            var finalEn = string.IsNullOrWhiteSpace(request.FinalTextEn)
+                ? generationRecord.GeneratedTextEn
+                : request.FinalTextEn;
+            var finalAr = string.IsNullOrWhiteSpace(request.FinalTextAr)
+                ? generationRecord.GeneratedTextAr
+                : request.FinalTextAr;
+
+            // The Property Module listens to this event and saves these exact strings.
             var integrationEvent = new PropertyDescriptionAcceptedEvent(
                 generationRecord.PropertyId,
-                request.FinalTextEn, // Passing the user's updated English text
-                request.FinalTextAr  // Passing the user's updated Arabic text
+                finalEn,
+                finalAr
             );
 
             await _eventPublisher.Publish(integrationEvent, cancellationToken);

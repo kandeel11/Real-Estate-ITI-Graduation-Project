@@ -77,12 +77,6 @@ namespace Property.Infrastructure.Migrations
                         .HasPrecision(5, 4)
                         .HasColumnType("decimal(5,4)");
 
-                    b.Property<string>("AiGeneratedDescriptionAr")
-                        .HasColumnType("nvarchar(max)");
-
-                    b.Property<string>("AiGeneratedDescriptionEn")
-                        .HasColumnType("nvarchar(max)");
-
                     b.Property<int?>("ApartmentNumber")
                         .HasColumnType("int");
 
@@ -150,20 +144,12 @@ namespace Property.Infrastructure.Migrations
                     b.Property<bool>("IsFurnished")
                         .HasColumnType("bit");
 
-                    b.Property<decimal>("Latitude")
-                        .HasPrecision(10, 7)
-                        .HasColumnType("decimal(10,7)");
-
                     b.Property<Guid?>("ListingBrokerId")
                         .HasColumnType("uniqueidentifier");
 
                     b.Property<string>("ListingSource")
                         .IsRequired()
                         .HasColumnType("nvarchar(max)");
-
-                    b.Property<decimal>("Longitude")
-                        .HasPrecision(10, 7)
-                        .HasColumnType("decimal(10,7)");
 
                     b.Property<string>("NationalIdBlobPath")
                         .IsRequired()

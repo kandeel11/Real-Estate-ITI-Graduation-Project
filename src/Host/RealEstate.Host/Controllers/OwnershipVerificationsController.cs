@@ -1,6 +1,5 @@
 using AI.Application.Features.OwnershipVerification.Commands.AdminApproveVerification;
 using AI.Application.Features.OwnershipVerification.Commands.AdminRejectVerification;
-using AI.Application.Features.OwnershipVerification.Commands.SubmitVerification;
 using AI.Application.Features.OwnershipVerification.DTOs;
 using AI.Application.Features.OwnershipVerification.Queries.GetPendingAdminReviews;
 using AI.Application.Features.OwnershipVerification.Queries.GetVerificationStatus;
@@ -26,72 +25,12 @@ namespace RealEstate.Host.Controllers
         }
 
         /// <summary>
-        /// Submit a new ownership verification request with National ID and ownership proof documents.
-        /// Only property owners can submit — brokers do not need to provide ownership verification.
+        /// ✅ Ownership verification is now AUTOMATIC when property is created with documents.
+        /// This endpoint replaced by PropertyCreatedEventHandler in AI module.
+        ///
+        /// Owners upload National ID + Ownership proof during property creation.
+        /// AI module automatically verifies and creates OwnershipVerificationRequest.
         /// </summary>
-        [HttpPost("submit")]
-        [ProducesResponseType(typeof(VerificationStatusDto), StatusCodes.Status200OK)]
-        [ProducesResponseType(StatusCodes.Status400BadRequest)]
-        [ProducesResponseType(StatusCodes.Status403Forbidden)]
-        [ProducesResponseType(StatusCodes.Status409Conflict)]
-        public async Task<IActionResult> SubmitVerification(
-            [FromForm] SubmitVerificationRequest request,
-            CancellationToken cancellationToken
-        )
-        {
-            // ✅ Brokers cannot submit ownership verification
-            if (_currentUser.Role == "broker")
-                return StatusCode(StatusCodes.Status403Forbidden, new { error = "Brokers do not need to provide ownership verification. Only property owners are required to verify ownership." });
-
-            // Validate files
-            if (request.NationalIdFile == null || request.NationalIdFile.Length == 0)
-                return BadRequest("National ID file is required");
-
-            if (request.OwnershipProofFile == null || request.OwnershipProofFile.Length == 0)
-                return BadRequest("Ownership proof file is required");
-
-            // Read file contents
-            byte[] nationalIdBytes, ownershipProofBytes;
-
-            using (var ms = new MemoryStream())
-            {
-                await request.NationalIdFile.CopyToAsync(ms, cancellationToken);
-                nationalIdBytes = ms.ToArray();
-            }
-
-            using (var ms = new MemoryStream())
-            {
-                await request.OwnershipProofFile.CopyToAsync(ms, cancellationToken);
-                ownershipProofBytes = ms.ToArray();
-            }
-
-            var command = new SubmitOwnershipVerificationCommand(
-     PropertyId: request.PropertyId,
-     OwnerId: request.OwnerId,
-     OwnerName: request.OwnerName,
-     NationalIdFile: nationalIdBytes,
-     NationalIdMimeType: request.NationalIdFile.ContentType ?? "image/jpeg",
-     OwnershipProofFile: ownershipProofBytes,
-     OwnershipProofMimeType: request.OwnershipProofFile.ContentType ?? "application/pdf",
-
-     // 👇 قم بتمرير المتغيرات الجديدة هنا
-     Country: request.Country,
-     Governorate: request.Governorate,
-     City: request.City,
-     District: request.District,
-     Address: request.Address
- );
-
-            try
-            {
-                var result = await _mediator.Send(command, cancellationToken);
-                return Ok(result);
-            }
-            catch (InvalidOperationException ex)
-            {
-                return Conflict(new { error = ex.Message });
-            }
-        }
 
         /// <summary>
         /// Get verification status by request ID.
@@ -129,7 +68,7 @@ namespace RealEstate.Host.Controllers
         /// Admin approves an ownership verification (moves to ManuallyVerified status).
         /// </summary>
         [HttpPost("{verificationRequestId}/approve")]
-        //[Authorize(Roles = "Admin")]
+        [Authorize(Policy = "AdminOnly")]
         [ProducesResponseType(typeof(VerificationStatusDto), StatusCodes.Status200OK)]
         [ProducesResponseType(StatusCodes.Status404NotFound)]
         [ProducesResponseType(StatusCodes.Status400BadRequest)]
@@ -139,12 +78,12 @@ namespace RealEstate.Host.Controllers
             CancellationToken cancellationToken
         )
         {
-            // TODO: Extract admin ID from current user claims
-            var adminId = Guid.NewGuid(); // Placeholder
+            var adminId = _currentUser.UserId;
+            if (adminId is null) return Unauthorized(new { error = "Admin user not authenticated." });
 
             var command = new AdminApproveVerificationCommand(
                 VerificationRequestId: verificationRequestId,
-                AdminId: adminId,
+                AdminId: adminId.Value,
                 ReviewNotes: request.ReviewNotes
             );
 
@@ -163,7 +102,7 @@ namespace RealEstate.Host.Controllers
         /// Admin rejects an ownership verification.
         /// </summary>
         [HttpPost("{verificationRequestId}/reject")]
-        //[Authorize(Roles = "Admin")]
+        [Authorize(Policy = "AdminOnly")]
         [ProducesResponseType(typeof(VerificationStatusDto), StatusCodes.Status200OK)]
         [ProducesResponseType(StatusCodes.Status404NotFound)]
         [ProducesResponseType(StatusCodes.Status400BadRequest)]
@@ -173,12 +112,12 @@ namespace RealEstate.Host.Controllers
             CancellationToken cancellationToken
         )
         {
-            // TODO: Extract admin ID from current user claims
-            var adminId = Guid.NewGuid(); // Placeholder
+            var adminId = _currentUser.UserId;
+            if (adminId is null) return Unauthorized(new { error = "Admin user not authenticated." });
 
             var command = new AdminRejectVerificationCommand(
                 VerificationRequestId: verificationRequestId,
-                AdminId: adminId,
+                AdminId: adminId.Value,
                 RejectionReason: request.ReviewNotes
             );
 
@@ -194,27 +133,6 @@ namespace RealEstate.Host.Controllers
         }
     }
 
-    /// <summary>
-    /// Request model for submitting ownership verification.
-    /// </summary>
-    /// <summary>
-    /// Request model for submitting ownership verification.
-    /// </summary>
-    public class SubmitVerificationRequest
-    {
-        public Guid PropertyId { get; set; }
-        public Guid OwnerId { get; set; }
-        public string OwnerName { get; set; }
-        public IFormFile NationalIdFile { get; set; }
-        public IFormFile OwnershipProofFile { get; set; }
-
-        // 👇 أضف هذه الخصائص الجديدة
-        public string Country { get; set; }
-        public string Governorate { get; set; }
-        public string City { get; set; }
-        public string? District { get; set; }
-        public string Address { get; set; }
-    }
     /// <summary>
     /// Request model for admin review (approve/reject).
     /// </summary>

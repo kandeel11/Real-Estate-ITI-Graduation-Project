@@ -17,8 +17,6 @@ public class PropertySummaryDto
     public bool PetsAllowed { get; init; }
     public string City { get; init; } = string.Empty;
     public string District { get; init; } = string.Empty;
-    public decimal Latitude { get; init; }
-    public decimal Longitude { get; init; }
     public string Status { get; init; } = string.Empty;
     public bool IsFeatured { get; init; }
     public string? PrimaryImageUrl { get; init; }

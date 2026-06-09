@@ -28,17 +28,6 @@ public class LeadClosedWonEvent : DomainEvent
     public decimal? DealValue { get; init; }
 }
 
-public class RatingApprovedEvent : DomainEvent
-{
-    public Guid RatingId { get; init; }
-    public Guid ReviewerId { get; init; }
-    public Guid? BrokerId { get; init; }
-    public Guid? CompanyId { get; init; }
-    public Guid? PropertyId { get; init; }
-    public Guid? MaintenanceCompanyId { get; init; }
-    public int RatingValue { get; init; }
-}
-
 public record LeaseUploadedEvent(
     Guid LeaseId,
     string ContractFileUrl,

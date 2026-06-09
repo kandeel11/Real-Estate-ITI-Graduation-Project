@@ -13,16 +13,13 @@ namespace Property.Application.Features.EventHandlers;
 public sealed class LeaseActivatedEventHandler : INotificationHandler<LeaseActivatedEvent>
 {
     private readonly IPropertyRepository _repository;
-    private readonly IPublisher _publisher;
     private readonly ILogger<LeaseActivatedEventHandler> _logger;
 
     public LeaseActivatedEventHandler(
         IPropertyRepository repository,
-        IPublisher publisher,
         ILogger<LeaseActivatedEventHandler> logger)
     {
         _repository = repository;
-        _publisher = publisher;
         _logger = logger;
     }
 
@@ -45,16 +42,11 @@ public sealed class LeaseActivatedEventHandler : INotificationHandler<LeaseActiv
                 return;
             }
 
-            // ✅ Mark property as Rented
-            // This validates Status=Active and publishes PropertyRentedEvent
+            // ✅ Mark property as Rented (validates Status=Active and raises PropertyRentedEvent).
+            // PropertyRentedEvent is dispatched by DispatchDomainEventsInterceptor after save,
+            // which triggers the subscription quota decrement.
             property.MarkAsRented();
             await _repository.SaveChangesAsync(cancellationToken);
-
-            // Publish domain events (PropertyRentedEvent) to trigger subscription quota decrement
-            foreach (var domainEvent in property.DomainEvents)
-                await _publisher.Publish(domainEvent, cancellationToken);
-
-            property.ClearDomainEvents();
 
             _logger.LogInformation(
                 "Property {PropertyId} marked as rented | Lease {LeaseId}",

@@ -1,6 +1,5 @@
 ﻿// AI.Infrastructure/EventHandlers/PropertyCreatedEventHandler.cs
 
-using AI.Application.Events;
 using AI.Application.Features.OwnershipVerification.DTOs;
 using AI.Application.Features.OwnershipVerification.Interfaces;
 using AI.Application.Interfaces.Common;
@@ -8,6 +7,7 @@ using AI.Domain.Entities;
 using MediatR;
 using Microsoft.Extensions.Logging;
 using Property.Domain.Events;
+using RealEstate.Shared.Kernel.Shared.IntegrationEvents;
 
 namespace AI.Infrastructure.EventHandlers;
 

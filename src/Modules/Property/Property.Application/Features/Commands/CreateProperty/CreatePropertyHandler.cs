@@ -49,8 +49,6 @@ public class CreatePropertyHandler : IRequestHandler<CreatePropertyCommand, Guid
       request.YearBuilt ?? 0,                  // Command has int?, Entity expects int
       request.IsFurnished,
       request.PetsAllowed,
-      request.Latitude,
-      request.Longitude,
       request.Address,
       request.ApartmentNumber,                 // Matches (int?)
       request.Country,
@@ -69,18 +67,27 @@ public class CreatePropertyHandler : IRequestHandler<CreatePropertyCommand, Guid
 
         await _limitChecker.IncrementPropertyUsageAsync(request.OwnerId, request.CompanyId, cancellationToken);
 
-        await _publisher.Publish(new PropertyCreatedEvent(
-          PropertyId: property.Id,
-          OwnerUserId: property.OwnerId,
-          OwnerName: request.OwnerFullName,
-          OwnerNationalIdBlobPath: request.NationalIdBlobPath,
-          OwnershipProofBlobPath: request.OwnershipProofBlobPath,
-          Country: request.Country,
-          Governorate: request.Governorate,
-          City: request.City,
-          District: request.District,
-          AddressLine: request.Address
-      ), cancellationToken);
+        // Only owners submit ownership documents and require AI verification.
+        // Brokers don't upload documents (blob paths are null), so we skip PropertyCreatedEvent
+        // entirely — otherwise the AI handler would try to persist an OwnershipVerificationRequest
+        // with null blob paths and violate the NOT NULL constraint.
+        if (request.IsOwnerSubmission
+            && !string.IsNullOrWhiteSpace(request.NationalIdBlobPath)
+            && !string.IsNullOrWhiteSpace(request.OwnershipProofBlobPath))
+        {
+            await _publisher.Publish(new PropertyCreatedEvent(
+              PropertyId: property.Id,
+              OwnerUserId: property.OwnerId,
+              OwnerName: request.OwnerFullName ?? string.Empty,
+              OwnerNationalIdBlobPath: request.NationalIdBlobPath,
+              OwnershipProofBlobPath: request.OwnershipProofBlobPath,
+              Country: request.Country,
+              Governorate: request.Governorate,
+              City: request.City,
+              District: request.District,
+              AddressLine: request.Address
+          ), cancellationToken);
+        }
 
         return property.Id;
     }

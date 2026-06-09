@@ -1,6 +1,5 @@
 using MediatR;
 using Property.Application.Interfaces;
-using Property.Domain.Enums;
 using RealEstate.Shared.Kernel.Shared.IntegrationEvents;
 
 namespace Property.Application.Features.Commands.RequestAiDescription;
@@ -24,8 +23,7 @@ public class PropertyAiDescriptionRequestHandler : IRequestHandler<PropertyAiDes
         if (property.OwnerId != request.RequestingUserId)
             throw new UnauthorizedAccessException("Only the property owner can request an AI description.");
 
-        if (property.Status == PropertyStatus.Draft)
-            throw new InvalidOperationException("Submit the property for review before generating an AI description.");
+        // Allowed in any status, including Draft — owners can generate a description before submitting.
 
         await _publisher.Publish(new PropertyAiDescriptionRequestedEvent(
             PropertyId:   property.Id,
