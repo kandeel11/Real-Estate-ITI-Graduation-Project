@@ -39,6 +39,22 @@ public class MaintenanceTicketRepository(MaintenanceDbContext db) : IMaintenance
         => db.MaintenanceTickets.Where(t => t.PropertyId == propertyId)
             .OrderByDescending(t => t.CreatedAt).ToListAsync(ct);
 
+    public async Task<List<MaintenanceTicket>> GetByVendorIdAsync(Guid vendorId, CancellationToken ct = default)
+    {
+        var ticketIds = await db.VendorAssignments
+            .Where(a => a.VendorId == vendorId && a.Status != AssignmentStatus.Rejected)
+            .Select(a => a.TicketId)
+            .Distinct()
+            .ToListAsync(ct);
+
+        return await db.MaintenanceTickets
+            .Include(t => t.Attachments)
+            .Include(t => t.CurrentVendorAssignment)
+            .Where(t => ticketIds.Contains(t.Id))
+            .OrderByDescending(t => t.CreatedAt)
+            .ToListAsync(ct);
+    }
+
     public Task<List<MaintenanceTicket>> GetPendingAiEvaluationAsync(CancellationToken ct = default)
         => db.MaintenanceTickets.Where(t => t.Status == TicketStatus.Submitted).ToListAsync(ct);
 
@@ -48,12 +64,13 @@ public class MaintenanceTicketRepository(MaintenanceDbContext db) : IMaintenance
     public async Task AddAsync(MaintenanceTicket ticket, CancellationToken ct = default)
         => await db.MaintenanceTickets.AddAsync(ticket, ct);
 
+    // ← new
+    public Task<MaintenanceTicketAttachment?> GetAttachmentByIdAsync(Guid attachmentId, CancellationToken ct = default)
+        => db.Attachments.FirstOrDefaultAsync(a => a.Id == attachmentId, ct);
+
+    // ← new
     public async Task AddAttachmentAsync(MaintenanceTicketAttachment attachment, CancellationToken ct = default)
         => await db.Attachments.AddAsync(attachment, ct);
 
-    public Task<MaintenanceTicketAttachment?> GetAttachmentByIdAsync(Guid attachmentId, CancellationToken ct = default)
-    => db.Attachments.FirstOrDefaultAsync(a => a.Id == attachmentId, ct);
-
-    public Task SaveChangesAsync(CancellationToken ct = default)
-        => db.SaveChangesAsync(ct);
+    public Task SaveChangesAsync(CancellationToken ct = default) => db.SaveChangesAsync(ct);
 }
