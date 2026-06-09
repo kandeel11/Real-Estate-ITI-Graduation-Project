@@ -2,10 +2,10 @@
 
 #nullable disable
 
-namespace Maintenance.Infrastructure.Migrations
+namespace Identity.Infrastructure.Migrations
 {
     /// <inheritdoc />
-    public partial class InitialMaintenance2 : Migration
+    public partial class V2 : Migration
     {
         /// <inheritdoc />
         protected override void Up(MigrationBuilder migrationBuilder)
