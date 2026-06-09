@@ -7,6 +7,8 @@ using Microsoft.AspNetCore.Authorization;
 using Document.Application.Commands.Rating.CreateRating;
 using Document.Application.Commands.Rating.ModerateRating;
 using Document.Application.Queries.Rating.GetRatingsByTarget;
+using Microsoft.AspNetCore.Mvc;
+using CreateRatingCommand = Document.Application.Commands.Rating.CreateRatingCommand;
 
 namespace RealEstate.Host.Controllers;
 
