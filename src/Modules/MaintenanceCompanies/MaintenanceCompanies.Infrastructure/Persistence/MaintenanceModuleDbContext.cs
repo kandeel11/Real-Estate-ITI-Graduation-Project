@@ -16,7 +16,7 @@ public class MaintenanceModuleDbContext : DbContext, IMaintenanceModuleDbContext
 
     protected override void OnModelCreating(ModelBuilder b)
     {
-        b.HasDefaultSchema("maintenance"); // module-scoped schema
+        b.HasDefaultSchema("maintenanceComp"); // module-scoped schema
 
         b.Entity<MaintenanceCategory>(e =>
         {

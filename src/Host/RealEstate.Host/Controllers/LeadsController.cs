@@ -1,4 +1,5 @@
 using Document.Application.Commands.Lead.UpdateLeadStatus;
+using Document.Application.Queries.Lead.GetLeadsByBroker;
 using MediatR;
 using Microsoft.AspNetCore.Mvc;
 
@@ -18,6 +19,12 @@ public class LeadsController : ControllerBase
             id, req.NewStatus, req.DealValue, req.Notes));
         return NoContent();
     }
+   [HttpGet("broker/{brokerId}")]
+   public async Task<IActionResult> GetByBroker(Guid brokerId)
+   {
+    var leads = await _mediator.Send(new GetLeadsByBrokerQuery(brokerId));
+    return Ok(leads);
+   }
 }
 
 public record UpdateLeadStatusRequest(
