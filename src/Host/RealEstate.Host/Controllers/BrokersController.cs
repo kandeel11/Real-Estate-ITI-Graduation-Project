@@ -11,6 +11,26 @@ namespace RealEstate.Host.Controllers;
 [Authorize(Policy = "CompanyManager")]
 public class BrokersController(IMediator mediator, ICurrentUserService currentUser) : ControllerBase
 {
+    /// <summary>
+    /// Add a broker to the CURRENT manager's own company — companyId is taken from the JWT,
+    /// so the caller never has to supply it. This is the normal company-manager path.
+    /// </summary>
+    [HttpPost("~/api/companies/mine/brokers")]
+    public async Task<IActionResult> AddBrokerToMyCompany(
+        [FromBody] AddBrokerRequest request,
+        CancellationToken ct)
+    {
+        var companyId = currentUser.CompanyId;
+        if (companyId is null)
+            return BadRequest(new { error = "You are not associated with a company." });
+
+        return await CreateBrokerAsync(companyId.Value, request, ct);
+    }
+
+    /// <summary>
+    /// Add a broker to a specific company by id. Managers may only target their own company;
+    /// admins may target any. Kept mainly for admin cross-company use.
+    /// </summary>
     [HttpPost]
     public async Task<IActionResult> AddBroker(
         Guid companyId,
@@ -21,6 +41,11 @@ public class BrokersController(IMediator mediator, ICurrentUserService currentUs
         if (!currentUser.IsInRole("admin") && currentUser.CompanyId != companyId)
             return Forbid();
 
+        return await CreateBrokerAsync(companyId, request, ct);
+    }
+
+    private async Task<IActionResult> CreateBrokerAsync(Guid companyId, AddBrokerRequest request, CancellationToken ct)
+    {
         try
         {
             var cmd = new AddBrokerCommand(
