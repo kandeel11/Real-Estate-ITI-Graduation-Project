@@ -1,6 +1,6 @@
 using MediatR;
 using Microsoft.Extensions.Logging;
-using Property.Application.Features.Commands.SetVerificationStatus;
+using Property.Application.Features.Commands.SetPropertyGate;
 using Property.Domain.Enums;
 using RealEstate.Shared.Kernel.Shared.IntegrationEvents;
 
@@ -35,10 +35,11 @@ public class OwnershipVerificationFailedHandler
             notification.PropertyId, notification.Reason);
 
         await _mediator.Send(
-            new SetVerificationStatusCommand(
+            new SetPropertyGateCommand(
                 notification.PropertyId,
-                VerificationStatus.RequiresManualReview,
-                RejectionReason: null),
+                PropertyGateType.Ownership,
+                GateStatus.NeedsReview,
+                Note: $"Ownership verification could not be completed automatically ({notification.Reason}). Needs manual review."),
             cancellationToken);
     }
 }

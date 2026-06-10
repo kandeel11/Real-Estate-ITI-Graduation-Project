@@ -101,8 +101,8 @@ public sealed class PropertyDuplicateCheckService : IPropertyDuplicateCheckServi
 
         if (similarHits.Count == 0)
         {
-            // Rule 1: No hits found at all -> Not a duplicate
-            finalResult = CreateSafeResult(false, 0, similarHits, request,
+            // Rule 1: No hits found at all -> Not a duplicate (deterministic → full confidence)
+            finalResult = CreateSafeResult(false, 0, decisionConfidence: 1.0, similarHits, request,
                 "No similar properties found.", "Clean property.");
         }
         else
@@ -112,14 +112,14 @@ public sealed class PropertyDuplicateCheckService : IPropertyDuplicateCheckServi
 
             if (highestScore >= AutoDuplicateThreshold || (highestScore >= 0.90 && isSameOwner))
             {
-                // Rule 2: Extremely high similarity or high similarity with same owner -> Auto Duplicate
-                finalResult = CreateSafeResult(true, highestScore, similarHits, request,
+                // Rule 2: Extremely high similarity or high similarity with same owner -> Auto Duplicate (deterministic → full confidence)
+                finalResult = CreateSafeResult(true, highestScore, decisionConfidence: 1.0, similarHits, request,
                     "Exact match or very high similarity with same owner detected.", "Auto-flagged by Rule Engine.");
             }
             else if (highestScore < ClaudeReviewThreshold)
             {
-                // Rule 3: Below Claude review threshold -> Not a duplicate
-                finalResult = CreateSafeResult(false, highestScore, similarHits, request,
+                // Rule 3: Below Claude review threshold -> Not a duplicate (deterministic → full confidence)
+                finalResult = CreateSafeResult(false, highestScore, decisionConfidence: 1.0, similarHits, request,
                     "Similarity score below ambiguity threshold.", "Auto-cleared by Rule Engine.");
             }
             else
@@ -403,6 +403,7 @@ public sealed class PropertyDuplicateCheckService : IPropertyDuplicateCheckServi
             return new DuplicateCheckResult(
      IsDuplicate: parsed.IsDuplicate,
      HighestSimilarityScore: parsed.SimilarityScore,
+     DecisionConfidence: parsed.DecisionConfidence,
                  Threshold: SimilarityThreshold,
                 SimilarProperties: similarProperties,
                 Reasoning: parsed.Reasoning ?? string.Empty,
@@ -412,9 +413,10 @@ public sealed class PropertyDuplicateCheckService : IPropertyDuplicateCheckServi
         {
             _logger.LogError(ex, "Failed to parse Claude response: {Raw}", raw);
 
-            // Fallback to Rule Engine logic if LLM fails
+            // Fallback when the LLM response can't be parsed: low decision confidence
+            // forces the property into manual admin review rather than auto-acting.
             var highestScore = hits.Count > 0 ? hits.Max(h => h.Score) : 0;
-            return CreateSafeResult(highestScore >= 0.90, highestScore, hits.ToList(), request,
+            return CreateSafeResult(highestScore >= 0.90, highestScore, decisionConfidence: 0.0, hits.ToList(), request,
                 "Analysis based on similarity score only due to AI parsing failure.",
                 "Automatic analysis failed — manual review required.");
         }
@@ -502,7 +504,7 @@ public sealed class PropertyDuplicateCheckService : IPropertyDuplicateCheckServi
     // Helper to generate safe Result structs
     // ─────────────────────────────────────────────────────────────────────────
     private DuplicateCheckResult CreateSafeResult(
-        bool isDuplicate, double highestScore, List<ScoredPoint> hits, PropertyDuplicateCheckRequest req, string reason, string note)
+        bool isDuplicate, double highestScore, double decisionConfidence, List<ScoredPoint> hits, PropertyDuplicateCheckRequest req, string reason, string note)
     {
         var mappedHits = hits.Select(h => new SimilarProperty(
             PropertyId: Guid.Parse(h.Payload["propertyId"].StringValue),
@@ -515,7 +517,7 @@ public sealed class PropertyDuplicateCheckService : IPropertyDuplicateCheckServi
             MatchedFields: BuildMatchedFields(req, h)
         )).ToList();
 
-        return new DuplicateCheckResult(isDuplicate, highestScore, SimilarityThreshold, mappedHits, reason, note);
+        return new DuplicateCheckResult(isDuplicate, highestScore, decisionConfidence, SimilarityThreshold, mappedHits, reason, note);
     }
 
     // Record for safe JSON Parsing

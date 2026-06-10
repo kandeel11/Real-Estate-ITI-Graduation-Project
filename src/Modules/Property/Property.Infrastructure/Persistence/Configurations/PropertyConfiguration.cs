@@ -62,6 +62,18 @@ public class PropertyConfiguration : IEntityTypeConfiguration<Domain.Entities.Pr
 
         builder.Property(x => x.RejectionReason);
 
+        builder.Property(x => x.OwnershipGate)
+            .IsRequired()
+            .HasConversion<string>()
+            .HasMaxLength(20)
+            .HasDefaultValue(GateStatus.Pending);
+
+        builder.Property(x => x.DuplicateGate)
+            .IsRequired()
+            .HasConversion<string>()
+            .HasMaxLength(20)
+            .HasDefaultValue(GateStatus.Pending);
+
         builder.Property(x => x.ViewsCount).IsRequired().HasDefaultValue(0);
         builder.Property(x => x.InquiriesCount).IsRequired().HasDefaultValue(0);
 

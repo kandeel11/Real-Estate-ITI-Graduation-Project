@@ -4,7 +4,7 @@ using Property.Application.Interfaces;
 
 namespace Property.Application.Features.Queries.GetPendingVerification;
 
-public class GetPendingVerificationHandler : IRequestHandler<GetPendingVerificationQuery, List<PropertySummaryDto>>
+public class GetPendingVerificationHandler : IRequestHandler<GetPendingVerificationQuery, List<MyPropertySummaryDto>>
 {
     private readonly IPropertyRepository _repository;
 
@@ -13,6 +13,6 @@ public class GetPendingVerificationHandler : IRequestHandler<GetPendingVerificat
         _repository = repository;
     }
 
-    public Task<List<PropertySummaryDto>> Handle(GetPendingVerificationQuery request, CancellationToken cancellationToken)
+    public Task<List<MyPropertySummaryDto>> Handle(GetPendingVerificationQuery request, CancellationToken cancellationToken)
         => _repository.GetPendingVerificationAsync(cancellationToken);
 }

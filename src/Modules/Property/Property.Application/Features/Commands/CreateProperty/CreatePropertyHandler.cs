@@ -62,6 +62,11 @@ public class CreatePropertyHandler : IRequestHandler<CreatePropertyCommand, Guid
       request.ListingSource
   );
 
+        // Brokers don't go through ownership verification — their ownership gate auto-passes.
+        // (The duplicate gate still applies to everyone, evaluated on submit.)
+        if (!request.IsOwnerSubmission)
+            property.MarkOwnershipNotRequired();
+
         await _repository.AddAsync(property, cancellationToken);
         await _repository.SaveChangesAsync(cancellationToken);
 
