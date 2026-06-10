@@ -13,7 +13,7 @@ public static class DependencyInjection
         this IServiceCollection services, IConfiguration config)
     {
         services.AddDbContext<MaintenanceModuleDbContext>(opt =>
-            opt.UseSqlServer(config.GetConnectionString("Default"),
+            opt.UseSqlServer(config.GetConnectionString("DefaultConnection"),
                 sql => sql.MigrationsHistoryTable("__EFMigrationsHistory", "maintenance")));
 
         services.AddScoped<IMaintenanceCompanyService, MaintenanceCompanyService>();
