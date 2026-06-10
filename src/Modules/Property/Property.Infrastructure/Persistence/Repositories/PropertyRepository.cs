@@ -132,11 +132,11 @@ public class PropertyRepository : IPropertyRepository
             })
             .ToListAsync(ct);
 
-    public async Task<List<PropertySummaryDto>> GetByOwnerAsync(Guid ownerId, CancellationToken ct = default)
+    public async Task<List<MyPropertySummaryDto>> GetByOwnerAsync(Guid ownerId, CancellationToken ct = default)
         => await _context.Properties
             .Where(p => p.OwnerId == ownerId)
             .OrderByDescending(p => p.CreatedAt)
-            .Select(p => new PropertySummaryDto
+            .Select(p => new MyPropertySummaryDto
             {
                 Id = p.Id,
                 OwnerId = p.OwnerId,
@@ -160,7 +160,13 @@ public class PropertyRepository : IPropertyRepository
                     .Select(m => m.MediaUrl)
                     .FirstOrDefault(),
                 ViewsCount = p.ViewsCount,
-                CreatedAt = p.CreatedAt
+                CreatedAt = p.CreatedAt,
+                // Owner/admin-only verification state
+                VerificationStatus = p.VerificationStatus.ToString(),
+                RejectionReason = p.RejectionReason,
+                AiDuplicateConfidence = p.AiDuplicateConfidence,
+                OwnershipGate = p.OwnershipGate.ToString(),
+                DuplicateGate = p.DuplicateGate.ToString()
             })
             .ToListAsync(ct);
 
@@ -196,11 +202,11 @@ public class PropertyRepository : IPropertyRepository
             })
             .ToListAsync(ct);
 
-    public async Task<List<PropertySummaryDto>> GetPendingVerificationAsync(CancellationToken ct = default)
+    public async Task<List<MyPropertySummaryDto>> GetPendingVerificationAsync(CancellationToken ct = default)
         => await _context.Properties
             .Where(p => p.Status == PropertyStatus.PendingReview)
             .OrderBy(p => p.CreatedAt)
-            .Select(p => new PropertySummaryDto
+            .Select(p => new MyPropertySummaryDto
             {
                 Id = p.Id,
                 OwnerId = p.OwnerId,
@@ -220,7 +226,13 @@ public class PropertyRepository : IPropertyRepository
                 Status = p.Status.ToString(),
                 IsFeatured = p.IsFeatured,
                 ViewsCount = p.ViewsCount,
-                CreatedAt = p.CreatedAt
+                CreatedAt = p.CreatedAt,
+                // Admin-only verification state
+                VerificationStatus = p.VerificationStatus.ToString(),
+                RejectionReason = p.RejectionReason,
+                AiDuplicateConfidence = p.AiDuplicateConfidence,
+                OwnershipGate = p.OwnershipGate.ToString(),
+                DuplicateGate = p.DuplicateGate.ToString()
             })
             .ToListAsync(ct);
 

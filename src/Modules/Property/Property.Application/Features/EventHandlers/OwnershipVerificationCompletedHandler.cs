@@ -1,18 +1,16 @@
 using MediatR;
 using Microsoft.Extensions.Logging;
-using Property.Application.Features.Commands.SetVerificationStatus;
+using Property.Application.Features.Commands.SetPropertyGate;
 using Property.Domain.Enums;
 using RealEstate.Shared.Kernel.Shared.IntegrationEvents;
 
 namespace Property.Application.Features.EventHandlers;
 
 /// <summary>
-/// Closes the owner verification loop: when the AI module finishes analyzing the
-/// ownership documents, this flips the property's VerificationStatus accordingly.
+/// Sets the property's OWNERSHIP gate from the AI ownership analysis.
+/// The property only goes Active once the duplicate gate also clears.
 ///
-/// AUTO_VERIFY → AiVerified (property becomes Active)
-/// MANUAL_REVIEW → RequiresManualReview (waits for admin approve/reject)
-/// REJECT → Rejected
+/// AUTO_VERIFY → Passed | MANUAL_REVIEW → NeedsReview | REJECT → Failed
 /// </summary>
 public class OwnershipVerificationCompletedHandler
     : INotificationHandler<OwnershipVerificationCompletedEvent>
@@ -30,30 +28,30 @@ public class OwnershipVerificationCompletedHandler
 
     public async Task Handle(OwnershipVerificationCompletedEvent notification, CancellationToken cancellationToken)
     {
-        var status = MapRecommendation(notification.Recommendation, notification.Status);
+        var gate = MapRecommendation(notification.Recommendation);
 
         _logger.LogInformation(
-            "Ownership verification completed | PropertyId={PropertyId} Recommendation={Rec} → VerificationStatus={Status} (confidence={Score})",
-            notification.PropertyId, notification.Recommendation, status, notification.ConfidenceScore);
+            "Ownership gate | PropertyId={PropertyId} Recommendation={Rec} → {Gate} (confidence={Score})",
+            notification.PropertyId, notification.Recommendation, gate, notification.ConfidenceScore);
 
-        var rejectionReason = status == VerificationStatus.Rejected
-            ? notification.AnalysisNotes ?? "Ownership documents rejected by automated verification."
-            : null;
+        var note = gate switch
+        {
+            GateStatus.Failed => notification.AnalysisNotes ?? "Ownership documents rejected by automated verification.",
+            GateStatus.NeedsReview => notification.AnalysisNotes ?? "Ownership documents need manual review.",
+            _ => null
+        };
 
         await _mediator.Send(
-            new SetVerificationStatusCommand(notification.PropertyId, status, rejectionReason),
+            new SetPropertyGateCommand(notification.PropertyId, PropertyGateType.Ownership, gate, note),
             cancellationToken);
     }
 
-    private static VerificationStatus MapRecommendation(string recommendation, string status)
+    private static GateStatus MapRecommendation(string recommendation)
         => recommendation?.ToUpperInvariant() switch
         {
-            "AUTO_VERIFY" => VerificationStatus.AiVerified,
-            "REJECT" => VerificationStatus.Rejected,
-            "MANUAL_REVIEW" => VerificationStatus.RequiresManualReview,
-            // Fall back to the Status string if Recommendation is unrecognized
-            _ => Enum.TryParse<VerificationStatus>(status, ignoreCase: true, out var parsed)
-                ? parsed
-                : VerificationStatus.RequiresManualReview
+            "AUTO_VERIFY" => GateStatus.Passed,
+            "REJECT" => GateStatus.Failed,
+            "MANUAL_REVIEW" => GateStatus.NeedsReview,
+            _ => GateStatus.NeedsReview   // unknown verdict → safest is human review
         };
 }

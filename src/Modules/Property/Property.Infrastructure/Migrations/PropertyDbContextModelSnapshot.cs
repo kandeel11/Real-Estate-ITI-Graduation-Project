@@ -121,6 +121,13 @@ namespace Property.Infrastructure.Migrations
                         .HasMaxLength(200)
                         .HasColumnType("nvarchar(200)");
 
+                    b.Property<string>("DuplicateGate")
+                        .IsRequired()
+                        .ValueGeneratedOnAdd()
+                        .HasMaxLength(20)
+                        .HasColumnType("nvarchar(20)")
+                        .HasDefaultValue("Pending");
+
                     b.Property<DateTime?>("FeaturedUntil")
                         .HasColumnType("datetime2");
 
@@ -165,6 +172,13 @@ namespace Property.Infrastructure.Migrations
                     b.Property<string>("OwnerShipStatus")
                         .IsRequired()
                         .HasColumnType("nvarchar(max)");
+
+                    b.Property<string>("OwnershipGate")
+                        .IsRequired()
+                        .ValueGeneratedOnAdd()
+                        .HasMaxLength(20)
+                        .HasColumnType("nvarchar(20)")
+                        .HasDefaultValue("Pending");
 
                     b.Property<string>("OwnershipProofBlobPath")
                         .IsRequired()

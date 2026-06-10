@@ -161,9 +161,30 @@ public class PropertiesController : ControllerBase
         if (ownerId is null)
             return Unauthorized(new { error = "User not authenticated." });
 
+        // Company managers don't create listings themselves — their brokers do.
+        // (A manager-created listing would have no owner identity to verify and wouldn't
+        //  belong to a broker, so we block it and steer them to add/assign a broker.)
+        if (_currentUser.IsInRole("company_manager"))
+            return StatusCode(StatusCodes.Status403Forbidden, new
+            {
+                error = "Company managers cannot create listings directly. Add a broker to your company — brokers create and are assigned listings."
+            });
+
         // 🔍 Determine submission type from role
         var isOwnerSubmission = _currentUser.IsInRole("owner");          // ⬅ adjust to your role constants
         var isBrokerSubmission = _currentUser.IsInRole("broker");
+
+        // CompanyId / ListingBrokerId are derived from the caller's identity — never from the body:
+        //   • Owner            → both null
+        //   • Individual broker → CompanyId null,            ListingBrokerId = broker's own user id
+        //   • Company broker    → CompanyId = broker's company, ListingBrokerId = broker's own user id
+        Guid? companyId = null;
+        Guid? listingBrokerId = null;
+        if (isBrokerSubmission)
+        {
+            listingBrokerId = ownerId.Value;          // ListingBrokerId is the broker's USER id
+            companyId = _currentUser.CompanyId;       // null for individual broker, set for company broker
+        }
 
         string? nationalIdBlobPath = null;
         string? ownershipProofBlobPath = null;
@@ -204,8 +225,8 @@ public class PropertiesController : ControllerBase
         // ── Build & send command ─────────────────────────────────────
         var id = await _mediator.Send(new CreatePropertyCommand(
        OwnerId: ownerId.Value,
-       CompanyId: request.CompanyId ?? _currentUser.CompanyId,
-       ListingBrokerId: request.ListingBrokerId,
+       CompanyId: companyId,
+       ListingBrokerId: listingBrokerId,
        Title: request.Title,
        TitleAr: request.TitleAr,
        // Descriptions come from the AI flow later; start empty.
@@ -495,8 +516,8 @@ public class PropertiesController : ControllerBase
 
 
 public record CreatePropertyRequest(
-    Guid? CompanyId,
-    Guid? ListingBrokerId,
+    // CompanyId & ListingBrokerId are NOT accepted from the client — they're derived from the
+    // caller's JWT (role + company_id) in the controller. See Create().
     string Title,
     string TitleAr,
     // Description/DescriptionAr are NOT collected here — they are produced by the AI

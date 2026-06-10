@@ -24,8 +24,11 @@ public class PropertyDetailDto
     public bool PetsAllowed { get; init; }
 
     public string Address { get; init; } = string.Empty;
+    public int? ApartmentNumber { get; init; }
     public string City { get; init; } = string.Empty;
     public string District { get; init; } = string.Empty;
+    public string Country { get; init; } = string.Empty;
+    public string Governorate { get; init; } = string.Empty;
 
     public string ListingSource { get; init; } = string.Empty;
     public string Status { get; init; } = string.Empty;
@@ -35,6 +38,10 @@ public class PropertyDetailDto
     public decimal? AiDuplicateConfidence { get; init; }
     public string VerificationStatus { get; init; } = string.Empty;
     public string? RejectionReason { get; init; }
+
+    // Two-gate verification state
+    public string OwnershipGate { get; init; } = string.Empty;
+    public string DuplicateGate { get; init; } = string.Empty;
 
     public int ViewsCount { get; init; }
     public int InquiriesCount { get; init; }
