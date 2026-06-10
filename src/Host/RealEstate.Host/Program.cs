@@ -5,7 +5,6 @@ using Document.Infrastructure;
 using Document.Infrastructure.Hubs;
 using Hangfire;
 using Hangfire.SqlServer;
-using Identity.Application;
 using Identity.Infrastructure;
 using Identity.Infrastructure.Persistence;
 using Identity.Infrastructure.Seed;
@@ -22,6 +21,8 @@ using Subscription.Infrastructure.Persistence;
 using Subscription.Infrastructure.Seed;
 using System.IdentityModel.Tokens.Jwt;
 using System.Text;
+using MaintenanceCompanies.Infrastructure;
+using MaintenanceCompanies.Application;
 
 namespace RealEstate.Host;
 
@@ -109,7 +110,9 @@ public class Program
                 typeof(Identity.Infrastructure.AssemblyMarker).Assembly,
                 typeof(Property.Infrastructure.AssemblyMarker).Assembly,
                 typeof(Document.Infrastructure.AssemblyMarker).Assembly,
-                typeof(Document.Application.AssemblyMarker).Assembly
+                typeof(Document.Application.AssemblyMarker).Assembly,
+                typeof(MaintenanceCompanies.Infrastructure.AssemblyReference).Assembly,
+                typeof(MaintenanceCompanies.Application.AssemblyReference).Assembly
             );
         });
 
@@ -117,6 +120,7 @@ public class Program
         builder.Services.AddAiApplication(builder.Configuration);
         builder.Services.AddAiInfrastructure(builder.Configuration);
         builder.Services.AddDocumentModule(builder.Configuration);
+        builder.Services.AddMaintenanceCompaniesModule(builder.Configuration);
 
         builder.Services.AddHangfire(config => config
             .SetDataCompatibilityLevel(CompatibilityLevel.Version_180)

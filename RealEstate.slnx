@@ -25,6 +25,11 @@
     <Project Path="src/Modules/Maintenance/Maintenance.Domain/Maintenance.Domain.csproj" />
     <Project Path="src/Modules/Maintenance/Maintenance.Infrastructure/Maintenance.Infrastructure.csproj" />
   </Folder>
+  <Folder Name="/src/Modules/MaintenanceCompanies/">
+    <Project Path="src/Modules/MaintenanceCompanies/MaintenanceCompanies.Application/MaintenanceCompanies.Application.csproj" />
+    <Project Path="src/Modules/MaintenanceCompanies/MaintenanceCompanies.Domain/MaintenanceCompanies.Domain.csproj" />
+    <Project Path="src/Modules/MaintenanceCompanies/MaintenanceCompanies.Infrastructure/MaintenanceCompanies.Infrastructure.csproj" />
+  </Folder>
   <Folder Name="/src/Modules/Payment/">
     <Project Path="src/Modules/Payment/Payment.Application/Payment.Application.csproj" />
     <Project Path="src/Modules/Payment/Payment.Domain/Payment.Domain.csproj" />

@@ -1,10 +1,10 @@
 ﻿using Document.Application.Commands.Notification;
+using Document.Application.Commands.Notification.MarkNotificationRead;
 using Document.Application.Queries.Notification;
 using Identity.Application.Interfaces;
 using MediatR;
 using Microsoft.AspNetCore.Authorization;
-using Document.Application.Commands.Notification.MarkNotificationRead;
-using Document.Application.Queries.Notification.GetNotificationsByUser;
+using Microsoft.AspNetCore.Mvc;
 
 namespace RealEstate.Host.Controllers;
 
@@ -30,7 +30,7 @@ public class NotificationsController(ISender sender, ICurrentUserService current
     [HttpPatch("{id:guid}/read")]
     public async Task<IActionResult> MarkRead(Guid id, CancellationToken ct)
     {
-        await sender.Send(new MarkNotificationReadCommand(id), ct);
+        await sender.Send(new Document.Application.Commands.Notification.MarkNotificationReadCommand(id), ct);
         return NoContent();
     }
 
@@ -40,4 +40,5 @@ public class NotificationsController(ISender sender, ICurrentUserService current
         await sender.Send(new MarkAllNotificationsReadCommand(UserId), ct);
         return NoContent();
     }
+
 }

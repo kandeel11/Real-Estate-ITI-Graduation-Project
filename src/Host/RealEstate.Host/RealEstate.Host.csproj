@@ -17,6 +17,7 @@
     </PackageReference>
   </ItemGroup>
   <ItemGroup>
+    <ProjectReference Include="..\..\Modules\MaintenanceCompanies\MaintenanceCompanies.Infrastructure\MaintenanceCompanies.Infrastructure.csproj" />
     <ProjectReference Include="..\..\Shared\RealEstate.Shared.Kernel\RealEstate.Shared.Kernel.csproj" />
     <ProjectReference Include="..\..\Modules\AI\AI.Infrastructure\AI.Infrastructure.csproj" />
     <ProjectReference Include="..\..\Modules\Identity\Identity.Infrastructure\Identity.Infrastructure.csproj" />

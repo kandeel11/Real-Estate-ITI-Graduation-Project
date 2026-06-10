@@ -17,12 +17,17 @@ public class CurrentUserService : ICurrentUserService
     {
         get
         {
-            var sub = User?.FindFirstValue(JwtRegisteredClaimNames.Sub);
-            return Guid.TryParse(sub, out var id) ? id : null;
+            // بندور في NameIdentifier الأول (بتاع ASP.NET)، وبعدين الـ Sub
+            var idClaim = User?.FindFirstValue(ClaimTypes.NameIdentifier)
+                       ?? User?.FindFirstValue(JwtRegisteredClaimNames.Sub);
+
+            return Guid.TryParse(idClaim, out var id) ? id : null;
         }
     }
 
-    public string? Email => User?.FindFirstValue(JwtRegisteredClaimNames.Email);
+    public string? Email =>
+        User?.FindFirstValue(ClaimTypes.Email) ??
+        User?.FindFirstValue(JwtRegisteredClaimNames.Email);
 
     public string? Role => User?.FindFirstValue(ClaimTypes.Role);
 
