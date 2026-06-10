@@ -42,6 +42,38 @@ public class CompaniesController(IMediator mediator, ICurrentUserService current
     }
 
     /// <summary>
+    /// Updates the logged-in manager's OWN company profile (companyId from JWT).
+    /// </summary>
+    [HttpPut("mine")]
+    [Authorize(Policy = "CompanyManager")]
+    public async Task<IActionResult> UpdateMine([FromBody] UpdateCompanyRequest request, CancellationToken ct)
+    {
+        var userId = currentUser.UserId;
+        if (userId is null) return Unauthorized(new { error = "User not authenticated." });
+
+        var companyId = currentUser.CompanyId;
+        if (companyId is null) return BadRequest(new { error = "No company is associated with your account." });
+
+        try
+        {
+            await mediator.Send(new UpdateCompanyCommand(
+                CompanyId: companyId.Value,
+                RequestingUserId: userId.Value,
+                Name: request.Name,
+                City: request.City,
+                Address: request.Address,
+                Phone: request.Phone,
+                Website: request.Website,
+                Description: request.Description,
+                LogoUrl: request.LogoUrl), ct);
+
+            return NoContent();
+        }
+        catch (InvalidOperationException ex) { return BadRequest(new { error = ex.Message }); }
+        catch (UnauthorizedAccessException) { return Forbid(); }
+    }
+
+    /// <summary>
     /// Updates company profile. Only the company's manager or an admin can call this.
     /// </summary>
     [HttpPut("{id:guid}")]

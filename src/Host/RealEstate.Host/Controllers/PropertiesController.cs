@@ -161,6 +161,15 @@ public class PropertiesController : ControllerBase
         if (ownerId is null)
             return Unauthorized(new { error = "User not authenticated." });
 
+        // Company managers don't create listings themselves — their brokers do.
+        // (A manager-created listing would have no owner identity to verify and wouldn't
+        //  belong to a broker, so we block it and steer them to add/assign a broker.)
+        if (_currentUser.IsInRole("company_manager"))
+            return StatusCode(StatusCodes.Status403Forbidden, new
+            {
+                error = "Company managers cannot create listings directly. Add a broker to your company — brokers create and are assigned listings."
+            });
+
         // 🔍 Determine submission type from role
         var isOwnerSubmission = _currentUser.IsInRole("owner");          // ⬅ adjust to your role constants
         var isBrokerSubmission = _currentUser.IsInRole("broker");

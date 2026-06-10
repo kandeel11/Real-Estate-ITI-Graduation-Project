@@ -1,4 +1,5 @@
 using Identity.Application.Commands.AddBroker;
+using Identity.Application.Commands.DeactivateBroker;
 using Identity.Application.Interfaces;
 using MediatR;
 using Microsoft.AspNetCore.Authorization;
@@ -42,6 +43,25 @@ public class BrokersController(IMediator mediator, ICurrentUserService currentUs
             return Forbid();
 
         return await CreateBrokerAsync(companyId, request, ct);
+    }
+
+    /// <summary>
+    /// Deactivate a broker in the current manager's own company (removes them + blocks their login).
+    /// </summary>
+    [HttpDelete("~/api/companies/mine/brokers/{brokerId:guid}")]
+    public async Task<IActionResult> DeactivateMyBroker(Guid brokerId, CancellationToken ct)
+    {
+        var companyId = currentUser.CompanyId;
+        if (companyId is null && !currentUser.IsInRole("admin"))
+            return BadRequest(new { error = "You are not associated with a company." });
+
+        try
+        {
+            await mediator.Send(new DeactivateBrokerCommand(brokerId, companyId, currentUser.IsInRole("admin")), ct);
+            return NoContent();
+        }
+        catch (KeyNotFoundException ex) { return NotFound(new { error = ex.Message }); }
+        catch (UnauthorizedAccessException) { return Forbid(); }
     }
 
     private async Task<IActionResult> CreateBrokerAsync(Guid companyId, AddBrokerRequest request, CancellationToken ct)
