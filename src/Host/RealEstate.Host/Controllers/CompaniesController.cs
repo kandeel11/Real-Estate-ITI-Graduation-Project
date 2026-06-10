@@ -99,6 +99,37 @@ public class CompaniesController(IMediator mediator, ICurrentUserService current
     }
 
     /// <summary>
+    /// Lists all properties belonging to the logged-in manager's OWN company (companyId from JWT).
+    /// </summary>
+    [HttpGet("mine/properties")]
+    [Authorize(Policy = "CompanyManager")]
+    public async Task<IActionResult> GetMyProperties(CancellationToken ct)
+    {
+        var companyId = currentUser.CompanyId;
+        if (companyId is null)
+            return BadRequest(new { error = "No company is associated with your account." });
+
+        var properties = await mediator.Send(new GetPropertiesByCompanyQuery(companyId.Value), ct);
+        await enrichment.EnrichAsync(properties, ct);
+        return Ok(properties);
+    }
+
+    /// <summary>
+    /// Lists all brokers belonging to the logged-in manager's OWN company (companyId from JWT).
+    /// </summary>
+    [HttpGet("mine/brokers")]
+    [Authorize(Policy = "CompanyManager")]
+    public async Task<IActionResult> GetMyBrokers(CancellationToken ct)
+    {
+        var companyId = currentUser.CompanyId;
+        if (companyId is null)
+            return BadRequest(new { error = "No company is associated with your account." });
+
+        var brokers = await mediator.Send(new GetBrokersByCompanyQuery(companyId.Value), ct);
+        return Ok(brokers);
+    }
+
+    /// <summary>
     /// Lists all properties belonging to a company (created by any of its brokers or the manager).
     /// </summary>
     [HttpGet("{id:guid}/properties")]
