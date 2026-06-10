@@ -1,4 +1,5 @@
-﻿using Document.Application.Commands.Notification;
+using System;
+using Document.Application.Commands.Notification;
 using Document.Application.Commands.Notification.MarkNotificationRead;
 using Document.Application.Queries.Notification;
 using Identity.Application.Interfaces;
@@ -13,7 +14,8 @@ namespace RealEstate.Host.Controllers;
 [Authorize]
 public class NotificationsController(ISender sender, ICurrentUserService currentUser) : ControllerBase
 {
-    private Guid UserId => currentUser.UserId ?? throw new UnauthorizedAccessException();
+    private Guid UserId => currentUser.UserId
+    ?? throw new UnauthorizedAccessException("User is not authenticated.");
 
     [HttpGet]
     public async Task<IActionResult> GetAll(
