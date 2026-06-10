@@ -10,5 +10,6 @@ public interface IUserRepository
     Task<bool> ExistsByEmailAsync(string email, CancellationToken ct = default);
     Task<Dictionary<Guid, string>> GetFullNamesByIdsAsync(IEnumerable<Guid> ids, CancellationToken ct = default);
     Task AddAsync(User user, CancellationToken ct = default);
+    Task UpdateAsync(User user, CancellationToken ct = default);  
     Task SaveChangesAsync(CancellationToken ct = default);
 }
