@@ -1,10 +1,8 @@
-﻿using Document.Application.Commands.Inquiry;
-using Document.Application.DTOs;
+﻿using Document.Application.DTOs;
 using Document.Application.Interfaces;
 using Document.Domain.Enums;
 using Document.Domain.Events;
 using MediatR;
-using Document.Application.Interfaces;
 
 namespace Document.Application.Commands.Inquiry;
 
@@ -13,15 +11,18 @@ public record AcceptInquiryCommand(Guid InquiryId, Guid AcceptedById) : IRequest
 public class AcceptInquiryCommandHandler : IRequestHandler<AcceptInquiryCommand, InquiryResponse>
 {
     private readonly IInquiryRepository _inquiries;
+    private readonly IDocumentDbContext _db;
     private readonly INotificationService _notifications;
     private readonly IMediator _mediator;
 
     public AcceptInquiryCommandHandler(
         IInquiryRepository inquiries,
+        IDocumentDbContext db,
         INotificationService notifications,
         IMediator mediator)
     {
         _inquiries = inquiries;
+        _db = db;
         _notifications = notifications;
         _mediator = mediator;
     }
@@ -41,6 +42,37 @@ public class AcceptInquiryCommandHandler : IRequestHandler<AcceptInquiryCommand,
 
         await _inquiries.UpdateAsync(inquiry, ct);
 
+        // عمل Lead أوتوماتيك
+        var lead = new Document.Domain.Entities.Lead
+        {
+            Id = Guid.NewGuid(),
+            InquiryId = inquiry.Id,
+            PropertyId = inquiry.PropertyId,
+            TenantId = inquiry.TenantId,
+            OwnerId = inquiry.OwnerId,
+            Status = LeadStatus.New,
+            CreatedAt = DateTime.UtcNow,
+            UpdatedAt = DateTime.UtcNow
+        };
+        _db.Leads.Add(lead);
+
+        // عمل Conversation أوتوماتيك
+        var conversation = new Document.Domain.Entities.Conversation
+        {
+            Id = Guid.NewGuid(),
+            InquiryId = inquiry.Id,
+            PropertyId = inquiry.PropertyId,
+            TenantId = inquiry.TenantId,
+            BrokerOrOwnerId = cmd.AcceptedById,
+            IsActive = true,
+            CreatedAt = DateTime.UtcNow,
+            UpdatedAt = DateTime.UtcNow
+        };
+        _db.Conversations.Add(conversation);
+
+        await _db.SaveChangesAsync(ct);
+
+        // إرسال notification للـ tenant
         await _notifications.CreateInAppAsync(
             userId: inquiry.TenantId,
             title: "Inquiry Accepted",

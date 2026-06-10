@@ -1,5 +1,6 @@
 using Document.Application.Commands.Message.MarkMessagesRead;
 using Document.Application.Queries.Message.GetMessagesByConversation;
+using Document.Application.Queries.Conversation.GetConversationsByUser;
 using MediatR;
 using Microsoft.AspNetCore.Mvc;
 
@@ -25,5 +26,11 @@ public class ConversationsController : ControllerBase
     {
         await _mediator.Send(new MarkMessagesReadCommand(id, readerId));
         return NoContent();
+    }
+    [HttpGet("user/{userId}")]
+    public async Task<IActionResult> GetByUser(Guid userId)
+    {
+    var conversations = await _mediator.Send(new GetConversationsByUserQuery(userId));
+    return Ok(conversations);
     }
 }
