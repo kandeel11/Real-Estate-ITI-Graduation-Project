@@ -49,9 +49,15 @@
                 <button class="site-navbar__icon-btn" aria-label="Notifications">
                     <i class="fa-regular fa-bell"></i>
                 </button>
-                <a routerLink="/auth/login" class="btn btn-primary site-navbar__cta">
-                    Login
-                </a>
+                @if (authenticated()) {
+                    <button class="btn btn-outline-danger site-navbar__cta" (click)="logout()">
+                        <i class="fa-solid fa-arrow-right-from-bracket me-1"></i>Logout
+                    </button>
+                } @else {
+                    <a routerLink="/auth/login" class="btn btn-primary site-navbar__cta">
+                        Login
+                    </a>
+                }
             </div>
 
         </div>
