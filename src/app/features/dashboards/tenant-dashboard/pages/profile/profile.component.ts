@@ -34,19 +34,27 @@ export class ProfileComponent implements OnInit {
 
   protected activeSection = signal<'info' | 'password' | 'danger'>('info');
   protected loading = signal(true);
+  protected error = signal<string | null>(null);
   protected profile = signal<UserProfile | null>(null);
+
   protected saveLoading = signal(false);
   protected saveSuccess = signal(false);
+  protected saveError = signal<string | null>(null);
+
   protected pwLoading = signal(false);
   protected pwSuccess = signal(false);
   protected pwError = signal<string | null>(null);
+
   protected showCurrentPw = signal(false);
   protected showNewPw = signal(false);
 
+  protected verificationLoading = signal(false);
+  protected verificationSent = signal(false);
+  protected verificationError = signal<string | null>(null);
+
   readonly profileForm = this.fb.group({
-    firstName: ['', [Validators.required, Validators.minLength(2)]],
-    lastName:  ['', [Validators.required, Validators.minLength(2)]],
-    phone:     [''],
+    fullName: ['', [Validators.required, Validators.minLength(2)]],
+    phone:    [''],
   });
 
   readonly passwordForm = this.fb.group({
@@ -77,9 +85,8 @@ export class ProfileComponent implements OnInit {
   }
 
   get initials(): string {
-    const p = this.profile();
-    if (!p) return 'T';
-    return `${p.firstName.charAt(0)}${p.lastName.charAt(0)}`.toUpperCase();
+    const name = this.profile()?.fullName ?? '';
+    return name.split(' ').slice(0, 2).map(w => w.charAt(0)).join('').toUpperCase() || 'T';
   }
 
   ngOnInit(): void {
@@ -88,20 +95,25 @@ export class ProfileComponent implements OnInit {
 
   loadProfile(): void {
     this.loading.set(true);
-    this.profileService.getProfile().pipe(finalize(() => this.loading.set(false))).subscribe({
-      next: p => {
-        this.profile.set(p);
-        this.profileForm.patchValue({ firstName: p.firstName, lastName: p.lastName, phone: p.phone });
-      },
-    });
+    this.error.set(null);
+    this.profileService.getProfile()
+      .pipe(finalize(() => this.loading.set(false)))
+      .subscribe({
+        next: p => {
+          this.profile.set(p);
+          this.profileForm.patchValue({ fullName: p.fullName, phone: p.phone ?? '' });
+        },
+        error: () => this.error.set('Failed to load profile. Please try again.'),
+      });
   }
 
   saveProfile(): void {
     if (this.profileForm.invalid) return;
     this.saveLoading.set(true);
     this.saveSuccess.set(false);
+    this.saveError.set(null);
     const val = this.profileForm.getRawValue();
-    this.profileService.updateProfile({ firstName: val.firstName!, lastName: val.lastName!, phone: val.phone ?? '' })
+    this.profileService.updateProfile({ fullName: val.fullName!, phone: val.phone ?? '' })
       .pipe(finalize(() => this.saveLoading.set(false)))
       .subscribe({
         next: updated => {
@@ -109,6 +121,7 @@ export class ProfileComponent implements OnInit {
           this.saveSuccess.set(true);
           setTimeout(() => this.saveSuccess.set(false), 3000);
         },
+        error: () => this.saveError.set('Failed to save profile. Please try again.'),
       });
   }
 
@@ -126,6 +139,19 @@ export class ProfileComponent implements OnInit {
           setTimeout(() => this.pwSuccess.set(false), 3000);
         },
         error: () => this.pwError.set('Current password is incorrect or the change failed. Please try again.'),
+      });
+  }
+
+  sendVerification(): void {
+    const email = this.profile()?.email;
+    if (!email || this.verificationLoading()) return;
+    this.verificationLoading.set(true);
+    this.verificationError.set(null);
+    this.profileService.resendVerification(email)
+      .pipe(finalize(() => this.verificationLoading.set(false)))
+      .subscribe({
+        next: () => this.verificationSent.set(true),
+        error: () => this.verificationError.set('Failed to send verification email. Please try again.'),
       });
   }
 }

@@ -1,6 +1,94 @@
 :host {
-  --color-success:    #16a34a;
-  --color-success-bg: #dcfce7;
+  --color-success:      #16a34a;
+  --color-success-bg:   #dcfce7;
+  --color-verified:     #15803d;
+  --color-verified-bg:  #dcfce7;
+  --color-unverified:   #b45309;
+  --color-unverified-bg:#fef3c7;
+}
+
+/* ── EMAIL VERIFICATION BANNER ──────────────────── */
+.verification-banner {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 16px;
+  flex-wrap: wrap;
+  background: #fefce8;
+  border: 1px solid #fde047;
+  border-left: 4px solid #f59e0b;
+  border-radius: var(--radius-md);
+  padding: 14px 18px;
+}
+
+.verification-banner-body {
+  display: flex;
+  align-items: flex-start;
+  gap: 12px;
+  flex: 1;
+}
+
+.banner-icon {
+  font-size: 22px;
+  color: #b45309;
+  flex-shrink: 0;
+  margin-top: 2px;
+}
+
+.banner-title {
+  font-size: 14px;
+  font-weight: 600;
+  color: #78350f;
+  margin: 0 0 2px;
+}
+
+.banner-desc {
+  font-size: 13px;
+  color: #92400e;
+  margin: 0;
+}
+
+.banner-action {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-end;
+  gap: 4px;
+  flex-shrink: 0;
+}
+
+.verification-sent-msg {
+  font-size: 13px;
+  font-weight: 600;
+  color: var(--color-verified);
+}
+
+.banner-error {
+  font-size: 12px;
+  color: var(--color-error);
+  margin: 0;
+}
+
+/* ── VERIFIED / UNVERIFIED BADGES ───────────────── */
+.verified-badge {
+  display: inline-flex;
+  align-items: center;
+  font-size: 12px;
+  font-weight: 600;
+  color: var(--color-verified);
+  background: var(--color-verified-bg);
+  padding: 2px 8px;
+  border-radius: var(--radius-full);
+}
+
+.unverified-badge {
+  display: inline-flex;
+  align-items: center;
+  font-size: 12px;
+  font-weight: 600;
+  color: var(--color-unverified);
+  background: var(--color-unverified-bg);
+  padding: 2px 8px;
+  border-radius: var(--radius-full);
 }
 
 .profile-page { padding: 28px; max-width: 720px; }

@@ -1,21 +1,20 @@
 import { Injectable, inject } from '@angular/core';
 import { HttpClient } from '@angular/common/http';
-import { Observable, of, catchError } from 'rxjs';
+import { Observable } from 'rxjs';
 import { environment } from '../../../../../environments/environment';
 
 export interface UserProfile {
   id: string;
-  firstName: string;
-  lastName: string;
+  fullName: string;
   email: string;
   phone: string;
   role: string;
-  profileImage?: string;
+  isEmailVerified: boolean;
+  isActive: boolean;
 }
 
 export interface UpdateProfileDto {
-  firstName: string;
-  lastName: string;
+  fullName: string;
   phone: string;
 }
 
@@ -24,24 +23,13 @@ export interface ChangePasswordDto {
   newPassword: string;
 }
 
-const MOCK_PROFILE: UserProfile = {
-  id: 'u-001',
-  firstName: 'Sarah',
-  lastName: 'Johnson',
-  email: 'sarah.johnson@example.com',
-  phone: '+1 (212) 555-0142',
-  role: 'tenant',
-};
-
 @Injectable({ providedIn: 'root' })
 export class ProfileService {
   private readonly http = inject(HttpClient);
   private readonly base = environment.apiUrl;
 
   getProfile(): Observable<UserProfile> {
-    // TODO: replace with real API call
-    return of(MOCK_PROFILE);
-    // return this.http.get<UserProfile>(`${this.base}/auth/me`).pipe(catchError(() => of(MOCK_PROFILE)));
+    return this.http.get<UserProfile>(`${this.base}/tenant/profile`);
   }
 
   updateProfile(data: UpdateProfileDto): Observable<UserProfile> {
@@ -50,5 +38,9 @@ export class ProfileService {
 
   changePassword(data: ChangePasswordDto): Observable<void> {
     return this.http.put<void>(`${this.base}/tenant/profile/password`, data);
+  }
+
+  resendVerification(email: string): Observable<void> {
+    return this.http.post<void>(`${this.base}/auth/resend-verification`, { email });
   }
 }
