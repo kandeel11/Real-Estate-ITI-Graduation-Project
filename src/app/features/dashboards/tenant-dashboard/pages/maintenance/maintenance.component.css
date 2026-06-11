@@ -178,6 +178,104 @@
 .comment-text { font-size: 13px; color: var(--color-on-surface); margin: 0; }
 .comment-input-row { display: flex; gap: 8px; margin-top: 12px; }
 
+/* ── FILTER TABS ───────────────────────────────────── */
+.filter-tabs-wrap { overflow-x: auto; -webkit-overflow-scrolling: touch; }
+.filter-tabs {
+  display: flex;
+  gap: 6px;
+  background: var(--color-surface-container-low);
+  padding: 4px;
+  border-radius: var(--radius-lg);
+  min-width: max-content;
+}
+.filter-tab {
+  padding: 7px 16px;
+  border-radius: var(--radius-md);
+  font-size: 13px;
+  font-weight: 500;
+  cursor: pointer;
+  background: none;
+  border: none;
+  color: var(--color-on-surface-variant);
+  transition: all 0.15s;
+  white-space: nowrap;
+}
+.filter-tab:hover { background: var(--color-surface-container); }
+.filter-tab-active {
+  background: var(--color-surface-container-lowest);
+  color: var(--color-primary);
+  box-shadow: var(--shadow-soft);
+  font-weight: 600;
+}
+
+/* ── LIST META ─────────────────────────────────────── */
+.list-meta { padding: 0 2px; }
+
+/* ── SKELETON LOADER ───────────────────────────────── */
+.skeleton-list { display: flex; flex-direction: column; gap: 12px; }
+.skeleton-card {
+  background: var(--color-surface-container-lowest);
+  border-radius: var(--radius-lg);
+  box-shadow: var(--shadow-soft);
+  padding: 16px;
+}
+.skel-row { display: flex; gap: 8px; }
+.skel {
+  background: linear-gradient(90deg, var(--color-surface-container-low) 25%, var(--color-surface-container) 50%, var(--color-surface-container-low) 75%);
+  background-size: 400% 100%;
+  animation: skel-shimmer 1.4s infinite linear;
+  border-radius: var(--radius-sm);
+}
+.skel-chip { width: 64px; height: 20px; border-radius: var(--radius-full); }
+.skel-title { width: 60%; height: 16px; }
+.skel-line { width: 90%; height: 13px; }
+.skel-line-short { width: 50%; height: 13px; }
+@keyframes skel-shimmer {
+  0%   { background-position: 100% 0; }
+  100% { background-position: -100% 0; }
+}
+
+/* ── ADDITIONAL STATUS BADGES ──────────────────────── */
+.status-draft           { background: var(--color-surface-container);      color: var(--color-on-surface-variant); }
+.status-submitted       { background: var(--color-secondary-container);    color: var(--color-on-secondary-fixed); }
+.status-ai-review       { background: #ede9fe;                             color: #5b21b6; }
+.status-ai-evaluated    { background: #ddd6fe;                             color: #4c1d95; }
+.status-waiting         { background: var(--color-warning-bg);             color: var(--color-warning); }
+.status-waiting-tenant  { background: #fef3c7;                             color: #92400e; }
+.status-assigned        { background: var(--color-primary-fixed);          color: var(--color-on-primary-fixed); }
+.status-vendor-accepted { background: #d1fae5;                             color: #065f46; }
+.status-awaiting-payment{ background: var(--color-error-container);        color: var(--color-on-error-container); }
+.status-rejected        { background: var(--color-error-container);        color: var(--color-on-error-container); }
+
+/* ── PAGINATION ────────────────────────────────────── */
+.pagination-row {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 6px;
+  flex-wrap: wrap;
+}
+.page-btn {
+  min-width: 36px;
+  height: 36px;
+  padding: 0 10px;
+  border-radius: var(--radius-md);
+  border: 1px solid var(--color-outline-variant);
+  background: var(--color-surface-container-lowest);
+  color: var(--color-on-surface);
+  font-size: 13px;
+  font-weight: 500;
+  cursor: pointer;
+  transition: all 0.15s;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-family: var(--font-family);
+}
+.page-btn:hover:not(:disabled) { background: var(--color-surface-container-low); border-color: var(--color-primary); color: var(--color-primary); }
+.page-btn:disabled { opacity: 0.4; cursor: not-allowed; }
+.page-btn-active { background: var(--color-primary-container) !important; border-color: var(--color-primary-container) !important; color: #fff !important; font-weight: 600; }
+
 /* ── RESPONSIVE ────────────────────────────────── */
 @media (max-width: 576px) {
   .maintenance-page { padding: 16px; }

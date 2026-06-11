@@ -1,5 +1,4 @@
 import { Routes } from '@angular/router';
-// import { TenantDashboardLayoutComponent } from '../../dashboard/tenant-dashboard.component';
 import { TDashboardComponent } from './t-dashboard/t-dashboard.component';
 import { authGuard } from '../../../core/guards/role.guard';
 
@@ -28,6 +27,16 @@ export const dashboardRoutes: Routes = [
         path: 'maintenance',
         loadComponent: () =>
           import('./pages/maintenance/maintenance.component').then(m => m.MaintenanceComponent),
+      },
+      {
+        path: 'maintenance/create',
+        loadComponent: () =>
+          import('./pages/maintenance/create-ticket/create-ticket.component').then(m => m.CreateTicketComponent),
+      },
+      {
+        path: 'maintenance/:id',
+        loadComponent: () =>
+          import('./pages/maintenance/ticket-detail/ticket-detail.component').then(m => m.TicketDetailComponent),
       },
       {
         path: 'notifications',

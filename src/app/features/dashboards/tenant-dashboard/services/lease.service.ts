@@ -77,6 +77,10 @@ export class LeaseService {
     return this.http.get<ApiLease[]>(`${this.base}/tenant/leases`);
   }
 
+  getActiveLease(): Observable<ApiLease> {
+    return this.http.get<ApiLease>(`${this.base}/tenant/leases/active`);
+  }
+
   getRentedProperties(): Observable<RentedPropertyItem[]> {
     return this.http.get<RentedPropertyItem[]>(`${this.base}/tenant/rented-properties`);
   }

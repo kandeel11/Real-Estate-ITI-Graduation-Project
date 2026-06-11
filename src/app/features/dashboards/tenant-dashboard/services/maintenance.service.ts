@@ -1,191 +1,230 @@
 import { Injectable, inject } from '@angular/core';
 import { HttpClient } from '@angular/common/http';
-import { Observable, of, catchError } from 'rxjs';
+import { Observable } from 'rxjs';
 import { environment } from '../../../../../environments/environment';
 
+// ── Status / Priority ────────────────────────────────────────────────────────
 export type TicketStatus =
-  | 'Open'
-  | 'WaitingForDecision'
+  | 'Draft'
+  | 'Submitted'
+  | 'UnderAiReview'
+  | 'AiEvaluated'
+  | 'WaitingForOwnerDecision'
   | 'WaitingForTenantDecision'
+  | 'AssignedToVendor'
+  | 'VendorAccepted'
   | 'InProgress'
+  | 'AwaitingPayment'
   | 'Completed'
-  | 'Cancelled';
+  | 'Cancelled'
+  | 'Rejected';
 
 export type TicketPriority = 'Low' | 'Medium' | 'Emergency';
+export type ResolutionMethod = 0 | 1; // 0 = PlatformVendor, 1 = ExternalTechnician
 
-export interface Ticket {
+// ── List / Paginated ─────────────────────────────────────────────────────────
+export interface TicketListItem {
   id: string;
   ticketNumber: string;
   title: string;
-  description: string;
   priority: TicketPriority;
   status: TicketStatus;
   propertyAddress: string;
   attachmentCount: number;
   createdAt: string;
-  updatedAt: string;
 }
 
-export interface StatusHistoryItem {
-  id: string;
-  status: TicketStatus;
-  note?: string;
-  createdAt: string;
-  createdByName: string;
+export interface PagedResult<T> {
+  items: T[];
+  total: number;
+  page: number;
+  pageSize: number;
 }
 
+// ── Sub-models ───────────────────────────────────────────────────────────────
 export interface AiEvaluation {
-  responsibleParty: string;
+  id: string;
+  responsibleParty: 'Owner' | 'Tenant';
   category: string;
   confidenceScore: number;
   reasoning: string;
+  evaluatedAt: string;
 }
 
-export interface TicketComment {
+export interface VendorAssignment {
   id: string;
-  userId: string;
-  userName: string;
-  text: string;
+  vendorId: string;
+  status: string;
+  rejectionReason: string | null;
+  acceptedAt: string | null;
   createdAt: string;
 }
 
 export interface TicketAttachment {
   id: string;
-  fileName: string;
-  url: string;
-  type: string;
+  fileUrl: string;
+  fileType: string;
+  fileSizeKb: number;
+  uploadedAt: string;
 }
 
-export interface TicketDetail extends Ticket {
-  statusHistory: StatusHistoryItem[];
-  aiEvaluation: AiEvaluation | null;
-  comments: TicketComment[];
-  attachments: TicketAttachment[];
+export interface TicketComment {
+  id: string;
+  userId: string;
+  userRole: string;
+  content: string;
+  isInternal: boolean;
+  createdAt: string;
+  updatedAt: string;
 }
 
-export interface CreateTicketDto {
+export interface StatusHistoryItem {
+  fromStatus: string;
+  toStatus: string;
+  changedBy: string;
+  notes: string | null;
+  changedAt: string;
+}
+
+export interface TicketPayment {
+  id: string;
+  amount: number;
+  currency: string;
+  status: string;
+  paymentMethod: string | null;
+  transactionId: string | null;
+  paidAt: string | null;
+  createdAt: string;
+}
+
+// ── Full detail ──────────────────────────────────────────────────────────────
+export interface TicketDetail {
+  id: string;
+  ticketNumber: string;
+  propertyId: string;
+  propertyAddress: string;
+  tenantId: string;
+  tenantEmail: string;
+  tenantPhone: string;
+  ownerId: string;
   title: string;
   description: string;
   priority: TicketPriority;
-  propertyId: string;
+  status: TicketStatus;
+  responsibleParty: string | null;
+  resolutionMethod: ResolutionMethod | null;
+  aiEvaluation: AiEvaluation | null;
+  vendorAssignment: VendorAssignment | null;
+  attachments: TicketAttachment[];
+  comments: TicketComment[];
+  statusHistory: StatusHistoryItem[];
+  payment: TicketPayment | null;
+  createdAt: string;
+  updatedAt: string;
+  resolvedAt: string | null;
 }
 
-export interface SubmitTicketDto {
+// ── Request bodies ───────────────────────────────────────────────────────────
+export interface CreateTicketRequest {
+  propertyId: string;
+  ownerId: string;
+  leaseId: string | null;
+  title: string;
+  description: string;
+  priority: TicketPriority;
+}
+
+export interface SubmitTicketRequest {
   propertyAddress: string;
   tenantPhone: string;
+  tenantEmail: string;
 }
 
-const MOCK_TICKETS: Ticket[] = [
-  {
-    id: 'ticket-001', ticketNumber: 'TCK-0001',
-    title: 'HVAC system not cooling properly',
-    description: 'The air conditioning unit has not been cooling the apartment for the past 3 days. Temperature inside is consistently above 85°F despite the thermostat being set to 72°F.',
-    priority: 'Emergency', status: 'WaitingForTenantDecision',
-    propertyAddress: '42 Oak Street, Suite 3B, New York, NY 10001',
-    attachmentCount: 2,
-    createdAt: new Date(Date.now() - 172800000).toISOString(),
-    updatedAt: new Date(Date.now() - 86400000).toISOString(),
-  },
-  {
-    id: 'ticket-002', ticketNumber: 'TCK-0002',
-    title: 'Leaking faucet in master bathroom',
-    description: 'The bathroom faucet has been dripping continuously. Water stains are appearing under the sink cabinet.',
-    priority: 'Medium', status: 'InProgress',
-    propertyAddress: '42 Oak Street, Suite 3B, New York, NY 10001',
-    attachmentCount: 1,
-    createdAt: new Date(Date.now() - 432000000).toISOString(),
-    updatedAt: new Date(Date.now() - 259200000).toISOString(),
-  },
-  {
-    id: 'ticket-003', ticketNumber: 'TCK-0003',
-    title: 'Broken window latch in living room',
-    description: 'The window latch on the east-facing living room window is broken and does not secure properly.',
-    priority: 'Low', status: 'Open',
-    propertyAddress: '42 Oak Street, Suite 3B, New York, NY 10001',
-    attachmentCount: 0,
-    createdAt: new Date(Date.now() - 604800000).toISOString(),
-    updatedAt: new Date(Date.now() - 604800000).toISOString(),
-  },
-  {
-    id: 'ticket-004', ticketNumber: 'TCK-0004',
-    title: 'Broken blinds in master bedroom',
-    description: 'The venetian blinds in the master bedroom are broken and need replacement.',
-    priority: 'Low', status: 'Completed',
-    propertyAddress: '42 Oak Street, Suite 3B, New York, NY 10001',
-    attachmentCount: 1,
-    createdAt: new Date(Date.now() - 1209600000).toISOString(),
-    updatedAt: new Date(Date.now() - 864000000).toISOString(),
-  },
-];
-
-const MOCK_TICKET_DETAIL: TicketDetail = {
-  ...MOCK_TICKETS[0],
-  statusHistory: [
-    { id: 'sh-1', status: 'Open', note: 'Ticket submitted by tenant', createdAt: new Date(Date.now() - 172800000).toISOString(), createdByName: 'Sarah Johnson' },
-    { id: 'sh-2', status: 'WaitingForDecision', note: 'AI evaluation completed.', createdAt: new Date(Date.now() - 86400000).toISOString(), createdByName: 'System' },
-    { id: 'sh-3', status: 'WaitingForTenantDecision', note: 'Please choose how you want to proceed.', createdAt: new Date(Date.now() - 43200000).toISOString(), createdByName: 'System' },
-  ],
-  aiEvaluation: {
-    responsibleParty: 'Landlord',
-    category: 'HVAC',
-    confidenceScore: 92,
-    reasoning: "Based on the description, this appears to be a mechanical failure of the HVAC system. The system is unable to maintain the set temperature, suggesting a compressor or refrigerant issue that falls under landlord's maintenance responsibility.",
-  },
-  comments: [
-    { id: 'c-1', userId: 'u-001', userName: 'Sarah Johnson', text: "It's been 3 days and the temperature inside is unbearable. Please send someone ASAP.", createdAt: new Date(Date.now() - 172800000).toISOString() },
-  ],
-  attachments: [
-    { id: 'a-1', fileName: 'hvac_unit.jpg', url: 'https://placehold.co/400x300/dce9ff/4f46e5?text=HVAC+Unit', type: 'image/jpeg' },
-    { id: 'a-2', fileName: 'temperature_reading.jpg', url: 'https://placehold.co/400x300/dce9ff/4f46e5?text=Thermometer', type: 'image/jpeg' },
-  ],
-};
-
+// ── Service ──────────────────────────────────────────────────────────────────
 @Injectable({ providedIn: 'root' })
 export class MaintenanceService {
   private readonly http = inject(HttpClient);
   private readonly base = environment.apiUrl;
 
-  getTickets(): Observable<Ticket[]> {
-    // TODO: replace with real API call
-    return of(MOCK_TICKETS);
-    // return this.http.get<Ticket[]>(`${this.base}/maintenance/tickets`).pipe(catchError(() => of([])));
+  // 1. All my tickets (paginated + filtered)
+  getMyTickets(status = '', page = 1, pageSize = 10): Observable<PagedResult<TicketListItem>> {
+    const params: Record<string, string | number> = { page, pageSize };
+    if (status) params['status'] = status;
+    return this.http.get<PagedResult<TicketListItem>>(`${this.base}/maintenance/tickets`, { params });
   }
 
+  // 2. Full ticket detail
   getTicketDetail(id: string): Observable<TicketDetail> {
-    // TODO: replace with real API call
-    return of(MOCK_TICKET_DETAIL);
-    // return this.http.get<TicketDetail>(`${this.base}/maintenance/tickets/${id}`);
+    return this.http.get<TicketDetail>(`${this.base}/maintenance/tickets/${id}`);
   }
 
-  createTicket(data: CreateTicketDto): Observable<{ id: string }> {
+  // 3. Create ticket (status = Draft)
+  createTicket(data: CreateTicketRequest): Observable<{ id: string }> {
     return this.http.post<{ id: string }>(`${this.base}/maintenance/tickets`, data);
   }
 
-  submitTicket(id: string, data: SubmitTicketDto): Observable<void> {
-    return this.http.post<void>(`${this.base}/maintenance/tickets/${id}/submit`, data);
+  // 4. Update ticket (Draft or Submitted)
+  updateTicket(id: string, data: { title?: string; description?: string; priority?: string }): Observable<void> {
+    return this.http.patch<void>(`${this.base}/maintenance/tickets/${id}`, { ticketId: id, ...data });
   }
 
-  uploadAttachment(ticketId: string, file: File): Observable<TicketAttachment> {
+  // 5. Delete ticket (Draft only)
+  deleteTicket(id: string): Observable<void> {
+    return this.http.delete<void>(`${this.base}/maintenance/tickets/${id}`);
+  }
+
+  // 6. Upload image attachment
+  uploadAttachment(ticketId: string, file: File): Observable<{ attachmentId: string }> {
     const form = new FormData();
     form.append('file', file);
-    return this.http.post<TicketAttachment>(`${this.base}/maintenance/tickets/${ticketId}/attachments`, form);
+    return this.http.post<{ attachmentId: string }>(
+      `${this.base}/maintenance/tickets/${ticketId}/attachments`, form
+    );
   }
 
-  getAiEvaluation(id: string): Observable<AiEvaluation | null> {
-    return this.http.get<AiEvaluation>(`${this.base}/maintenance/tickets/${id}/ai-evaluation`)
-      .pipe(catchError(() => of(null)));
+  // 7. Submit ticket (triggers AI evaluation)
+  submitTicket(id: string, data: SubmitTicketRequest): Observable<{ message: string }> {
+    return this.http.post<{ message: string }>(`${this.base}/maintenance/tickets/${id}/submit`, data);
   }
 
-  makeDecision(id: string, decision: 'platform' | 'external'): Observable<void> {
-    return this.http.post<void>(`${this.base}/maintenance/tickets/${id}/decision`, { decision });
+  // 8. Get AI evaluation result
+  getAiEvaluation(id: string): Observable<AiEvaluation> {
+    return this.http.get<AiEvaluation>(`${this.base}/maintenance/tickets/${id}/ai-evaluation`);
   }
 
-  getComments(id: string): Observable<TicketComment[]> {
-    return this.http.get<TicketComment[]>(`${this.base}/maintenance/tickets/${id}/comments`)
-      .pipe(catchError(() => of([])));
+  // 9. Tenant decision (0 = PlatformVendor, 1 = ExternalTechnician)
+  makeDecision(id: string, resolutionMethod: ResolutionMethod): Observable<void> {
+    return this.http.post<void>(`${this.base}/maintenance/tickets/${id}/decision`, { resolutionMethod });
   }
 
-  addComment(id: string, text: string): Observable<TicketComment> {
-    return this.http.post<TicketComment>(`${this.base}/maintenance/tickets/${id}/comments`, { text });
+  // 10. Cancel ticket
+  cancelTicket(id: string): Observable<void> {
+    return this.http.post<void>(`${this.base}/maintenance/tickets/${id}/cancel`, {});
+  }
+
+  // Mark ticket as complete (external technician flow)
+  completeTicket(id: string): Observable<void> {
+    return this.http.post<void>(`${this.base}/maintenance/tickets/${id}/complete`, {});
+  }
+
+  // 11. Add comment (always non-internal for tenant)
+  addComment(id: string, content: string): Observable<TicketComment> {
+    return this.http.post<TicketComment>(
+      `${this.base}/maintenance/tickets/${id}/comments`,
+      { content, isInternal: false }
+    );
+  }
+
+  // 12. Pay online (AwaitingPayment)
+  payTicket(paymentId: string, transactionId: string): Observable<void> {
+    return this.http.post<void>(
+      `${this.base}/maintenance/tickets/payments/${paymentId}/pay`,
+      { transactionId }
+    );
+  }
+
+  // 13. Get payment info
+  getPayment(ticketId: string): Observable<TicketPayment> {
+    return this.http.get<TicketPayment>(`${this.base}/maintenance/tickets/${ticketId}/payments`);
   }
 }
