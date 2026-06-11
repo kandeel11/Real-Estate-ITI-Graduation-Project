@@ -14,6 +14,7 @@
 
 import { Injectable, signal, computed, inject } from '@angular/core';
 import { HttpClient } from '@angular/common/http';
+import { Router } from '@angular/router';
 import { Observable, of, delay, map, tap, finalize } from 'rxjs';
 import { environment } from '../../../environments/environment';
 import { API_ENDPOINTS } from '../constants/api-endpoints';
@@ -64,7 +65,10 @@ const BACKEND_ROLE_MAP: Record<string, UserRole> = {
 })
 export class AuthService {
   private readonly http = inject(HttpClient);
-  private useMock = false; // ← flip to false to authenticate against the real backend
+  private readonly router = inject(Router);
+  private useMock = false; // ← flip to true for offline demos (no backend)
+
+  private logoutTimer: ReturnType<typeof setTimeout> | null = null;
 
   // Reactive state using Signals
   private readonly currentUser = signal<AuthUser | null>(null);
@@ -82,19 +86,76 @@ export class AuthService {
   }
 
   /**
-   * Initialize authentication from stored session
+   * Initialize authentication from stored session.
+   * A session restored with an already-expired token is discarded so guards
+   * send the user straight to login.
    */
   private initializeAuth(): void {
     const storedUser = localStorage.getItem('auth_user');
-    if (storedUser) {
-      try {
-        const user = JSON.parse(storedUser) as AuthUser;
-        this.currentUser.set(user);
-        this.isAuthenticated.set(true);
-      } catch {
-        this.clearAuth();
-      }
+    if (!storedUser) return;
+
+    if (this.isTokenExpired()) {
+      this.clearAuth();
+      return;
     }
+
+    try {
+      const user = JSON.parse(storedUser) as AuthUser;
+      this.currentUser.set(user);
+      this.isAuthenticated.set(true);
+      const token = this.getToken();
+      if (token) this.scheduleAutoLogout(token);
+    } catch {
+      this.clearAuth();
+    }
+  }
+
+  // ── JWT expiry handling ─────────────────────────────────────────
+
+  /** Epoch ms of the token's `exp` claim, or null if it can't be decoded
+   *  (mock tokens / malformed tokens never expire client-side). */
+  private getTokenExpiry(token: string): number | null {
+    try {
+      const payload = JSON.parse(
+        atob(token.split('.')[1].replace(/-/g, '+').replace(/_/g, '/'))
+      );
+      return typeof payload.exp === 'number' ? payload.exp * 1000 : null;
+    } catch {
+      return null;
+    }
+  }
+
+  isTokenExpired(): boolean {
+    const token = this.getToken();
+    if (!token) return false;
+    const expiresAt = this.getTokenExpiry(token);
+    return expiresAt !== null && Date.now() >= expiresAt;
+  }
+
+  /**
+   * Clear the session and send the user to login with a "session expired"
+   * notice, remembering where they were so login can return them there.
+   */
+  sessionExpired(): void {
+    const returnUrl = this.router.url;
+    this.clearAuth();
+    this.router.navigate(['/auth/login'], {
+      queryParams: {
+        expired: 1,
+        ...(returnUrl && returnUrl !== '/' && !returnUrl.startsWith('/auth')
+          ? { returnUrl }
+          : {}),
+      },
+    });
+  }
+
+  /** Logs out automatically the moment the token expires, even when idle. */
+  private scheduleAutoLogout(token: string): void {
+    if (this.logoutTimer) clearTimeout(this.logoutTimer);
+    const expiresAt = this.getTokenExpiry(token);
+    if (expiresAt === null) return;
+    const delay = Math.min(Math.max(expiresAt - Date.now(), 0), 0x7fffffff);
+    this.logoutTimer = setTimeout(() => this.sessionExpired(), delay);
   }
 
   /**
@@ -190,6 +251,7 @@ export class AuthService {
     localStorage.setItem('auth_user', JSON.stringify(user));
     localStorage.setItem('auth_token', token);
     this.isLoading.set(false);
+    this.scheduleAutoLogout(token);
   }
 
   /**
@@ -200,6 +262,10 @@ export class AuthService {
   }
 
   private clearAuth(): void {
+    if (this.logoutTimer) {
+      clearTimeout(this.logoutTimer);
+      this.logoutTimer = null;
+    }
     this.currentUser.set(null);
     this.isAuthenticated.set(false);
     localStorage.removeItem('auth_user');

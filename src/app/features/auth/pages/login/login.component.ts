@@ -24,6 +24,7 @@ export class LoginComponent {
   showPassword = false;
   loading = false;
   errorMsg: string | null = null;
+  sessionExpired = this.route.snapshot.queryParamMap.has('expired');
 
   get email()    { return this.form.get('email')!; }
   get password() { return this.form.get('password')!; }
@@ -35,6 +36,7 @@ export class LoginComponent {
     }
     this.loading = true;
     this.errorMsg = null;
+    this.sessionExpired = false;
 
     const { email, password } = this.form.getRawValue();
     this.auth.login(email!, password!).subscribe({
