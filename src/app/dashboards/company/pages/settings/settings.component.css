@@ -1,0 +1,6 @@
+.logo-preview {
+  width: 80px;
+  height: 80px;
+  object-fit: cover;
+  flex-shrink: 0;
+}

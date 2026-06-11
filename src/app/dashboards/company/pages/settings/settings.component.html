@@ -1,0 +1,108 @@
+<h2 class="mb-4">Settings</h2>
+
+@if (loading()) {
+  <div class="d-flex justify-content-center py-5">
+    <div class="spinner-border text-secondary" role="status">
+      <span class="visually-hidden">Loading…</span>
+    </div>
+  </div>
+} @else {
+  @if (saved()) {
+    <div class="alert alert-success">
+      <i class="fa-solid fa-circle-check me-2"></i>Company profile saved.
+    </div>
+  }
+
+  <div class="card p-4">
+    <form [formGroup]="form" (ngSubmit)="save()">
+      <!-- Logo -->
+      <div class="d-flex align-items-center gap-3 mb-4">
+        @if (logoPreview()) {
+          <img [src]="logoPreview()" alt="Company logo" class="logo-preview rounded border" />
+        } @else {
+          <div class="logo-preview rounded border bg-light d-flex align-items-center justify-content-center">
+            <i class="fa-solid fa-building text-muted fs-3"></i>
+          </div>
+        }
+        <div>
+          <label class="form-label mb-1">Company Logo</label>
+          <input type="file" class="form-control form-control-sm" accept="image/*" (change)="onLogoSelected($event)" />
+          <small class="text-muted">Preview only — upload will be enabled later.</small>
+        </div>
+      </div>
+
+      <div class="row g-3">
+        <div class="col-md-6">
+          <label class="form-label">Company Name</label>
+          <input type="text" class="form-control" formControlName="name"
+                 [class.is-invalid]="name.invalid && name.touched" />
+          @if (name.invalid && name.touched) {
+            <div class="invalid-feedback">Company name (min 3 characters) is required.</div>
+          }
+        </div>
+
+        <div class="col-md-6">
+          <label class="form-label">
+            Commercial Register
+            <i class="fa-solid fa-lock text-muted ms-1" title="Cannot change after verification"></i>
+          </label>
+          <input type="text" class="form-control" formControlName="commercialRegister" />
+        </div>
+
+        <div class="col-md-6">
+          <label class="form-label">Website</label>
+          <input type="text" class="form-control" formControlName="website" />
+        </div>
+
+        <div class="col-md-6">
+          <label class="form-label">
+            Email
+            <i class="fa-solid fa-lock text-muted ms-1" title="Contact support to change the account email"></i>
+          </label>
+          <input type="email" class="form-control" formControlName="email" />
+        </div>
+
+        <div class="col-md-6">
+          <label class="form-label">City</label>
+          <input type="text" class="form-control" formControlName="city"
+                 [class.is-invalid]="city.invalid && city.touched" />
+          @if (city.invalid && city.touched) {
+            <div class="invalid-feedback">City is required.</div>
+          }
+        </div>
+
+        <div class="col-md-6">
+          <label class="form-label">Phone</label>
+          <input type="tel" class="form-control" formControlName="phone"
+                 [class.is-invalid]="phone.invalid && phone.touched" />
+          @if (phone.invalid && phone.touched) {
+            <div class="invalid-feedback">Phone is required.</div>
+          }
+        </div>
+
+        <div class="col-12">
+          <label class="form-label">Address</label>
+          <input type="text" class="form-control" formControlName="address"
+                 [class.is-invalid]="address.invalid && address.touched" />
+          @if (address.invalid && address.touched) {
+            <div class="invalid-feedback">Address is required.</div>
+          }
+        </div>
+
+        <div class="col-12">
+          <label class="form-label">Description</label>
+          <textarea class="form-control" rows="3" formControlName="description"></textarea>
+        </div>
+      </div>
+
+      <div class="mt-4">
+        <button type="submit" class="btn btn-dark" [disabled]="saving()">
+          @if (saving()) {
+            <span class="spinner-border spinner-border-sm me-2"></span>
+          }
+          Save Changes
+        </button>
+      </div>
+    </form>
+  </div>
+}

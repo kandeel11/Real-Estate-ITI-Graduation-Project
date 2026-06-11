@@ -1,3 +1,9 @@
+/**
+ * Application Configuration
+ * Configures providers, interceptors, HTTP client, and other dependencies
+ * Used with bootstrapApplication in main.ts
+ */
+
 import { ApplicationConfig } from '@angular/core';
 import {
   provideRouter,

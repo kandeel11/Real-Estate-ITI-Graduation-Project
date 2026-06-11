@@ -1,5 +1,5 @@
 import { Routes } from '@angular/router';
-import { roleGuard } from './core/guards/role.guard';
+import { roleGuard, multiRoleGuard, dashboardRedirectGuard } from './core/guards/role.guard';
 
 export const routes: Routes = [
   // ==================== PUBLIC LAYOUT (Navbar + Footer) ====================
@@ -10,7 +10,21 @@ export const routes: Routes = [
     children: [
       {
         path: '',
+        // Dashboard roles (admin/company/broker/maintenance) go straight to
+        // their dashboard; tenants and owners browse the public site
+        canActivate: [dashboardRedirectGuard],
         loadComponent: () => import('./features/home/home').then((m) => m.HomeComponent),
+      },
+      {
+        // Listing creation — owners and brokers only (companies monitor;
+        // their brokers create)
+        path: 'properties/new',
+        canActivate: [multiRoleGuard],
+        data: { expectedRoles: ['owner', 'broker'] },
+        loadComponent: () =>
+          import('./features/properties/pages/create-property/create-property.component').then(
+            (m) => m.CreatePropertyComponent,
+          ),
       },
     ],
   },
@@ -112,6 +126,11 @@ export const routes: Routes = [
           ),
         children: [
           {
+            path: '',
+            pathMatch: 'full',
+            redirectTo: 'overview',
+          },
+          {
             path: 'overview',
             loadComponent: () =>
               import('./dashboards/company/pages/overview/overview.component').then(
@@ -133,6 +152,18 @@ export const routes: Routes = [
               ),
           },
           {
+            path: 'performance',
+            loadComponent: () =>
+              import('./dashboards/company/pages/performance/performance.component').then(
+                (m) => m.PerformanceComponent,
+              ),
+          },
+          {
+            path: 'ai',
+            loadComponent: () =>
+              import('./dashboards/company/pages/ai/ai.component').then((m) => m.AiComponent),
+          },
+          {
             path: 'leases',
             loadComponent: () =>
               import('./dashboards/company/pages/leases/leases.component').then(
@@ -144,6 +175,13 @@ export const routes: Routes = [
             loadComponent: () =>
               import('./dashboards/company/pages/subscriptions/subscriptions.component').then(
                 (m) => m.SubscriptionsComponent,
+              ),
+          },
+          {
+            path: 'settings',
+            loadComponent: () =>
+              import('./dashboards/company/pages/settings/settings.component').then(
+                (m) => m.SettingsComponent,
               ),
           },
         ],

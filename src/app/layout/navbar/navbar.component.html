@@ -50,9 +50,35 @@
                     <i class="fa-regular fa-bell"></i>
                 </button>
                 @if (authenticated()) {
-                    <button class="btn btn-outline-danger site-navbar__cta" (click)="logout()">
-                        <i class="fa-solid fa-arrow-right-from-bracket me-1"></i>Logout
-                    </button>
+                    @if (isTenant()) {
+                        <div class="site-navbar__user" (click)="$event.stopPropagation()">
+                            <button class="site-navbar__avatar" (click)="toggleMenu($event)"
+                                aria-label="Account menu" [attr.aria-expanded]="menuOpen()">
+                                {{ initials() }}
+                            </button>
+
+                            @if (menuOpen()) {
+                                <div class="site-navbar__menu shadow">
+                                    <div class="site-navbar__menu-header">
+                                        <div class="site-navbar__menu-name">{{ user()?.fullName }}</div>
+                                        <div class="site-navbar__menu-email">{{ user()?.email }}</div>
+                                    </div>
+                                    <div class="site-navbar__menu-divider"></div>
+                                    <a class="site-navbar__menu-item" [routerLink]="dashboardRoute()" (click)="closeMenu()">
+                                        <i class="fa-solid fa-gauge"></i>My Dashboard
+                                    </a>
+                                    <div class="site-navbar__menu-divider"></div>
+                                    <button class="site-navbar__menu-item site-navbar__menu-item--danger" (click)="logout()">
+                                        <i class="fa-solid fa-arrow-right-from-bracket"></i>Logout
+                                    </button>
+                                </div>
+                            }
+                        </div>
+                    } @else {
+                        <button class="btn btn-outline-danger site-navbar__cta" (click)="logout()">
+                            <i class="fa-solid fa-arrow-right-from-bracket me-1"></i>Logout
+                        </button>
+                    }
                 } @else {
                     <a routerLink="/auth/login" class="btn btn-primary site-navbar__cta">
                         Login

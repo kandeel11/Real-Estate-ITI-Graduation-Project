@@ -1,3 +1,19 @@
+/**
+ * Confirm Modal
+ * Bootstrap-styled replacement for native confirm(). Always render it and
+ * control visibility through [show]:
+ *
+ *   <app-confirm-modal
+ *     [show]="pendingDelete() !== null"
+ *     title="Delete item"
+ *     [message]="deleteMessage()"
+ *     confirmLabel="Delete"
+ *     confirmClass="btn-danger"
+ *     [loading]="deleting()"
+ *     (confirmed)="doDelete()"
+ *     (cancelled)="pendingDelete.set(null)" />
+ */
+
 import { Component, Input, Output, EventEmitter } from '@angular/core';
 
 @Component({
