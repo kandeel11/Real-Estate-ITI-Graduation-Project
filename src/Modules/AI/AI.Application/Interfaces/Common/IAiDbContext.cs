@@ -24,6 +24,9 @@ public interface IAiDbContext
     DbSet<AiChatbotSession> AiChatbotSessions { get; }
     DbSet<AiChatbotMessage> AiChatbotMessages { get; }
 
+    DbSet<ChatbotSession> ChatbotSessions { get; }
+    DbSet<ChatbotMessage> ChatbotMessages { get; }
+
     // ── Smart Search ──────────────────────────────────────────────────────────
     DbSet<AiSearchQuery> AiSearchQueries { get; }
     DbSet<SavedSearch> SavedSearches { get; }

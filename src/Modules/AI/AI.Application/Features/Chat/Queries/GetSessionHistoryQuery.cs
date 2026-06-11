@@ -5,7 +5,7 @@ using MediatR;
 namespace AI.Application.Features.Chat.Queries;
 
 public sealed record GetSessionHistoryQuery(
-    string SessionId
+    Guid SessionId
 ) : IRequest<IReadOnlyList<SessionMessage>>;
 
 public sealed record SessionMessage(

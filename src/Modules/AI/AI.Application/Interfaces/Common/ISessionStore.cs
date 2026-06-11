@@ -11,16 +11,16 @@ namespace AI.Application.Interfaces;
 public interface ISessionStore
 {
     Task<ChatHistory> GetOrCreateAsync(
-        string sessionId,
+        Guid sessionId,
         string systemPrompt,
         CancellationToken cancellationToken = default);
 
     Task SaveAsync(
-        string sessionId,
+        Guid sessionId,
         ChatHistory history,
         CancellationToken cancellationToken = default);
 
     Task DeleteAsync(
-        string sessionId,
+        Guid sessionId,
         CancellationToken cancellationToken = default);
 }
