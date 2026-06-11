@@ -6,6 +6,7 @@ using Maintenance.Application.Features.Commands.CancelTicket;
 using Maintenance.Application.Features.Commands.CompleteWork;
 using Maintenance.Application.Features.Commands.ConfirmPayment;
 using Maintenance.Application.Features.Commands.CreatePayment;
+using Maintenance.Application.Features.Commands.UserPay;
 using Maintenance.Application.Features.Commands.CreateTicket;
 using Maintenance.Application.Features.Commands.DeleteTicket;
 using Maintenance.Application.Features.Commands.MakeDecision;
@@ -218,27 +219,35 @@ public class TicketsController(ISender sender, ICurrentUserService currentUser) 
 
     // ── Payments ───────────────────────────────────────────────────
 
+    // Vendor sets the price — creates a pending payment record
     [HttpPost("{id:guid}/payments")]
-    [Authorize(Roles = "tenant,owner")]
+    [Authorize(Roles = "maintenance_company")]
     public async Task<IActionResult> CreatePayment(Guid id, [FromBody] CreatePaymentRequest req)
     {
         var paymentId = await sender.Send(new CreatePaymentCommand(
             TicketId: id,
-            PayerId: CurrentUserId,   // ← from JWT, not body
-            VendorId: req.VendorId,
+            VendorId: CurrentUserId,
             Amount: req.Amount,
-            Currency: req.Currency,
-            PaymentMethod: req.PaymentMethod));
+            Currency: req.Currency));
 
         return Ok(new { paymentId });
     }
 
-    [HttpPost("payments/{paymentId:guid}/confirm")]
+    // User pays online — submits transaction ID from the website payment
+    [HttpPost("payments/{paymentId:guid}/pay")]
     [Authorize(Roles = "tenant,owner")]
-    public async Task<IActionResult> ConfirmPayment(
-        Guid paymentId, [FromBody] ConfirmPaymentRequest req)
+    public async Task<IActionResult> PayOnline(Guid paymentId, [FromBody] PayOnlineRequest req)
     {
-        await sender.Send(new ConfirmPaymentCommand(paymentId, req.TransactionId));
+        await sender.Send(new UserPayCommand(paymentId, req.TransactionId));
+        return Ok(new { message = "Payment submitted. Awaiting vendor confirmation." });
+    }
+
+    // Vendor confirms the payment after seeing it — closes the ticket
+    [HttpPost("payments/{paymentId:guid}/confirm")]
+    [Authorize(Roles = "maintenance_company")]
+    public async Task<IActionResult> ConfirmPayment(Guid paymentId)
+    {
+        await sender.Send(new ConfirmPaymentCommand(paymentId));
         return Ok(new { message = "Payment confirmed. Ticket marked as Completed." });
     }
 
@@ -270,5 +279,5 @@ public record MakeDecisionRequest(ResolutionMethod ResolutionMethod);
 public record AssignVendorRequest(Guid VendorId);
 public record RejectAssignmentRequest(string Reason);
 public record AddCommentRequest(string Content, bool IsInternal = false);
-public record CreatePaymentRequest(Guid VendorId, decimal Amount, string Currency = "SAR", string? PaymentMethod = null);
-public record ConfirmPaymentRequest(string TransactionId);
+public record CreatePaymentRequest(decimal Amount, string Currency = "EGP");
+public record PayOnlineRequest(string TransactionId);

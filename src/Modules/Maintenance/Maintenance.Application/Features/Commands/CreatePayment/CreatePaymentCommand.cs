@@ -7,11 +7,9 @@ namespace Maintenance.Application.Features.Commands.CreatePayment;
 
 public record CreatePaymentCommand(
     Guid TicketId,
-    Guid PayerId,         
     Guid VendorId,
     decimal Amount,
-    string Currency = " EGP",
-    string? PaymentMethod = null) : IRequest<Guid>;
+    string Currency = "EGP") : IRequest<Guid>;
 
 public class CreatePaymentHandler(
     IMaintenanceTicketRepository ticketRepo,
@@ -30,9 +28,13 @@ public class CreatePaymentHandler(
         if (existing is not null)
             throw new InvalidOperationException("Payment already exists for this ticket.");
 
+        var payerId = ticket.ResponsibleParty == ResponsibleParty.Owner
+            ? ticket.OwnerId
+            : ticket.TenantId;
+
         var payment = MaintenancePayment.Create(
-            cmd.TicketId, cmd.PayerId, cmd.VendorId,
-            cmd.Amount, cmd.Currency, cmd.PaymentMethod);
+            cmd.TicketId, payerId, cmd.VendorId,
+            cmd.Amount, cmd.Currency);
 
         await paymentRepo.AddAsync(payment, ct);
         await paymentRepo.SaveChangesAsync(ct);

@@ -40,12 +40,24 @@ namespace Maintenance.Domain.Entities
                 Notes = notes
             };
 
-        public void Confirm(string transactionId)
+        public void MarkUserPaid(string transactionId)
         {
             if (Status != MaintenancePaymentStatus.Pending)
                 throw new InvalidOperationException("Payment is not pending.");
-            Status = MaintenancePaymentStatus.Paid;
+            if (TransactionId is not null)
+                throw new InvalidOperationException("Payment has already been submitted.");
             TransactionId = transactionId;
+            PaymentMethod = "Online";
+            MarkAsUpdated();
+        }
+
+        public void Confirm()
+        {
+            if (Status != MaintenancePaymentStatus.Pending)
+                throw new InvalidOperationException("Payment is not pending.");
+            if (TransactionId is null)
+                throw new InvalidOperationException("User has not submitted payment yet.");
+            Status = MaintenancePaymentStatus.Paid;
             PaidAt = DateTime.UtcNow;
             MarkAsUpdated();
         }
