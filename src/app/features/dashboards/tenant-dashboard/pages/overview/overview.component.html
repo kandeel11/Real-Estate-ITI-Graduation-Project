@@ -1,0 +1,235 @@
+<div class="overview-page">
+
+  <!-- ── LOADING ──────────────────────────────────── -->
+  @if (loading()) {
+    <div class="loading-state">
+      <div class="spinner-border text-primary" role="status">
+        <span class="visually-hidden">Loading…</span>
+      </div>
+    </div>
+  }
+
+  <!-- ── ERROR ────────────────────────────────────── -->
+  @if (!loading() && error()) {
+    <div class="alert alert-danger d-flex align-items-center gap-2 mb-4">
+      <i class="fa-solid fa-triangle-exclamation"></i>
+      <span>{{ error() }}</span>
+      <button class="btn btn-sm btn-outline-danger ms-2" (click)="loadData()">Try again</button>
+    </div>
+  }
+
+  <!-- ── CONTENT ───────────────────────────────────── -->
+  @if (!loading() && !error() && summary(); as s) {
+
+    <!-- 1. WELCOME HEADER -->
+    <div class="welcome-header">
+      <div>
+        <h1 class="welcome-title">{{ greeting }}, {{ s.tenantName.split(' ')[0] }}!</h1>
+        <p class="welcome-date">{{ today | date:'EEEE, MMMM d, y' }}</p>
+      </div>
+    </div>
+
+    <!-- 2. STATS CARDS -->
+    <div class="row g-3 mb-4">
+
+      <!-- Active Lease -->
+      <div class="col-6 col-lg-3">
+        <div class="stat-card">
+          <div class="stat-icon-wrap" [class.stat-icon-green]="s.lease?.status === 'Active'"
+               [class.stat-icon-gray]="s.lease?.status !== 'Active'">
+            <i class="fa-solid fa-file-contract"></i>
+          </div>
+          <div class="stat-body">
+            <p class="stat-label">Active Lease</p>
+            <p class="stat-value" [class.stat-value-green]="s.lease?.status === 'Active'">
+              {{ s.lease?.status === 'Active' ? 'Active' : 'No Lease' }}
+            </p>
+          </div>
+        </div>
+      </div>
+
+      <!-- Days Until Expiry -->
+      <div class="col-6 col-lg-3">
+        <div class="stat-card">
+          <div class="stat-icon-wrap" [class]="'stat-icon-' + expiryClass(s.lease?.daysUntilExpiry ?? 999)">
+            <i class="fa-solid fa-calendar-days"></i>
+          </div>
+          <div class="stat-body">
+            <p class="stat-label">Days Until Expiry</p>
+            <p class="stat-value" [class]="expiryClass(s.lease?.daysUntilExpiry ?? 999)">
+              {{ s.lease ? s.lease.daysUntilExpiry : '—' }}
+            </p>
+          </div>
+        </div>
+      </div>
+
+      <!-- Open Tickets -->
+      <div class="col-6 col-lg-3">
+        <div class="stat-card">
+          <div class="stat-icon-wrap" [class.stat-icon-primary]="s.ticketStats.open > 0"
+               [class.stat-icon-gray]="s.ticketStats.open === 0">
+            <i class="fa-solid fa-screwdriver-wrench"></i>
+          </div>
+          <div class="stat-body">
+            <p class="stat-label">Open Tickets</p>
+            <p class="stat-value">{{ s.ticketStats.open }}</p>
+          </div>
+        </div>
+      </div>
+
+      <!-- Unread Notifications -->
+      <div class="col-6 col-lg-3">
+        <div class="stat-card">
+          <div class="stat-icon-wrap" [class.stat-icon-primary]="s.notifications.unreadCount > 0"
+               [class.stat-icon-gray]="s.notifications.unreadCount === 0">
+            <i class="fa-regular fa-bell"></i>
+          </div>
+          <div class="stat-body">
+            <p class="stat-label">Unread Notifications</p>
+            <p class="stat-value">
+              {{ s.notifications.unreadCount }}
+              @if (s.notifications.unreadCount > 0) {
+                <span class="unread-dot"></span>
+              }
+            </p>
+          </div>
+        </div>
+      </div>
+
+    </div>
+
+    <!-- 3. ACTIVE LEASE CARD -->
+    @if (s.lease) {
+      <div class="section-card mb-4">
+        <div class="section-card-header">
+          <h2 class="section-title">
+            <i class="fa-solid fa-file-contract me-2"></i>Active Lease
+          </h2>
+          <div class="d-flex gap-2">
+            <button class="btn btn-sm btn-outline-primary" (click)="downloadContract()">
+              <i class="fa-solid fa-download me-1"></i>Download Contract
+            </button>
+            <a class="btn btn-sm btn-primary" routerLink="/dashboard/lease">View Details</a>
+          </div>
+        </div>
+
+        <div class="lease-info-grid">
+          <div class="lease-info-item">
+            <span class="info-label"><i class="fa-solid fa-location-dot me-1"></i>Property</span>
+            <span class="info-value">{{ s.lease.propertyAddress }}</span>
+          </div>
+          <div class="lease-info-item">
+            <span class="info-label"><i class="fa-solid fa-sterling-sign me-1"></i>Monthly Rent</span>
+            <span class="info-value rent-amount">{{ s.lease.monthlyRent | currency:'USD':'symbol':'1.0-0' }}</span>
+          </div>
+          <div class="lease-info-item">
+            <span class="info-label"><i class="fa-regular fa-calendar me-1"></i>Start Date</span>
+            <span class="info-value">{{ s.lease.startDate | date:'mediumDate' }}</span>
+          </div>
+          <div class="lease-info-item">
+            <span class="info-label"><i class="fa-regular fa-calendar-xmark me-1"></i>End Date</span>
+            <span class="info-value">{{ s.lease.endDate | date:'mediumDate' }}</span>
+          </div>
+        </div>
+
+        <div class="lease-progress-wrap mt-3">
+          <div class="lease-progress-header">
+            <span class="progress-label">Lease elapsed</span>
+            <span class="progress-pct">{{ leaseElapsedPercent(s.lease) }}%</span>
+          </div>
+          <div class="progress-track">
+            <div class="progress-fill" [style.width]="leaseElapsedPercent(s.lease) + '%'"></div>
+          </div>
+        </div>
+      </div>
+    }
+
+    <!-- 4. TICKET STATS ROW -->
+    <div class="section-card mb-4">
+      <div class="section-card-header">
+        <h2 class="section-title">
+          <i class="fa-solid fa-screwdriver-wrench me-2"></i>Maintenance Tickets
+        </h2>
+        <a class="btn btn-sm btn-primary" routerLink="/dashboard/maintenance">
+          <i class="fa-solid fa-plus me-1"></i>New Ticket
+        </a>
+      </div>
+
+      <div class="ticket-stats-numbers mb-2">
+        <div class="ticket-stat-item">
+          <span class="ticket-stat-num stat-waiting">{{ s.ticketStats.waitingForDecision }}</span>
+          <span class="ticket-stat-label">Waiting Decision</span>
+        </div>
+        <div class="ticket-stat-item">
+          <span class="ticket-stat-num stat-progress">{{ s.ticketStats.inProgress }}</span>
+          <span class="ticket-stat-label">In Progress</span>
+        </div>
+        <div class="ticket-stat-item">
+          <span class="ticket-stat-num stat-open">{{ s.ticketStats.open }}</span>
+          <span class="ticket-stat-label">Open</span>
+        </div>
+        <div class="ticket-stat-item">
+          <span class="ticket-stat-num stat-done">{{ s.ticketStats.completed }}</span>
+          <span class="ticket-stat-label">Completed</span>
+        </div>
+      </div>
+
+      @if (s.ticketStats.total > 0) {
+        <div class="ticket-bar">
+          @if (s.ticketStats.waitingForDecision > 0) {
+            <div class="ticket-bar-seg seg-waiting"
+                 [style.width]="ticketBarWidth(s.ticketStats.waitingForDecision, s.ticketStats.total)"
+                 [title]="s.ticketStats.waitingForDecision + ' waiting for decision'"></div>
+          }
+          @if (s.ticketStats.inProgress > 0) {
+            <div class="ticket-bar-seg seg-progress"
+                 [style.width]="ticketBarWidth(s.ticketStats.inProgress, s.ticketStats.total)"
+                 [title]="s.ticketStats.inProgress + ' in progress'"></div>
+          }
+          @if (s.ticketStats.open > 0) {
+            <div class="ticket-bar-seg seg-open"
+                 [style.width]="ticketBarWidth(s.ticketStats.open, s.ticketStats.total)"
+                 [title]="s.ticketStats.open + ' open'"></div>
+          }
+          @if (s.ticketStats.completed > 0) {
+            <div class="ticket-bar-seg seg-done"
+                 [style.width]="ticketBarWidth(s.ticketStats.completed, s.ticketStats.total)"
+                 [title]="s.ticketStats.completed + ' completed'"></div>
+          }
+        </div>
+      }
+    </div>
+
+    <!-- 5. RECENT ACTIVITY -->
+    <div class="section-card">
+      <div class="section-card-header">
+        <h2 class="section-title">
+          <i class="fa-solid fa-clock-rotate-left me-2"></i>Recent Activity
+        </h2>
+      </div>
+
+      @if (activity().length === 0) {
+        <div class="empty-state">
+          <i class="fa-regular fa-bell empty-icon"></i>
+          <p>No recent activity yet.</p>
+        </div>
+      } @else {
+        <div class="activity-list">
+          @for (item of activity(); track item.id) {
+            <div class="activity-item" [class.activity-unread]="!item.isRead">
+              <div class="activity-icon-wrap">
+                <i [class]="activityIcon(item.type)"></i>
+              </div>
+              <div class="activity-body">
+                <p class="activity-title">{{ item.title }}</p>
+                <p class="activity-desc">{{ item.body }}</p>
+              </div>
+              <span class="activity-time">{{ timeAgo(item.createdAt) }}</span>
+            </div>
+          }
+        </div>
+      }
+    </div>
+
+  }
+</div>

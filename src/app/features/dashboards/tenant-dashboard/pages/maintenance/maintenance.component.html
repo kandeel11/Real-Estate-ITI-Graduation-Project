@@ -1,0 +1,297 @@
+<div class="maintenance-page">
+  <div class="page-header">
+    <h1 class="page-title"><i class="fa-solid fa-screwdriver-wrench me-2"></i>Maintenance</h1>
+    <div class="pills-row">
+      <button class="pill" [class.pill-active]="activeTab() === 'tickets'" (click)="activeTab.set('tickets')">My Tickets</button>
+      <button class="pill" [class.pill-active]="activeTab() === 'create'" (click)="activeTab.set('create')">Create Ticket</button>
+    </div>
+  </div>
+
+  <!-- ── LOADING ──────────────────────────────────── -->
+  @if (loading()) {
+    <div class="loading-state">
+      <div class="spinner-border text-primary" role="status"><span class="visually-hidden">Loading…</span></div>
+    </div>
+  }
+
+  <!-- ── ERROR ────────────────────────────────────── -->
+  @if (!loading() && error()) {
+    <div class="alert alert-danger d-flex align-items-center gap-2">
+      <i class="fa-solid fa-triangle-exclamation"></i>
+      <span>{{ error() }}</span>
+      <button class="btn btn-sm btn-outline-danger ms-2" (click)="loadTickets()">Try again</button>
+    </div>
+  }
+
+  <!-- ══════════════════ MY TICKETS ══════════════════ -->
+  @if (!loading() && activeTab() === 'tickets') {
+
+    <!-- Stats bar -->
+    <div class="stats-bar mb-4">
+      <div class="stat-item"><span class="stat-num">{{ ticketStats().total }}</span><span class="stat-lbl">Total</span></div>
+      <div class="stat-item"><span class="stat-num text-warning">{{ ticketStats().waitingForDecision }}</span><span class="stat-lbl">Waiting</span></div>
+      <div class="stat-item"><span class="stat-num text-primary">{{ ticketStats().inProgress }}</span><span class="stat-lbl">In Progress</span></div>
+      <div class="stat-item"><span class="stat-num text-secondary">{{ ticketStats().open }}</span><span class="stat-lbl">Open</span></div>
+      <div class="stat-item"><span class="stat-num stat-done-num">{{ ticketStats().completed }}</span><span class="stat-lbl">Completed</span></div>
+    </div>
+
+    @if (tickets().length === 0) {
+      <div class="empty-state">
+        <i class="fa-solid fa-screwdriver-wrench empty-icon"></i>
+        <p class="empty-title">No Tickets Found</p>
+        <p class="empty-desc">You haven't submitted any maintenance requests yet.</p>
+      </div>
+    } @else {
+      <div class="ticket-list">
+        @for (ticket of tickets(); track ticket.id) {
+          <div class="ticket-card" (click)="openDetail(ticket)" role="button" tabindex="0"
+               (keydown.enter)="openDetail(ticket)">
+            <div class="ticket-card-top">
+              <span class="ticket-number">{{ ticket.ticketNumber }}</span>
+              <span class="ticket-badge" [class]="priorityClass(ticket.priority)">{{ ticket.priority }}</span>
+              <span class="ticket-badge" [class]="statusClass(ticket.status)">{{ statusLabel(ticket.status) }}</span>
+            </div>
+            <h3 class="ticket-title">{{ ticket.title }}</h3>
+            <p class="ticket-desc">{{ ticket.description }}</p>
+            <div class="ticket-card-footer">
+              <span class="ticket-meta"><i class="fa-regular fa-calendar me-1"></i>{{ ticket.createdAt | date:'mediumDate' }}</span>
+              @if (ticket.attachmentCount > 0) {
+                <span class="ticket-meta"><i class="fa-solid fa-paperclip me-1"></i>{{ ticket.attachmentCount }}</span>
+              }
+            </div>
+          </div>
+        }
+      </div>
+    }
+  }
+
+  <!-- ══════════════════ CREATE TICKET ══════════════════ -->
+  @if (!loading() && activeTab() === 'create') {
+
+    @if (createSuccess()) {
+      <div class="create-success">
+        <div class="success-icon"><i class="fa-solid fa-circle-check"></i></div>
+        <h2>Ticket Submitted!</h2>
+        <p>AI is evaluating your request. You'll be notified once the evaluation is complete.</p>
+        <button class="btn btn-primary" (click)="createSuccess.set(false); activeTab.set('tickets')">
+          View My Tickets
+        </button>
+      </div>
+    } @else {
+      <div class="create-form-card">
+        <h2 class="create-form-title">Submit a Maintenance Request</h2>
+        <form [formGroup]="createForm" (ngSubmit)="submitTicket()">
+
+          <div class="form-group">
+            <label class="form-label">Title <span class="req">*</span></label>
+            <input type="text" class="form-control" formControlName="title"
+                   placeholder="Brief description of the issue" />
+            @if (createForm.get('title')?.invalid && createForm.get('title')?.touched) {
+              <div class="form-error">Title must be at least 5 characters.</div>
+            }
+          </div>
+
+          <div class="form-group">
+            <label class="form-label">Description <span class="req">*</span></label>
+            <textarea class="form-control" formControlName="description" rows="4"
+                      placeholder="Describe the problem in detail (min. 20 characters)"></textarea>
+            @if (createForm.get('description')?.invalid && createForm.get('description')?.touched) {
+              <div class="form-error">Description must be at least 20 characters.</div>
+            }
+          </div>
+
+          <div class="form-row-2">
+            <div class="form-group">
+              <label class="form-label">Priority <span class="req">*</span></label>
+              <select class="form-select" formControlName="priority">
+                <option value="Low">Low</option>
+                <option value="Medium">Medium</option>
+                <option value="Emergency">Emergency</option>
+              </select>
+            </div>
+            <div class="form-group">
+              <label class="form-label">Property</label>
+              <input type="text" class="form-control" formControlName="propertyId"
+                     value="42 Oak Street, Suite 3B" readonly />
+            </div>
+          </div>
+
+          <!-- Image upload -->
+          <div class="form-group">
+            <label class="form-label">Attachments</label>
+            <div class="upload-area"
+                 [class.drag-active]="dragOver()"
+                 (dragover)="$event.preventDefault(); dragOver.set(true)"
+                 (dragleave)="dragOver.set(false)"
+                 (drop)="onDrop($event)">
+              <i class="fa-solid fa-cloud-arrow-up upload-icon"></i>
+              <p class="upload-text">Drag & drop images here, or</p>
+              <label class="btn btn-outline-primary btn-sm">
+                Browse Files
+                <input type="file" accept="image/*" multiple (change)="onFileSelect($event)" hidden />
+              </label>
+            </div>
+
+            @if (previewUrls().length > 0) {
+              <div class="preview-grid mt-2">
+                @for (url of previewUrls(); track $index) {
+                  <div class="preview-item">
+                    <img [src]="url" alt="preview" />
+                    <button class="preview-remove" type="button" (click)="removeFile($index)">
+                      <i class="fa-solid fa-xmark"></i>
+                    </button>
+                  </div>
+                }
+              </div>
+            }
+          </div>
+
+          <div class="d-flex justify-content-end">
+            <button type="submit" class="btn btn-primary"
+                    [disabled]="createForm.invalid || createLoading()">
+              @if (createLoading()) {
+                <span class="spinner-border spinner-border-sm me-2" role="status"></span>Submitting…
+              } @else {
+                <i class="fa-solid fa-paper-plane me-2"></i>Submit Ticket
+              }
+            </button>
+          </div>
+
+        </form>
+      </div>
+    }
+  }
+
+  <!-- ══════════════════ TICKET DETAIL MODAL ══════════════════ -->
+  @if (detailLoading()) {
+    <div class="modal-overlay">
+      <div class="spinner-border text-primary" role="status"><span class="visually-hidden">Loading…</span></div>
+    </div>
+  }
+
+  @if (selectedTicket(); as ticket) {
+    <div class="modal-overlay" (click)="closeDetail()">
+      <div class="modal-box" (click)="$event.stopPropagation()">
+        <div class="modal-header">
+          <div>
+            <span class="ticket-number">{{ ticket.ticketNumber }}</span>
+            <h2 class="modal-title">{{ ticket.title }}</h2>
+          </div>
+          <button class="modal-close" (click)="closeDetail()"><i class="fa-solid fa-xmark"></i></button>
+        </div>
+
+        <div class="modal-body">
+
+          <!-- Badges -->
+          <div class="d-flex gap-2 flex-wrap mb-3">
+            <span class="ticket-badge" [class]="priorityClass(ticket.priority)">{{ ticket.priority }}</span>
+            <span class="ticket-badge" [class]="statusClass(ticket.status)">{{ statusLabel(ticket.status) }}</span>
+          </div>
+
+          <p class="detail-desc">{{ ticket.description }}</p>
+
+          <!-- Status Timeline -->
+          <h3 class="modal-section-title">Status History</h3>
+          <div class="timeline">
+            @for (step of ticket.statusHistory; track step.id) {
+              <div class="timeline-item">
+                <div class="timeline-dot" [class]="statusClass(step.status)"></div>
+                <div class="timeline-body">
+                  <div class="timeline-header">
+                    <span class="timeline-status">{{ statusLabel(step.status) }}</span>
+                    <span class="timeline-time">{{ timeAgo(step.createdAt) }}</span>
+                  </div>
+                  @if (step.note) {
+                    <p class="timeline-note">{{ step.note }}</p>
+                  }
+                  <span class="timeline-by">{{ step.createdByName }}</span>
+                </div>
+              </div>
+            }
+          </div>
+
+          <!-- AI Evaluation -->
+          @if (ticket.aiEvaluation) {
+            @let ai = ticket.aiEvaluation;
+            <h3 class="modal-section-title"><i class="fa-solid fa-robot me-2 text-primary"></i>AI Evaluation</h3>
+            <div class="ai-card mb-3">
+              <div class="ai-meta-row">
+                <div class="ai-meta-item">
+                  <span class="ai-label">Responsible Party</span>
+                  <span class="ai-value">{{ ai.responsibleParty }}</span>
+                </div>
+                <div class="ai-meta-item">
+                  <span class="ai-label">Category</span>
+                  <span class="ai-value">{{ ai.category }}</span>
+                </div>
+              </div>
+              <div class="ai-conf-row mb-2">
+                <span class="ai-label">Confidence: <strong>{{ ai.confidenceScore }}%</strong></span>
+                <div class="conf-bar"><div class="conf-fill" [style.width]="ai.confidenceScore + '%'"></div></div>
+              </div>
+              <p class="ai-reasoning">{{ ai.reasoning }}</p>
+            </div>
+          }
+
+          <!-- Decision Panel -->
+          @if (ticket.status === 'WaitingForTenantDecision') {
+            <div class="decision-panel mb-3">
+              <h3 class="modal-section-title mb-2">How would you like to proceed?</h3>
+              <div class="d-flex gap-3 flex-wrap">
+                <button class="btn btn-primary flex-fill" (click)="makeDecision(ticket.id, 'platform')">
+                  <i class="fa-solid fa-building me-2"></i>Use Platform Vendor
+                </button>
+                <button class="btn btn-outline-primary flex-fill" (click)="makeDecision(ticket.id, 'external')">
+                  <i class="fa-solid fa-user-gear me-2"></i>Use External Technician
+                </button>
+              </div>
+            </div>
+          }
+
+          <!-- Attachments -->
+          @if (ticket.attachments.length > 0) {
+            <h3 class="modal-section-title">Attachments</h3>
+            <div class="attach-grid mb-3">
+              @for (a of ticket.attachments; track a.id) {
+                <a [href]="a.url" target="_blank" class="attach-item">
+                  <img [src]="a.url" [alt]="a.fileName" />
+                  <span class="attach-name">{{ a.fileName }}</span>
+                </a>
+              }
+            </div>
+          }
+
+          <!-- Comments -->
+          <h3 class="modal-section-title">Comments</h3>
+          @if (ticket.comments.length === 0) {
+            <p class="text-muted small">No comments yet.</p>
+          } @else {
+            <div class="comments-list mb-3">
+              @for (c of ticket.comments; track c.id) {
+                <div class="comment-item">
+                  <div class="comment-avatar">{{ c.userName.charAt(0) }}</div>
+                  <div class="comment-body">
+                    <div class="comment-header">
+                      <span class="comment-author">{{ c.userName }}</span>
+                      <span class="comment-time">{{ timeAgo(c.createdAt) }}</span>
+                    </div>
+                    <p class="comment-text">{{ c.text }}</p>
+                  </div>
+                </div>
+              }
+            </div>
+          }
+
+          <div class="comment-input-row">
+            <input class="form-control" type="text" placeholder="Add a comment…"
+                   [(ngModel)]="newComment" (keyup.enter)="submitComment()" [disabled]="commentLoading()" />
+            <button class="btn btn-primary btn-sm" (click)="submitComment()"
+                    [disabled]="!newComment.trim() || commentLoading()">
+              <i class="fa-solid fa-paper-plane"></i>
+            </button>
+          </div>
+        </div>
+      </div>
+    </div>
+  }
+</div>

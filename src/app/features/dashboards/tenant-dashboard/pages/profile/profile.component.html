@@ -1,0 +1,181 @@
+<div class="profile-page">
+  <div class="page-header">
+    <h1 class="page-title"><i class="fa-regular fa-circle-user me-2"></i>Profile</h1>
+  </div>
+
+  <!-- Section tabs -->
+  <div class="section-tabs mb-4">
+    <button class="section-tab" [class.tab-active]="activeSection() === 'info'" (click)="activeSection.set('info')">
+      <i class="fa-regular fa-id-card me-2"></i>Personal Info
+    </button>
+    <button class="section-tab" [class.tab-active]="activeSection() === 'password'" (click)="activeSection.set('password')">
+      <i class="fa-solid fa-key me-2"></i>Change Password
+    </button>
+    <button class="section-tab tab-danger" [class.tab-active]="activeSection() === 'danger'" (click)="activeSection.set('danger')">
+      <i class="fa-solid fa-triangle-exclamation me-2"></i>Danger Zone
+    </button>
+  </div>
+
+  <!-- Loading -->
+  @if (loading()) {
+    <div class="loading-state">
+      <div class="spinner-border text-primary" role="status"><span class="visually-hidden">Loading…</span></div>
+    </div>
+  }
+
+  <!-- ══════════════════ PERSONAL INFO ══════════════════ -->
+  @if (!loading() && activeSection() === 'info' && profile()) {
+    @let p = profile()!;
+    <div class="profile-card">
+
+      <!-- Avatar -->
+      <div class="avatar-section">
+        <div class="avatar-circle">{{ initials }}</div>
+        <div class="avatar-info">
+          <p class="avatar-name">{{ p.firstName }} {{ p.lastName }}</p>
+          <p class="avatar-email">{{ p.email }}</p>
+          <span class="role-badge">Tenant</span>
+        </div>
+      </div>
+
+      <hr class="divider" />
+
+      <form [formGroup]="profileForm" (ngSubmit)="saveProfile()">
+        <div class="form-row-2">
+          <div class="form-group">
+            <label class="form-label">First Name <span class="req">*</span></label>
+            <input type="text" class="form-control" formControlName="firstName" />
+            @if (profileForm.get('firstName')?.invalid && profileForm.get('firstName')?.touched) {
+              <div class="form-error">First name is required.</div>
+            }
+          </div>
+          <div class="form-group">
+            <label class="form-label">Last Name <span class="req">*</span></label>
+            <input type="text" class="form-control" formControlName="lastName" />
+            @if (profileForm.get('lastName')?.invalid && profileForm.get('lastName')?.touched) {
+              <div class="form-error">Last name is required.</div>
+            }
+          </div>
+        </div>
+
+        <div class="form-group">
+          <label class="form-label">Email</label>
+          <input type="email" class="form-control form-control-readonly" [value]="p.email" readonly />
+          <p class="form-hint"><i class="fa-solid fa-lock me-1"></i>Email cannot be changed.</p>
+        </div>
+
+        <div class="form-group">
+          <label class="form-label">Phone Number</label>
+          <input type="tel" class="form-control" formControlName="phone" placeholder="+1 (000) 000-0000" />
+        </div>
+
+        @if (saveSuccess()) {
+          <div class="alert alert-success d-flex align-items-center gap-2 mb-3">
+            <i class="fa-solid fa-circle-check"></i> Profile updated successfully.
+          </div>
+        }
+
+        <div class="d-flex justify-content-end">
+          <button type="submit" class="btn btn-primary" [disabled]="profileForm.invalid || saveLoading()">
+            @if (saveLoading()) {
+              <span class="spinner-border spinner-border-sm me-2" role="status"></span>Saving…
+            } @else {
+              <i class="fa-solid fa-floppy-disk me-2"></i>Save Changes
+            }
+          </button>
+        </div>
+      </form>
+    </div>
+  }
+
+  <!-- ══════════════════ CHANGE PASSWORD ══════════════════ -->
+  @if (!loading() && activeSection() === 'password') {
+    <div class="profile-card">
+      <h2 class="section-heading">Change Password</h2>
+
+      @if (pwError()) {
+        <div class="alert alert-danger d-flex align-items-center gap-2 mb-3">
+          <i class="fa-solid fa-triangle-exclamation"></i> {{ pwError() }}
+        </div>
+      }
+
+      @if (pwSuccess()) {
+        <div class="alert alert-success d-flex align-items-center gap-2 mb-3">
+          <i class="fa-solid fa-circle-check"></i> Password changed successfully.
+        </div>
+      }
+
+      <form [formGroup]="passwordForm" (ngSubmit)="changePassword()">
+
+        <div class="form-group">
+          <label class="form-label">Current Password <span class="req">*</span></label>
+          <div class="pw-input-wrap">
+            <input [type]="showCurrentPw() ? 'text' : 'password'" class="form-control" formControlName="currentPassword" />
+            <button type="button" class="pw-toggle" (click)="showCurrentPw.update(v => !v)">
+              <i class="fa-regular" [class.fa-eye]="!showCurrentPw()" [class.fa-eye-slash]="showCurrentPw()"></i>
+            </button>
+          </div>
+        </div>
+
+        <div class="form-group">
+          <label class="form-label">New Password <span class="req">*</span></label>
+          <div class="pw-input-wrap">
+            <input [type]="showNewPw() ? 'text' : 'password'" class="form-control" formControlName="newPassword" />
+            <button type="button" class="pw-toggle" (click)="showNewPw.update(v => !v)">
+              <i class="fa-regular" [class.fa-eye]="!showNewPw()" [class.fa-eye-slash]="showNewPw()"></i>
+            </button>
+          </div>
+          @if (passwordForm.get('newPassword')?.value) {
+            <div class="strength-bar mt-2">
+              @for (i of [1,2,3,4,5]; track i) {
+                <div class="strength-seg" [class.filled]="i <= pwStrength()" [class]="i <= pwStrength() ? pwStrengthClass : ''"></div>
+              }
+              <span class="strength-label" [class]="pwStrengthClass">{{ pwStrengthLabel }}</span>
+            </div>
+          }
+          @if (passwordForm.get('newPassword')?.invalid && passwordForm.get('newPassword')?.touched) {
+            <div class="form-error">Password must be at least 8 characters.</div>
+          }
+        </div>
+
+        <div class="form-group">
+          <label class="form-label">Confirm New Password <span class="req">*</span></label>
+          <input type="password" class="form-control" formControlName="confirmPassword" />
+          @if (passwordForm.get('confirmPassword')?.errors?.['mismatch'] && passwordForm.get('confirmPassword')?.touched) {
+            <div class="form-error">Passwords do not match.</div>
+          }
+        </div>
+
+        <div class="d-flex justify-content-end">
+          <button type="submit" class="btn btn-primary" [disabled]="passwordForm.invalid || pwLoading()">
+            @if (pwLoading()) {
+              <span class="spinner-border spinner-border-sm me-2" role="status"></span>Changing…
+            } @else {
+              <i class="fa-solid fa-key me-2"></i>Change Password
+            }
+          </button>
+        </div>
+
+      </form>
+    </div>
+  }
+
+  <!-- ══════════════════ DANGER ZONE ══════════════════ -->
+  @if (!loading() && activeSection() === 'danger') {
+    <div class="profile-card danger-card">
+      <h2 class="section-heading danger-heading">
+        <i class="fa-solid fa-triangle-exclamation me-2"></i>Danger Zone
+      </h2>
+      <p class="danger-desc">These actions are irreversible. Please proceed with caution.</p>
+      <div class="danger-action">
+        <div>
+          <p class="danger-action-title">Delete Account</p>
+          <p class="danger-action-desc">Permanently delete your account and all associated data.</p>
+        </div>
+        <button class="btn btn-outline-danger btn-sm" disabled>
+          Delete Account
+        </button>
+      </div>
+    </div>
+  }
+</div>

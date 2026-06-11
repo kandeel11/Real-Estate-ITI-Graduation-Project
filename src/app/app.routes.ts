@@ -238,7 +238,7 @@ export const routes: Routes = [
       {
         path: '',
         loadChildren: () =>
-          import('./features/dashboard/dashboard.routes').then(m => m.dashboardRoutes),
+          import('./features/dashboards/tenant-dashboard/dashboard.routes').then(m => m.dashboardRoutes),
       },
     ],
   },
