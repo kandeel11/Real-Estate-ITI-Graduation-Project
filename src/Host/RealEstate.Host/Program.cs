@@ -128,7 +128,7 @@ public class Program
         builder.Services.AddMaintenanceCompaniesModule(builder.Configuration);
 
         // ── SignalR ───────────────────────────────────────────
-        builder.Services.AddSignalR();    // ← was missing
+        builder.Services.AddSignalR();   
 
         // ── Hangfire ──────────────────────────────────────────
         builder.Services.AddHangfire(config => config
@@ -150,6 +150,15 @@ public class Program
         {
             options.WorkerCount = Environment.ProcessorCount * 2;
             options.Queues = new[] { "emails", "default" };
+        });
+
+        builder.Services.AddCors(options =>
+        {
+            options.AddPolicy("AllowAngular", policy =>
+                policy.WithOrigins("http://localhost:4200")
+                      .AllowAnyHeader()
+                      .AllowAnyMethod()
+                      .AllowCredentials());
         });
 
         var app = builder.Build();
@@ -183,7 +192,7 @@ public class Program
             app.UseSwaggerUI(c =>
                 c.SwaggerEndpoint("/swagger/v1/swagger.json", "Real Estate API v1"));
         }
-
+        app.UseCors("AllowAngular");
         app.UseAuthentication();
         app.UseAuthorization();
         app.MapControllers();
