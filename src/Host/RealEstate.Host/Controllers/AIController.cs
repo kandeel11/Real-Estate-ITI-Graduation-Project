@@ -1,5 +1,4 @@
 ﻿using AI.Application.DTOs;
-using AI.Application.Features.Chat.Queries;
 using AI.Application.Features.Chatbot.Commands.SendMessage;
 using AI.Application.Features.Chatbot.Queries.GetSessionHistory;
 using AI.Application.Features.Chatbot.Queries.GetUserSessions;

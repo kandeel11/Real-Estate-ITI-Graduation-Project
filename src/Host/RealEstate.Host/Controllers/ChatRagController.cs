@@ -13,7 +13,7 @@ namespace RealEstate.Host.Controllers
     [ApiController]
     [Route("api/[controller]")]
     [Produces("application/json")]
-    [Authorize] // 🔒 مهم جداً حماية الكنترولر ده لأن الشات هنا بيحتوي على تفاصيل عقود المستخدمين
+    [Authorize] // 
     public class ChatRagController : ControllerBase
     {
         private readonly ISender _sender; // استخدمنا ISender لتوحيد الشكل مع AIController
@@ -43,7 +43,7 @@ namespace RealEstate.Host.Controllers
         /// Upload a contract PDF — extracts, chunks, embeds and stores in Qdrant.
         /// </summary>
         [HttpPost("ingest")]
-        // 💡 يفضل مستقبلاً إضافة [Authorize(Roles = "Admin")] هنا
+         [Authorize(Roles = "Admin")]
         [ProducesResponseType(typeof(ContractIngestionResult), StatusCodes.Status200OK)]
         [ProducesResponseType(StatusCodes.Status400BadRequest)]
         public async Task<IActionResult> IngestAsync(

@@ -1,29 +1,35 @@
-﻿using AI.Application.Features.Chat.Queries;
-using AI.Application.Interfaces.Common;
+﻿using AI.Application.Interfaces.Common;
 using MediatR;
 using Microsoft.EntityFrameworkCore;
 
 namespace AI.Application.Features.Chatbot.Queries.GetSessionHistory;
 
-public class GetSessionHistoryQueryHandler : IRequestHandler<GetSessionHistoryQuery, IReadOnlyList<SessionMessage>>
+// 1. الـ Record الخاص بالـ Query (بياخد Guid)
+public record GetSessionHistoryQuery(Guid SessionId) : IRequest<IReadOnlyList<ChatbotMessageDto>>;
+
+// 2. الـ DTO الخاص بالرسالة (عشان مانستخدمش SessionMessage بتاعة الـ RAG)
+public record ChatbotMessageDto(string Role, string Content);
+
+// 3. الـ Handler
+public class GetSessionHistoryQueryHandler : IRequestHandler<GetSessionHistoryQuery, IReadOnlyList<ChatbotMessageDto>>
 {
-    private readonly IAiDbContext _context; // عملنا Inject للـ DbContext هنا
+    private readonly IAiDbContext _context;
 
     public GetSessionHistoryQueryHandler(IAiDbContext context)
     {
         _context = context;
     }
 
-    public async Task<IReadOnlyList<SessionMessage>> Handle(
+    public async Task<IReadOnlyList<ChatbotMessageDto>> Handle(
         GetSessionHistoryQuery query,
         CancellationToken cancellationToken)
     {
-        // 1. بنجيب الرسايل مباشرة من الداتابيز لسيشن معينة
+        // بنجيب الرسايل مباشرة من جداول الشات العادي
         var history = await _context.ChatbotMessages
-            .AsNoTracking() // AsNoTracking لتحسين الأداء لأنها عملية قراءة فقط
-            .Where(m => m.SessionId == query.SessionId && m.Role != "system") // فلترة الـ system prompt زي ما كنت عامل
-            .OrderBy(m => m.CreatedAt) // ترتيب الرسايل من الأقدم للأحدث (الـ CreatedAt موروثة من BaseEntity)
-            .Select(m => new SessionMessage(m.Role, m.Content)) // عمل الـ Mapping للـ DTO/Record بتاعك
+            .AsNoTracking()
+            .Where(m => m.SessionId == query.SessionId && m.Role != "system")
+            .OrderBy(m => m.CreatedAt)
+            .Select(m => new ChatbotMessageDto(m.Role, m.Content)) // بنعمل Map للـ DTO الجديد
             .ToListAsync(cancellationToken);
 
         return history;
