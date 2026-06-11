@@ -2,7 +2,6 @@
   <div class="page-header">
     <h1 class="page-title"><i class="fa-solid fa-file-contract me-2"></i>My Lease</h1>
 
-    <!-- Sub-section pills -->
     <div class="pills-row">
       <button class="pill" [class.pill-active]="activeTab() === 'active'" (click)="activeTab.set('active')">
         Active Lease
@@ -57,12 +56,11 @@
         <div class="lease-card-header">
           <div>
             <h2 class="lease-property">{{ lease.propertyAddress }}</h2>
-            <span class="status-badge" [class.badge-active]="lease.status === 'Active'"
-                  [class.badge-ended]="lease.status === 'Ended'">
-              {{ lease.status }}
+            <span class="status-badge" [class.badge-active]="lease.isActive" [class.badge-ended]="!lease.isActive">
+              {{ lease.isActive ? 'Active' : 'Ended' }}
             </span>
           </div>
-          <button class="btn btn-primary btn-sm" (click)="downloadContract()">
+          <button class="btn btn-primary btn-sm" (click)="downloadContract(lease)">
             <i class="fa-solid fa-download me-1"></i>Download Contract
           </button>
         </div>
@@ -70,11 +68,11 @@
         <div class="lease-details-grid">
           <div class="detail-item">
             <span class="detail-label">Monthly Rent</span>
-            <span class="detail-value rent">{{ lease.monthlyRent | currency:'USD':'symbol':'1.0-0' }}</span>
+            <span class="detail-value rent">{{ lease.rentAmount | currency:'EGP':'symbol':'1.0-0' }}</span>
           </div>
           <div class="detail-item">
             <span class="detail-label">Security Deposit</span>
-            <span class="detail-value">{{ lease.securityDeposit | currency:'USD':'symbol':'1.0-0' }}</span>
+            <span class="detail-value">{{ lease.securityDeposit | currency:'EGP':'symbol':'1.0-0' }}</span>
           </div>
           <div class="detail-item">
             <span class="detail-label">Lease Start</span>
@@ -92,7 +90,9 @@
           </div>
           <div class="detail-item">
             <span class="detail-label">Payment Day</span>
-            <span class="detail-value">{{ lease.paymentDayOfMonth }}{{ lease.paymentDayOfMonth === 1 ? 'st' : lease.paymentDayOfMonth === 2 ? 'nd' : lease.paymentDayOfMonth === 3 ? 'rd' : 'th' }} of month</span>
+            <span class="detail-value">
+              {{ lease.paymentDayOfMonth }}{{ ordinalSuffix(lease.paymentDayOfMonth) }} of month
+            </span>
           </div>
         </div>
 
@@ -173,9 +173,10 @@
                 </div>
               </div>
               <div class="d-flex align-items-center gap-3">
-                <span class="status-badge" [class.badge-active]="lease.status === 'Active'"
-                      [class.badge-ended]="lease.status === 'Ended'">{{ lease.status }}</span>
-                <span class="rent-tag">{{ lease.monthlyRent | currency:'USD':'symbol':'1.0-0' }}/mo</span>
+                <span class="status-badge" [class.badge-active]="lease.isActive" [class.badge-ended]="!lease.isActive">
+                  {{ lease.isActive ? 'Active' : 'Ended' }}
+                </span>
+                <span class="rent-tag">{{ lease.rentAmount | currency:'EGP':'symbol':'1.0-0' }}/mo</span>
                 <i class="fa-solid" [class.fa-chevron-down]="expandedLeaseId() !== lease.id"
                    [class.fa-chevron-up]="expandedLeaseId() === lease.id"></i>
               </div>
@@ -186,11 +187,11 @@
                 <div class="lease-details-grid">
                   <div class="detail-item">
                     <span class="detail-label">Monthly Rent</span>
-                    <span class="detail-value rent">{{ lease.monthlyRent | currency:'USD':'symbol':'1.0-0' }}</span>
+                    <span class="detail-value rent">{{ lease.rentAmount | currency:'EGP':'symbol':'1.0-0' }}</span>
                   </div>
                   <div class="detail-item">
                     <span class="detail-label">Security Deposit</span>
-                    <span class="detail-value">{{ lease.securityDeposit | currency:'USD':'symbol':'1.0-0' }}</span>
+                    <span class="detail-value">{{ lease.securityDeposit | currency:'EGP':'symbol':'1.0-0' }}</span>
                   </div>
                   <div class="detail-item">
                     <span class="detail-label">Start Date</span>
@@ -202,9 +203,14 @@
                   </div>
                   <div class="detail-item">
                     <span class="detail-label">Payment Day</span>
-                    <span class="detail-value">{{ lease.paymentDayOfMonth }}th of month</span>
+                    <span class="detail-value">{{ lease.paymentDayOfMonth }}{{ ordinalSuffix(lease.paymentDayOfMonth) }} of month</span>
                   </div>
                 </div>
+                @if (lease.contractFileUrl) {
+                  <button class="btn btn-outline-primary btn-sm mt-3" (click)="downloadContract(lease)">
+                    <i class="fa-solid fa-download me-1"></i>Download Contract
+                  </button>
+                }
               </div>
             }
           </div>

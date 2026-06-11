@@ -3,9 +3,6 @@ import { RouterLink } from '@angular/router';
 import { DatePipe, CurrencyPipe } from '@angular/common';
 import { finalize } from 'rxjs';
 import { ActiveLeaseInfo, ActivityItem, DashboardService, DashboardSummary } from '../../services/dashboard.service';
-import { LeaseService } from '../../services/lease.service';
-// import { DashboardService, DashboardSummary, ActivityItem, ActiveLeaseInfo } from '../../../dashboards/tenant-dashboard/services/dashboard.service';
-// import { LeaseService } from '../../../dashboards/tenant-dashboard/services/lease.service';
 
 @Component({
   selector: 'app-overview',
@@ -16,8 +13,6 @@ import { LeaseService } from '../../services/lease.service';
 })
 export class OverviewComponent implements OnInit {
   private readonly dashboardService = inject(DashboardService);
-  private readonly leaseService = inject(LeaseService);
-
   protected loading = signal(true);
   protected error = signal<string | null>(null);
   protected summary = signal<DashboardSummary | null>(null);
@@ -90,10 +85,6 @@ export class OverviewComponent implements OnInit {
   }
 
   downloadContract(): void {
-    const lease = this.summary()?.lease;
-    if (!lease) return;
-    this.leaseService.downloadContract(lease.id).subscribe({
-      next: ({ downloadUrl }) => window.open(downloadUrl, '_blank'),
-    });
+    // Contract download is handled in the My Lease page
   }
 }

@@ -1,25 +1,24 @@
 import { Injectable, inject } from '@angular/core';
 import { HttpClient } from '@angular/common/http';
-import { Observable, of } from 'rxjs';
+import { Observable } from 'rxjs';
 import { environment } from '../../../../../environments/environment';
 
-// ── Lease interfaces (unchanged — used by My Lease page) ────────────────────
+// ── API lease shape ─────────────────────────────────────────────────────────
 
-export interface Lease {
+export interface ApiLease {
   id: string;
   propertyId: string;
-  propertyAddress: string;
-  monthlyRent: number;
+  tenantId: string;
+  ownerId: string;
+  rentAmount: number;
   securityDeposit: number;
   startDate: string;
   endDate: string;
   paymentDayOfMonth: number;
-  status: 'Active' | 'Ended';
-  daysUntilExpiry: number;
-}
-
-export interface LeaseDownload {
-  downloadUrl: string;
+  extractionStatus: string;
+  extractionConfidence: number;
+  isActive: boolean;
+  contractFileUrl: string;
 }
 
 // ── Rented-properties API types ──────────────────────────────────────────────
@@ -69,57 +68,20 @@ export interface RentedPropertyItem {
   daysUntilExpiry: number;
 }
 
-// ── Mock data for My Lease (still mock) ─────────────────────────────────────
-
-const MOCK_ACTIVE_LEASE: Lease = {
-  id: 'lease-001',
-  propertyId: 'prop-001',
-  propertyAddress: '42 Oak Street, Suite 3B, New York, NY 10001',
-  monthlyRent: 2800,
-  securityDeposit: 5600,
-  startDate: '2024-03-01',
-  endDate: '2025-09-30',
-  paymentDayOfMonth: 1,
-  status: 'Active',
-  daysUntilExpiry: 45,
-};
-
-const MOCK_LEASE_HISTORY: Lease[] = [
-  MOCK_ACTIVE_LEASE,
-  {
-    id: 'lease-000',
-    propertyId: 'prop-002',
-    propertyAddress: '15 Maple Avenue, Apt 2F, Brooklyn, NY 11201',
-    monthlyRent: 2200,
-    securityDeposit: 4400,
-    startDate: '2022-06-01',
-    endDate: '2023-05-31',
-    paymentDayOfMonth: 1,
-    status: 'Ended',
-    daysUntilExpiry: 0,
-  },
-];
-
 @Injectable({ providedIn: 'root' })
 export class LeaseService {
   private readonly http = inject(HttpClient);
   private readonly base = environment.apiUrl;
 
+  getLeases(): Observable<ApiLease[]> {
+    return this.http.get<ApiLease[]>(`${this.base}/tenant/leases`);
+  }
+
   getRentedProperties(): Observable<RentedPropertyItem[]> {
     return this.http.get<RentedPropertyItem[]>(`${this.base}/tenant/rented-properties`);
   }
 
-  getActiveLease(): Observable<Lease | null> {
-    // TODO: replace with real API call
-    return of(MOCK_ACTIVE_LEASE);
-  }
-
-  getLeaseHistory(): Observable<Lease[]> {
-    // TODO: replace with real API call
-    return of(MOCK_LEASE_HISTORY);
-  }
-
-  downloadContract(leaseId: string): Observable<LeaseDownload> {
-    return this.http.get<LeaseDownload>(`${this.base}/leases/${leaseId}/download`);
+  contractUrl(relativePath: string): string {
+    return `${this.base.replace('/api', '')}/${relativePath}`;
   }
 }
