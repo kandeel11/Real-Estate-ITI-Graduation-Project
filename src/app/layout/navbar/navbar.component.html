@@ -1,1 +1,65 @@
-<p>navbar works!</p>
+<nav class="navbar navbar-expand-md site-navbar sticky-top" [class.site-navbar--scrolled]="scrolled()">
+    <div class="container-xl">
+
+        <!-- Brand -->
+        <a class="navbar-brand site-navbar__brand" routerLink="/">
+            <i class="fa-solid fa-house-chimney site-navbar__brand-icon"></i>
+            <span class="site-navbar__brand-name">Estatein</span>
+        </a>
+
+        <!-- Mobile toggle -->
+        <button class="navbar-toggler site-navbar__toggler" type="button" data-bs-toggle="collapse"
+            data-bs-target="#navMenu" aria-controls="navMenu" aria-expanded="false" aria-label="Toggle navigation">
+            <i class="fa-solid fa-bars"></i>
+        </button>
+
+        <!-- Collapsible content -->
+        <div class="collapse navbar-collapse" id="navMenu">
+
+            <!-- Center links -->
+            <ul class="navbar-nav mx-auto gap-2">
+                <li class="nav-item">
+                    <a class="nav-link site-navbar__link" routerLink="/" routerLinkActive="active"
+                        [routerLinkActiveOptions]="{exact: true}">
+                        Home
+                    </a>
+                </li>
+                <li class="nav-item">
+                    <a class="nav-link site-navbar__link" routerLink="/properties" routerLinkActive="active">
+                        Properties
+                    </a>
+                </li>
+                <li class="nav-item">
+                    <a class="nav-link site-navbar__link" routerLink="/services" routerLinkActive="active">
+                        Services
+                    </a>
+                </li>
+                <li class="nav-item">
+                    <a class="nav-link site-navbar__link" routerLink="/contact" routerLinkActive="active">
+                        Contact
+                    </a>
+                </li>
+            </ul>
+
+            <!-- Right actions -->
+            <div class="site-navbar__actions">
+                <button class="site-navbar__icon-btn" aria-label="Search">
+                    <i class="fa-solid fa-magnifying-glass"></i>
+                </button>
+                <button class="site-navbar__icon-btn" aria-label="Notifications">
+                    <i class="fa-regular fa-bell"></i>
+                </button>
+                @if (authenticated()) {
+                    <button class="btn btn-outline-danger site-navbar__cta" (click)="logout()">
+                        <i class="fa-solid fa-arrow-right-from-bracket me-1"></i>Logout
+                    </button>
+                } @else {
+                    <a routerLink="/auth/login" class="btn btn-primary site-navbar__cta">
+                        Login
+                    </a>
+                }
+            </div>
+
+        </div>
+    </div>
+</nav>

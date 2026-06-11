@@ -1,0 +1,141 @@
+<div class="ratings-page">
+  <div class="page-header">
+    <h1 class="page-title"><i class="fa-regular fa-star me-2"></i>Ratings &amp; Reviews</h1>
+    <div class="pills-row">
+      <button class="pill" [class.pill-active]="activeTab() === 'reviews'" (click)="activeTab.set('reviews')">My Reviews</button>
+      <button class="pill" [class.pill-active]="activeTab() === 'write'" (click)="activeTab.set('write'); submitSuccess.set(false)">Write a Review</button>
+    </div>
+  </div>
+
+  @if (loading()) {
+    <div class="loading-state">
+      <div class="spinner-border text-primary" role="status"><span class="visually-hidden">Loading…</span></div>
+    </div>
+  }
+
+  @if (!loading() && error()) {
+    <div class="alert alert-danger d-flex align-items-center gap-2">
+      <i class="fa-solid fa-triangle-exclamation"></i>
+      <span>{{ error() }}</span>
+      <button class="btn btn-sm btn-outline-danger ms-2" (click)="loadRatings()">Try again</button>
+    </div>
+  }
+
+  <!-- ══════════════════ MY REVIEWS ══════════════════ -->
+  @if (!loading() && activeTab() === 'reviews') {
+
+    @if (ratings().length === 0) {
+      <div class="empty-state">
+        <i class="fa-regular fa-star empty-icon"></i>
+        <p class="empty-title">No Reviews Yet</p>
+        <p class="empty-desc">Reviews you submit will appear here.</p>
+        <button class="btn btn-primary btn-sm mt-2" (click)="activeTab.set('write')">Write a Review</button>
+      </div>
+    } @else {
+      <div class="reviews-list">
+        @for (r of ratings(); track r.id) {
+          <div class="review-card">
+            <div class="review-header">
+              <div>
+                <p class="review-target">{{ r.targetName }}</p>
+                <span class="review-type">{{ r.targetType === 'Property' ? 'Property' : 'Maintenance Company' }}</span>
+              </div>
+              <span class="status-badge" [class]="statusClass(r.status)">{{ r.status }}</span>
+            </div>
+
+            <!-- Stars -->
+            <div class="star-row mb-2">
+              @for (s of stars(5); track s) {
+                <i class="fa-star" [class.fa-solid]="s <= r.rating" [class.fa-regular]="s > r.rating"></i>
+              }
+            </div>
+
+            <p class="review-text">{{ r.reviewText }}</p>
+            <p class="review-date">{{ r.createdAt | date:'mediumDate' }}</p>
+
+            <div class="d-flex gap-2">
+              @if (deleteLoadingId() === r.id) {
+                <span class="spinner-border spinner-border-sm text-danger" role="status"></span>
+              } @else {
+                <button class="btn btn-sm btn-outline-danger" (click)="deleteRating(r.id)">
+                  <i class="fa-regular fa-trash-can me-1"></i>Delete
+                </button>
+              }
+            </div>
+          </div>
+        }
+      </div>
+    }
+  }
+
+  <!-- ══════════════════ WRITE A REVIEW ══════════════════ -->
+  @if (!loading() && activeTab() === 'write') {
+
+    @if (submitSuccess()) {
+      <div class="create-success">
+        <div class="success-icon"><i class="fa-solid fa-circle-check"></i></div>
+        <h2>Review Submitted!</h2>
+        <p>Your review is pending moderation and will appear once approved.</p>
+        <button class="btn btn-primary" (click)="submitSuccess.set(false); activeTab.set('reviews')">View My Reviews</button>
+      </div>
+    } @else {
+      <div class="write-card">
+        <h2 class="write-title">Submit a Review</h2>
+        <form [formGroup]="writeForm" (ngSubmit)="submitReview()">
+
+          <div class="form-group">
+            <label class="form-label">Review Target</label>
+            <select class="form-select" formControlName="targetType">
+              <option value="Property">Property</option>
+              <option value="MaintenanceCompany">Maintenance Company</option>
+            </select>
+          </div>
+
+          <!-- Star selector -->
+          <div class="form-group">
+            <label class="form-label">Rating <span class="req">*</span></label>
+            <div class="star-selector">
+              @for (s of starValues; track s) {
+                <button type="button" class="star-btn"
+                        (mouseenter)="hoveredStar.set(s)"
+                        (mouseleave)="hoveredStar.set(0)"
+                        (click)="setRating(s)">
+                  <i class="fa-star"
+                     [class.fa-solid]="s <= (hoveredStar() || selectedStar())"
+                     [class.fa-regular]="s > (hoveredStar() || selectedStar())"></i>
+                </button>
+              }
+              @if (selectedStar() > 0) {
+                <span class="star-label">{{ selectedStar() }}/5</span>
+              }
+            </div>
+            @if (selectedStar() === 0 && writeForm.touched) {
+              <div class="form-error">Please select a rating.</div>
+            }
+          </div>
+
+          <div class="form-group">
+            <label class="form-label">Review <span class="req">*</span></label>
+            <textarea class="form-control" formControlName="reviewText" rows="4"
+                      placeholder="Share your experience (min. 10 characters)"></textarea>
+            @if (writeForm.get('reviewText')?.invalid && writeForm.get('reviewText')?.touched) {
+              <div class="form-error">Review must be at least 10 characters.</div>
+            }
+          </div>
+
+          <div class="d-flex justify-content-end">
+            <button type="submit" class="btn btn-primary"
+                    [disabled]="writeForm.invalid || selectedStar() === 0 || submitLoading()">
+              @if (submitLoading()) {
+                <span class="spinner-border spinner-border-sm me-2" role="status"></span>Submitting…
+              } @else {
+                <i class="fa-solid fa-paper-plane me-2"></i>Submit Review
+              }
+            </button>
+          </div>
+
+        </form>
+      </div>
+    }
+  }
+</div>
