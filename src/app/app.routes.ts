@@ -1,5 +1,9 @@
 import { Routes } from '@angular/router';
-import { roleGuard, multiRoleGuard } from './core/guards/role.guard';
+import {
+  roleGuard,
+  multiRoleGuard,
+  dashboardRedirectGuard,
+} from './core/guards/role.guard';
 
 export const routes: Routes = [
   // ==================== PUBLIC LAYOUT (Navbar + Footer) ====================
@@ -12,6 +16,9 @@ export const routes: Routes = [
     children: [
       {
         path: '',
+        // Dashboard roles (admin/company/broker/maintenance) go straight to
+        // their dashboard; tenants and owners browse the public site
+        canActivate: [dashboardRedirectGuard],
         loadComponent: () =>
           import('./features/home/home').then((m) => m.HomeComponent),
       },
@@ -157,6 +164,13 @@ export const routes: Routes = [
             loadComponent: () =>
               import('./dashboards/company/pages/performance/performance.component').then(
                 (m) => m.PerformanceComponent
+              ),
+          },
+          {
+            path: 'ai',
+            loadComponent: () =>
+              import('./dashboards/company/pages/ai/ai.component').then(
+                (m) => m.AiComponent
               ),
           },
           {

@@ -9,6 +9,28 @@ import { CanActivateFn, Router, ActivatedRouteSnapshot } from '@angular/router';
 import { AuthService, UserRole } from '../services/auth.service';
 
 /**
+ * Sends signed-in dashboard roles (admin, company, broker, maintenance)
+ * straight to their dashboard when they hit the public home page.
+ * Tenants and owners keep browsing the public site — that IS their surface
+ * (tenants use the navbar avatar menu; owners list properties from here).
+ */
+export const dashboardRedirectGuard: CanActivateFn = () => {
+  const authService = inject(AuthService);
+  const router = inject(Router);
+  const role = authService.userRole();
+
+  if (
+    authService.authenticated() &&
+    role &&
+    role !== 'tenant' &&
+    role !== 'owner'
+  ) {
+    return router.parseUrl(authService.dashboardRouteFor(role));
+  }
+  return true;
+};
+
+/**
  * Functional guard factory for role-based route protection
  *
  * Usage in routes:

@@ -47,13 +47,19 @@ export class LoginComponent {
       .pipe(finalize(() => (this.loading = false)))
       .subscribe({
         next: (user) => {
-          const home = this.auth.dashboardRouteFor(user.role);
+          // Tenants land on the public site (their main surface); dashboard
+          // roles land on their dashboard
+          const home = user.role === 'tenant' ? '/' : this.auth.dashboardRouteFor(user.role);
+          const dashboardPrefix =
+            user.role === 'tenant'
+              ? '/dashboard'
+              : this.auth.dashboardRouteFor(user.role).replace(/\/overview$/, '');
           const returnUrl = this.route.snapshot.queryParamMap.get('returnUrl');
           // Only honor returnUrl if it's internal and the role can actually
           // open it, otherwise the guard would bounce straight back to login.
           const target =
             returnUrl?.startsWith('/') &&
-            (!returnUrl.startsWith('/dashboard/') || returnUrl.startsWith(home.replace(/\/overview$/, '')))
+            (!returnUrl.startsWith('/dashboard') || returnUrl.startsWith(dashboardPrefix))
               ? returnUrl
               : home;
           this.router.navigateByUrl(target);

@@ -225,7 +225,7 @@ export class AuthService {
       case 'broker':
         return '/dashboard/broker/overview';
       case 'tenant':
-        return '/dashboard/tenant/overview';
+        return '/dashboard'; // new tenant dashboard mounts at /dashboard root
       case 'maintenance-company':
         return '/dashboard/maintenance-company/overview';
       default:

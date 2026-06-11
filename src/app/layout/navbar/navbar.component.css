@@ -94,6 +94,107 @@
   letter-spacing: var(--font-label-md-spacing);
 }
 
+/* ── User avatar + dropdown ─────────────────── */
+.site-navbar__user {
+  position: relative;
+}
+
+.site-navbar__avatar {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 40px;
+  height: 40px;
+  padding: 0;
+  border: none;
+  border-radius: 50%;
+  background: linear-gradient(135deg, var(--color-primary), #7b6cf6);
+  color: #fff;
+  font-size: 14px;
+  font-weight: 700;
+  letter-spacing: 0.5px;
+  cursor: pointer;
+  transition: transform var(--transition-default),
+              box-shadow var(--transition-default);
+}
+
+.site-navbar__avatar:hover {
+  transform: scale(1.05);
+  box-shadow: 0 4px 12px rgba(99, 91, 255, 0.35);
+}
+
+.site-navbar__menu {
+  position: absolute;
+  top: calc(100% + 10px);
+  right: 0;
+  min-width: 230px;
+  background: #fff;
+  border: 1px solid rgba(199, 196, 216, 0.40);
+  border-radius: var(--radius-md);
+  padding: 6px;
+  z-index: 1050;
+}
+
+.site-navbar__menu-header {
+  padding: 10px 12px 8px;
+}
+
+.site-navbar__menu-name {
+  font-weight: 600;
+  font-size: 14px;
+  color: var(--color-on-surface, #1b1b21);
+}
+
+.site-navbar__menu-email {
+  font-size: 12px;
+  color: var(--color-on-surface-variant);
+  word-break: break-all;
+}
+
+.site-navbar__menu-divider {
+  height: 1px;
+  margin: 4px 6px;
+  background: rgba(199, 196, 216, 0.40);
+}
+
+.site-navbar__menu-item {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  width: 100%;
+  padding: 9px 12px;
+  border: none;
+  border-radius: var(--radius-md);
+  background: none;
+  font-size: 14px;
+  font-weight: 500;
+  color: var(--color-on-surface-variant);
+  text-decoration: none;
+  text-align: left;
+  cursor: pointer;
+  transition: color var(--transition-default),
+              background-color var(--transition-default);
+}
+
+.site-navbar__menu-item i {
+  width: 16px;
+  text-align: center;
+}
+
+.site-navbar__menu-item:hover {
+  color: var(--color-primary);
+  background-color: rgba(211, 228, 254, 0.50);
+}
+
+.site-navbar__menu-item--danger {
+  color: #dc3545;
+}
+
+.site-navbar__menu-item--danger:hover {
+  color: #dc3545;
+  background-color: rgba(220, 53, 69, 0.08);
+}
+
 /* ── Mobile toggler ─────────────────────────── */
 .site-navbar__toggler {
   border: none;

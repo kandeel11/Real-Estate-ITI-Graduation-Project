@@ -2,6 +2,7 @@ import { ComponentFixture, TestBed } from '@angular/core/testing';
 import { provideHttpClient } from '@angular/common/http';
 import { provideHttpClientTesting } from '@angular/common/http/testing';
 import { provideRouter } from '@angular/router';
+import { provideNoopAnimations } from '@angular/platform-browser/animations';
 
 import { CompanyDashboardComponent } from './company-dashboard.component';
 
@@ -12,7 +13,12 @@ describe('CompanyDashboardComponent', () => {
   beforeEach(async () => {
     await TestBed.configureTestingModule({
       imports: [CompanyDashboardComponent],
-      providers: [provideHttpClient(), provideHttpClientTesting(), provideRouter([])],
+      providers: [
+        provideHttpClient(),
+        provideHttpClientTesting(),
+        provideRouter([]),
+        provideNoopAnimations(),
+      ],
     }).compileComponents();
 
     fixture = TestBed.createComponent(CompanyDashboardComponent);
@@ -24,9 +30,9 @@ describe('CompanyDashboardComponent', () => {
     expect(component).toBeTruthy();
   });
 
-  it('should render the sidebar navigation', () => {
+  it('should render all sidebar navigation items', () => {
     const el: HTMLElement = fixture.nativeElement;
-    const links = el.querySelectorAll('aside .nav-link');
-    expect(links.length).toBeGreaterThanOrEqual(6);
+    const links = el.querySelectorAll('aside .nav-item');
+    expect(links.length).toBe(7);
   });
 });
