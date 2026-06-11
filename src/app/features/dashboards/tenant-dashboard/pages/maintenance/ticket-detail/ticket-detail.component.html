@@ -116,7 +116,7 @@
     }
 
     <!-- ══ 4. DECISION PANEL ══════════════════════════════════════ -->
-    @if (t.status === 'WaitingForTenantDecision') {
+    @if (t.status === 'WaitingForTenantDecision' && t.resolutionMethod === null) {
       <div class="detail-card mb-4 decision-card">
         <h2 class="section-title"><i class="fa-solid fa-scale-balanced me-2"></i>Your Decision Required</h2>
         <p class="text-muted small mb-3">Based on the AI evaluation, you are responsible for this repair. How would you like to proceed?</p>

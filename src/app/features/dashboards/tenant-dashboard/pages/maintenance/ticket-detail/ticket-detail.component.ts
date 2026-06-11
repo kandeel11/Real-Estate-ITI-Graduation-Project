@@ -105,10 +105,11 @@ export class TicketDetailComponent implements OnInit {
     return s === 'Draft' || s === 'Submitted' || s === 'WaitingForOwnerDecision' || s === 'WaitingForTenantDecision';
   });
 
-  // True once the tenant chose ExternalTechnician
-  protected readonly isExternalDecision = computed(() =>
-    this.ticket()?.resolutionMethod === 1
-  );
+  // True once the tenant chose ExternalTechnician (API may return int 1 or string)
+  protected readonly isExternalDecision = computed(() => {
+    const m = this.ticket()?.resolutionMethod;
+    return m === 1 || m === 'ExternalTechnician';
+  });
 
   protected readonly decisionModalTitle = computed(() =>
     this.pendingDecision() === 0 ? 'Assign to Platform Vendor?' : 'Use External Technician?'

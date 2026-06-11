@@ -112,7 +112,7 @@ export interface TicketDetail {
   priority: TicketPriority;
   status: TicketStatus;
   responsibleParty: string | null;
-  resolutionMethod: ResolutionMethod | null;
+  resolutionMethod: ResolutionMethod | 'PlatformVendor' | 'ExternalTechnician' | null;
   aiEvaluation: AiEvaluation | null;
   vendorAssignment: VendorAssignment | null;
   attachments: TicketAttachment[];
