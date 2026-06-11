@@ -1,20 +1,15 @@
 /**
  * Company Subscription Page
- * Current plan, usage meters, active features, and (mocked) invoices.
- * Payment module is Phase 2 — upgrade shows a "coming soon" notice.
+ * Live plan + usage + payment history from /api/subscriptions/mine[/usage|/payments].
+ * Online payment (upgrades/charging) is still Phase 2 — only history is real.
  */
 
-import { Component, inject, signal } from '@angular/core';
+import { Component, inject, signal, computed } from '@angular/core';
 import { DatePipe, CurrencyPipe } from '@angular/common';
 import { toSignal } from '@angular/core/rxjs-interop';
 import { CompanySubscriptionService } from '../../services/company-subscription.service';
 import { UsageMeterComponent } from '../../../../shared/components/usage-meter/usage-meter.component';
-
-interface Invoice {
-  date: string;
-  amount: number;
-  status: string;
-}
+import { PaymentItem } from '../../../../shared/models/company.model';
 
 @Component({
   selector: 'app-company-subscriptions',
@@ -29,21 +24,40 @@ export class SubscriptionsComponent {
   subscription = toSignal(this.subSvc.getActive());
   usage = toSignal(this.subSvc.getUsage());
 
+  // undefined = still loading; null = loaded, no active subscription
+  loading = computed(() => this.subscription() === undefined);
+
   upgradeNotice = signal(false);
 
-  features = [
-    'Advanced analytics',
-    'Featured listings',
-    'AI price estimation',
-    'AI lead prioritization',
-  ];
+  features = computed(() => {
+    const sub = this.subscription();
+    if (!sub) return [];
+    return [
+      { label: 'Advanced analytics', on: !!sub.hasAdvancedAnalytics },
+      { label: 'Featured listings', on: !!sub.hasFeaturedListings },
+      { label: 'AI price estimation', on: !!sub.hasAiPriceEstimation },
+      { label: 'AI chatbot', on: !!sub.hasAiChatbot },
+      { label: 'AI lead prioritization', on: !!sub.hasAiLeadPrioritization },
+      { label: 'AI description generator', on: !!sub.hasAiDescriptionGenerator },
+    ];
+  });
 
-  // Mocked until the Payment module ships (Phase 2)
-  invoices: Invoice[] = [
-    { date: '2026-06-15', amount: 99, status: 'Paid' },
-    { date: '2026-05-15', amount: 99, status: 'Paid' },
-    { date: '2026-04-15', amount: 99, status: 'Paid' },
-  ];
+  invoices = toSignal(this.subSvc.getPayments(), {
+    initialValue: [] as PaymentItem[],
+  });
+
+  invoiceBadge(status: string): string {
+    switch (status) {
+      case 'Paid':
+        return 'badge bg-success';
+      case 'Pending':
+        return 'badge bg-warning text-dark';
+      case 'Failed':
+        return 'badge bg-danger';
+      default:
+        return 'badge bg-secondary';
+    }
+  }
 
   onUpgrade(): void {
     this.upgradeNotice.set(true);

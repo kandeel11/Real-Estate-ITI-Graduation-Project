@@ -27,28 +27,28 @@
         <div class="card p-3 h-100">
           <div class="text-muted small">Properties</div>
           <div class="fs-3 fw-bold">{{ s.totalProperties | number }}</div>
-          <div class="small text-success">{{ s.activeProperties }} active</div>
+          <div class="small text-success">{{ s.activeProperties }} active · {{ s.pendingProperties }} pending</div>
         </div>
       </div>
       <div class="col-6 col-lg-3">
         <div class="card p-3 h-100">
           <div class="text-muted small">Brokers</div>
           <div class="fs-3 fw-bold">{{ s.totalBrokers | number }}</div>
-          <div class="small text-muted">team members</div>
+          <div class="small text-muted">active team members</div>
         </div>
       </div>
       <div class="col-6 col-lg-3">
         <div class="card p-3 h-100">
           <div class="text-muted small">Total Views</div>
-          <div class="fs-3 fw-bold">{{ s.monthlyViews | number }}</div>
-          <div class="small text-muted">{{ s.monthlyInquiries }} inquiries</div>
+          <div class="fs-3 fw-bold">{{ s.totalViews | number }}</div>
+          <div class="small text-muted">{{ s.monthlyInquiries }} inquiries this month</div>
         </div>
       </div>
       <div class="col-6 col-lg-3">
         <div class="card p-3 h-100">
           <div class="text-muted small">Deals Closed</div>
-          <div class="fs-3 fw-bold">{{ s.monthlyDealsClosed | number }}</div>
-          <div class="small text-muted">this month</div>
+          <div class="fs-3 fw-bold">{{ s.dealsClosed | number }}</div>
+          <div class="small text-muted">{{ s.rentedProperties }} listings rented</div>
         </div>
       </div>
     </div>
@@ -81,7 +81,7 @@
           <div class="d-flex align-items-center justify-content-between py-2 border-bottom">
             <div class="d-flex align-items-center gap-2">
               <span class="badge bg-dark rounded-circle">{{ i + 1 }}</span>
-              <span class="fw-semibold">{{ broker.fullName ?? broker.licenseNumber }}</span>
+              <span class="fw-semibold">{{ broker.fullName || broker.licenseNumber }}</span>
             </div>
             <div class="text-muted small">
               {{ broker.closedDealsCount ?? 0 }} deals ·
@@ -94,16 +94,18 @@
       </div>
     </div>
 
-    <!-- Recent activity (mocked) -->
+    <!-- Recent activity -->
     <div class="col-lg-6">
       <div class="card p-3 h-100">
         <h5 class="mb-3">Recent Activity</h5>
-        @for (item of activity; track item.text) {
+        @for (item of activity(); track item.text + item.timestamp) {
           <div class="d-flex align-items-center gap-2 py-2 border-bottom">
-            <i class="fa-solid {{ item.icon }}"></i>
+            <i class="fa-solid {{ iconFor(item) }}"></i>
             <span class="flex-grow-1 small">{{ item.text }}</span>
-            <span class="text-muted small text-nowrap">{{ item.when }}</span>
+            <span class="text-muted small text-nowrap">{{ item.timestamp | date: 'MMM d, HH:mm' }}</span>
           </div>
+        } @empty {
+          <p class="text-muted mb-0">No activity yet — it appears as listings, brokers, and inquiries come in.</p>
         }
       </div>
     </div>

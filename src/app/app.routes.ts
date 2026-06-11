@@ -1,5 +1,5 @@
 import { Routes } from '@angular/router';
-import { roleGuard } from './core/guards/role.guard';
+import { roleGuard, multiRoleGuard } from './core/guards/role.guard';
 
 export const routes: Routes = [
   // ==================== PUBLIC LAYOUT (Navbar + Footer) ====================
@@ -14,6 +14,17 @@ export const routes: Routes = [
         path: '',
         loadComponent: () =>
           import('./features/home/home').then((m) => m.HomeComponent),
+      },
+      {
+        // Listing creation — owners and brokers only (companies monitor;
+        // their brokers create)
+        path: 'properties/new',
+        canActivate: [multiRoleGuard],
+        data: { expectedRoles: ['owner', 'broker'] },
+        loadComponent: () =>
+          import(
+            './features/properties/pages/create-property/create-property.component'
+          ).then((m) => m.CreatePropertyComponent),
       },
     ],
   },

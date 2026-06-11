@@ -1,10 +1,17 @@
 <h2 class="mb-4">Subscription</h2>
 
-@if (!subscription()) {
+@if (loading()) {
   <div class="d-flex justify-content-center py-5">
     <div class="spinner-border text-secondary" role="status">
       <span class="visually-hidden">Loading…</span>
     </div>
+  </div>
+} @else if (!subscription()) {
+  <div class="alert alert-warning">
+    <i class="fa-solid fa-triangle-exclamation me-2"></i>
+    No active subscription found for this account. A plan is assigned
+    automatically when the company is registered — contact support if this
+    looks wrong.
   </div>
 } @else {
   @if (subscription(); as sub) {
@@ -12,9 +19,13 @@
     <div class="card p-4 mb-4 plan-card text-white">
       <div class="d-flex justify-content-between align-items-start">
         <div>
-          <div class="text-uppercase fw-bold fs-5">{{ sub.planName }}</div>
+          <div class="text-uppercase fw-bold fs-5">
+            {{ sub.planName }}
+            <span class="badge bg-light text-dark ms-2 align-middle">{{ sub.status }}</span>
+          </div>
           <div class="opacity-75">
-            $99/month · Renews {{ sub.endDate | date: 'MMM d, y' }}
+            {{ sub.priceMonthly | currency: 'USD' : 'symbol' : '1.0-0' }}/month
+            · Renews {{ sub.endDate | date: 'MMM d, y' }}
             @if (sub.isAutoRenew) {
               <span class="badge bg-light text-dark ms-2">Auto-renew on</span>
             }
@@ -50,35 +61,47 @@
     }
 
     <div class="row g-3">
-      <!-- Active features -->
+      <!-- Plan features (from real plan flags) -->
       <div class="col-lg-6">
         <div class="card p-3 h-100">
-          <h5 class="mb-3">Active Features</h5>
+          <h5 class="mb-3">Plan Features</h5>
           <div class="row">
-            @for (feature of features; track feature) {
-              <div class="col-6 mb-2">
-                <i class="fa-solid fa-circle-check text-success me-2"></i>{{ feature }}
+            @for (feature of features(); track feature.label) {
+              <div class="col-6 mb-2" [class.text-muted]="!feature.on">
+                @if (feature.on) {
+                  <i class="fa-solid fa-circle-check text-success me-2"></i>
+                } @else {
+                  <i class="fa-solid fa-circle-xmark text-secondary me-2"></i>
+                }
+                {{ feature.label }}
               </div>
             }
           </div>
         </div>
       </div>
 
-      <!-- Invoices (mocked) -->
+      <!-- Payment history -->
       <div class="col-lg-6">
         <div class="card p-3 h-100">
           <h5 class="mb-3">Recent Invoices</h5>
-          <table class="table table-sm mb-0">
-            <tbody>
-              @for (inv of invoices; track inv.date) {
-                <tr>
-                  <td>{{ inv.date | date: 'MMM d, y' }}</td>
-                  <td>{{ inv.amount | currency: 'USD' : 'symbol' : '1.2-2' }}</td>
-                  <td class="text-end"><span class="badge bg-success">{{ inv.status }}</span></td>
-                </tr>
-              }
-            </tbody>
-          </table>
+          @if (invoices().length === 0) {
+            <p class="text-muted mb-0">
+              No invoices yet — free plans aren't charged, and paid invoices
+              appear here once billing starts.
+            </p>
+          } @else {
+            <table class="table table-sm mb-0">
+              <tbody>
+                @for (inv of invoices(); track inv.id) {
+                  <tr>
+                    <td>{{ (inv.paidAt ?? inv.dueDate) | date: 'MMM d, y' }}</td>
+                    <td>{{ inv.amount | currency: inv.currency || 'USD' : 'symbol' : '1.2-2' }}</td>
+                    <td class="text-end"><span [class]="invoiceBadge(inv.status)">{{ inv.status }}</span></td>
+                  </tr>
+                }
+              </tbody>
+            </table>
+          }
         </div>
       </div>
     </div>

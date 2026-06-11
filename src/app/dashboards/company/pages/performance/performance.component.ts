@@ -26,15 +26,14 @@ export class PerformanceComponent {
 
   loading = computed(() => this.brokers().length === 0);
 
-  // Deals/response metrics are not in the backend BrokerDto yet — mock-only
   private deals = (b: Broker) => b.closedDealsCount ?? 0;
   private response = (b: Broker) => b.avgResponseTimeMinutes ?? 0;
 
-  /** True when the backend hasn't supplied performance metrics for any broker. */
+  /** True while no broker has recorded any deals yet (fresh company). */
   metricsMissing = computed(
     () =>
       this.brokers().length > 0 &&
-      this.brokers().every((b) => b.closedDealsCount == null)
+      this.brokers().every((b) => this.deals(b) === 0)
   );
 
   dealsRanking = computed(() =>

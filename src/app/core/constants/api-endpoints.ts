@@ -28,12 +28,29 @@ export const API_ENDPOINTS = {
     CREATE: '/properties',
     UPDATE: (id: string) => `/properties/${id}`,
     DELETE: (id: string) => `/properties/${id}`,
-    UPLOAD_IMAGES: (id: string) => `/properties/${id}/images`,
-    DELETE_IMAGE: (id: string, imageId: string) =>
-      `/properties/${id}/images/${imageId}`,
+    SUBMIT: (id: string) => `/properties/${id}/submit`,
+    REQUEST_AI_DESCRIPTION: (id: string) =>
+      `/properties/${id}/request-ai-description`,
+    MEDIA: (id: string) => `/properties/${id}/media`,
+    AMENITIES: (id: string) => `/properties/${id}/amenities`,
+    REMOVE_AMENITY: (id: string, amenityId: string) =>
+      `/properties/${id}/amenities/${amenityId}`,
     GET_BY_CITY: (city: string) => `/properties/city/${city}`,
     GET_FEATURED: '/properties/featured',
     SEARCH: '/properties/search',
+  },
+
+  // ==================== AMENITIES CATALOG ====================
+  AMENITIES: {
+    GET_ALL: '/amenities',
+    GET_BY_PROPERTY: (propertyId: string) => `/amenities/property/${propertyId}`,
+  },
+
+  // ==================== AI MODULE ====================
+  AI: {
+    DESCRIPTION_BY_PROPERTY: (propertyId: string) =>
+      `/AI/descriptions/by-property/${propertyId}`,
+    ACCEPT_DESCRIPTION: (generationId: string) => `/AI/${generationId}/accept`,
   },
 
   // ==================== COMPANIES MODULE ====================
@@ -44,6 +61,8 @@ export const API_ENDPOINTS = {
     UPDATE_MINE: '/companies/mine',
     MINE_PROPERTIES: '/companies/mine/properties',
     MINE_BROKERS: '/companies/mine/brokers',
+    MINE_STATS: '/companies/mine/stats',
+    MINE_ACTIVITY: '/companies/mine/activity',
     UPDATE: (id: string) => `/companies/${id}`,
     VERIFY: (id: string) => `/companies/${id}/verify`,
     GET_PROPERTIES: (id: string) => `/companies/${id}/properties`,
@@ -103,14 +122,17 @@ export const API_ENDPOINTS = {
   },
 
   // ==================== SUBSCRIPTIONS MODULE ====================
+  // MINE/MINE_USAGE match the backend SubscriptionsController;
+  // plan catalog lives at /subscription-plans
   SUBSCRIPTIONS: {
-    GET_PLANS: '/subscriptions/plans',
-    GET_USER_SUBSCRIPTION: '/subscriptions/user',
+    GET_PLANS: '/subscription-plans',
+    MINE: '/subscriptions/mine',
+    MINE_USAGE: '/subscriptions/mine/usage',
+    MINE_PAYMENTS: '/subscriptions/mine/payments',
     SUBSCRIBE: '/subscriptions/subscribe',
     UPGRADE_PLAN: '/subscriptions/upgrade',
     CANCEL_SUBSCRIPTION: '/subscriptions/cancel',
     GET_BILLING_HISTORY: '/subscriptions/billing-history',
-    GET_USAGE: '/subscriptions/usage',
   },
 
   // ==================== PAYMENTS MODULE ====================

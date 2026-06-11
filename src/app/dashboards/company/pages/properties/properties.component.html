@@ -1,8 +1,8 @@
 <div class="d-flex justify-content-between align-items-center mb-3">
   <h2 class="mb-0">Company Properties ({{ counts().all }})</h2>
-  <button class="btn btn-dark" (click)="addProperty()">
-    <i class="fa-solid fa-plus me-2"></i>Add Property
-  </button>
+  <span class="text-muted small">
+    <i class="fa-solid fa-circle-info me-1"></i>Listings are created by your brokers
+  </span>
 </div>
 
 <div class="d-flex flex-wrap justify-content-between align-items-center gap-2 mb-3">
@@ -85,11 +85,8 @@
               <td><span [class]="badgeClass(p.status)">{{ statusLabel(p.status) }}</span></td>
               <td>{{ p.viewsCount | number }}</td>
               <td class="text-end">
-                <button class="btn btn-sm btn-outline-secondary me-1" title="View">
+                <button class="btn btn-sm btn-outline-secondary" title="View">
                   <i class="fa-solid fa-eye"></i>
-                </button>
-                <button class="btn btn-sm btn-outline-secondary" title="Edit">
-                  <i class="fa-solid fa-pen"></i>
                 </button>
               </td>
             </tr>

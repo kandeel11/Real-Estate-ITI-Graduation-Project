@@ -1,6 +1,7 @@
 /**
  * Company Dashboard Overview Page
- * Stat cards, subscription usage meters, top brokers, and activity feed.
+ * Stat cards, subscription usage meters, top brokers, and activity feed —
+ * all from live endpoints (/companies/mine/*, /subscriptions/mine*).
  */
 
 import { Component, inject, computed } from '@angular/core';
@@ -9,13 +10,13 @@ import { toSignal } from '@angular/core/rxjs-interop';
 import { CompanyService } from '../../services/company.service';
 import { CompanySubscriptionService } from '../../services/company-subscription.service';
 import { UsageMeterComponent } from '../../../../shared/components/usage-meter/usage-meter.component';
-import { Broker } from '../../../../shared/models/company.model';
+import { Broker, ActivityItem } from '../../../../shared/models/company.model';
 
-interface ActivityItem {
-  icon: string;
-  text: string;
-  when: string;
-}
+const ACTIVITY_ICONS: Record<string, string> = {
+  listing_created: 'fa-house text-primary',
+  broker_joined: 'fa-user-plus text-secondary',
+  inquiry_received: 'fa-envelope text-primary',
+};
 
 @Component({
   selector: 'app-company-overview',
@@ -35,6 +36,9 @@ export class OverviewComponent {
   brokers = toSignal(this.companySvc.getBrokers(), {
     initialValue: [] as Broker[],
   });
+  activity = toSignal(this.companySvc.getActivity(), {
+    initialValue: [] as ActivityItem[],
+  });
 
   topBrokers = computed(() =>
     [...this.brokers()]
@@ -45,11 +49,7 @@ export class OverviewComponent {
 
   loading = computed(() => !this.company() || !this.stats());
 
-  // Mocked until a real activity feed endpoint exists
-  activity: ActivityItem[] = [
-    { icon: 'fa-circle-check text-success', text: 'Property "Maadi 3BR" approved', when: '2h ago' },
-    { icon: 'fa-envelope text-primary', text: 'New inquiry assigned to Sara Hassan', when: '4h ago' },
-    { icon: 'fa-handshake text-success', text: 'Deal closed by Mahmoud Ali', when: '1d ago' },
-    { icon: 'fa-user-plus text-secondary', text: 'Broker Layla Ibrahim joined the team', when: '3d ago' },
-  ];
+  iconFor(item: ActivityItem): string {
+    return ACTIVITY_ICONS[item.type] ?? 'fa-circle-info text-secondary';
+  }
 }

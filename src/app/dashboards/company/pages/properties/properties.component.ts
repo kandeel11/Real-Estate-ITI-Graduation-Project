@@ -93,9 +93,4 @@ export class PropertiesComponent implements OnInit {
   onSearch(event: Event): void {
     this.search.set((event.target as HTMLInputElement).value);
   }
-
-  // Property editor is separate scope — link target until it's built
-  addProperty(): void {
-    alert('The property editor is coming soon.');
-  }
 }

@@ -81,8 +81,10 @@ export class SettingsComponent implements OnInit {
     this.saved.set(false);
 
     // Backend body: { name, city, address, phone, website?, description?, logoUrl? }
+    // logoUrl must be echoed back — the backend overwrites it with whatever is
+    // sent, so omitting it would wipe an existing logo
     const { name, city, address, phone, website, description } = this.form.getRawValue();
-    const changes = { name, city, address, phone, website, description };
+    const changes = { name, city, address, phone, website, description, logoUrl: company.logoUrl ?? null };
 
     this.companySvc.updateCompany(changes).subscribe({
       next: () => {

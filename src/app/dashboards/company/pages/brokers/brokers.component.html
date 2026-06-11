@@ -174,3 +174,14 @@
   </div>
   <div class="modal-backdrop show"></div>
 }
+
+<!-- Deactivate confirmation -->
+@if (brokerToDeactivate(); as broker) {
+  <app-confirm-modal
+    title="Deactivate broker"
+    [message]="'Deactivate ' + displayName(broker) + '? They will no longer be able to log in.'"
+    confirmText="Deactivate"
+    (confirmed)="confirmDeactivate()"
+    (cancelled)="brokerToDeactivate.set(null)"
+  />
+}

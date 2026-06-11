@@ -1,9 +1,9 @@
 /**
  * Company Subscription Service
- * FULLY MOCKED — the backend only exposes /api/subscription-plans (catalog).
- * There is no "my subscription" or usage endpoint yet. When one ships, point
- * the URLs below at it and flip `useMock` to false; until then the real-call
- * branch targets the agreed-but-unbuilt routes and falls back to mock data.
+ * LIVE against GET /api/subscriptions/mine and /mine/usage (requires JWT;
+ * company callers resolve to the company subscription via the token's
+ * CompanyId). Emits null when there's no active subscription (404) or the
+ * call fails, so pages can show an explicit empty state instead of hanging.
  */
 
 import { Injectable, inject } from '@angular/core';
@@ -14,18 +14,27 @@ import { API_ENDPOINTS } from '../../../core/constants/api-endpoints';
 import {
   SubscriptionInfo,
   SubscriptionUsage,
+  PaymentItem,
 } from '../../../shared/models/company.model';
 
 const MOCK_SUB: SubscriptionInfo = {
   planName: 'Premium Company',
   tier: 'PremiumCompany',
   status: 'Active',
+  billingCycle: 'Monthly',
+  priceMonthly: 99,
   endDate: '2026-07-15',
   isAutoRenew: true,
   maxProperties: 200,
   maxBrokers: 25,
   maxAiRequestsPerMonth: 5000,
   maxStorageGb: 100,
+  hasAdvancedAnalytics: true,
+  hasFeaturedListings: true,
+  hasAiPriceEstimation: true,
+  hasAiChatbot: true,
+  hasAiLeadPrioritization: true,
+  hasAiDescriptionGenerator: true,
 };
 
 const MOCK_USAGE: SubscriptionUsage = {
@@ -41,23 +50,31 @@ const MOCK_USAGE: SubscriptionUsage = {
 export class CompanySubscriptionService {
   private http = inject(HttpClient);
   private baseUrl = environment.apiUrl;
-  private useMock = true; // ← flip to false when Identity/JWT ships
+  private useMock = false; // ← offline demo fallback; backend is live
 
-  getActive(): Observable<SubscriptionInfo> {
+  getActive(): Observable<SubscriptionInfo | null> {
     if (this.useMock) return of(MOCK_SUB).pipe(delay(300));
     return this.http
-      .get<SubscriptionInfo>(
-        `${this.baseUrl}${API_ENDPOINTS.SUBSCRIPTIONS.GET_USER_SUBSCRIPTION}`
-      )
-      .pipe(catchError(() => of(MOCK_SUB)));
+      .get<SubscriptionInfo>(`${this.baseUrl}${API_ENDPOINTS.SUBSCRIPTIONS.MINE}`)
+      .pipe(catchError(() => of(null)));
   }
 
-  getUsage(): Observable<SubscriptionUsage> {
+  getUsage(): Observable<SubscriptionUsage | null> {
     if (this.useMock) return of(MOCK_USAGE).pipe(delay(350));
     return this.http
       .get<SubscriptionUsage>(
-        `${this.baseUrl}${API_ENDPOINTS.SUBSCRIPTIONS.GET_USAGE}`
+        `${this.baseUrl}${API_ENDPOINTS.SUBSCRIPTIONS.MINE_USAGE}`
       )
-      .pipe(catchError(() => of(MOCK_USAGE)));
+      .pipe(catchError(() => of(null)));
+  }
+
+  /** GET /api/subscriptions/mine/payments — empty list = nothing charged yet. */
+  getPayments(): Observable<PaymentItem[]> {
+    if (this.useMock) return of([]).pipe(delay(300));
+    return this.http
+      .get<PaymentItem[]>(
+        `${this.baseUrl}${API_ENDPOINTS.SUBSCRIPTIONS.MINE_PAYMENTS}`
+      )
+      .pipe(catchError(() => of([])));
   }
 }

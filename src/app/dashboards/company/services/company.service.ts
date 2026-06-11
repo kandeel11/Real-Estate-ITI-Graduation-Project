@@ -2,14 +2,13 @@
  * Company Service
  * Live against the backend (CompaniesController / BrokersController) — all
  * calls require a CompanyManager JWT. `useMock` remains as an offline demo
- * fallback. Company stats have NO backend endpoint yet, so in live mode they
- * are DERIVED from /companies/mine/properties + /companies/mine/brokers;
- * inquiries and deals-closed stay 0 until a real stats endpoint exists.
+ * fallback. Stats and activity come from the composed Host endpoints
+ * /companies/mine/stats and /companies/mine/activity.
  */
 
 import { Injectable, inject } from '@angular/core';
 import { HttpClient } from '@angular/common/http';
-import { Observable, of, throwError, delay, forkJoin, map } from 'rxjs';
+import { Observable, of, throwError, delay } from 'rxjs';
 import { environment } from '../../../../environments/environment';
 import { API_ENDPOINTS } from '../../../core/constants/api-endpoints';
 import {
@@ -17,8 +16,8 @@ import {
   CompanyStats,
   Broker,
   AddBrokerRequest,
+  ActivityItem,
 } from '../../../shared/models/company.model';
-import { PropertyService } from '../../../features/properties/services/property.service';
 
 const MOCK_COMPANY: Company = {
   id: 'c1',
@@ -40,11 +39,19 @@ const MOCK_STATS: CompanyStats = {
   totalProperties: 147,
   activeProperties: 140,
   pendingProperties: 2,
+  rentedProperties: 5,
   totalBrokers: 23,
-  monthlyViews: 3421,
+  totalViews: 3421,
+  totalInquiries: 312,
   monthlyInquiries: 188,
-  monthlyDealsClosed: 12,
+  dealsClosed: 12,
 };
+
+const MOCK_ACTIVITY: ActivityItem[] = [
+  { type: 'listing_created', text: 'Listing "Maadi 3BR" created', timestamp: '2026-06-11T08:00:00Z' },
+  { type: 'inquiry_received', text: 'New inquiry received on "Maadi 3BR"', timestamp: '2026-06-11T06:00:00Z' },
+  { type: 'broker_joined', text: 'Broker Layla Ibrahim joined the team', timestamp: '2026-06-08T10:00:00Z' },
+];
 
 const MOCK_BROKERS: Broker[] = [
   { id: 'b1', userId: 'u1', companyId: 'c1', fullName: 'Sara Hassan', email: 'sara@acme.com',
@@ -66,7 +73,6 @@ const MAX_BROKERS = 25;
 @Injectable({ providedIn: 'root' })
 export class CompanyService {
   private http = inject(HttpClient);
-  private propertySvc = inject(PropertyService);
   private baseUrl = environment.apiUrl;
   private useMock = false; // ← offline demo fallback; backend is live
 
@@ -76,25 +82,19 @@ export class CompanyService {
     return this.http.get<Company>(`${this.baseUrl}${API_ENDPOINTS.COMPANIES.MINE}`);
   }
 
-  /**
-   * No backend stats endpoint yet — derived from real properties + brokers.
-   * monthlyInquiries / monthlyDealsClosed need a real endpoint and stay 0.
-   */
+  /** GET /api/companies/mine/stats — composed dashboard counters. */
   getStats(): Observable<CompanyStats> {
     if (this.useMock) return of(MOCK_STATS).pipe(delay(400));
-    return forkJoin({
-      properties: this.propertySvc.getCompanyProperties(),
-      brokers: this.getBrokers(),
-    }).pipe(
-      map(({ properties, brokers }) => ({
-        totalProperties: properties.length,
-        activeProperties: properties.filter((p) => p.status === 'Active').length,
-        pendingProperties: properties.filter((p) => p.status === 'PendingReview').length,
-        totalBrokers: brokers.filter((b) => b.isActive).length,
-        monthlyViews: properties.reduce((sum, p) => sum + (p.viewsCount ?? 0), 0),
-        monthlyInquiries: 0,
-        monthlyDealsClosed: 0,
-      }))
+    return this.http.get<CompanyStats>(
+      `${this.baseUrl}${API_ENDPOINTS.COMPANIES.MINE_STATS}`
+    );
+  }
+
+  /** GET /api/companies/mine/activity — recent listings/brokers/inquiries. */
+  getActivity(): Observable<ActivityItem[]> {
+    if (this.useMock) return of([...MOCK_ACTIVITY]).pipe(delay(350));
+    return this.http.get<ActivityItem[]>(
+      `${this.baseUrl}${API_ENDPOINTS.COMPANIES.MINE_ACTIVITY}`
     );
   }
 

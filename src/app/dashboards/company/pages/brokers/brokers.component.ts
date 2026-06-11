@@ -11,13 +11,14 @@ import { ReactiveFormsModule, FormBuilder, Validators } from '@angular/forms';
 import { RouterLink } from '@angular/router';
 import { CompanyService } from '../../services/company.service';
 import { Broker } from '../../../../shared/models/company.model';
+import { ConfirmModalComponent } from '../../../../shared/components/modal/confirm-modal.component';
 
 const MAX_BROKERS = 25;
 
 @Component({
   selector: 'app-company-brokers',
   standalone: true,
-  imports: [ReactiveFormsModule, RouterLink],
+  imports: [ReactiveFormsModule, RouterLink, ConfirmModalComponent],
   templateUrl: './brokers.component.html',
   styleUrl: './brokers.component.css',
 })
@@ -97,12 +98,20 @@ export class BrokersComponent implements OnInit {
     });
   }
 
+  brokerToDeactivate = signal<Broker | null>(null);
+
   deactivate(broker: Broker): void {
-    if (!confirm(`Deactivate ${this.displayName(broker)}? They will no longer be able to log in.`)) return;
+    this.brokerToDeactivate.set(broker);
+  }
+
+  confirmDeactivate(): void {
+    const broker = this.brokerToDeactivate();
+    if (!broker) return;
+    this.brokerToDeactivate.set(null);
     this.companySvc.deactivateBroker(broker.id).subscribe(() => this.load());
   }
 
   displayName(broker: Broker): string {
-    return broker.fullName ?? `License ${broker.licenseNumber}`;
+    return broker.fullName || `License ${broker.licenseNumber}`;
   }
 }

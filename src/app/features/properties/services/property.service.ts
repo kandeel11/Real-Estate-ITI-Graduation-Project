@@ -11,7 +11,12 @@ import { HttpClient } from '@angular/common/http';
 import { Observable, of, delay } from 'rxjs';
 import { environment } from '../../../../environments/environment';
 import { API_ENDPOINTS } from '../../../core/constants/api-endpoints';
-import { Property } from '../models/property.model';
+import {
+  Property,
+  Amenity,
+  DescriptionDraft,
+  CreatePropertyData,
+} from '../models/property.model';
 
 const MOCK_PROPERTIES: Property[] = [
   { id: 'p1', ownerId: 'u1', companyId: 'c1', listingBrokerId: 'b1', title: 'Maadi 3BR Apartment', titleAr: '',
@@ -66,6 +71,103 @@ export class PropertyService {
     }
     return this.http.get<Property>(
       `${this.baseUrl}${API_ENDPOINTS.PROPERTIES.GET_BY_ID(id)}`
+    );
+  }
+
+  // ─── Creation flow ────────────────────────────────────────────────
+  // POST /api/properties is multipart/form-data; keys match the backend's
+  // CreatePropertyRequest. Ownership files are required only for owners —
+  // for brokers the backend skips the ownership verification entirely.
+
+  create(data: CreatePropertyData): Observable<{ id: string }> {
+    const form = new FormData();
+    form.append('Title', data.title);
+    form.append('TitleAr', data.titleAr);
+    form.append('PropertyType', data.propertyType);
+    form.append('Price', String(data.price));
+    form.append('Bedrooms', String(data.bedrooms));
+    form.append('Bathrooms', String(data.bathrooms));
+    form.append('AreaSqm', String(data.areaSqm));
+    form.append('FloorNumber', String(data.floorNumber));
+    form.append('TotalFloors', String(data.totalFloors));
+    form.append('YearBuilt', String(data.yearBuilt));
+    form.append('IsFurnished', String(data.isFurnished));
+    form.append('PetsAllowed', String(data.petsAllowed));
+    form.append('Address', data.address);
+    if (data.apartmentNumber != null)
+      form.append('ApartmentNumber', String(data.apartmentNumber));
+    form.append('Country', data.country);
+    form.append('Governorate', data.governorate);
+    form.append('City', data.city);
+    form.append('District', data.district);
+    form.append('ListingSource', data.listingSource);
+    if (data.ownerFullName) form.append('OwnerFullName', data.ownerFullName);
+    if (data.nationalIdFile)
+      form.append('NationalIdFile', data.nationalIdFile);
+    if (data.ownershipProofFile)
+      form.append('OwnershipProofFile', data.ownershipProofFile);
+
+    return this.http.post<{ id: string }>(
+      `${this.baseUrl}${API_ENDPOINTS.PROPERTIES.CREATE}`,
+      form
+    );
+  }
+
+  uploadMedia(propertyId: string, file: File, sortOrder = 0): Observable<{ mediaId: string }> {
+    const form = new FormData();
+    form.append('File', file);
+    form.append('MediaType', 'Image');
+    form.append('SortOrder', String(sortOrder));
+    return this.http.post<{ mediaId: string }>(
+      `${this.baseUrl}${API_ENDPOINTS.PROPERTIES.MEDIA(propertyId)}`,
+      form
+    );
+  }
+
+  getAmenities(): Observable<Amenity[]> {
+    return this.http.get<Amenity[]>(
+      `${this.baseUrl}${API_ENDPOINTS.AMENITIES.GET_ALL}`
+    );
+  }
+
+  addAmenity(propertyId: string, amenityId: string): Observable<void> {
+    return this.http.post<void>(
+      `${this.baseUrl}${API_ENDPOINTS.PROPERTIES.AMENITIES(propertyId)}`,
+      { amenityId }
+    );
+  }
+
+  removeAmenity(propertyId: string, amenityId: string): Observable<void> {
+    return this.http.delete<void>(
+      `${this.baseUrl}${API_ENDPOINTS.PROPERTIES.REMOVE_AMENITY(propertyId, amenityId)}`
+    );
+  }
+
+  requestAiDescription(propertyId: string): Observable<unknown> {
+    return this.http.post(
+      `${this.baseUrl}${API_ENDPOINTS.PROPERTIES.REQUEST_AI_DESCRIPTION(propertyId)}`,
+      {}
+    );
+  }
+
+  /** 404 until the AI handler has produced a draft — callers poll this. */
+  getLatestDescription(propertyId: string): Observable<DescriptionDraft> {
+    return this.http.get<DescriptionDraft>(
+      `${this.baseUrl}${API_ENDPOINTS.AI.DESCRIPTION_BY_PROPERTY(propertyId)}`
+    );
+  }
+
+  acceptDescription(generationId: string, finalTextEn: string, finalTextAr: string): Observable<unknown> {
+    return this.http.patch(
+      `${this.baseUrl}${API_ENDPOINTS.AI.ACCEPT_DESCRIPTION(generationId)}`,
+      { finalTextEn, finalTextAr }
+    );
+  }
+
+  submitForReview(propertyId: string): Observable<void> {
+    return this.http.post<void>(
+      `${this.baseUrl}${API_ENDPOINTS.PROPERTIES.SUBMIT(propertyId)}`,
+      {}
     );
   }
 }

@@ -10,8 +10,7 @@
   @if (metricsMissing()) {
     <div class="alert alert-info">
       <i class="fa-solid fa-circle-info me-2"></i>
-      Deals and response-time metrics aren't tracked by the backend yet — values
-      show 0 until a broker-performance endpoint exists.
+      No deals recorded yet — these metrics fill in as your brokers close deals.
     </div>
   }
   <div class="row g-3">
@@ -21,7 +20,7 @@
         <h5 class="mb-3">Deals Closed by Broker</h5>
         @for (b of dealsRanking(); track b.id) {
           <div class="d-flex align-items-center gap-3 mb-2">
-            <span class="broker-name small text-truncate">{{ b.fullName ?? b.licenseNumber }}</span>
+            <span class="broker-name small text-truncate">{{ b.fullName || b.licenseNumber }}</span>
             <div class="progress flex-grow-1" style="height: 18px;">
               <div
                 class="progress-bar bg-dark"
@@ -41,13 +40,13 @@
         @if (fastest(); as f) {
           <div class="d-flex justify-content-between py-2 border-bottom">
             <span><i class="fa-solid fa-bolt text-success me-2"></i>Best</span>
-            <span class="fw-semibold">{{ f.fullName ?? f.licenseNumber }} ({{ f.avgResponseTimeMinutes ?? 0 }} min)</span>
+            <span class="fw-semibold">{{ f.fullName || f.licenseNumber }} ({{ f.avgResponseTimeMinutes ?? 0 }} min)</span>
           </div>
         }
         @if (slowest(); as s) {
           <div class="d-flex justify-content-between py-2 border-bottom">
             <span><i class="fa-solid fa-hourglass-half text-danger me-2"></i>Worst</span>
-            <span class="fw-semibold">{{ s.fullName ?? s.licenseNumber }} ({{ s.avgResponseTimeMinutes ?? 0 }} min)</span>
+            <span class="fw-semibold">{{ s.fullName || s.licenseNumber }} ({{ s.avgResponseTimeMinutes ?? 0 }} min)</span>
           </div>
         }
         <div class="d-flex justify-content-between py-2">
