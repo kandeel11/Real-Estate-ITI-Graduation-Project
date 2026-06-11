@@ -1,13 +1,14 @@
 import { HttpClient } from '@angular/common/http';
 import { Injectable } from '@angular/core';
-import { BehaviorSubject, Observable } from 'rxjs';
-import { ChatRequest, ChatResponse, HistoryMessage, SessionSummary } from '../models/index';
+import { BehaviorSubject, Observable, throwError } from 'rxjs';
+import { catchError } from 'rxjs/operators';
+import { environment } from '../../../../../environments/environment';
+import { ChatRequest, ChatResponse, HistoryMessage, SessionSummary } from '../models';
 
 @Injectable({ providedIn: 'root' })
 export class ChatbotService {
-  private readonly baseUrl = '/api/AI/chatbot';
+  private readonly baseUrl = `${environment.apiUrl}/AI/chatbot`;
 
-  // Shared state so the widget and the dashboard stay in sync
   private readonly _isOpen = new BehaviorSubject<boolean>(false);
   readonly isOpen$ = this._isOpen.asObservable();
 
@@ -16,7 +17,7 @@ export class ChatbotService {
 
   constructor(private http: HttpClient) {}
 
-  // ---- UI helpers ----
+  // ---- UI ----
   open(sessionId?: string) {
     if (sessionId) this._activeSessionId.next(sessionId);
     this._isOpen.next(true);
@@ -32,27 +33,38 @@ export class ChatbotService {
   }
 
   // ---- API ----
+
+  /**
+   * POST /api/AI/chatbot/chat
+   * - First call: send WITHOUT sessionId → backend creates one and returns it
+   * - Following calls: send WITH sessionId → backend continues the same session
+   */
   sendMessage(payload: ChatRequest): Observable<ChatResponse> {
-    return this.http.post<ChatResponse>(`${this.baseUrl}/chat`, payload);
+    // shape body: only include sessionId if it exists
+    const body: ChatRequest = payload.sessionId
+      ? { sessionId: payload.sessionId, message: payload.message }
+      : { message: payload.message };
+
+    return this.http
+      .post<ChatResponse>(`${this.baseUrl}/chat`, body)
+      .pipe(catchError(this.handleError));
   }
 
   getSessions(): Observable<SessionSummary[]> {
-    return this.http.get<SessionSummary[]>(`${this.baseUrl}/sessions`);
+    return this.http
+      .get<SessionSummary[]>(`${this.baseUrl}/sessions`)
+      .pipe(catchError(this.handleError));
   }
 
   getHistory(sessionId: string): Observable<HistoryMessage[]> {
-    return this.http.get<HistoryMessage[]>(`${this.baseUrl}/sessions/${sessionId}/history`);
+    return this.http
+      .get<HistoryMessage[]>(`${this.baseUrl}/sessions/${sessionId}/history`)
+      .pipe(catchError(this.handleError));
   }
 
-  // ---- utils ----
-  generateSessionId(): string {
-    if (typeof crypto !== 'undefined' && 'randomUUID' in crypto) {
-      return (crypto as any).randomUUID();
-    }
-    return 'xxxxxxxx-xxxx-4xxx-yxxx-xxxxxxxxxxxx'.replace(/[xy]/g, (c) => {
-      const r = (Math.random() * 16) | 0;
-      const v = c === 'x' ? r : (r & 0x3) | 0x8;
-      return v.toString(16);
-    });
+  private handleError(error: any) {
+    console.error('[Chatbot] API error:', error);
+    const message = error.error?.message || error.message || 'Unexpected error';
+    return throwError(() => new Error(message));
   }
 }

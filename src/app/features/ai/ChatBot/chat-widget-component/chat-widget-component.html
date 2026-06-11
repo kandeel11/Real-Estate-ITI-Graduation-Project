@@ -1,5 +1,5 @@
 <!-- Floating launcher button -->
-<button class="chat-fab" (click)="toggle()" [class.hidden]="isOpen" aria-label="Open chat">
+<button class="chat-fab" (click)="toggle()" [class.hidden]="isOpen()" aria-label="Open chat">
     <div class="fab-pulse"></div>
     <svg viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
         <path
@@ -10,7 +10,7 @@
 </button>
 
 <!-- Chat panel -->
-<div class="chat-panel" [class.open]="isOpen">
+<div class="chat-panel" [class.open]="isOpen()">
     <!-- Header -->
     <header class="chat-header">
         <div class="header-bg"></div>
@@ -48,12 +48,12 @@
 
     <!-- Messages -->
     <div class="messages" #scrollBox>
-        @if (loadingHistory) {
+        @if (loadingHistory()) {
         <div class="loading-state">
             <div class="loader"></div>
             <span>Loading history...</span>
         </div>
-        } @else if (messages.length === 0) {
+        } @else if (messages().length === 0) {
         <div class="welcome">
             <div class="welcome-icon">
                 <svg viewBox="0 0 24 24" fill="none">
@@ -66,20 +66,14 @@
             <h4>Hey there! 👋</h4>
             <p>I'm your Estatein AI assistant.<br>Ask me anything about properties.</p>
             <div class="suggestions">
-                <button (click)="draft = 'Show me luxury homes'; send()">
-                    🏡 Luxury homes
-                </button>
-                <button (click)="draft = 'Properties under $500k'; send()">
-                    💰 Under $500k
-                </button>
-                <button (click)="draft = 'New listings this week'; send()">
-                    ✨ New listings
-                </button>
+                <button (click)="draft.set('Show me luxury homes'); send()">🏡 Luxury homes</button>
+                <button (click)="draft.set('Properties under $500k'); send()">💰 Under $500k</button>
+                <button (click)="draft.set('New listings this week'); send()">✨ New listings</button>
             </div>
         </div>
         }
 
-        @for (m of messages; track $index) {
+        @for (m of messages(); track $index) {
         <div class="bubble-row" [class.user]="m.role === 'user'" [class.assistant]="m.role === 'assistant'">
             @if (m.role === 'assistant') {
             <div class="mini-avatar">
@@ -89,12 +83,12 @@
             </div>
             }
             <div class="bubble">
-                <div class="text">44</div>
+                <div class="text">{{ m.message }}</div>
             </div>
         </div>
         }
 
-        @if (sending) {
+        @if (sending()) {
         <div class="bubble-row assistant">
             <div class="mini-avatar">
                 <svg viewBox="0 0 24 24" fill="none">
@@ -108,22 +102,23 @@
         }
     </div>
 
-    @if (errorMsg) {
+    @if (errorMsg()) {
     <div class="error-banner">
         <svg viewBox="0 0 24 24" fill="none">
             <circle cx="12" cy="12" r="10" stroke="currentColor" stroke-width="2" />
             <path d="M12 8v4M12 16h.01" stroke="currentColor" stroke-width="2" stroke-linecap="round" />
         </svg>
-        45
+        <span>{{ errorMsg() }}</span>
     </div>
     }
 
     <!-- Composer -->
     <form class="composer" (submit)="$event.preventDefault(); send()">
         <div class="input-wrapper">
-            <textarea [(ngModel)]="draft" name="draft" rows="1" placeholder="Type your message..."
-                (keydown)="onEnter($event)" [disabled]="sending"></textarea>
-            <button type="submit" class="send-btn" [disabled]="sending || !draft.trim()" aria-label="Send">
+            <!-- 👇 التعديل المهم هنا -->
+            <textarea [value]="draft()" (input)="draft.set($any($event.target).value)" rows="1"
+                placeholder="Type your message..." (keydown)="onEnter($event)" [disabled]="sending()"></textarea>
+            <button type="submit" class="send-btn" [disabled]="sending() || !draft().trim()" aria-label="Send">
                 <svg viewBox="0 0 24 24" fill="none">
                     <path d="M22 2L11 13M22 2l-7 20-4-9-9-4 20-7z" stroke="currentColor" stroke-width="2"
                         stroke-linecap="round" stroke-linejoin="round" />

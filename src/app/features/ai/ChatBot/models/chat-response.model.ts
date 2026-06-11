@@ -1,5 +1,4 @@
 export interface ChatResponse {
-  reply: string;
-  sessionId?: string;
-  createdAt?: string;
+  sessionId: string;
+  replyText: string; // ← غيّرنا من reply لـ replyText
 }

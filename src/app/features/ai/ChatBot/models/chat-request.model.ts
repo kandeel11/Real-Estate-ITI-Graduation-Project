@@ -1,4 +1,4 @@
 export interface ChatRequest {
-  sessionId: string;
+  sessionId?: string; // ← optional (أول رسالة بدونه)
   message: string;
 }
