@@ -214,6 +214,7 @@
 }
 
 .stat-waiting  { color: var(--color-warning); }
+.stat-vendor   { color: #7c3aed; }
 .stat-progress { color: var(--color-primary); }
 .stat-open     { color: var(--color-secondary); }
 .stat-done     { color: var(--color-success); }
@@ -233,9 +234,62 @@
 }
 
 .seg-waiting  { background: var(--color-warning-bg); outline: 1.5px solid var(--color-warning); }
+.seg-vendor   { background: #ede9fe; outline: 1.5px solid #7c3aed; }
 .seg-progress { background: var(--color-primary-fixed); outline: 1.5px solid var(--color-primary); }
 .seg-open     { background: var(--color-secondary-container); }
 .seg-done     { background: var(--color-success-bg); outline: 1.5px solid var(--color-success); }
+
+.ticket-total-label { font-size: 12px; color: var(--color-on-surface-variant); margin: 6px 0 0; }
+.no-tickets-hint    { font-size: 13px; color: var(--color-on-surface-variant); margin: 8px 0 0; }
+
+/* ── INQUIRIES CARD ────────────────────────────── */
+.inq-stats {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 0;
+  padding: 16px 0 4px;
+}
+
+.inq-stat {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 4px;
+}
+
+.inq-num {
+  font-size: 32px;
+  font-weight: 700;
+  color: var(--color-on-surface);
+  line-height: 1;
+}
+
+.inq-label {
+  font-size: 12px;
+  color: var(--color-on-surface-variant);
+  font-weight: 500;
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+}
+
+.inq-divider {
+  width: 1px;
+  height: 48px;
+  background: var(--color-outline-variant);
+  flex-shrink: 0;
+}
+
+/* ── EXPIRY BANNER ─────────────────────────────── */
+.expiry-banner {
+  background: #fef3c7;
+  color: #92400e;
+  border: 1px solid #fcd34d;
+  border-radius: var(--radius-md);
+  padding: 12px 16px;
+  font-size: 14px;
+}
 
 /* ── ACTIVITY FEED ─────────────────────────────── */
 .activity-list {

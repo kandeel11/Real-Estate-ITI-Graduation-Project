@@ -19,12 +19,12 @@
   }
 
   <!-- ── CONTENT ───────────────────────────────────── -->
-  @if (!loading() && !error() && summary(); as s) {
+  @if (!loading() && !error()) {
 
     <!-- 1. WELCOME HEADER -->
     <div class="welcome-header">
       <div>
-        <h1 class="welcome-title">{{ greeting }}, {{ s.tenantName.split(' ')[0] }}!</h1>
+        <h1 class="welcome-title">{{ greeting }}, {{ tenantName().split(' ')[0] }}!</h1>
         <p class="welcome-date">{{ today | date:'EEEE, MMMM d, y' }}</p>
       </div>
     </div>
@@ -35,14 +35,14 @@
       <!-- Active Lease -->
       <div class="col-6 col-lg-3">
         <div class="stat-card">
-          <div class="stat-icon-wrap" [class.stat-icon-green]="s.lease?.status === 'Active'"
-               [class.stat-icon-gray]="s.lease?.status !== 'Active'">
+          <div class="stat-icon-wrap" [class.stat-icon-green]="activeLease() !== null"
+               [class.stat-icon-gray]="activeLease() === null">
             <i class="fa-solid fa-file-contract"></i>
           </div>
           <div class="stat-body">
             <p class="stat-label">Active Lease</p>
-            <p class="stat-value" [class.stat-value-green]="s.lease?.status === 'Active'">
-              {{ s.lease?.status === 'Active' ? 'Active' : 'No Lease' }}
+            <p class="stat-value" [class.stat-value-green]="activeLease() !== null">
+              {{ activeLease() ? 'Active' : 'No Lease' }}
             </p>
           </div>
         </div>
@@ -51,28 +51,29 @@
       <!-- Days Until Expiry -->
       <div class="col-6 col-lg-3">
         <div class="stat-card">
-          <div class="stat-icon-wrap" [class]="'stat-icon-' + expiryClass(s.lease?.daysUntilExpiry ?? 999)">
+          <div class="stat-icon-wrap"
+               [class]="'stat-icon-' + expiryClass(activeLease()?.daysUntilExpiry ?? 999)">
             <i class="fa-solid fa-calendar-days"></i>
           </div>
           <div class="stat-body">
             <p class="stat-label">Days Until Expiry</p>
-            <p class="stat-value" [class]="expiryClass(s.lease?.daysUntilExpiry ?? 999)">
-              {{ s.lease ? s.lease.daysUntilExpiry : '—' }}
+            <p class="stat-value" [class]="expiryClass(activeLease()?.daysUntilExpiry ?? 999)">
+              {{ activeLease() ? activeLease()!.daysUntilExpiry : '—' }}
             </p>
           </div>
         </div>
       </div>
 
-      <!-- Open Tickets -->
+      <!-- My Properties -->
       <div class="col-6 col-lg-3">
         <div class="stat-card">
-          <div class="stat-icon-wrap" [class.stat-icon-primary]="s.ticketStats.open > 0"
-               [class.stat-icon-gray]="s.ticketStats.open === 0">
-            <i class="fa-solid fa-screwdriver-wrench"></i>
+          <div class="stat-icon-wrap" [class.stat-icon-primary]="propertyCount() > 0"
+               [class.stat-icon-gray]="propertyCount() === 0">
+            <i class="fa-solid fa-building"></i>
           </div>
           <div class="stat-body">
-            <p class="stat-label">Open Tickets</p>
-            <p class="stat-value">{{ s.ticketStats.open }}</p>
+            <p class="stat-label">My Properties</p>
+            <p class="stat-value">{{ propertyCount() }}</p>
           </div>
         </div>
       </div>
@@ -80,15 +81,15 @@
       <!-- Unread Notifications -->
       <div class="col-6 col-lg-3">
         <div class="stat-card">
-          <div class="stat-icon-wrap" [class.stat-icon-primary]="s.notifications.unreadCount > 0"
-               [class.stat-icon-gray]="s.notifications.unreadCount === 0">
+          <div class="stat-icon-wrap" [class.stat-icon-primary]="notifService.unreadCount() > 0"
+               [class.stat-icon-gray]="notifService.unreadCount() === 0">
             <i class="fa-regular fa-bell"></i>
           </div>
           <div class="stat-body">
             <p class="stat-label">Unread Notifications</p>
             <p class="stat-value">
-              {{ s.notifications.unreadCount }}
-              @if (s.notifications.unreadCount > 0) {
+              {{ notifService.unreadCount() }}
+              @if (notifService.unreadCount() > 0) {
                 <span class="unread-dot"></span>
               }
             </p>
@@ -99,103 +100,151 @@
     </div>
 
     <!-- 3. ACTIVE LEASE CARD -->
-    @if (s.lease) {
+    @if (activeLease(); as lease) {
+      @if (lease.isExpiringSoon) {
+        <div class="expiry-banner mb-3">
+          <i class="fa-solid fa-triangle-exclamation me-2"></i>
+          Your lease expires in <strong>{{ lease.daysUntilExpiry }} days</strong>.
+          Contact your landlord to discuss renewal options.
+        </div>
+      }
+
       <div class="section-card mb-4">
         <div class="section-card-header">
           <h2 class="section-title">
             <i class="fa-solid fa-file-contract me-2"></i>Active Lease
           </h2>
-          <div class="d-flex gap-2">
-            <button class="btn btn-sm btn-outline-primary" (click)="downloadContract()">
-              <i class="fa-solid fa-download me-1"></i>Download Contract
-            </button>
-            <a class="btn btn-sm btn-primary" routerLink="/dashboard/lease">View Details</a>
-          </div>
+          <a class="btn btn-sm btn-primary" routerLink="/dashboard/lease">
+            <i class="fa-solid fa-arrow-right me-1"></i>View Details
+          </a>
         </div>
 
         <div class="lease-info-grid">
           <div class="lease-info-item">
             <span class="info-label"><i class="fa-solid fa-location-dot me-1"></i>Property</span>
-            <span class="info-value">{{ s.lease.propertyAddress }}</span>
+            <span class="info-value">{{ lease.propertyAddress }}</span>
           </div>
           <div class="lease-info-item">
-            <span class="info-label"><i class="fa-solid fa-sterling-sign me-1"></i>Monthly Rent</span>
-            <span class="info-value rent-amount">{{ s.lease.monthlyRent | currency:'USD':'symbol':'1.0-0' }}</span>
+            <span class="info-label"><i class="fa-solid fa-money-bill me-1"></i>Monthly Rent</span>
+            <span class="info-value rent-amount">{{ lease.monthlyRent | currency:'EGP':'symbol':'1.0-0' }}</span>
           </div>
           <div class="lease-info-item">
             <span class="info-label"><i class="fa-regular fa-calendar me-1"></i>Start Date</span>
-            <span class="info-value">{{ s.lease.startDate | date:'mediumDate' }}</span>
+            <span class="info-value">{{ lease.startDate | date:'mediumDate' }}</span>
           </div>
           <div class="lease-info-item">
             <span class="info-label"><i class="fa-regular fa-calendar-xmark me-1"></i>End Date</span>
-            <span class="info-value">{{ s.lease.endDate | date:'mediumDate' }}</span>
+            <span class="info-value">{{ lease.endDate | date:'mediumDate' }}</span>
           </div>
         </div>
 
         <div class="lease-progress-wrap mt-3">
           <div class="lease-progress-header">
             <span class="progress-label">Lease elapsed</span>
-            <span class="progress-pct">{{ leaseElapsedPercent(s.lease) }}%</span>
+            <span class="progress-pct">{{ leaseElapsedPercent(lease) }}%</span>
           </div>
           <div class="progress-track">
-            <div class="progress-fill" [style.width]="leaseElapsedPercent(s.lease) + '%'"></div>
+            <div class="progress-fill" [style.width]="leaseElapsedPercent(lease) + '%'"></div>
           </div>
+        </div>
+      </div>
+    } @else {
+      <div class="section-card mb-4">
+        <div class="empty-state">
+          <i class="fa-solid fa-file-circle-xmark empty-icon"></i>
+          <p class="empty-title">No Active Lease</p>
+          <p class="empty-desc">You don't have an active lease at the moment.</p>
         </div>
       </div>
     }
 
-    <!-- 4. TICKET STATS ROW -->
-    <div class="section-card mb-4">
-      <div class="section-card-header">
-        <h2 class="section-title">
-          <i class="fa-solid fa-screwdriver-wrench me-2"></i>Maintenance Tickets
-        </h2>
-        <a class="btn btn-sm btn-primary" routerLink="/dashboard/maintenance">
-          <i class="fa-solid fa-plus me-1"></i>New Ticket
-        </a>
+    <!-- 4. TICKET STATS + INQUIRIES ROW -->
+    <div class="row g-3 mb-4">
+
+      <!-- Ticket Stats -->
+      <div class="col-12 col-lg-8">
+        @if (ticketStats(); as ts) {
+          <div class="section-card h-100">
+            <div class="section-card-header">
+              <h2 class="section-title">
+                <i class="fa-solid fa-screwdriver-wrench me-2"></i>Maintenance Tickets
+              </h2>
+              <a class="btn btn-sm btn-primary" routerLink="/dashboard/maintenance">
+                <i class="fa-solid fa-plus me-1"></i>New Ticket
+              </a>
+            </div>
+
+            <div class="ticket-stats-numbers mb-2">
+              <div class="ticket-stat-item">
+                <span class="ticket-stat-num stat-waiting">{{ ts.waitingForDecision }}</span>
+                <span class="ticket-stat-label">Waiting Decision</span>
+              </div>
+              <div class="ticket-stat-item">
+                <span class="ticket-stat-num stat-vendor">{{ ts.assignedToVendor }}</span>
+                <span class="ticket-stat-label">With Vendor</span>
+              </div>
+              <div class="ticket-stat-item">
+                <span class="ticket-stat-num stat-progress">{{ ts.inProgress }}</span>
+                <span class="ticket-stat-label">In Progress</span>
+              </div>
+              <div class="ticket-stat-item">
+                <span class="ticket-stat-num stat-done">{{ ts.completed }}</span>
+                <span class="ticket-stat-label">Completed</span>
+              </div>
+            </div>
+
+            @if (ts.total > 0) {
+              <div class="ticket-bar">
+                @if (ts.waitingForDecision > 0) {
+                  <div class="ticket-bar-seg seg-waiting"
+                       [style.width]="ticketBarWidth(ts.waitingForDecision, ts.total)"
+                       [title]="ts.waitingForDecision + ' waiting for decision'"></div>
+                }
+                @if (ts.assignedToVendor > 0) {
+                  <div class="ticket-bar-seg seg-vendor"
+                       [style.width]="ticketBarWidth(ts.assignedToVendor, ts.total)"
+                       [title]="ts.assignedToVendor + ' assigned to vendor'"></div>
+                }
+                @if (ts.inProgress > 0) {
+                  <div class="ticket-bar-seg seg-progress"
+                       [style.width]="ticketBarWidth(ts.inProgress, ts.total)"
+                       [title]="ts.inProgress + ' in progress'"></div>
+                }
+                @if (ts.completed > 0) {
+                  <div class="ticket-bar-seg seg-done"
+                       [style.width]="ticketBarWidth(ts.completed, ts.total)"
+                       [title]="ts.completed + ' completed'"></div>
+                }
+              </div>
+              <p class="ticket-total-label">{{ ts.total }} ticket{{ ts.total !== 1 ? 's' : '' }} total</p>
+            } @else {
+              <p class="no-tickets-hint">No maintenance tickets yet.</p>
+            }
+          </div>
+        }
       </div>
 
-      <div class="ticket-stats-numbers mb-2">
-        <div class="ticket-stat-item">
-          <span class="ticket-stat-num stat-waiting">{{ s.ticketStats.waitingForDecision }}</span>
-          <span class="ticket-stat-label">Waiting Decision</span>
-        </div>
-        <div class="ticket-stat-item">
-          <span class="ticket-stat-num stat-progress">{{ s.ticketStats.inProgress }}</span>
-          <span class="ticket-stat-label">In Progress</span>
-        </div>
-        <div class="ticket-stat-item">
-          <span class="ticket-stat-num stat-open">{{ s.ticketStats.open }}</span>
-          <span class="ticket-stat-label">Open</span>
-        </div>
-        <div class="ticket-stat-item">
-          <span class="ticket-stat-num stat-done">{{ s.ticketStats.completed }}</span>
-          <span class="ticket-stat-label">Completed</span>
-        </div>
-      </div>
-
-      @if (s.ticketStats.total > 0) {
-        <div class="ticket-bar">
-          @if (s.ticketStats.waitingForDecision > 0) {
-            <div class="ticket-bar-seg seg-waiting"
-                 [style.width]="ticketBarWidth(s.ticketStats.waitingForDecision, s.ticketStats.total)"
-                 [title]="s.ticketStats.waitingForDecision + ' waiting for decision'"></div>
-          }
-          @if (s.ticketStats.inProgress > 0) {
-            <div class="ticket-bar-seg seg-progress"
-                 [style.width]="ticketBarWidth(s.ticketStats.inProgress, s.ticketStats.total)"
-                 [title]="s.ticketStats.inProgress + ' in progress'"></div>
-          }
-          @if (s.ticketStats.open > 0) {
-            <div class="ticket-bar-seg seg-open"
-                 [style.width]="ticketBarWidth(s.ticketStats.open, s.ticketStats.total)"
-                 [title]="s.ticketStats.open + ' open'"></div>
-          }
-          @if (s.ticketStats.completed > 0) {
-            <div class="ticket-bar-seg seg-done"
-                 [style.width]="ticketBarWidth(s.ticketStats.completed, s.ticketStats.total)"
-                 [title]="s.ticketStats.completed + ' completed'"></div>
-          }
+      <!-- Inquiries -->
+      @if (inquiries(); as inq) {
+        <div class="col-12 col-lg-4">
+          <div class="section-card h-100">
+            <div class="section-card-header">
+              <h2 class="section-title">
+                <i class="fa-regular fa-envelope me-2"></i>Inquiries
+              </h2>
+            </div>
+            <div class="inq-stats">
+              <div class="inq-stat">
+                <span class="inq-num" [class.text-warning]="inq.pending > 0">{{ inq.pending }}</span>
+                <span class="inq-label">Pending</span>
+              </div>
+              <div class="inq-divider"></div>
+              <div class="inq-stat">
+                <span class="inq-num">{{ inq.total }}</span>
+                <span class="inq-label">Total</span>
+              </div>
+            </div>
+          </div>
         </div>
       }
     </div>

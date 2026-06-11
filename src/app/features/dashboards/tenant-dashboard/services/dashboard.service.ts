@@ -1,32 +1,43 @@
 import { Injectable, inject } from '@angular/core';
 import { HttpClient } from '@angular/common/http';
-import { Observable, of, catchError } from 'rxjs';
+import { Observable, of } from 'rxjs';
 import { environment } from '../../../../../environments/environment';
 
-export interface ActiveLeaseInfo {
-  id: string;
-  status: 'Active' | 'Inactive';
-  propertyAddress: string;
+// ── API types ────────────────────────────────────────────────────────────────
+
+export interface ApiActiveLease {
+  leaseId: string;
+  propertyId: string;
   monthlyRent: number;
   startDate: string;
   endDate: string;
   daysUntilExpiry: number;
+  isExpiringSoon: boolean;
 }
 
-export interface TicketStats {
-  open: number;
-  inProgress: number;
-  completed: number;
-  waitingForDecision: number;
+export interface ApiTicketStats {
   total: number;
+  draft: number;
+  submitted: number;
+  underAiReview: number;
+  waitingForDecision: number;
+  assignedToVendor: number;
+  inProgress: number;
+  awaitingPayment: number;
+  completed: number;
+  cancelled: number;
+  rejected: number;
 }
 
-export interface DashboardSummary {
-  tenantName: string;
-  lease: ActiveLeaseInfo | null;
-  ticketStats: TicketStats;
+export interface ApiDashboardSummary {
+  tenant: { id: string; email: string; role: string };
+  activeLease: ApiActiveLease | null;
+  ticketStats: ApiTicketStats;
   notifications: { unreadCount: number };
+  inquiries: { pending: number; total: number };
 }
+
+// ── Kept for activity feed (still mock) ─────────────────────────────────────
 
 export interface ActivityItem {
   id: string;
@@ -37,46 +48,21 @@ export interface ActivityItem {
   isRead: boolean;
 }
 
-const MOCK_SUMMARY: DashboardSummary = {
-  tenantName: 'Sarah Johnson',
-  lease: {
-    id: 'lease-001',
-    status: 'Active',
-    propertyAddress: '42 Oak Street, Suite 3B, New York, NY 10001',
-    monthlyRent: 2800,
-    startDate: '2024-03-01',
-    endDate: '2025-09-30',
-    daysUntilExpiry: 45,
-  },
-  ticketStats: { open: 2, inProgress: 1, completed: 5, waitingForDecision: 1, total: 9 },
-  notifications: { unreadCount: 3 },
-};
-
 const MOCK_ACTIVITY: ActivityItem[] = [
   {
     id: '1', type: 'maintenance', title: 'Maintenance ticket updated',
-    body: 'Your HVAC ticket has been assigned to a technician.',
+    body: 'Your ticket has been assigned to a technician.',
     createdAt: new Date(Date.now() - 7200000).toISOString(), isRead: false,
   },
   {
     id: '2', type: 'lease', title: 'Lease renewal reminder',
-    body: 'Your lease expires in 45 days. Contact your landlord to discuss renewal.',
+    body: 'Your lease expires soon. Contact your landlord to discuss renewal.',
     createdAt: new Date(Date.now() - 86400000).toISOString(), isRead: false,
   },
   {
     id: '3', type: 'maintenance', title: 'Ticket resolved',
-    body: 'Your ticket #TCK-0004 (Broken blinds) has been marked as completed.',
+    body: 'Your maintenance ticket has been marked as completed.',
     createdAt: new Date(Date.now() - 259200000).toISOString(), isRead: true,
-  },
-  {
-    id: '4', type: 'notification', title: 'Message from landlord',
-    body: 'Your landlord sent a message regarding the upcoming property inspection.',
-    createdAt: new Date(Date.now() - 432000000).toISOString(), isRead: true,
-  },
-  {
-    id: '5', type: 'payment', title: 'Rent payment confirmed',
-    body: 'Your rent payment of $2,800 for this month has been confirmed.',
-    createdAt: new Date(Date.now() - 604800000).toISOString(), isRead: true,
   },
 ];
 
@@ -85,18 +71,12 @@ export class DashboardService {
   private readonly http = inject(HttpClient);
   private readonly base = environment.apiUrl;
 
-  getDashboardSummary(): Observable<DashboardSummary> {
-    // TODO: replace with real API call
-    return of(MOCK_SUMMARY);
-    // return this.http.get<DashboardSummary>(`${this.base}/tenant/dashboard/summary`)
-    //   .pipe(catchError(() => of(MOCK_SUMMARY)));
+  getDashboardSummary(): Observable<ApiDashboardSummary> {
+    return this.http.get<ApiDashboardSummary>(`${this.base}/tenant/dashboard/summary`);
   }
 
   getActivityFeed(pageSize = 5): Observable<ActivityItem[]> {
     // TODO: replace with real API call
     return of(MOCK_ACTIVITY.slice(0, pageSize));
-    // return this.http
-    //   .get<ActivityItem[]>(`${this.base}/tenant/dashboard/activity`, { params: { pageSize } })
-    //   .pipe(catchError(() => of([])));
   }
 }

@@ -1,8 +1,15 @@
-import { Component, OnInit, inject, signal } from '@angular/core';
+import { Component, OnInit, inject, signal, computed } from '@angular/core';
 import { RouterLink } from '@angular/router';
 import { DatePipe, CurrencyPipe } from '@angular/common';
-import { finalize } from 'rxjs';
-import { ActiveLeaseInfo, ActivityItem, DashboardService, DashboardSummary } from '../../services/dashboard.service';
+import { forkJoin, finalize } from 'rxjs';
+import { AuthService } from '../../../../../core/services/auth.service';
+import { LeaseService } from '../../services/lease.service';
+import { NotificationService } from '../../services/notification.service';
+import { ActivityItem, ApiActiveLease, ApiTicketStats, DashboardService } from '../../services/dashboard.service';
+
+interface ActiveLeaseView extends ApiActiveLease {
+  propertyAddress: string;
+}
 
 @Component({
   selector: 'app-overview',
@@ -12,10 +19,20 @@ import { ActiveLeaseInfo, ActivityItem, DashboardService, DashboardSummary } fro
   styleUrl: './overview.component.css',
 })
 export class OverviewComponent implements OnInit {
+  private readonly auth = inject(AuthService);
+  private readonly leaseService = inject(LeaseService);
+  protected readonly notifService = inject(NotificationService);
   private readonly dashboardService = inject(DashboardService);
+
   protected loading = signal(true);
   protected error = signal<string | null>(null);
-  protected summary = signal<DashboardSummary | null>(null);
+
+  protected tenantName = computed(() => this.auth.user()?.fullName ?? 'Tenant');
+
+  protected activeLease = signal<ActiveLeaseView | null>(null);
+  protected ticketStats = signal<ApiTicketStats | null>(null);
+  protected propertyCount = signal(0);
+  protected inquiries = signal<{ pending: number; total: number } | null>(null);
   protected activity = signal<ActivityItem[]>([]);
   protected today = new Date();
 
@@ -34,34 +51,52 @@ export class OverviewComponent implements OnInit {
     this.loading.set(true);
     this.error.set(null);
 
-    this.dashboardService
-      .getDashboardSummary()
+    forkJoin({
+      summary: this.dashboardService.getDashboardSummary(),
+      properties: this.leaseService.getRentedProperties(),
+    })
       .pipe(finalize(() => this.loading.set(false)))
       .subscribe({
-        next: data => this.summary.set(data),
+        next: ({ summary, properties }) => {
+          this.propertyCount.set(properties.length);
+          this.ticketStats.set(summary.ticketStats);
+          this.inquiries.set(summary.inquiries);
+
+          if (summary.activeLease) {
+            const prop = properties.find(p => p.leaseId === summary.activeLease!.leaseId);
+            const parts = prop
+              ? [prop.property.address, prop.property.district, prop.property.city].filter(Boolean)
+              : [`Property ${summary.activeLease.propertyId.slice(-6)}`];
+
+            this.activeLease.set({
+              ...summary.activeLease,
+              propertyAddress: parts.join(', '),
+            });
+          }
+        },
         error: () => this.error.set('Failed to load dashboard data. Please try again.'),
       });
 
+    // TODO: replace with real API call
     this.dashboardService.getActivityFeed(5).subscribe({
       next: data => this.activity.set(data),
     });
   }
 
-  leaseElapsedPercent(lease: ActiveLeaseInfo): number {
+  leaseElapsedPercent(lease: ActiveLeaseView): number {
     const start = new Date(lease.startDate).getTime();
     const end = new Date(lease.endDate).getTime();
-    const now = Date.now();
-    return Math.min(100, Math.max(0, Math.round(((now - start) / (end - start)) * 100)));
-  }
-
-  ticketBarWidth(count: number, total: number): string {
-    return total ? `${Math.round((count / total) * 100)}%` : '0%';
+    return Math.min(100, Math.max(0, Math.round(((Date.now() - start) / (end - start)) * 100)));
   }
 
   expiryClass(days: number): string {
     if (days <= 30) return 'expiry-critical';
     if (days <= 60) return 'expiry-warning';
     return 'expiry-safe';
+  }
+
+  ticketBarWidth(count: number, total: number): string {
+    return total ? `${Math.round((count / total) * 100)}%` : '0%';
   }
 
   activityIcon(type: string): string {
@@ -82,9 +117,5 @@ export class OverviewComponent implements OnInit {
     const h = Math.floor(m / 60);
     if (h < 24) return `${h}h ago`;
     return `${Math.floor(h / 24)}d ago`;
-  }
-
-  downloadContract(): void {
-    // Contract download is handled in the My Lease page
   }
 }
