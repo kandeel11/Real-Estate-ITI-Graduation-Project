@@ -8,6 +8,6 @@ using System.Threading.Tasks;
 namespace AI.Application.Features.Chat.Commands
 {
     public sealed record ClearSessionCommand(
-    string SessionId
+    Guid SessionId
 ) : IRequest;
 }

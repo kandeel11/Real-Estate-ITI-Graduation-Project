@@ -62,6 +62,8 @@ public class AiDbContext : DbContext,IAiDbContext
     public DbSet<AiUsageLog> AiUsageLogs
         => Set<AiUsageLog>();
 
+    public DbSet<ChatbotSession> ChatbotSessions => Set<ChatbotSession>();
+    public DbSet<ChatbotMessage> ChatbotMessages => Set<ChatbotMessage>();
     // ─────────────────────────────────────────────────────────────────────────
 
     protected override void OnModelCreating(ModelBuilder modelBuilder)
