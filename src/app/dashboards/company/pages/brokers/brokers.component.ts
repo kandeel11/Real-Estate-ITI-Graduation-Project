@@ -99,6 +99,14 @@ export class BrokersComponent implements OnInit {
   }
 
   brokerToDeactivate = signal<Broker | null>(null);
+  deactivating = signal(false);
+
+  deactivateMessage = computed(() => {
+    const broker = this.brokerToDeactivate();
+    return broker
+      ? `Deactivate ${this.displayName(broker)}? They will no longer be able to log in.`
+      : '';
+  });
 
   deactivate(broker: Broker): void {
     this.brokerToDeactivate.set(broker);
@@ -106,9 +114,19 @@ export class BrokersComponent implements OnInit {
 
   confirmDeactivate(): void {
     const broker = this.brokerToDeactivate();
-    if (!broker) return;
-    this.brokerToDeactivate.set(null);
-    this.companySvc.deactivateBroker(broker.id).subscribe(() => this.load());
+    if (!broker || this.deactivating()) return;
+    this.deactivating.set(true);
+    this.companySvc.deactivateBroker(broker.id).subscribe({
+      next: () => {
+        this.deactivating.set(false);
+        this.brokerToDeactivate.set(null);
+        this.load();
+      },
+      error: () => {
+        this.deactivating.set(false);
+        this.brokerToDeactivate.set(null);
+      },
+    });
   }
 
   displayName(broker: Broker): string {

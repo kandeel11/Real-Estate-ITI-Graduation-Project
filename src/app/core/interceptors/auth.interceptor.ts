@@ -1,5 +1,5 @@
 /**
- * Auth Interceptor
+ * Auth Interceptor (functional)
  * Attaches the Bearer token to outgoing requests, and ends the session when
  * the JWT is no longer valid:
  *  - token already expired before a request → log out + redirect immediately
@@ -8,61 +8,44 @@
  * trigger the session-expired flow.
  */
 
-import { Injectable, inject } from '@angular/core';
-import {
-  HttpInterceptor,
-  HttpRequest,
-  HttpHandler,
-  HttpEvent,
-  HttpErrorResponse,
-} from '@angular/common/http';
-import { Observable, throwError, catchError } from 'rxjs';
+import { HttpInterceptorFn, HttpErrorResponse } from '@angular/common/http';
+import { inject } from '@angular/core';
+import { throwError, catchError } from 'rxjs';
 import { AuthService } from '../services/auth.service';
 
-@Injectable()
-export class AuthInterceptor implements HttpInterceptor {
-  private authService = inject(AuthService);
+export const authInterceptor: HttpInterceptorFn = (req, next) => {
+  const authService = inject(AuthService);
+  const token = authService.getToken();
+  const isAuthEndpoint = req.url.includes('/auth/');
 
-  intercept(
-    request: HttpRequest<unknown>,
-    next: HttpHandler
-  ): Observable<HttpEvent<unknown>> {
-    const token = this.authService.getToken();
-    const isAuthEndpoint = request.url.includes('/auth/');
-
-    // Token already expired — don't bother the backend
-    if (token && !isAuthEndpoint && this.authService.isTokenExpired()) {
-      this.authService.sessionExpired();
-      return throwError(
-        () =>
-          new HttpErrorResponse({
-            status: 401,
-            statusText: 'Session expired',
-            url: request.url,
-          })
-      );
-    }
-
-    if (token) {
-      request = request.clone({
-        setHeaders: {
-          Authorization: `Bearer ${token}`,
-        },
-      });
-    }
-
-    return next.handle(request).pipe(
-      catchError((error) => {
-        if (
-          error instanceof HttpErrorResponse &&
-          error.status === 401 &&
-          !isAuthEndpoint &&
-          this.authService.authenticated()
-        ) {
-          this.authService.sessionExpired();
-        }
-        return throwError(() => error);
-      })
+  // Token already expired — don't bother the backend
+  if (token && !isAuthEndpoint && authService.isTokenExpired()) {
+    authService.sessionExpired();
+    return throwError(
+      () =>
+        new HttpErrorResponse({
+          status: 401,
+          statusText: 'Session expired',
+          url: req.url,
+        })
     );
   }
-}
+
+  const authedReq = token
+    ? req.clone({ setHeaders: { Authorization: `Bearer ${token}` } })
+    : req;
+
+  return next(authedReq).pipe(
+    catchError((error) => {
+      if (
+        error instanceof HttpErrorResponse &&
+        error.status === 401 &&
+        !isAuthEndpoint &&
+        authService.authenticated()
+      ) {
+        authService.sessionExpired();
+      }
+      return throwError(() => error);
+    })
+  );
+};

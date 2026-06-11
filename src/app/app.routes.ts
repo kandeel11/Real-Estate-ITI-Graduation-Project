@@ -67,7 +67,6 @@ export const routes: Routes = [
   // ==================== DASHBOARD LAYOUT WITH ROLE-BASED ACCESS ====================
   {
     path: 'dashboard',
-    canActivate: [roleGuard],
     children: [
       // ============ ADMIN DASHBOARD ============
       {
@@ -225,54 +224,6 @@ export const routes: Routes = [
         ],
       },
 
-      // ============ TENANT DASHBOARD ============
-      {
-        path: 'tenant',
-        canActivate: [roleGuard],
-        data: { expectedRole: 'tenant' },
-        loadComponent: () =>
-          import('./dashboards/tenant/tenant-dashboard.component').then(
-            (m) => m.TenantDashboardComponent
-          ),
-        children: [
-          {
-            path: 'overview',
-            loadComponent: () =>
-              import('./dashboards/tenant/pages/overview/overview.component').then(
-                (m) => m.OverviewComponent
-              ),
-          },
-          {
-            path: 'my-property',
-            loadComponent: () =>
-              import('./dashboards/tenant/pages/my-property/my-property.component').then(
-                (m) => m.MyPropertyComponent
-              ),
-          },
-          {
-            path: 'lease',
-            loadComponent: () =>
-              import('./dashboards/tenant/pages/lease/lease.component').then(
-                (m) => m.LeaseComponent
-              ),
-          },
-          {
-            path: 'maintenance-requests',
-            loadComponent: () =>
-              import('./dashboards/tenant/pages/maintenance-requests/maintenance-requests.component').then(
-                (m) => m.MaintenanceRequestsComponent
-              ),
-          },
-          {
-            path: 'payments',
-            loadComponent: () =>
-              import('./dashboards/tenant/pages/payments/payments.component').then(
-                (m) => m.PaymentsComponent
-              ),
-          },
-        ],
-      },
-
       // ============ MAINTENANCE COMPANY DASHBOARD ============
       {
         path: 'maintenance-company',
@@ -312,6 +263,12 @@ export const routes: Routes = [
               ),
           },
         ],
+      },
+      // ============ TENANT DASHBOARD (catches /dashboard and /dashboard/*) ============
+      {
+        path: '',
+        loadChildren: () =>
+          import('./features/dashboards/tenant-dashboard/dashboard.routes').then(m => m.dashboardRoutes),
       },
     ],
   },

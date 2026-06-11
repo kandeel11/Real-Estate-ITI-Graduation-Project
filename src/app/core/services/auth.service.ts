@@ -15,19 +15,9 @@
 import { Injectable, signal, computed, inject } from '@angular/core';
 import { HttpClient } from '@angular/common/http';
 import { Router } from '@angular/router';
-import { Observable, of, delay, map, tap, finalize } from 'rxjs';
+import { Observable, of, delay, map, tap } from 'rxjs';
 import { environment } from '../../../environments/environment';
 import { API_ENDPOINTS } from '../constants/api-endpoints';
-
-export interface AuthUser {
-  id: string;
-  email: string;
-  firstName: string;
-  lastName: string;
-  role: UserRole;
-  companyId?: string | null;
-  profileImage?: string;
-}
 
 export type UserRole =
   | 'admin'
@@ -37,7 +27,17 @@ export type UserRole =
   | 'owner'
   | 'maintenance-company';
 
-interface BackendAuthResponse {
+export interface AuthUser {
+  id: string;
+  email: string;
+  fullName: string;
+  role: UserRole;
+  companyId: string | null;
+  isEmailVerified?: boolean;
+}
+
+/** Raw backend login response (role is the backend's name, e.g. company_manager). */
+export interface LoginResponse {
   accessToken: string;
   refreshToken: string;
   expiresAt: string;
@@ -70,16 +70,12 @@ export class AuthService {
 
   private logoutTimer: ReturnType<typeof setTimeout> | null = null;
 
-  // Reactive state using Signals
   private readonly currentUser = signal<AuthUser | null>(null);
   private readonly isAuthenticated = signal<boolean>(false);
-  private readonly isLoading = signal<boolean>(false);
 
-  // Computed signals for derived state
   readonly user = this.currentUser.asReadonly();
   readonly authenticated = this.isAuthenticated.asReadonly();
-  readonly loading = this.isLoading.asReadonly();
-  readonly userRole = computed(() => this.currentUser()?.role || null);
+  readonly userRole = computed(() => this.currentUser()?.role ?? null);
 
   constructor() {
     this.initializeAuth();
@@ -160,11 +156,10 @@ export class AuthService {
 
   /**
    * Authenticate user with credentials.
-   * Emits the signed-in user; auth state and tokens are stored as a side effect.
+   * Emits the signed-in user (with the backend role already mapped to the
+   * frontend role); auth state and tokens are stored as a side effect.
    */
   login(email: string, password: string): Observable<AuthUser> {
-    this.isLoading.set(true);
-
     if (this.useMock) {
       const user = this.mockUserFor(email);
       return of(user).pipe(
@@ -174,31 +169,28 @@ export class AuthService {
     }
 
     return this.http
-      .post<BackendAuthResponse>(
-        `${environment.apiUrl}${API_ENDPOINTS.AUTH.LOGIN}`,
-        { email, password }
-      )
+      .post<LoginResponse>(`${environment.apiUrl}${API_ENDPOINTS.AUTH.LOGIN}`, {
+        email,
+        password,
+      })
       .pipe(
         map((res) => {
           const user = this.toAuthUser(res.user);
-          localStorage.setItem('refresh_token', res.refreshToken);
-          this.setUser(user, res.accessToken);
+          this.setUser(user, res.accessToken, res.refreshToken);
           return user;
-        }),
-        finalize(() => this.isLoading.set(false))
+        })
       );
   }
 
-  /** Map the backend's CurrentUserDto to the frontend AuthUser. */
-  private toAuthUser(u: BackendAuthResponse['user']): AuthUser {
-    const [firstName, ...rest] = (u.fullName ?? '').split(' ');
+  /** Map the backend's user to the frontend AuthUser (role name mapped). */
+  private toAuthUser(u: LoginResponse['user']): AuthUser {
     return {
       id: u.id,
       email: u.email,
-      firstName: firstName || u.email,
-      lastName: rest.join(' '),
+      fullName: u.fullName || u.email,
       role: BACKEND_ROLE_MAP[u.role] ?? 'tenant',
       companyId: u.companyId,
+      isEmailVerified: u.isEmailVerified,
     };
   }
 
@@ -217,8 +209,7 @@ export class AuthService {
     return {
       id: 'mock-' + role,
       email,
-      firstName: local.charAt(0).toUpperCase() + local.slice(1),
-      lastName: '(Demo)',
+      fullName: local.charAt(0).toUpperCase() + local.slice(1) + ' (Demo)',
       role,
       companyId: role === 'company' ? 'c1' : null,
     };
@@ -242,21 +233,17 @@ export class AuthService {
     }
   }
 
-  /**
-   * Set authenticated user after successful login
-   */
-  setUser(user: AuthUser, token: string): void {
+  setUser(user: AuthUser, accessToken: string, refreshToken?: string): void {
     this.currentUser.set(user);
     this.isAuthenticated.set(true);
     localStorage.setItem('auth_user', JSON.stringify(user));
-    localStorage.setItem('auth_token', token);
-    this.isLoading.set(false);
-    this.scheduleAutoLogout(token);
+    localStorage.setItem('auth_token', accessToken);
+    if (refreshToken) {
+      localStorage.setItem('auth_refresh_token', refreshToken);
+    }
+    this.scheduleAutoLogout(accessToken);
   }
 
-  /**
-   * Clear authentication state
-   */
   logout(): void {
     this.clearAuth();
   }
@@ -270,26 +257,18 @@ export class AuthService {
     this.isAuthenticated.set(false);
     localStorage.removeItem('auth_user');
     localStorage.removeItem('auth_token');
-    localStorage.removeItem('refresh_token');
+    localStorage.removeItem('auth_refresh_token');
+    localStorage.removeItem('refresh_token'); // legacy key
   }
 
-  /**
-   * Get stored auth token
-   */
   getToken(): string | null {
     return localStorage.getItem('auth_token');
   }
 
-  /**
-   * Check if user has specific role
-   */
   hasRole(role: UserRole): boolean {
     return this.userRole() === role;
   }
 
-  /**
-   * Check if user has any of the provided roles
-   */
   hasAnyRole(...roles: UserRole[]): boolean {
     const currentRole = this.userRole();
     return currentRole ? roles.includes(currentRole) : false;

@@ -176,12 +176,13 @@
 }
 
 <!-- Deactivate confirmation -->
-@if (brokerToDeactivate(); as broker) {
-  <app-confirm-modal
-    title="Deactivate broker"
-    [message]="'Deactivate ' + displayName(broker) + '? They will no longer be able to log in.'"
-    confirmText="Deactivate"
-    (confirmed)="confirmDeactivate()"
-    (cancelled)="brokerToDeactivate.set(null)"
-  />
-}
+<app-confirm-modal
+  [show]="brokerToDeactivate() !== null"
+  title="Deactivate broker"
+  [message]="deactivateMessage()"
+  confirmLabel="Deactivate"
+  confirmClass="btn-danger"
+  [loading]="deactivating()"
+  (confirmed)="confirmDeactivate()"
+  (cancelled)="brokerToDeactivate.set(null)"
+/>
