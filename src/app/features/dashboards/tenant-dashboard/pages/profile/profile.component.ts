@@ -1,7 +1,8 @@
-import { Component, OnInit, inject, signal, computed } from '@angular/core';
+import { Component, OnInit, OnDestroy, inject, signal, computed } from '@angular/core';
 import { ReactiveFormsModule, FormBuilder, Validators, AbstractControl } from '@angular/forms';
 import { finalize } from 'rxjs';
 import { ProfileService, UserProfile } from '../../services/profile.service';
+import { ToastService } from '../../../../../shared/components/toast/toast.service';
 
 function passwordStrength(password: string): number {
   if (!password) return 0;
@@ -28,8 +29,9 @@ function confirmPasswordValidator(control: AbstractControl): { [key: string]: bo
   templateUrl: './profile.component.html',
   styleUrl: './profile.component.css',
 })
-export class ProfileComponent implements OnInit {
+export class ProfileComponent implements OnInit, OnDestroy {
   private readonly profileService = inject(ProfileService);
+  private readonly toast = inject(ToastService);
   private readonly fb = inject(FormBuilder);
 
   protected activeSection = signal<'info' | 'password' | 'danger'>('info');
@@ -38,8 +40,6 @@ export class ProfileComponent implements OnInit {
   protected profile = signal<UserProfile | null>(null);
 
   protected saveLoading = signal(false);
-  protected saveSuccess = signal(false);
-  protected saveError = signal<string | null>(null);
 
   protected pwLoading = signal(false);
   protected pwSuccess = signal(false);
@@ -51,9 +51,27 @@ export class ProfileComponent implements OnInit {
   protected verificationLoading = signal(false);
   protected verificationSent = signal(false);
   protected verificationError = signal<string | null>(null);
+  protected verificationCountdown = signal(0);
+  private _countdownInterval: ReturnType<typeof setInterval> | null = null;
+
+  /** Set of field names currently unlocked for editing */
+  protected readonly editingFields = signal(new Set<string>());
+
+  isEditing(field: string): boolean {
+    return this.editingFields().has(field);
+  }
+
+  toggleEdit(field: string): void {
+    this.editingFields.update(set => {
+      const next = new Set(set);
+      if (next.has(field)) { next.delete(field); } else { next.add(field); }
+      return next;
+    });
+  }
 
   readonly profileForm = this.fb.group({
     fullName: ['', [Validators.required, Validators.minLength(2)]],
+    email:    ['', [Validators.required, Validators.email]],
     phone:    [''],
   });
 
@@ -101,7 +119,7 @@ export class ProfileComponent implements OnInit {
       .subscribe({
         next: p => {
           this.profile.set(p);
-          this.profileForm.patchValue({ fullName: p.fullName, phone: p.phone ?? '' });
+          this.profileForm.patchValue({ fullName: p.fullName, email: p.email, phone: p.phone ?? '' });
         },
         error: () => this.error.set('Failed to load profile. Please try again.'),
       });
@@ -110,18 +128,18 @@ export class ProfileComponent implements OnInit {
   saveProfile(): void {
     if (this.profileForm.invalid) return;
     this.saveLoading.set(true);
-    this.saveSuccess.set(false);
-    this.saveError.set(null);
     const val = this.profileForm.getRawValue();
-    this.profileService.updateProfile({ fullName: val.fullName!, phone: val.phone ?? '' })
+    const dto = { fullName: val.fullName!, email: val.email!, phone: val.phone ?? '' };
+    this.profileService.updateProfile(dto)
       .pipe(finalize(() => this.saveLoading.set(false)))
       .subscribe({
-        next: updated => {
-          this.profile.set(updated);
-          this.saveSuccess.set(true);
-          setTimeout(() => this.saveSuccess.set(false), 3000);
+        next: () => {
+          // Update signal manually — don't rely on API response shape
+          this.profile.update(p => p ? { ...p, ...dto } : p);
+          this.editingFields.set(new Set());
+          this.toast.success('Profile updated successfully.');
         },
-        error: () => this.saveError.set('Failed to save profile. Please try again.'),
+        error: () => this.toast.error('Failed to save profile. Please try again.'),
       });
   }
 
@@ -144,14 +162,37 @@ export class ProfileComponent implements OnInit {
 
   sendVerification(): void {
     const email = this.profile()?.email;
-    if (!email || this.verificationLoading()) return;
+    if (!email || this.verificationLoading() || this.verificationCountdown() > 0) return;
     this.verificationLoading.set(true);
     this.verificationError.set(null);
     this.profileService.resendVerification(email)
       .pipe(finalize(() => this.verificationLoading.set(false)))
       .subscribe({
-        next: () => this.verificationSent.set(true),
+        next: () => {
+          this.verificationSent.set(true);
+          this.startCountdown();
+        },
         error: () => this.verificationError.set('Failed to send verification email. Please try again.'),
       });
+  }
+
+  private startCountdown(): void {
+    if (this._countdownInterval) clearInterval(this._countdownInterval);
+    this.verificationCountdown.set(60);
+    this._countdownInterval = setInterval(() => {
+      this.verificationCountdown.update(n => {
+        if (n <= 1) {
+          clearInterval(this._countdownInterval!);
+          this._countdownInterval = null;
+          this.verificationSent.set(false);
+          return 0;
+        }
+        return n - 1;
+      });
+    }, 1000);
+  }
+
+  ngOnDestroy(): void {
+    if (this._countdownInterval) clearInterval(this._countdownInterval);
   }
 }

@@ -16,6 +16,7 @@ export interface UserProfile {
 export interface UpdateProfileDto {
   fullName: string;
   phone: string;
+  email: string;
 }
 
 export interface ChangePasswordDto {

@@ -36,16 +36,17 @@
             <span class="verification-sent-msg">
               <i class="fa-solid fa-circle-check me-1"></i>Verification email sent!
             </span>
-          } @else {
-            <button class="btn btn-sm btn-warning" (click)="sendVerification()"
-                    [disabled]="verificationLoading()">
-              @if (verificationLoading()) {
-                <span class="spinner-border spinner-border-sm me-2" role="status"></span>Sending…
-              } @else {
-                <i class="fa-solid fa-paper-plane me-1"></i>Send Verification Email
-              }
-            </button>
           }
+          <button class="btn btn-sm btn-warning" (click)="sendVerification()"
+                  [disabled]="verificationLoading() || verificationCountdown() > 0">
+            @if (verificationLoading()) {
+              <span class="spinner-border spinner-border-sm me-2" role="status"></span>Sending…
+            } @else if (verificationCountdown() > 0) {
+              <i class="fa-regular fa-clock me-1"></i>Resend in {{ verificationCountdown() }}s
+            } @else {
+              <i class="fa-solid fa-paper-plane me-1"></i>{{ verificationSent() ? 'Resend Email' : 'Send Verification Email' }}
+            }
+          </button>
           @if (verificationError()) {
             <p class="banner-error mt-1">{{ verificationError() }}</p>
           }
@@ -97,33 +98,51 @@
 
           <div class="form-group">
             <label class="form-label">Full Name <span class="req">*</span></label>
-            <input type="text" class="form-control" formControlName="fullName" placeholder="Your full name" />
+            <div class="field-input-wrap">
+              <input type="text" class="form-control"
+                     [class.form-control-readonly]="!isEditing('fullName')"
+                     formControlName="fullName"
+                     [attr.readonly]="isEditing('fullName') ? null : true"
+                     placeholder="Your full name" />
+              <button type="button" class="pen-btn" (click)="toggleEdit('fullName')" [attr.aria-label]="isEditing('fullName') ? 'Lock field' : 'Edit full name'">
+                <i class="fa-solid" [class.fa-pen]="!isEditing('fullName')" [class.fa-lock]="isEditing('fullName')"></i>
+              </button>
+            </div>
             @if (profileForm.get('fullName')?.invalid && profileForm.get('fullName')?.touched) {
               <div class="form-error">Full name is required (min 2 characters).</div>
             }
           </div>
 
           <div class="form-group">
-            <label class="form-label">Email</label>
-            <input type="email" class="form-control form-control-readonly" [value]="p.email" readonly />
-            <p class="form-hint"><i class="fa-solid fa-lock me-1"></i>Email cannot be changed here.</p>
+            <label class="form-label">Email <span class="req">*</span></label>
+            <div class="field-input-wrap">
+              <input type="email" class="form-control"
+                     [class.form-control-readonly]="!isEditing('email')"
+                     formControlName="email"
+                     [attr.readonly]="isEditing('email') ? null : true"
+                     placeholder="your@email.com" />
+              <button type="button" class="pen-btn" (click)="toggleEdit('email')" [attr.aria-label]="isEditing('email') ? 'Lock field' : 'Edit email'">
+                <i class="fa-solid" [class.fa-pen]="!isEditing('email')" [class.fa-lock]="isEditing('email')"></i>
+              </button>
+            </div>
+            @if (profileForm.get('email')?.invalid && profileForm.get('email')?.touched) {
+              <div class="form-error">A valid email is required.</div>
+            }
           </div>
 
           <div class="form-group">
             <label class="form-label">Phone Number</label>
-            <input type="tel" class="form-control" formControlName="phone" placeholder="+20 100 000 0000" />
+            <div class="field-input-wrap">
+              <input type="tel" class="form-control"
+                     [class.form-control-readonly]="!isEditing('phone')"
+                     formControlName="phone"
+                     [attr.readonly]="isEditing('phone') ? null : true"
+                     placeholder="+20 100 000 0000" />
+              <button type="button" class="pen-btn" (click)="toggleEdit('phone')" [attr.aria-label]="isEditing('phone') ? 'Lock field' : 'Edit phone'">
+                <i class="fa-solid" [class.fa-pen]="!isEditing('phone')" [class.fa-lock]="isEditing('phone')"></i>
+              </button>
+            </div>
           </div>
-
-          @if (saveSuccess()) {
-            <div class="alert alert-success d-flex align-items-center gap-2 mb-3">
-              <i class="fa-solid fa-circle-check"></i> Profile updated successfully.
-            </div>
-          }
-          @if (saveError()) {
-            <div class="alert alert-danger d-flex align-items-center gap-2 mb-3">
-              <i class="fa-solid fa-triangle-exclamation"></i> {{ saveError() }}
-            </div>
-          }
 
           <div class="d-flex justify-content-end">
             <button type="submit" class="btn btn-primary" [disabled]="profileForm.invalid || saveLoading()">
