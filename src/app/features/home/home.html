@@ -1,0 +1,245 @@
+<main>
+
+  <!-- ══════════════════════════════════════════
+       HERO
+  ══════════════════════════════════════════ -->
+  <section class="home-hero">
+    <div class="container-xl">
+      <div class="row align-items-center g-5">
+
+        <!-- Left: Text + Search + Stats -->
+        <div class="col-12 col-lg-6">
+
+          <div class="home-hero__badge mb-4" inView [inViewDelay]="0">
+            <i class="fa-solid fa-star fa-xs"></i>
+            <span>Discover Premium Properties</span>
+          </div>
+
+          <h1 class="home-hero__title mb-4" inView [inViewDelay]="100">
+            Discover Your Dream Property with
+            <span class="home-hero__title--accent">Estatein</span>
+          </h1>
+
+          <p class="home-hero__subtitle mb-5" inView [inViewDelay]="200">
+            Your journey to finding the perfect property begins here. Explore our curated
+            listings to find a home that perfectly matches your aspirations and lifestyle.
+          </p>
+
+          <div class="home-hero__search mb-5" inView [inViewDelay]="300">
+            <div class="home-hero__search-field">
+              <i class="fa-solid fa-magnifying-glass home-hero__search-icon"></i>
+              <input type="text" class="home-hero__search-input"
+                placeholder="Search by location, property type, or keywords..." />
+            </div>
+            <button class="btn btn-primary home-hero__search-btn">
+              Search&nbsp;<i class="fa-solid fa-arrow-right"></i>
+            </button>
+          </div>
+
+          <div class="home-hero__stats" inView [inViewDelay]="400">
+            <div class="home-hero__stat">
+              <span class="home-hero__stat-value">200+</span>
+              <span class="home-hero__stat-label">Happy Customers</span>
+            </div>
+            <div class="home-hero__stat-divider"></div>
+            <div class="home-hero__stat">
+              <span class="home-hero__stat-value">10k+</span>
+              <span class="home-hero__stat-label">Properties For Clients</span>
+            </div>
+            <div class="home-hero__stat-divider"></div>
+            <div class="home-hero__stat">
+              <span class="home-hero__stat-value">16+</span>
+              <span class="home-hero__stat-label">Years of Experience</span>
+            </div>
+          </div>
+
+        </div>
+
+        <!-- Right: Image Grid -->
+        <div class="col-12 col-lg-6" inView [inViewDelay]="150">
+          <div class="home-hero__imgs">
+            <div class="home-hero__img-main">
+              <img src="https://lh3.googleusercontent.com/aida/AP1WRLukLyxl9WcfVyOvlOyseW4y3LMr7-yKuQxOVUz-4Sz5oYPSByZhVTJ8sKs2avFlUSCOAqwjvj2XbxZgnKu7x0gKUhZgiAdVccvmkLGzZ1CuvGjbmYqqU_ljYjnOAyoF1MH8lWBqzalkL8TbsDspzAKlpUSH3zaPXqSSgluEnbKWhoNWilXep_1cynekwoBzm1J93Asqaatg8WGU1G8wpqZYQJBjtrLx8FJHaQjrPlrf59PPVO_BA7dXj8Hk"
+                alt="Modern luxury house" />
+            </div>
+            <div class="home-hero__img-secondary">
+              <img src="https://lh3.googleusercontent.com/aida/AP1WRLvKWCA31KrYb2oS_P9kUYMm_dXuxFs9TRhkry-yelMHVJoat0XbmpYbnaLTBpFg4H5dJNQHEH0pGWtWa5HMfdO2eDW-BdMMkYIvwqRkda_Vd2nDNN4m-6zMZ5XYyQGxZRH5cyCcvAgk1mFprnAeE16_ov8deYVLsv_KGE3b9AU8AnFOaj7qNzh3RO-uiSqH5txWDK-1yINifVEfcHtVhCHWxNYoQzFg9HIlmYOwMKQbAoYbnuXAqM91FUEk"
+                alt="Modern living room" />
+            </div>
+            <div class="home-hero__img-float">
+              <div class="home-hero__img-float-icon">
+                <i class="fa-solid fa-house-chimney"></i>
+              </div>
+              <div>
+                <p class="home-hero__img-float-sub">Premium</p>
+                <p class="home-hero__img-float-title">Properties</p>
+              </div>
+            </div>
+          </div>
+        </div>
+
+      </div>
+    </div>
+  </section>
+
+
+  <!-- ══════════════════════════════════════════
+       SERVICE HIGHLIGHTS
+  ══════════════════════════════════════════ -->
+  <section class="home-services">
+    <div class="container-xl">
+      <div class="row g-4">
+        @for (s of services; track s.title; let i = $index) {
+          <div class="col-12 col-sm-6 col-lg-3" inView [inViewDelay]="i * 100">
+            <div class="home-services__card">
+              <div class="home-services__icon-wrap">
+                <i [class]="s.icon"></i>
+              </div>
+              <h3 class="home-services__title">{{ s.title }}</h3>
+              <p class="home-services__desc">{{ s.desc }}</p>
+              <a href="#" class="home-services__link">
+                Learn more&nbsp;<i class="fa-solid fa-arrow-right fa-xs"></i>
+              </a>
+            </div>
+          </div>
+        }
+      </div>
+    </div>
+  </section>
+
+
+  <!-- ══════════════════════════════════════════
+       FEATURED PROPERTIES
+  ══════════════════════════════════════════ -->
+  <section class="home-properties">
+    <div class="container-xl">
+
+      <div class="home-properties__header" inView>
+        <div>
+          <div class="home-properties__label mb-3">
+            <i class="fa-solid fa-star fa-xs"></i>
+            <span>Handpicked Selection</span>
+          </div>
+          <h2 class="home-properties__title mb-3">Featured Properties</h2>
+          <p class="home-properties__subtitle">
+            Explore our handpicked selection of featured properties. Each listing offers a glimpse
+            into exceptional homes and investments available through Estatein.
+          </p>
+        </div>
+        <button class="btn home-properties__view-all flex-shrink-0">View All Properties</button>
+      </div>
+
+      <div class="row g-4">
+        @for (p of properties; track p.name; let i = $index) {
+          <div class="col-12 col-md-6 col-lg-4" inView [inViewDelay]="i * 120">
+            <div class="home-properties__card hover-lift">
+              <div class="home-properties__card-img">
+                <img [src]="p.image" [alt]="p.name" />
+                <span class="home-properties__card-badge">
+                  <i class="fa-solid fa-tag fa-xs"></i>&nbsp;{{ p.badge }}
+                </span>
+              </div>
+              <div class="home-properties__card-body">
+                <h3 class="home-properties__card-name">{{ p.name }}</h3>
+                <p class="home-properties__card-desc">{{ p.desc }}</p>
+                <div class="home-properties__chips">
+                  <span class="home-properties__chip">
+                    <i class="fa-solid fa-bed fa-xs"></i>&nbsp;{{ p.beds }} Beds
+                  </span>
+                  <span class="home-properties__chip">
+                    <i class="fa-solid fa-bath fa-xs"></i>&nbsp;{{ p.baths }} Baths
+                  </span>
+                  <span class="home-properties__chip">
+                    <i [class]="p.typeIcon + ' fa-xs'"></i>&nbsp;{{ p.type }}
+                  </span>
+                </div>
+                <div class="home-properties__card-footer">
+                  <div>
+                    <p class="home-properties__price-label">Price</p>
+                    <p class="home-properties__price">{{ p.price }}</p>
+                  </div>
+                  <button class="btn btn-primary home-properties__details-btn">View Details</button>
+                </div>
+              </div>
+            </div>
+          </div>
+        }
+      </div>
+
+    </div>
+  </section>
+
+
+  <!-- ══════════════════════════════════════════
+       CTA
+  ══════════════════════════════════════════ -->
+  <section class="home-cta">
+    <div class="container-xl">
+      <div class="home-cta__inner">
+        <div class="home-cta__text" inView>
+          <h2 class="home-cta__title mb-3">Start Your Real Estate Journey Today</h2>
+          <p class="home-cta__subtitle">
+            Your dream property is just a click away. Whether you're looking for a new home,
+            a strategic investment, or expert real estate advice, Estatein is here to assist
+            you every step of the way.
+          </p>
+        </div>
+        <button class="btn btn-primary home-cta__btn flex-shrink-0" inView [inViewDelay]="150">
+          Explore Properties
+        </button>
+      </div>
+    </div>
+  </section>
+
+
+  <!-- ══════════════════════════════════════════
+       FAQ
+  ══════════════════════════════════════════ -->
+  <section class="home-faq">
+    <div class="container-xl">
+
+      <div class="text-center mb-5" inView>
+        <div class="home-faq__label mb-3">
+          <i class="fa-regular fa-circle-question"></i>
+          <span>FAQ</span>
+        </div>
+        <h2 class="home-faq__title mb-3">Frequently Asked Questions</h2>
+        <p class="home-faq__subtitle mx-auto">
+          Everything you need to know about buying, selling, and managing property with Estatein.
+        </p>
+      </div>
+
+      <div class="row justify-content-center">
+        <div class="col-12 col-lg-8">
+          <div class="accordion home-faq__accordion" id="faqAccordion">
+            @for (faq of faqs; track faq.q; let i = $index) {
+              <div class="accordion-item home-faq__item" inView [inViewDelay]="i * 80">
+                <h3 class="accordion-header">
+                  <button
+                    class="accordion-button home-faq__btn"
+                    [class.collapsed]="i !== 0"
+                    type="button"
+                    data-bs-toggle="collapse"
+                    [attr.data-bs-target]="'#faq-' + i"
+                    [attr.aria-expanded]="i === 0"
+                    [attr.aria-controls]="'faq-' + i"
+                  >{{ faq.q }}</button>
+                </h3>
+                <div
+                  [id]="'faq-' + i"
+                  class="accordion-collapse collapse"
+                  [class.show]="i === 0"
+                  data-bs-parent="#faqAccordion"
+                >
+                  <div class="accordion-body home-faq__body">{{ faq.a }}</div>
+                </div>
+              </div>
+            }
+          </div>
+        </div>
+      </div>
+
+    </div>
+  </section>
+
+</main>
