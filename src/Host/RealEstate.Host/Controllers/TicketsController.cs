@@ -4,6 +4,7 @@ using Maintenance.Application.Features.Commands.AddComment;
 using Maintenance.Application.Features.Commands.AssignVendor;
 using Maintenance.Application.Features.Commands.CancelTicket;
 using Maintenance.Application.Features.Commands.CompleteWork;
+using Maintenance.Application.Features.Commands.MarkCompleted;
 using Maintenance.Application.Features.Commands.ConfirmPayment;
 using Maintenance.Application.Features.Commands.CreatePayment;
 using Maintenance.Application.Features.Commands.UserPay;
@@ -171,6 +172,15 @@ public class TicketsController(ISender sender, ICurrentUserService currentUser) 
     {
         await sender.Send(new CompleteWorkCommand(id));
         return Ok(new { message = "Work marked as complete." });
+    }
+
+    // User marks ticket complete when they hired an external technician themselves
+    [HttpPost("{id:guid}/complete")]
+    [Authorize(Roles = "tenant,owner")]
+    public async Task<IActionResult> MarkCompleted(Guid id)
+    {
+        await sender.Send(new MarkCompletedCommand(id));
+        return Ok(new { message = "Ticket marked as completed." });
     }
 
     [HttpPost("{id:guid}/cancel")]
