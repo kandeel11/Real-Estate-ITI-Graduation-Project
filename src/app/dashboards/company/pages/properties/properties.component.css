@@ -1,0 +1,9 @@
+.thumb {
+  width: 48px;
+  height: 36px;
+  object-fit: cover;
+}
+
+.search-box {
+  max-width: 260px;
+}

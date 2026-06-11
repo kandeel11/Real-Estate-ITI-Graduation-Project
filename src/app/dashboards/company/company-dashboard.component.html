@@ -1,0 +1,45 @@
+<div class="d-flex min-vh-100">
+  <!-- Sidebar -->
+  <aside class="sidebar bg-white border-end p-3 d-flex flex-column">
+    <div class="fw-bold fs-5 mb-4 px-2">
+      <i class="fa-solid fa-building me-2"></i><span>Company</span>
+    </div>
+
+    <div class="text-uppercase small text-muted px-2 mb-2">Manage</div>
+    <nav class="nav flex-column gap-1 mb-4">
+      <a class="nav-link rounded" routerLink="overview" routerLinkActive="active">
+        <i class="fa-solid fa-gauge me-2"></i><span>Overview</span>
+      </a>
+      <a class="nav-link rounded" routerLink="properties" routerLinkActive="active">
+        <i class="fa-solid fa-house me-2"></i><span>Properties</span>
+      </a>
+      <a class="nav-link rounded" routerLink="brokers" routerLinkActive="active">
+        <i class="fa-solid fa-users me-2"></i><span>Brokers</span>
+      </a>
+      <a class="nav-link rounded" routerLink="performance" routerLinkActive="active">
+        <i class="fa-solid fa-chart-line me-2"></i><span>Performance</span>
+      </a>
+    </nav>
+
+    <div class="text-uppercase small text-muted px-2 mb-2">Account</div>
+    <nav class="nav flex-column gap-1">
+      <a class="nav-link rounded" routerLink="subscriptions" routerLinkActive="active">
+        <i class="fa-solid fa-credit-card me-2"></i><span>Subscription</span>
+      </a>
+      <a class="nav-link rounded" routerLink="settings" routerLinkActive="active">
+        <i class="fa-solid fa-gear me-2"></i><span>Settings</span>
+      </a>
+    </nav>
+
+    <div class="mt-auto pt-3 border-top">
+      <button class="btn btn-link nav-link text-danger" (click)="signOut()">
+        <i class="fa-solid fa-right-from-bracket me-2"></i><span>Sign out</span>
+      </button>
+    </div>
+  </aside>
+
+  <!-- Content -->
+  <main class="flex-grow-1 p-4 bg-light">
+    <router-outlet />
+  </main>
+</div>

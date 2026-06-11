@@ -1,0 +1,101 @@
+<div class="d-flex justify-content-between align-items-center mb-3">
+  <h2 class="mb-0">Company Properties ({{ counts().all }})</h2>
+  <button class="btn btn-dark" (click)="addProperty()">
+    <i class="fa-solid fa-plus me-2"></i>Add Property
+  </button>
+</div>
+
+<div class="d-flex flex-wrap justify-content-between align-items-center gap-2 mb-3">
+  <ul class="nav nav-pills">
+    @for (tab of tabs; track tab.value) {
+      <li class="nav-item">
+        <button
+          class="nav-link"
+          [class.active]="statusFilter() === tab.value"
+          (click)="statusFilter.set(tab.value)"
+        >
+          {{ tab.label }}
+          <span class="badge bg-light text-dark ms-1">{{ counts()[tab.countKey] }}</span>
+        </button>
+      </li>
+    }
+  </ul>
+  <input
+    type="search"
+    class="form-control search-box"
+    placeholder="Search by title…"
+    [value]="search()"
+    (input)="onSearch($event)"
+  />
+</div>
+
+@if (loading()) {
+  <div class="d-flex justify-content-center py-5">
+    <div class="spinner-border text-secondary" role="status">
+      <span class="visually-hidden">Loading…</span>
+    </div>
+  </div>
+} @else if (error()) {
+  <div class="alert alert-danger d-flex justify-content-between align-items-center">
+    <span><i class="fa-solid fa-triangle-exclamation me-2"></i>{{ error() }}</span>
+    <button class="btn btn-sm btn-outline-danger" (click)="load()">Retry</button>
+  </div>
+} @else if (filtered().length === 0) {
+  <div class="card p-5 text-center text-muted">
+    <i class="fa-solid fa-house fs-1 mb-3"></i>
+    <p class="mb-0">No properties match the current filter.</p>
+  </div>
+} @else {
+  <div class="card">
+    <div class="table-responsive">
+      <table class="table table-hover align-middle mb-0">
+        <thead class="table-light">
+          <tr>
+            <th></th>
+            <th>Title</th>
+            <th>Location</th>
+            <th>Broker</th>
+            <th>Price</th>
+            <th>Status</th>
+            <th>Views</th>
+            <th class="text-end">Actions</th>
+          </tr>
+        </thead>
+        <tbody>
+          @for (p of filtered(); track p.id) {
+            <tr>
+              <td>
+                @if (p.primaryImageUrl) {
+                  <img [src]="p.primaryImageUrl" alt="" class="thumb rounded" />
+                } @else {
+                  <div class="thumb rounded bg-light d-flex align-items-center justify-content-center">
+                    <i class="fa-solid fa-image text-muted"></i>
+                  </div>
+                }
+              </td>
+              <td class="fw-semibold">
+                {{ p.title }}
+                @if (p.isFeatured) {
+                  <i class="fa-solid fa-star text-warning ms-1" title="Featured"></i>
+                }
+              </td>
+              <td>{{ p.district }}, {{ p.city }}</td>
+              <td>{{ p.listingBrokerName ?? '—' }}</td>
+              <td>{{ p.price | number }}/mo</td>
+              <td><span [class]="badgeClass(p.status)">{{ statusLabel(p.status) }}</span></td>
+              <td>{{ p.viewsCount | number }}</td>
+              <td class="text-end">
+                <button class="btn btn-sm btn-outline-secondary me-1" title="View">
+                  <i class="fa-solid fa-eye"></i>
+                </button>
+                <button class="btn btn-sm btn-outline-secondary" title="Edit">
+                  <i class="fa-solid fa-pen"></i>
+                </button>
+              </td>
+            </tr>
+          }
+        </tbody>
+      </table>
+    </div>
+  </div>
+}

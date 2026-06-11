@@ -117,6 +117,11 @@ export const routes: Routes = [
           ),
         children: [
           {
+            path: '',
+            pathMatch: 'full',
+            redirectTo: 'overview',
+          },
+          {
             path: 'overview',
             loadComponent: () =>
               import('./dashboards/company/pages/overview/overview.component').then(
@@ -138,6 +143,13 @@ export const routes: Routes = [
               ),
           },
           {
+            path: 'performance',
+            loadComponent: () =>
+              import('./dashboards/company/pages/performance/performance.component').then(
+                (m) => m.PerformanceComponent
+              ),
+          },
+          {
             path: 'leases',
             loadComponent: () =>
               import('./dashboards/company/pages/leases/leases.component').then(
@@ -149,6 +161,13 @@ export const routes: Routes = [
             loadComponent: () =>
               import('./dashboards/company/pages/subscriptions/subscriptions.component').then(
                 (m) => m.SubscriptionsComponent
+              ),
+          },
+          {
+            path: 'settings',
+            loadComponent: () =>
+              import('./dashboards/company/pages/settings/settings.component').then(
+                (m) => m.SettingsComponent
               ),
           },
         ],

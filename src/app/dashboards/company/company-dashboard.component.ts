@@ -1,27 +1,26 @@
 /**
- * Company Dashboard Component
- * Main shell for company dashboard with access to properties, brokers, leases, and subscriptions
+ * Company Dashboard Shell
+ * Sidebar layout for company dashboard pages: overview, properties, brokers,
+ * performance, subscriptions, and settings.
  */
 
-import { Component } from '@angular/core';
-import { RouterOutlet } from '@angular/router';
-import { CommonModule } from '@angular/common';
+import { Component, inject } from '@angular/core';
+import { Router, RouterOutlet, RouterLink, RouterLinkActive } from '@angular/router';
+import { AuthService } from '../../core/services/auth.service';
 
 @Component({
   selector: 'app-company-dashboard',
   standalone: true,
-  imports: [RouterOutlet, CommonModule],
-  template: `
-    <div class="company-dashboard">
-      <router-outlet />
-    </div>
-  `,
-  styles: [
-    `
-      .company-dashboard {
-        width: 100%;
-      }
-    `,
-  ],
+  imports: [RouterOutlet, RouterLink, RouterLinkActive],
+  templateUrl: './company-dashboard.component.html',
+  styleUrl: './company-dashboard.component.css',
 })
-export class CompanyDashboardComponent {}
+export class CompanyDashboardComponent {
+  auth = inject(AuthService);
+  private router = inject(Router);
+
+  signOut(): void {
+    this.auth.logout();
+    this.router.navigate(['/auth/login']);
+  }
+}

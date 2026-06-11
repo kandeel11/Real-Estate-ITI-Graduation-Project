@@ -1,0 +1,23 @@
+.sidebar {
+  width: 250px;
+  flex-shrink: 0;
+}
+
+.nav-link {
+  color: #444;
+}
+
+.nav-link.active {
+  background: #212529;
+  color: #fff;
+}
+
+@media (max-width: 768px) {
+  .sidebar {
+    width: 64px;
+  }
+  .sidebar span,
+  .sidebar .small {
+    display: none;
+  }
+}

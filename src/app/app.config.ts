@@ -13,7 +13,7 @@ import {
 } from '@angular/router';
 import {
   provideHttpClient,
-  withInterceptors,
+  withInterceptorsFromDi,
   HTTP_INTERCEPTORS,
 } from '@angular/common/http';
 import { provideAnimations } from '@angular/platform-browser/animations';
@@ -27,7 +27,9 @@ export const appConfig: ApplicationConfig = {
       withPreloading(PreloadAllModules),
       withInMemoryScrolling({ scrollPositionRestoration: 'top' })
     ),
-    provideHttpClient(),
+    // withInterceptorsFromDi is required for the class-based AuthInterceptor
+    // registered via HTTP_INTERCEPTORS below to actually run
+    provideHttpClient(withInterceptorsFromDi()),
     {
       provide: HTTP_INTERCEPTORS,
       useClass: AuthInterceptor,

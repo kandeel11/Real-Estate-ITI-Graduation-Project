@@ -1,0 +1,111 @@
+@if (loading()) {
+  <div class="d-flex justify-content-center align-items-center py-5">
+    <div class="spinner-border text-secondary" role="status">
+      <span class="visually-hidden">Loading…</span>
+    </div>
+  </div>
+} @else {
+  <!-- Header -->
+  <div class="mb-4">
+    <h2 class="mb-1">
+      Welcome back, {{ company()?.name }}
+      @if (company()?.isVerified) {
+        <i class="fa-solid fa-circle-check text-primary fs-5" title="Verified company"></i>
+      }
+    </h2>
+    @if (subscription(); as sub) {
+      <span class="text-muted">
+        {{ sub.planName }} · Renews {{ sub.endDate | date: 'MMM d, y' }}
+      </span>
+    }
+  </div>
+
+  <!-- Stat cards -->
+  @if (stats(); as s) {
+    <div class="row g-3 mb-4">
+      <div class="col-6 col-lg-3">
+        <div class="card p-3 h-100">
+          <div class="text-muted small">Properties</div>
+          <div class="fs-3 fw-bold">{{ s.totalProperties | number }}</div>
+          <div class="small text-success">{{ s.activeProperties }} active</div>
+        </div>
+      </div>
+      <div class="col-6 col-lg-3">
+        <div class="card p-3 h-100">
+          <div class="text-muted small">Brokers</div>
+          <div class="fs-3 fw-bold">{{ s.totalBrokers | number }}</div>
+          <div class="small text-muted">team members</div>
+        </div>
+      </div>
+      <div class="col-6 col-lg-3">
+        <div class="card p-3 h-100">
+          <div class="text-muted small">Total Views</div>
+          <div class="fs-3 fw-bold">{{ s.monthlyViews | number }}</div>
+          <div class="small text-muted">{{ s.monthlyInquiries }} inquiries</div>
+        </div>
+      </div>
+      <div class="col-6 col-lg-3">
+        <div class="card p-3 h-100">
+          <div class="text-muted small">Deals Closed</div>
+          <div class="fs-3 fw-bold">{{ s.monthlyDealsClosed | number }}</div>
+          <div class="small text-muted">this month</div>
+        </div>
+      </div>
+    </div>
+  }
+
+  <!-- Subscription usage -->
+  @if (usage(); as u) {
+    @if (subscription(); as sub) {
+      <h5 class="mb-3">Subscription Usage</h5>
+      <div class="row g-3 mb-4">
+        <div class="col-md-4">
+          <app-usage-meter label="Properties" [used]="u.propertiesUsed" [max]="sub.maxProperties" />
+        </div>
+        <div class="col-md-4">
+          <app-usage-meter label="Brokers" [used]="u.brokersUsed" [max]="sub.maxBrokers" />
+        </div>
+        <div class="col-md-4">
+          <app-usage-meter label="AI Requests" [used]="u.aiRequestsUsed" [max]="sub.maxAiRequestsPerMonth" />
+        </div>
+      </div>
+    }
+  }
+
+  <div class="row g-3">
+    <!-- Top brokers -->
+    <div class="col-lg-6">
+      <div class="card p-3 h-100">
+        <h5 class="mb-3">Top Brokers This Month</h5>
+        @for (broker of topBrokers(); track broker.id; let i = $index) {
+          <div class="d-flex align-items-center justify-content-between py-2 border-bottom">
+            <div class="d-flex align-items-center gap-2">
+              <span class="badge bg-dark rounded-circle">{{ i + 1 }}</span>
+              <span class="fw-semibold">{{ broker.fullName ?? broker.licenseNumber }}</span>
+            </div>
+            <div class="text-muted small">
+              {{ broker.closedDealsCount ?? 0 }} deals ·
+              <i class="fa-solid fa-star text-warning"></i> {{ broker.ratingAvg }}
+            </div>
+          </div>
+        } @empty {
+          <p class="text-muted mb-0">No active brokers yet.</p>
+        }
+      </div>
+    </div>
+
+    <!-- Recent activity (mocked) -->
+    <div class="col-lg-6">
+      <div class="card p-3 h-100">
+        <h5 class="mb-3">Recent Activity</h5>
+        @for (item of activity; track item.text) {
+          <div class="d-flex align-items-center gap-2 py-2 border-bottom">
+            <i class="fa-solid {{ item.icon }}"></i>
+            <span class="flex-grow-1 small">{{ item.text }}</span>
+            <span class="text-muted small text-nowrap">{{ item.when }}</span>
+          </div>
+        }
+      </div>
+    </div>
+  </div>
+}
