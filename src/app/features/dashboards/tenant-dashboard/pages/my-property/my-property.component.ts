@@ -1,12 +1,28 @@
 import { Component, OnInit, inject, signal } from '@angular/core';
 import { RouterLink } from '@angular/router';
 import { DatePipe, CurrencyPipe } from '@angular/common';
-import { forkJoin } from 'rxjs';
-import { Amenity, LeaseService, PropertyMedia, RentedProperty } from '../../services/lease.service';
+import { finalize } from 'rxjs';
+import { LeaseService, RentedPropertyItem, ApiPropertyMedia, ApiAmenity } from '../../services/lease.service';
 
-interface PropertyView extends RentedProperty {
-  media: PropertyMedia[];
-  amenities: Amenity[];
+interface PropertyView {
+  id: string;
+  leaseId: string;
+  title: string;
+  fullAddress: string;
+  type: string;
+  bedrooms: number;
+  bathrooms: number;
+  area: number;
+  isFurnished: boolean;
+  petsAllowed: boolean;
+  mainImage: string;
+  monthlyRent: number;
+  isActive: boolean;
+  startDate: string;
+  endDate: string;
+  daysUntilExpiry: number;
+  media: ApiPropertyMedia[];
+  amenities: ApiAmenity[];
   lightboxUrl: string | null;
 }
 
@@ -33,42 +49,40 @@ export class MyPropertyComponent implements OnInit {
     this.loading.set(true);
     this.error.set(null);
 
-    this.leaseService.getRentedProperties().subscribe({
-      next: props => {
-        if (props.length === 0) {
-          this.loading.set(false);
-          return;
-        }
-        forkJoin(
-          props.map(p =>
-            forkJoin({
-              media: this.leaseService.getPropertyMedia(p.id),
-              amenities: this.leaseService.getPropertyAmenities(p.id),
-            })
-          )
-        ).subscribe({
-          next: extras => {
-            this.properties.set(
-              props.map((p, i) => ({
-                ...p,
-                media: extras[i].media,
-                amenities: extras[i].amenities,
-                lightboxUrl: null,
-              }))
-            );
-            this.loading.set(false);
-          },
-          error: () => {
-            this.properties.set(props.map(p => ({ ...p, media: [], amenities: [], lightboxUrl: null })));
-            this.loading.set(false);
-          },
-        });
-      },
-      error: () => {
-        this.error.set('Failed to load your properties. Please try again.');
-        this.loading.set(false);
-      },
-    });
+    this.leaseService.getRentedProperties()
+      .pipe(finalize(() => this.loading.set(false)))
+      .subscribe({
+        next: items => this.properties.set(items.map(item => this.toView(item))),
+        error: () => this.error.set('Failed to load your properties. Please try again.'),
+      });
+  }
+
+  private toView(item: RentedPropertyItem): PropertyView {
+    const p = item.property;
+    const parts = [p.address, p.district, p.city, p.governorate].filter(Boolean);
+    const primaryMedia = p.media.find(m => m.isPrimary) ?? p.media[0];
+
+    return {
+      id: p.id,
+      leaseId: item.leaseId,
+      title: p.title,
+      fullAddress: parts.join(', '),
+      type: p.propertyType,
+      bedrooms: p.bedrooms,
+      bathrooms: p.bathrooms,
+      area: p.areaSqm,
+      isFurnished: p.isFurnished,
+      petsAllowed: p.petsAllowed,
+      mainImage: primaryMedia?.url ?? '',
+      monthlyRent: item.monthlyRent,
+      isActive: item.isActive,
+      startDate: item.startDate,
+      endDate: item.endDate,
+      daysUntilExpiry: item.daysUntilExpiry,
+      media: p.media,
+      amenities: p.amenities,
+      lightboxUrl: null,
+    };
   }
 
   openLightbox(url: string): void {

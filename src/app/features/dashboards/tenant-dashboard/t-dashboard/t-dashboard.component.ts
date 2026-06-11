@@ -1,5 +1,5 @@
 import { Component, inject } from '@angular/core';
-import { RouterOutlet, RouterLink, RouterLinkActive } from '@angular/router';
+import { RouterOutlet, RouterLink, RouterLinkActive, Router } from '@angular/router';
 import { NotificationService } from '../services/notification.service';
 import { AuthService } from '../../../../core/services/auth.service';
 
@@ -22,6 +22,7 @@ export class TDashboardComponent {
 
   protected readonly auth = inject(AuthService);
   protected readonly notificationService = inject(NotificationService);
+  private readonly router = inject(Router);
   
     readonly navItems: NavItem[] = [
       { label: 'Overview',      icon: 'fa-solid fa-gauge-high',           route: '/dashboard',               exact: true },
@@ -50,5 +51,6 @@ export class TDashboardComponent {
   
     logout(): void {
       this.auth.logout();
+      this.router.navigate(['/auth/login']);
     }
 }
