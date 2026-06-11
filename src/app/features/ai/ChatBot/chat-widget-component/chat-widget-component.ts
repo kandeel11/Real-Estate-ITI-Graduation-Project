@@ -19,7 +19,7 @@ import { ChatbotService } from '../Services/chatbot-service';
   standalone: true,
   imports: [FormsModule],
   templateUrl: './chat-widget-component.html',
-  styleUrls: ['./chat-widget-component.css'],
+  styleUrls: ['./chat-widget-component.scss'],
 })
 export class ChatWidgetComponent implements OnInit, OnDestroy {
   @ViewChild('scrollBox') scrollBox?: ElementRef<HTMLDivElement>;
