@@ -36,6 +36,16 @@ public class Program
         var builder = WebApplication.CreateBuilder(args);
 
         builder.Services.AddControllers();
+
+        // Allow the Angular dev server to call the API from the browser
+        builder.Services.AddCors(options =>
+        {
+            options.AddPolicy("Frontend", policy => policy
+                .WithOrigins("http://localhost:4200")
+                .AllowAnyHeader()
+                .AllowAnyMethod());
+        });
+
         builder.Services.AddEndpointsApiExplorer();
         builder.Services.AddSwaggerGen(options =>
         {
@@ -175,6 +185,7 @@ public class Program
             });
         }
 
+        app.UseCors("Frontend");
         app.UseAuthentication();
         app.UseAuthorization();
         app.MapControllers();

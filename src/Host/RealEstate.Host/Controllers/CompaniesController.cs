@@ -1,8 +1,11 @@
+using Document.Application.Queries.Inquiry;
 using Identity.Application.Commands.UpdateCompany;
 using Identity.Application.Commands.VerifyCompany;
 using Identity.Application.Interfaces;
 using Identity.Application.Queries.GetBrokersByCompany;
 using Identity.Application.Queries.GetCompanyById;
+using Identity.Application.Queries.GetCompanyBrokersDetails;
+using Identity.Application.Queries.GetCompanyDetails;
 using MediatR;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
@@ -17,6 +20,7 @@ public class CompaniesController(IMediator mediator, ICurrentUserService current
 {
     /// <summary>
     /// Returns the company belonging to the logged-in company manager (reads CompanyId from JWT).
+    /// Uses CompanyDetailsDto so branding fields (logo/website/description) round-trip.
     /// </summary>
     [HttpGet("mine")]
     [Authorize(Policy = "CompanyManager")]
@@ -26,7 +30,7 @@ public class CompaniesController(IMediator mediator, ICurrentUserService current
         if (companyId is null)
             return BadRequest(new { error = "No company is associated with your account." });
 
-        var company = await mediator.Send(new GetCompanyByIdQuery(companyId.Value), ct);
+        var company = await mediator.Send(new GetCompanyDetailsQuery(companyId.Value), ct);
         return company is null ? NotFound() : Ok(company);
     }
 
@@ -148,6 +152,7 @@ public class CompaniesController(IMediator mediator, ICurrentUserService current
 
     /// <summary>
     /// Lists all brokers belonging to the logged-in manager's OWN company (companyId from JWT).
+    /// Uses BrokerDetailsDto: includes the broker's name/contact and performance counters.
     /// </summary>
     [HttpGet("mine/brokers")]
     [Authorize(Policy = "CompanyManager")]
@@ -157,8 +162,73 @@ public class CompaniesController(IMediator mediator, ICurrentUserService current
         if (companyId is null)
             return BadRequest(new { error = "No company is associated with your account." });
 
-        var brokers = await mediator.Send(new GetBrokersByCompanyQuery(companyId.Value), ct);
+        var brokers = await mediator.Send(new GetCompanyBrokersDetailsQuery(companyId.Value), ct);
         return Ok(brokers);
+    }
+
+    /// <summary>
+    /// Dashboard stat counters for the manager's own company, composed from the
+    /// Property, Identity, and Document modules (no cross-module references —
+    /// composition happens here in the Host, like PropertyEnrichmentService).
+    /// </summary>
+    [HttpGet("mine/stats")]
+    [Authorize(Policy = "CompanyManager")]
+    public async Task<IActionResult> GetMyStats(CancellationToken ct)
+    {
+        var companyId = currentUser.CompanyId;
+        if (companyId is null)
+            return BadRequest(new { error = "No company is associated with your account." });
+
+        var properties = await mediator.Send(new GetPropertiesByCompanyQuery(companyId.Value), ct);
+        var brokers = await mediator.Send(new GetCompanyBrokersDetailsQuery(companyId.Value), ct);
+        var inquiries = await mediator.Send(new GetCompanyInquiryStatsQuery(companyId.Value, 0), ct);
+
+        return Ok(new CompanyStatsResponse(
+            TotalProperties: properties.Count,
+            ActiveProperties: properties.Count(p => p.Status == "Active"),
+            PendingProperties: properties.Count(p => p.Status == "PendingReview"),
+            RentedProperties: properties.Count(p => p.Status == "Rented"),
+            TotalBrokers: brokers.Count(b => b.IsActive),
+            TotalViews: properties.Sum(p => p.ViewsCount),
+            TotalInquiries: inquiries.TotalInquiries,
+            MonthlyInquiries: inquiries.MonthlyInquiries,
+            DealsClosed: brokers.Sum(b => b.ClosedDealsCount)));
+    }
+
+    /// <summary>
+    /// Recent activity feed for the manager's own company, synthesized from
+    /// real events: listings created, brokers joining, inquiries received.
+    /// </summary>
+    [HttpGet("mine/activity")]
+    [Authorize(Policy = "CompanyManager")]
+    public async Task<IActionResult> GetMyActivity([FromQuery] int take = 10, CancellationToken ct = default)
+    {
+        var companyId = currentUser.CompanyId;
+        if (companyId is null)
+            return BadRequest(new { error = "No company is associated with your account." });
+
+        var properties = await mediator.Send(new GetPropertiesByCompanyQuery(companyId.Value), ct);
+        var brokers = await mediator.Send(new GetCompanyBrokersDetailsQuery(companyId.Value), ct);
+        var inquiries = await mediator.Send(new GetCompanyInquiryStatsQuery(companyId.Value, take), ct);
+
+        var titlesById = properties.ToDictionary(p => p.Id, p => p.Title);
+
+        var items = new List<CompanyActivityItem>();
+
+        items.AddRange(properties.Select(p => new CompanyActivityItem(
+            "listing_created", $"Listing \"{p.Title}\" created", p.CreatedAt)));
+
+        items.AddRange(brokers.Select(b => new CompanyActivityItem(
+            "broker_joined", $"Broker {(string.IsNullOrEmpty(b.FullName) ? b.LicenseNumber : b.FullName)} joined the team", b.CreatedAt)));
+
+        items.AddRange(inquiries.Recent.Select(i => new CompanyActivityItem(
+            "inquiry_received",
+            titlesById.TryGetValue(i.PropertyId, out var title)
+                ? $"New inquiry received on \"{title}\""
+                : "New inquiry received",
+            i.CreatedAt)));
+
+        return Ok(items.OrderByDescending(i => i.Timestamp).Take(take).ToList());
     }
 
     /// <summary>
@@ -197,3 +267,16 @@ public record UpdateCompanyRequest(
     string? Website,
     string? Description,
     string? LogoUrl);
+
+public record CompanyStatsResponse(
+    int TotalProperties,
+    int ActiveProperties,
+    int PendingProperties,
+    int RentedProperties,
+    int TotalBrokers,
+    int TotalViews,
+    int TotalInquiries,
+    int MonthlyInquiries,
+    int DealsClosed);
+
+public record CompanyActivityItem(string Type, string Text, DateTime Timestamp);
