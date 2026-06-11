@@ -223,7 +223,9 @@ public class PropertiesController : ControllerBase
         }
 
         // ── Build & send command ─────────────────────────────────────
-        var id = await _mediator.Send(new CreatePropertyCommand(
+        try
+        {
+            var id = await _mediator.Send(new CreatePropertyCommand(
        OwnerId: ownerId.Value,
        CompanyId: companyId,
        ListingBrokerId: listingBrokerId,
@@ -258,7 +260,14 @@ public class PropertiesController : ControllerBase
        NationalIdBlobPath: nationalIdBlobPath,
        OwnershipProofBlobPath: ownershipProofBlobPath), ct);
 
-        return CreatedAtAction(nameof(GetById), new { id }, new { id });
+            return CreatedAtAction(nameof(GetById), new { id }, new { id });
+        }
+        catch (InvalidOperationException ex)
+        {
+            // Duplicate listing (same owner+title, or same address+apartment) or plan limit reached.
+            // The property is NOT created in any of these cases.
+            return Conflict(new { error = ex.Message });
+        }
     }
 
     // ─── Helper for upload ────────────────────────────────────────────

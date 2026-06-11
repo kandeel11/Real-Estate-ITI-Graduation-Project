@@ -270,10 +270,13 @@ public class PropertyRepository : IPropertyRepository
             .ToListAsync(ct);
 
     public async Task<bool> ExistsByOwnerAndTitleAsync(Guid ownerId, string title, CancellationToken ct = default)
-        => await _context.Properties.AnyAsync(
+    {
+        var normalized = (title ?? string.Empty).Trim().ToLower();
+        return await _context.Properties.AnyAsync(
             p => p.OwnerId == ownerId &&
-                 p.Title.ToLower() == title.ToLower() &&
+                 p.Title.Trim().ToLower() == normalized &&
                  p.DeletedAt == null, ct);
+    }
 
     public async Task<bool> ExistsByOwnerAndAddressAsync(Guid ownerId, string address, int apartmentNumber, CancellationToken ct = default)
         => await _context.Properties.AnyAsync(
