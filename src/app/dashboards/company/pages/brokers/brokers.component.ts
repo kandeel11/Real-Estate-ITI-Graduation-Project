@@ -9,11 +9,11 @@
 import { Component, inject, signal, computed, OnInit } from '@angular/core';
 import { ReactiveFormsModule, FormBuilder, Validators } from '@angular/forms';
 import { RouterLink } from '@angular/router';
+import { toSignal } from '@angular/core/rxjs-interop';
 import { CompanyService } from '../../services/company.service';
+import { CompanySubscriptionService } from '../../services/company-subscription.service';
 import { Broker } from '../../../../shared/models/company.model';
 import { ConfirmModalComponent } from '../../../../shared/components/modal/confirm-modal.component';
-
-const MAX_BROKERS = 25;
 
 @Component({
   selector: 'app-company-brokers',
@@ -24,6 +24,7 @@ const MAX_BROKERS = 25;
 })
 export class BrokersComponent implements OnInit {
   private companySvc = inject(CompanyService);
+  private subSvc = inject(CompanySubscriptionService);
   private fb = inject(FormBuilder);
 
   brokers = signal<Broker[]>([]);
@@ -32,8 +33,16 @@ export class BrokersComponent implements OnInit {
   submitting = signal(false);
   errorMsg = signal<string | null>(null);
 
+  private subscription = toSignal(this.subSvc.getActive());
+
   activeCount = computed(() => this.brokers().filter((b) => b.isActive).length);
-  maxBrokers = MAX_BROKERS;
+
+  /** Plan's broker limit — '∞' for unlimited, '…' while loading. */
+  maxBrokersLabel = computed(() => {
+    const max = this.subscription()?.maxBrokers;
+    if (max == null) return '…';
+    return max >= 999999 ? '∞' : String(max);
+  });
 
   form = this.fb.nonNullable.group({
     fullName: ['', [Validators.required, Validators.minLength(3)]],
@@ -100,6 +109,7 @@ export class BrokersComponent implements OnInit {
 
   brokerToDeactivate = signal<Broker | null>(null);
   deactivating = signal(false);
+  actionError = signal<string | null>(null);
 
   deactivateMessage = computed(() => {
     const broker = this.brokerToDeactivate();
@@ -125,6 +135,65 @@ export class BrokersComponent implements OnInit {
       error: () => {
         this.deactivating.set(false);
         this.brokerToDeactivate.set(null);
+      },
+    });
+  }
+
+  // ── Reactivate ──────────────────────────────────────────────────
+  reactivatingId = signal<string | null>(null);
+
+  reactivate(broker: Broker): void {
+    if (this.reactivatingId()) return;
+    this.reactivatingId.set(broker.id);
+    this.actionError.set(null);
+    this.companySvc.reactivateBroker(broker.id).subscribe({
+      next: () => {
+        this.reactivatingId.set(null);
+        this.load();
+      },
+      error: (err) => {
+        this.reactivatingId.set(null);
+        // e.g. broker limit reached — backend shape: { error: "message" }
+        this.actionError.set(
+          err?.error?.error ??
+            (err?.status === 404
+              ? 'Reactivate endpoint not found — restart the backend to pick up the latest build.'
+              : `Failed to reactivate the broker (HTTP ${err?.status ?? '?'}).`)
+        );
+      },
+    });
+  }
+
+  // ── Permanent delete ────────────────────────────────────────────
+  brokerToDelete = signal<Broker | null>(null);
+  deleting = signal(false);
+
+  deleteMessage = computed(() => {
+    const broker = this.brokerToDelete();
+    return broker
+      ? `Permanently delete ${this.displayName(broker)}? Their listings stay with the company — reassign them to another broker from the Properties page.`
+      : '';
+  });
+
+  requestDelete(broker: Broker): void {
+    this.brokerToDelete.set(broker);
+  }
+
+  confirmDelete(): void {
+    const broker = this.brokerToDelete();
+    if (!broker || this.deleting()) return;
+    this.deleting.set(true);
+    this.actionError.set(null);
+    this.companySvc.deleteBroker(broker.id).subscribe({
+      next: () => {
+        this.deleting.set(false);
+        this.brokerToDelete.set(null);
+        this.load();
+      },
+      error: (err) => {
+        this.deleting.set(false);
+        this.brokerToDelete.set(null);
+        this.actionError.set(err?.error?.error ?? 'Failed to delete the broker.');
       },
     });
   }

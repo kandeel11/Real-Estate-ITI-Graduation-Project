@@ -29,6 +29,7 @@ export const API_ENDPOINTS = {
     UPDATE: (id: string) => `/properties/${id}`,
     DELETE: (id: string) => `/properties/${id}`,
     SUBMIT: (id: string) => `/properties/${id}/submit`,
+    ASSIGN_BROKER: (id: string) => `/properties/${id}/assign-broker`,
     REQUEST_AI_DESCRIPTION: (id: string) =>
       `/properties/${id}/request-ai-description`,
     MEDIA: (id: string) => `/properties/${id}/media`,
@@ -76,6 +77,10 @@ export const API_ENDPOINTS = {
     ADD: (companyId: string) => `/companies/${companyId}/brokers`,
     DEACTIVATE_MINE: (brokerId: string) =>
       `/companies/mine/brokers/${brokerId}`,
+    REACTIVATE_MINE: (brokerId: string) =>
+      `/companies/mine/brokers/${brokerId}/reactivate`,
+    DELETE_MINE: (brokerId: string) =>
+      `/companies/mine/brokers/${brokerId}/permanent`,
   },
 
   // ==================== MAINTENANCE MODULE ====================

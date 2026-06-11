@@ -164,6 +164,14 @@ export class PropertyService {
     );
   }
 
+  /** PATCH /api/properties/{id}/assign-broker — company manager only. */
+  assignBroker(propertyId: string, brokerId: string | null): Observable<void> {
+    return this.http.patch<void>(
+      `${this.baseUrl}${API_ENDPOINTS.PROPERTIES.ASSIGN_BROKER(propertyId)}`,
+      { brokerId }
+    );
+  }
+
   submitForReview(propertyId: string): Observable<void> {
     return this.http.post<void>(
       `${this.baseUrl}${API_ENDPOINTS.PROPERTIES.SUBMIT(propertyId)}`,

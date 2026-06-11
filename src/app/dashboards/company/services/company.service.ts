@@ -151,6 +151,35 @@ export class CompanyService {
     );
   }
 
+  /** POST /api/companies/mine/brokers/{id}/reactivate — re-checks the plan's broker limit. */
+  reactivateBroker(brokerId: string): Observable<void> {
+    if (this.useMock) {
+      const broker = MOCK_BROKERS.find((b) => b.id === brokerId);
+      if (broker) broker.isActive = true;
+      return of(void 0).pipe(delay(300));
+    }
+    return this.http.post<void>(
+      `${this.baseUrl}${API_ENDPOINTS.BROKERS.REACTIVATE_MINE(brokerId)}`,
+      {}
+    );
+  }
+
+  /**
+   * DELETE /api/companies/mine/brokers/{id}/permanent — removes the broker
+   * and blocks their login. Their properties stay and can be reassigned via
+   * the Properties page.
+   */
+  deleteBroker(brokerId: string): Observable<void> {
+    if (this.useMock) {
+      const idx = MOCK_BROKERS.findIndex((b) => b.id === brokerId);
+      if (idx >= 0) MOCK_BROKERS.splice(idx, 1);
+      return of(void 0).pipe(delay(300));
+    }
+    return this.http.delete<void>(
+      `${this.baseUrl}${API_ENDPOINTS.BROKERS.DELETE_MINE(brokerId)}`
+    );
+  }
+
   /** PUT /api/companies/mine — backend returns 204 No Content. */
   updateCompany(changes: Partial<Company>): Observable<void> {
     if (this.useMock) {

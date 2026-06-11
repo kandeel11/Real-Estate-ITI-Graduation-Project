@@ -1,13 +1,18 @@
 /**
  * Company Settings Page
- * Edit company profile. Commercial register is locked after verification.
- * Logo upload is preview-only until a real upload endpoint exists.
+ * Two sections: the COMPANY profile (PUT /companies/mine — commercial
+ * register locked after verification, logo preview-only) and the manager's
+ * own ACCOUNT (PUT /users/me/profile + /users/me/password).
  */
 
 import { Component, inject, signal, OnInit } from '@angular/core';
 import { ReactiveFormsModule, FormBuilder, Validators } from '@angular/forms';
 import { CompanyService } from '../../services/company.service';
 import { Company } from '../../../../shared/models/company.model';
+import {
+  UserProfileService,
+  UserProfile,
+} from '../../../../core/services/user-profile.service';
 
 @Component({
   selector: 'app-company-settings',
@@ -18,6 +23,7 @@ import { Company } from '../../../../shared/models/company.model';
 })
 export class SettingsComponent implements OnInit {
   private companySvc = inject(CompanyService);
+  private profileSvc = inject(UserProfileService);
   private fb = inject(FormBuilder);
 
   company = signal<Company | null>(null);
@@ -26,6 +32,7 @@ export class SettingsComponent implements OnInit {
   saved = signal(false);
   logoPreview = signal<string | null>(null);
 
+  // ── Company profile ─────────────────────────────────────────────
   // email/commercialRegister are not updatable via PUT /companies/mine
   form = this.fb.nonNullable.group({
     name: ['', [Validators.required, Validators.minLength(3)]],
@@ -43,6 +50,35 @@ export class SettingsComponent implements OnInit {
   get address() { return this.form.get('address')!; }
   get phone() { return this.form.get('phone')!; }
 
+  // ── Manager account ─────────────────────────────────────────────
+  profile = signal<UserProfile | null>(null);
+  accountSaving = signal(false);
+  accountSaved = signal(false);
+  accountError = signal<string | null>(null);
+
+  accountForm = this.fb.nonNullable.group({
+    fullName: ['', [Validators.required, Validators.minLength(3)]],
+    phone: ['', Validators.required],
+    email: [{ value: '', disabled: true }],
+  });
+
+  get accountFullName() { return this.accountForm.get('fullName')!; }
+  get accountPhone() { return this.accountForm.get('phone')!; }
+
+  passwordSaving = signal(false);
+  passwordSaved = signal(false);
+  passwordError = signal<string | null>(null);
+
+  passwordForm = this.fb.nonNullable.group({
+    currentPassword: ['', Validators.required],
+    newPassword: ['', [Validators.required, Validators.minLength(8)]],
+    confirmNewPassword: ['', Validators.required],
+  });
+
+  get currentPassword() { return this.passwordForm.get('currentPassword')!; }
+  get newPassword() { return this.passwordForm.get('newPassword')!; }
+  get confirmNewPassword() { return this.passwordForm.get('confirmNewPassword')!; }
+
   ngOnInit(): void {
     this.companySvc.getMyCompany().subscribe((company) => {
       this.company.set(company);
@@ -58,6 +94,18 @@ export class SettingsComponent implements OnInit {
         commercialRegister: company.commercialRegister,
       });
       this.loading.set(false);
+    });
+
+    this.profileSvc.getMe().subscribe({
+      next: (profile) => {
+        this.profile.set(profile);
+        this.accountForm.patchValue({
+          fullName: profile.fullName,
+          phone: profile.phone,
+          email: profile.email,
+        });
+      },
+      error: () => this.accountError.set('Could not load your account details.'),
     });
   }
 
@@ -95,5 +143,59 @@ export class SettingsComponent implements OnInit {
       },
       error: () => this.saving.set(false),
     });
+  }
+
+  saveAccount(): void {
+    if (this.accountForm.invalid) {
+      this.accountForm.markAllAsTouched();
+      return;
+    }
+    this.accountSaving.set(true);
+    this.accountSaved.set(false);
+    this.accountError.set(null);
+
+    const { fullName, phone } = this.accountForm.getRawValue();
+    this.profileSvc.updateProfile({ fullName, phone }).subscribe({
+      next: () => {
+        this.accountSaving.set(false);
+        this.accountSaved.set(true);
+        setTimeout(() => this.accountSaved.set(false), 4000);
+      },
+      error: (err) => {
+        this.accountSaving.set(false);
+        this.accountError.set(err?.error?.error ?? 'Failed to save your account details.');
+      },
+    });
+  }
+
+  changePassword(): void {
+    if (this.passwordForm.invalid) {
+      this.passwordForm.markAllAsTouched();
+      return;
+    }
+    const { currentPassword, newPassword, confirmNewPassword } = this.passwordForm.getRawValue();
+    if (newPassword !== confirmNewPassword) {
+      this.passwordError.set('New password and confirmation do not match.');
+      return;
+    }
+
+    this.passwordSaving.set(true);
+    this.passwordSaved.set(false);
+    this.passwordError.set(null);
+
+    this.profileSvc
+      .changePassword({ currentPassword, newPassword, confirmNewPassword })
+      .subscribe({
+        next: () => {
+          this.passwordSaving.set(false);
+          this.passwordSaved.set(true);
+          this.passwordForm.reset();
+          setTimeout(() => this.passwordSaved.set(false), 4000);
+        },
+        error: (err) => {
+          this.passwordSaving.set(false);
+          this.passwordError.set(err?.error?.error ?? 'Failed to change the password.');
+        },
+      });
   }
 }

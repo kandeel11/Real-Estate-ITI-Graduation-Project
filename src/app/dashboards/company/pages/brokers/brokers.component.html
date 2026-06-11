@@ -1,9 +1,16 @@
 <div class="d-flex justify-content-between align-items-center mb-3">
-  <h2 class="mb-0">Team Members ({{ activeCount() }} / {{ maxBrokers }})</h2>
+  <h2 class="mb-0">Team Members ({{ activeCount() }} / {{ maxBrokersLabel() }})</h2>
   <button class="btn btn-dark" (click)="openModal()">
     <i class="fa-solid fa-plus me-2"></i>Add Broker
   </button>
 </div>
+
+@if (actionError()) {
+  <div class="alert alert-danger d-flex justify-content-between align-items-center">
+    <span>{{ actionError() }}</span>
+    <a routerLink="/dashboard/company/subscriptions" class="alert-link">Upgrade Plan</a>
+  </div>
+}
 
 @if (loading()) {
   <div class="d-flex justify-content-center py-5">
@@ -60,6 +67,17 @@
                 @if (b.isActive) {
                   <button class="btn btn-sm btn-outline-danger" (click)="deactivate(b)">
                     Deactivate
+                  </button>
+                } @else {
+                  <button class="btn btn-sm btn-outline-success me-1" (click)="reactivate(b)"
+                          [disabled]="reactivatingId() === b.id">
+                    @if (reactivatingId() === b.id) {
+                      <span class="spinner-border spinner-border-sm me-1"></span>
+                    }
+                    Reactivate
+                  </button>
+                  <button class="btn btn-sm btn-outline-danger" (click)="requestDelete(b)" title="Delete permanently">
+                    <i class="fa-solid fa-trash"></i>
                   </button>
                 }
               </td>
@@ -185,4 +203,16 @@
   [loading]="deactivating()"
   (confirmed)="confirmDeactivate()"
   (cancelled)="brokerToDeactivate.set(null)"
+/>
+
+<!-- Permanent delete confirmation -->
+<app-confirm-modal
+  [show]="brokerToDelete() !== null"
+  title="Delete broker permanently"
+  [message]="deleteMessage()"
+  confirmLabel="Delete"
+  confirmClass="btn-danger"
+  [loading]="deleting()"
+  (confirmed)="confirmDelete()"
+  (cancelled)="brokerToDelete.set(null)"
 />

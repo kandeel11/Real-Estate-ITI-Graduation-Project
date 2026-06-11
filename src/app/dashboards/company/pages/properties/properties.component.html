@@ -1,5 +1,5 @@
 <div class="d-flex justify-content-between align-items-center mb-3">
-  <h2 class="mb-0">Company Properties ({{ counts().all }})</h2>
+  <h2 class="mb-0">Company Properties ({{ counts().all }} / {{ maxPropertiesLabel() }})</h2>
   <span class="text-muted small">
     <i class="fa-solid fa-circle-info me-1"></i>Listings are created by your brokers
   </span>
@@ -85,6 +85,10 @@
               <td><span [class]="badgeClass(p.status)">{{ statusLabel(p.status) }}</span></td>
               <td>{{ p.viewsCount | number }}</td>
               <td class="text-end">
+                <button class="btn btn-sm btn-outline-secondary me-1" title="Assign broker"
+                        (click)="openAssign(p)">
+                  <i class="fa-solid fa-user-tag"></i>
+                </button>
                 <button class="btn btn-sm btn-outline-secondary" title="View">
                   <i class="fa-solid fa-eye"></i>
                 </button>
@@ -95,4 +99,58 @@
       </table>
     </div>
   </div>
+}
+
+<!-- Assign broker modal -->
+@if (propertyToAssign(); as property) {
+  <div class="modal d-block" tabindex="-1" role="dialog">
+    <div class="modal-dialog modal-dialog-centered">
+      <div class="modal-content">
+        <div class="modal-header">
+          <h5 class="modal-title">Assign Broker</h5>
+          <button type="button" class="btn-close" (click)="propertyToAssign.set(null)"></button>
+        </div>
+        <div class="modal-body">
+          <p class="text-muted">
+            Choose which broker handles <strong>{{ property.title }}</strong>.
+            @if (property.listingBrokerName) {
+              Currently assigned to <strong>{{ property.listingBrokerName }}</strong>.
+            }
+          </p>
+
+          @if (assignError()) {
+            <div class="alert alert-danger py-2">{{ assignError() }}</div>
+          }
+
+          @if (activeBrokers().length === 0) {
+            <div class="alert alert-warning py-2">
+              No active brokers available — reactivate or add one from the Brokers page first.
+            </div>
+          } @else {
+            <label class="form-label">Broker</label>
+            <select class="form-select" [value]="selectedBrokerId()" (change)="onBrokerSelected($event)">
+              <option value="" disabled>Select a broker…</option>
+              @for (broker of activeBrokers(); track broker.id) {
+                <option [value]="broker.id">
+                  {{ broker.fullName || broker.licenseNumber }}
+                </option>
+              }
+            </select>
+          }
+        </div>
+        <div class="modal-footer">
+          <button type="button" class="btn btn-outline-secondary" (click)="propertyToAssign.set(null)">Cancel</button>
+          <button type="button" class="btn btn-dark"
+                  (click)="confirmAssign()"
+                  [disabled]="assigning() || !selectedBrokerId() || activeBrokers().length === 0">
+            @if (assigning()) {
+              <span class="spinner-border spinner-border-sm me-2"></span>
+            }
+            Assign
+          </button>
+        </div>
+      </div>
+    </div>
+  </div>
+  <div class="modal-backdrop show"></div>
 }

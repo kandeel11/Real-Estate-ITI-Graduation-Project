@@ -6,8 +6,12 @@
 
 import { Component, inject, signal, computed, OnInit } from '@angular/core';
 import { DecimalPipe } from '@angular/common';
+import { toSignal } from '@angular/core/rxjs-interop';
 import { PropertyService } from '../../../../features/properties/services/property.service';
 import { Property } from '../../../../features/properties/models/property.model';
+import { CompanyService } from '../../services/company.service';
+import { CompanySubscriptionService } from '../../services/company-subscription.service';
+import { Broker } from '../../../../shared/models/company.model';
 
 type StatusFilter = 'all' | 'Draft' | 'PendingReview' | 'Active' | 'Rented';
 type CountKey = 'all' | 'draft' | 'pending' | 'active' | 'rented';
@@ -30,10 +34,28 @@ const STATUS_BADGES: Record<string, string> = {
 })
 export class PropertiesComponent implements OnInit {
   private propertySvc = inject(PropertyService);
+  private companySvc = inject(CompanyService);
+  private subSvc = inject(CompanySubscriptionService);
 
   properties = signal<Property[]>([]);
   loading = signal(true);
   error = signal<string | null>(null);
+
+  private subscription = toSignal(this.subSvc.getActive());
+
+  /** Plan's property limit — '∞' for unlimited, '…' while loading. */
+  maxPropertiesLabel = computed(() => {
+    const max = this.subscription()?.maxProperties;
+    if (max == null) return '…';
+    return max >= 999999 ? '∞' : String(max);
+  });
+
+  // ── Broker assignment ───────────────────────────────────────────
+  activeBrokers = signal<Broker[]>([]);
+  propertyToAssign = signal<Property | null>(null);
+  selectedBrokerId = signal<string>('');
+  assigning = signal(false);
+  assignError = signal<string | null>(null);
 
   statusFilter = signal<StatusFilter>('all');
   search = signal('');
@@ -65,6 +87,10 @@ export class PropertiesComponent implements OnInit {
 
   ngOnInit(): void {
     this.load();
+    this.companySvc.getBrokers().subscribe({
+      next: (brokers) => this.activeBrokers.set(brokers.filter((b) => b.isActive)),
+      error: () => this.activeBrokers.set([]),
+    });
   }
 
   load(): void {
@@ -92,5 +118,36 @@ export class PropertiesComponent implements OnInit {
 
   onSearch(event: Event): void {
     this.search.set((event.target as HTMLInputElement).value);
+  }
+
+  openAssign(property: Property): void {
+    this.assignError.set(null);
+    this.selectedBrokerId.set(property.listingBrokerId ?? '');
+    this.propertyToAssign.set(property);
+  }
+
+  onBrokerSelected(event: Event): void {
+    this.selectedBrokerId.set((event.target as HTMLSelectElement).value);
+  }
+
+  confirmAssign(): void {
+    const property = this.propertyToAssign();
+    const brokerId = this.selectedBrokerId();
+    if (!property || !brokerId || this.assigning()) return;
+
+    this.assigning.set(true);
+    this.assignError.set(null);
+
+    this.propertySvc.assignBroker(property.id, brokerId).subscribe({
+      next: () => {
+        this.assigning.set(false);
+        this.propertyToAssign.set(null);
+        this.load(); // refresh so listingBrokerName re-enriches
+      },
+      error: (err) => {
+        this.assigning.set(false);
+        this.assignError.set(err?.error?.error ?? 'Failed to assign the broker.');
+      },
+    });
   }
 }
