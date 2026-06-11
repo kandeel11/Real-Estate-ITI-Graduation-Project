@@ -26,6 +26,9 @@ public class BrokerRepository : IBrokerRepository
     public async Task AddAsync(Broker broker, CancellationToken ct = default) =>
         await _context.Brokers.AddAsync(broker, ct);
 
+    public void Remove(Broker broker) =>
+        _context.Brokers.Remove(broker);
+
     public async Task SaveChangesAsync(CancellationToken ct = default) =>
         await _context.SaveChangesAsync(ct);
 }

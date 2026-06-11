@@ -70,6 +70,14 @@ public class SubscriptionLimitChecker : ISubscriptionLimitChecker
         await _usageRepo.UpdateAsync(usage, ct);
     }
 
+    public async Task SyncBrokerUsageAsync(Guid companyId, int activeBrokerCount, CancellationToken ct = default)
+    {
+        var (_, _, usage) = await ResolveAsync(Guid.Empty, companyId, ct);
+        if (usage is null) return;
+        usage.SetBrokers(activeBrokerCount);
+        await _usageRepo.UpdateAsync(usage, ct);
+    }
+
     public async Task<(bool Allowed, string Reason)> CheckAiRequestLimitAsync(Guid userId, Guid? companyId, CancellationToken ct = default)
     {
         var (subscription, plan, usage) = await ResolveAsync(userId, companyId, ct);
