@@ -251,6 +251,18 @@
   line-height: 1;
 }
 
+.tab-logout {
+  background: none;
+  border: none;
+  cursor: pointer;
+  color: var(--color-on-surface-variant);
+}
+
+.tab-logout:hover,
+.tab-logout:active {
+  color: var(--color-error);
+}
+
 /* ── RESPONSIVE ────────────────────────────────── */
 @media (max-width: 768px) {
   .sidebar {
