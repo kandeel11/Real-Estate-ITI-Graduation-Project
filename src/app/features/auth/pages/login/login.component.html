@@ -92,6 +92,14 @@
           }
         </div>
 
+        <!-- Server error -->
+        @if (serverError) {
+        <div class="lf__server-error" role="alert">
+          <i class="fa-solid fa-circle-exclamation"></i>
+          {{ serverError }}
+        </div>
+        }
+
         <!-- Submit -->
         <button type="submit" class="btn btn-primary login-card__submit" [disabled]="loading" inView
           [inViewDelay]="340">
