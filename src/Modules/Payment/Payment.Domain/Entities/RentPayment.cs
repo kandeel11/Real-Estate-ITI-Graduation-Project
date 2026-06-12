@@ -79,4 +79,12 @@ public class RentPayment
     }
     public bool IsOverdue(DateOnly today) =>
         Status == PaymentStatus.Pending && DueDate < today;
+    public void MarkAsRefunded(string reason)
+    {
+        Status = PaymentStatus.Refunded;
+        Notes = string.IsNullOrWhiteSpace(Notes)
+            ? $"Refunded: {reason}"
+            : $"{Notes} | Refunded: {reason}";
+        UpdatedAt = DateTime.UtcNow;
+    }
 }

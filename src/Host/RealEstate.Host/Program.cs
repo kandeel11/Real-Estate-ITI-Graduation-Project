@@ -8,18 +8,19 @@ using Identity.Infrastructure;
 using Identity.Infrastructure.Persistence;
 using Identity.Infrastructure.Seed;
 using Identity.Infrastructure.Services;
+using Maintenance.Infrastructure;
 using Microsoft.AspNetCore.Authentication.JwtBearer;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.IdentityModel.Tokens;
+using Payment.Infrastructure;
+using Payment.Infrastructure.Persistence;
 using Property.Infrastructure;
-using Maintenance.Infrastructure;
 using RealEstate.Host.Services;
 using Subscription.Infrastructure;
 using Subscription.Infrastructure.Persistence;
 using Subscription.Infrastructure.Seed;
 using System.IdentityModel.Tokens.Jwt;
 using System.Text;
-using Payment.Infrastructure;
 
 namespace RealEstate.Host;
 
@@ -180,7 +181,19 @@ public class Program
             await identityDb.Database.MigrateAsync();
             var hasher = scope.ServiceProvider.GetRequiredService<Identity.Application.Interfaces.IPasswordHasher>();
             await AdminSeed.SeedAsync(identityDb, hasher);
+
+            var paymentDb = scope.ServiceProvider.GetRequiredService<PaymentDbContext>();
+            await paymentDb.Database.MigrateAsync();
         }
+        //stripe
+        app.Use(async (context, next) =>
+        {
+            if (context.Request.Path.StartsWithSegments("/api/stripe/webhook"))
+            {
+                context.Request.EnableBuffering(); 
+            }
+            await next();
+        });
 
         if (app.Environment.IsDevelopment())
         {
