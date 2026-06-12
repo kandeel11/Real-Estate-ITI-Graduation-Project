@@ -13,6 +13,8 @@ using Maintenance.Infrastructure;
 using Microsoft.AspNetCore.Authentication.JwtBearer;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.IdentityModel.Tokens;
+using Payment.Infrastructure;
+using Payment.Infrastructure.Persistence;
 using Property.Infrastructure;
 using Property.Infrastructure.Persistence.Contexts;
 using RealEstate.Host.Services;
@@ -196,7 +198,19 @@ public class Program
             await identityDb.Database.MigrateAsync();
             var hasher = scope.ServiceProvider.GetRequiredService<Identity.Application.Interfaces.IPasswordHasher>();
             await AdminSeed.SeedAsync(identityDb, hasher);
+
+            var paymentDb = scope.ServiceProvider.GetRequiredService<PaymentDbContext>();
+            await paymentDb.Database.MigrateAsync();
         }
+        //stripe
+        app.Use(async (context, next) =>
+        {
+            if (context.Request.Path.StartsWithSegments("/api/stripe/webhook"))
+            {
+                context.Request.EnableBuffering(); 
+            }
+            await next();
+        });
 
         if (app.Environment.IsDevelopment())
         {

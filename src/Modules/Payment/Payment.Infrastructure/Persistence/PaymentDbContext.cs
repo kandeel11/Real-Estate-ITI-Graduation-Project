@@ -1,10 +1,11 @@
-﻿using Microsoft.EntityFrameworkCore;
+using Microsoft.EntityFrameworkCore;
 using Payment.Application.Interfaces;
 using Payment.Domain.Entities;
 
 namespace Payment.Infrastructure.Persistence;
 
-public sealed class PaymentDbContext : DbContext, IPaymentDbContext{
+public sealed class PaymentDbContext : DbContext, IPaymentDbContext
+{
     public PaymentDbContext(DbContextOptions<PaymentDbContext> options) : base(options)
     {
     }
