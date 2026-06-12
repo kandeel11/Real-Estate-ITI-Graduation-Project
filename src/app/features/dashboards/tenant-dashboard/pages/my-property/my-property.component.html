@@ -123,6 +123,11 @@
           <a class="btn btn-outline-primary btn-sm" routerLink="/dashboard/maintenance">
             <i class="fa-solid fa-screwdriver-wrench me-1"></i>New Ticket
           </a>
+          @if (prop.isActive) {
+            <button class="btn btn-outline-warning btn-sm" (click)="openRatingModal(prop)">
+              <i class="fa-regular fa-star me-1"></i>Write a Review
+            </button>
+          }
         </div>
 
         <!-- Photo Gallery -->
@@ -150,3 +155,12 @@
     </div>
   }
 </div>
+
+<!-- ── Rating Modal ──────────────────────────────────── -->
+<app-rating-modal
+  [show]="showRatingModal()"
+  mode="create"
+  [propertyId]="ratingPropertyId()"
+  [leaseId]="ratingLeaseId()"
+  (closed)="showRatingModal.set(false)"
+  (saved)="showRatingModal.set(false)" />

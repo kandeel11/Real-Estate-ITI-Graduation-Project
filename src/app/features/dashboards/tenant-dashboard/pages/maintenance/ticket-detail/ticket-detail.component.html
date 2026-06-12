@@ -274,8 +274,61 @@
       </div>
     }
 
+    <!-- ══ 9. RATE MAINTENANCE COMPANY ══════════════════════════ -->
+    @if (t.status === 'Completed' && t.vendorAssignment?.vendorId) {
+      <div class="detail-card mb-4">
+        <h2 class="section-title">
+          <i class="fa-regular fa-star me-2"></i>Rate Maintenance Company
+        </h2>
+
+        @if (vendorRatingLoading()) {
+          <div class="d-flex align-items-center gap-2 py-2">
+            <div class="spinner-border spinner-border-sm text-primary" role="status"></div>
+            <span class="text-muted small">Checking your review…</span>
+          </div>
+
+        } @else if (vendorRating(); as vr) {
+          <div class="vendor-rating-existing">
+            <div class="d-flex align-items-center gap-3 mb-2 flex-wrap">
+              <app-star-rating [value]="vr.ratingValue" size="md" />
+              <span class="vendor-rating-score">{{ vr.ratingValue }}/5</span>
+              <span class="vendor-rating-badge vendor-badge-{{ vr.moderationStatus.toLowerCase() }}">
+                <i class="fa-solid {{ vr.moderationStatus === 'Pending' ? 'fa-clock' : vr.moderationStatus === 'Approved' ? 'fa-check' : 'fa-xmark' }} me-1"></i>
+                {{ vr.moderationStatus === 'Pending' ? 'Under Review' : vr.moderationStatus }}
+              </span>
+            </div>
+            @if (vr.reviewText) {
+              <p class="vendor-review-text">{{ vr.reviewText }}</p>
+            }
+            @if (isVendorRatingEditable()) {
+              <button class="btn btn-sm btn-outline-primary" (click)="openVendorRatingModal('edit')">
+                <i class="fa-regular fa-pen-to-square me-1"></i>Edit Review
+              </button>
+            }
+          </div>
+
+        } @else {
+          <p class="text-muted small mb-3">
+            The maintenance work is done! Share your experience to help others choose a reliable service.
+          </p>
+          <button class="btn btn-outline-primary" (click)="openVendorRatingModal('create')">
+            <i class="fa-regular fa-star me-2"></i>Rate Maintenance Company
+          </button>
+        }
+      </div>
+    }
+
   }<!-- /ticket -->
 </div>
+
+<!-- ── Vendor Rating Modal ──────────────────────────────── -->
+<app-rating-modal
+  [show]="showVendorRatingModal()"
+  [mode]="vendorRatingModalMode()"
+  [editRating]="vendorRating()"
+  [maintenanceCompanyId]="ticket()?.vendorAssignment?.vendorId ?? null"
+  (closed)="showVendorRatingModal.set(false)"
+  (saved)="onVendorRatingSaved($event)" />
 
 <!-- ── DECISION CONFIRM MODAL ─────────────────────────────────── -->
 <app-confirm-modal

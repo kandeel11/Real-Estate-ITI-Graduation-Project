@@ -1,0 +1,14 @@
+<span class="star-row" [class]="'star-row--' + size" (mouseleave)="leave()">
+  @for (s of stars; track s) {
+    <button
+      type="button"
+      class="star-btn"
+      [class.star-btn--interactive]="interactive"
+      (mouseenter)="hover(s)"
+      (click)="select(s)"
+      [attr.disabled]="!interactive ? true : null"
+      [attr.aria-label]="'Rate ' + s + ' out of 5'">
+      <i [class]="starIcon(s)"></i>
+    </button>
+  }
+</span>

@@ -406,6 +406,35 @@
   flex-wrap: wrap;
 }
 
+/* ── Vendor Rating Section ─────────────────────────── */
+.vendor-rating-existing { display: flex; flex-direction: column; gap: 8px; }
+
+.vendor-rating-score {
+  font-size: 14px;
+  font-weight: 700;
+  color: var(--color-on-surface);
+}
+
+.vendor-rating-badge {
+  display: inline-flex;
+  align-items: center;
+  padding: 3px 10px;
+  border-radius: var(--radius-full);
+  font-size: 12px;
+  font-weight: 600;
+}
+
+.vendor-badge-pending  { background: #fef3c7; color: #b45309; }
+.vendor-badge-approved { background: #dcfce7; color: #16a34a; }
+.vendor-badge-rejected { background: var(--color-error-container); color: var(--color-on-error-container); }
+
+.vendor-review-text {
+  font-size: 14px;
+  color: var(--color-on-surface);
+  line-height: 1.6;
+  margin: 0;
+}
+
 /* ── Responsive ────────────────────────────────────── */
 @media (max-width: 576px) {
   .detail-page { padding: 16px; }

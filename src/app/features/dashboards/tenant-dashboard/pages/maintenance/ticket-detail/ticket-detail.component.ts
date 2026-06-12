@@ -9,8 +9,11 @@ import {
   TicketPriority,
   ResolutionMethod,
 } from '../../../services/maintenance.service';
+import { RatingService, RatingResponse } from '../../../services/rating.service';
 import { ToastService } from '../../../../../../shared/components/toast/toast.service';
 import { ConfirmModalComponent } from '../../../../../../shared/components/modal/confirm-modal.component';
+import { StarRatingComponent } from '../../../../../../shared/components/star-rating/star-rating.component';
+import { RatingModalComponent } from '../../../../../../shared/components/rating-modal/rating-modal.component';
 
 interface TimelineStep {
   key: string;
@@ -47,12 +50,13 @@ const TIMELINE_STEPS: TimelineStep[] = [
 @Component({
   selector: 'app-ticket-detail',
   standalone: true,
-  imports: [DatePipe, FormsModule, RouterLink, ConfirmModalComponent],
+  imports: [DatePipe, FormsModule, RouterLink, ConfirmModalComponent, StarRatingComponent, RatingModalComponent],
   templateUrl: './ticket-detail.component.html',
   styleUrl: './ticket-detail.component.css',
 })
 export class TicketDetailComponent implements OnInit {
   private readonly maintenanceService = inject(MaintenanceService);
+  private readonly ratingService = inject(RatingService);
   private readonly route = inject(ActivatedRoute);
   private readonly router = inject(Router);
   private readonly toast = inject(ToastService);
@@ -83,6 +87,12 @@ export class TicketDetailComponent implements OnInit {
   protected showPayModal = signal(false);
   protected transactionId = '';
   protected payLoading = signal(false);
+
+  // Vendor rating
+  protected vendorRating = signal<RatingResponse | null>(null);
+  protected vendorRatingLoading = signal(false);
+  protected showVendorRatingModal = signal(false);
+  protected vendorRatingModalMode = signal<'create' | 'edit'>('create');
 
   protected readonly timelineSteps = TIMELINE_STEPS;
 
@@ -137,9 +147,41 @@ export class TicketDetailComponent implements OnInit {
     this.maintenanceService.getTicketDetail(id)
       .pipe(finalize(() => this.loading.set(false)))
       .subscribe({
-        next: t => this.ticket.set(t),
+        next: t => {
+          this.ticket.set(t);
+          if (t.status === 'Completed' && t.vendorAssignment?.vendorId) {
+            this.loadVendorRating(t.vendorAssignment.vendorId);
+          }
+        },
         error: () => this.error.set('Failed to load ticket details.'),
       });
+  }
+
+  private loadVendorRating(vendorId: string): void {
+    this.vendorRatingLoading.set(true);
+    this.ratingService.getMyRatings()
+      .pipe(finalize(() => this.vendorRatingLoading.set(false)))
+      .subscribe({
+        next: ratings => {
+          const match = ratings.find(r => r.maintenanceCompanyId === vendorId) ?? null;
+          this.vendorRating.set(match);
+        },
+      });
+  }
+
+  protected isVendorRatingEditable(): boolean {
+    const r = this.vendorRating();
+    if (!r || r.moderationStatus !== 'Pending') return false;
+    return Date.now() - new Date(r.createdAt).getTime() < 86_400_000;
+  }
+
+  protected openVendorRatingModal(mode: 'create' | 'edit'): void {
+    this.vendorRatingModalMode.set(mode);
+    this.showVendorRatingModal.set(true);
+  }
+
+  protected onVendorRatingSaved(r: RatingResponse): void {
+    this.vendorRating.set(r);
   }
 
   refresh(): void {

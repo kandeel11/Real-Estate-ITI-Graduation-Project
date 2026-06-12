@@ -1,97 +1,133 @@
 import { Component, OnInit, inject, signal } from '@angular/core';
 import { DatePipe } from '@angular/common';
-import { ReactiveFormsModule, FormBuilder, Validators } from '@angular/forms';
 import { finalize } from 'rxjs';
-import { CreateRatingDto, Rating, RatingService, RatingTargetType } from '../../services/rating.service';
+import {
+  RatingService,
+  RatingResponse,
+  ModerationStatus,
+} from '../../services/rating.service';
+import { LeaseService } from '../../services/lease.service';
+import { ToastService } from '../../../../../shared/components/toast/toast.service';
+import { StarRatingComponent } from '../../../../../shared/components/star-rating/star-rating.component';
+import { RatingModalComponent } from '../../../../../shared/components/rating-modal/rating-modal.component';
 
 @Component({
   selector: 'app-ratings',
   standalone: true,
-  imports: [DatePipe, ReactiveFormsModule],
+  imports: [DatePipe, StarRatingComponent, RatingModalComponent],
   templateUrl: './ratings.component.html',
   styleUrl: './ratings.component.css',
 })
 export class RatingsComponent implements OnInit {
   private readonly ratingService = inject(RatingService);
-  private readonly fb = inject(FormBuilder);
+  private readonly leaseService = inject(LeaseService);
+  private readonly toast = inject(ToastService);
 
-  protected activeTab = signal<'reviews' | 'write'>('reviews');
   protected loading = signal(true);
   protected error = signal<string | null>(null);
-  protected ratings = signal<Rating[]>([]);
-  protected submitLoading = signal(false);
-  protected submitSuccess = signal(false);
+  protected ratings = signal<RatingResponse[]>([]);
   protected deleteLoadingId = signal<string | null>(null);
 
-  protected hoveredStar = signal(0);
-  protected selectedStar = signal(0);
-
-  readonly writeForm = this.fb.group({
-    targetType: ['Property' as RatingTargetType, Validators.required],
-    reviewText: ['', [Validators.required, Validators.minLength(10)]],
-  });
-
-  readonly starValues = [1, 2, 3, 4, 5];
+  protected showModal = signal(false);
+  protected modalMode = signal<'create' | 'edit'>('create');
+  protected editTarget = signal<RatingResponse | null>(null);
+  protected leaseId = signal<string | null>(null);
 
   ngOnInit(): void {
     this.loadRatings();
+    this.leaseService.getActiveLease().subscribe({
+      next: lease => this.leaseId.set(lease.id),
+    });
   }
 
   loadRatings(): void {
     this.loading.set(true);
-    this.ratingService.getMyRatings().pipe(finalize(() => this.loading.set(false))).subscribe({
-      next: data => this.ratings.set(data),
-      error: () => this.error.set('Failed to load ratings. Please try again.'),
-    });
+    this.error.set(null);
+    this.ratingService.getMyRatings()
+      .pipe(finalize(() => this.loading.set(false)))
+      .subscribe({
+        next: data => this.ratings.set(data),
+        error: () => this.error.set('Failed to load your reviews. Please try again.'),
+      });
   }
 
-  setRating(star: number): void {
-    this.selectedStar.set(star);
+  protected isEditable(r: RatingResponse): boolean {
+    if (r.moderationStatus !== 'Pending') return false;
+    return Date.now() - new Date(r.createdAt).getTime() < 86_400_000;
   }
 
-  submitReview(): void {
-    if (this.writeForm.invalid || this.selectedStar() === 0) return;
-    this.submitLoading.set(true);
-    const val = this.writeForm.getRawValue();
+  protected isDeletable(r: RatingResponse): boolean {
+    return r.moderationStatus === 'Pending';
+  }
 
-    const dto: CreateRatingDto = {
-      rating:     this.selectedStar(),
-      reviewText: val.reviewText!,
-      targetType: val.targetType as RatingTargetType,
-      propertyId: val.targetType === 'Property' ? 'prop-001' : undefined,
-      maintenanceCompanyId: val.targetType === 'MaintenanceCompany' ? 'mc-001' : undefined,
+  protected deleteRating(r: RatingResponse): void {
+    this.deleteLoadingId.set(r.id);
+    this.ratingService.deleteRating(r.id)
+      .pipe(finalize(() => this.deleteLoadingId.set(null)))
+      .subscribe({
+        next: () => {
+          this.ratings.update(cur => cur.filter(x => x.id !== r.id));
+          this.toast.success('Review deleted successfully.');
+        },
+        error: () => this.toast.error('Failed to delete review. Please try again.'),
+      });
+  }
+
+  protected openCreate(): void {
+    this.modalMode.set('create');
+    this.editTarget.set(null);
+    this.showModal.set(true);
+  }
+
+  protected openEdit(r: RatingResponse): void {
+    this.modalMode.set('edit');
+    this.editTarget.set(r);
+    this.showModal.set(true);
+  }
+
+  protected onSaved(r: RatingResponse): void {
+    if (this.modalMode() === 'create') {
+      this.ratings.update(cur => [r, ...cur]);
+    } else {
+      this.ratings.update(cur => cur.map(x => x.id === r.id ? r : x));
+    }
+  }
+
+  protected statusBadgeClass(s: ModerationStatus): string {
+    const map: Record<ModerationStatus, string> = {
+      Pending: 'badge-pending',
+      Approved: 'badge-approved',
+      Rejected: 'badge-rejected',
     };
-
-    this.ratingService.createRating(dto).pipe(finalize(() => this.submitLoading.set(false))).subscribe({
-      next: () => {
-        this.submitSuccess.set(true);
-        this.writeForm.reset({ targetType: 'Property' });
-        this.selectedStar.set(0);
-        this.loadRatings();
-      },
-      error: () => this.error.set('Failed to submit review. Please try again.'),
-    });
-  }
-
-  deleteRating(id: string): void {
-    this.deleteLoadingId.set(id);
-    this.ratingService.deleteRating(id).pipe(finalize(() => this.deleteLoadingId.set(null))).subscribe({
-      next: () => this.ratings.update(cur => cur.filter(r => r.id !== id)),
-    });
-  }
-
-  isEditable(r: Rating): boolean {
-    if (r.status !== 'Pending') return false;
-    const ageMs = Date.now() - new Date(r.createdAt).getTime();
-    return ageMs < 24 * 60 * 60 * 1000;
-  }
-
-  statusClass(s: string): string {
-    const map: Record<string, string> = { Pending: 'status-pending', Approved: 'status-approved', Rejected: 'status-rejected' };
     return map[s] ?? '';
   }
 
-  stars(n: number): number[] {
-    return Array.from({ length: 5 }, (_, i) => i + 1);
+  protected statusIcon(s: ModerationStatus): string {
+    const map: Record<ModerationStatus, string> = {
+      Pending: 'fa-clock',
+      Approved: 'fa-check',
+      Rejected: 'fa-xmark',
+    };
+    return map[s] ?? '';
   }
+
+  protected statusLabel(s: ModerationStatus): string {
+    return s === 'Pending' ? 'Under Review' : s;
+  }
+
+  protected targetLabel(r: RatingResponse): string {
+    if (r.propertyId) return 'Property';
+    if (r.maintenanceCompanyId) return 'Maintenance Company';
+    return 'Unknown';
+  }
+
+  protected targetIcon(r: RatingResponse): string {
+    return r.propertyId ? 'fa-building' : 'fa-wrench';
+  }
+
+  protected targetId(r: RatingResponse): string {
+    return r.propertyId ?? r.maintenanceCompanyId ?? '—';
+  }
+
+  readonly skeletonRows = [1, 2, 3];
 }

@@ -3,6 +3,7 @@ import { RouterLink } from '@angular/router';
 import { DatePipe, CurrencyPipe } from '@angular/common';
 import { finalize } from 'rxjs';
 import { LeaseService, RentedPropertyItem, ApiPropertyMedia, ApiAmenity } from '../../services/lease.service';
+import { RatingModalComponent } from '../../../../../shared/components/rating-modal/rating-modal.component';
 
 interface PropertyView {
   id: string;
@@ -29,7 +30,7 @@ interface PropertyView {
 @Component({
   selector: 'app-my-property',
   standalone: true,
-  imports: [RouterLink, DatePipe, CurrencyPipe],
+  imports: [RouterLink, DatePipe, CurrencyPipe, RatingModalComponent],
   templateUrl: './my-property.component.html',
   styleUrl: './my-property.component.css',
 })
@@ -40,6 +41,10 @@ export class MyPropertyComponent implements OnInit {
   protected error = signal<string | null>(null);
   protected properties = signal<PropertyView[]>([]);
   protected lightboxUrl = signal<string | null>(null);
+
+  protected showRatingModal = signal(false);
+  protected ratingPropertyId = signal<string | null>(null);
+  protected ratingLeaseId = signal<string | null>(null);
 
   ngOnInit(): void {
     this.loadData();
@@ -91,5 +96,11 @@ export class MyPropertyComponent implements OnInit {
 
   closeLightbox(): void {
     this.lightboxUrl.set(null);
+  }
+
+  openRatingModal(prop: PropertyView): void {
+    this.ratingPropertyId.set(prop.id);
+    this.ratingLeaseId.set(prop.leaseId);
+    this.showRatingModal.set(true);
   }
 }
