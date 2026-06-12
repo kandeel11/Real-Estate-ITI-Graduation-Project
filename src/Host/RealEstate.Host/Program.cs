@@ -193,7 +193,7 @@ public class Program
             await aiDb.Database.MigrateAsync();
             await subscriptionDb.Database.MigrateAsync();
             await SubscriptionPlanSeed.SeedAsync(subscriptionDb);
-            await Property.Infrastructure.Persistence.Seeding.AmenitySeed.SeedAsync(PropertyDb);
+            await Property.Infrastructure.Persistence.Seeding.AmenitySeed.SeedAsync(propertyDb);
 
             var identityDb = scope.ServiceProvider.GetRequiredService<IdentityDbContext>();
             await identityDb.Database.MigrateAsync();
