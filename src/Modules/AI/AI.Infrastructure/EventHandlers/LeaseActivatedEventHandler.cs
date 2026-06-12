@@ -64,7 +64,7 @@ public sealed class LeaseActivatedEventHandler
             await EnsureCollectionAsync(cancellationToken);
 
             var chunks = ChunkPages(extraction.Pages, notification.LeaseId);
-            await EmbedAndUpsertAsync(chunks, cancellationToken);
+            await EmbedAndUpsertAsync(chunks, notification.LeaseId, cancellationToken);
 
             _logger.LogInformation(
                 "Lease {LeaseId} embedded into Qdrant | {Count} chunks",
@@ -109,6 +109,7 @@ public sealed class LeaseActivatedEventHandler
 
     private async Task EmbedAndUpsertAsync(
         List<(Guid ChunkId, string Text, int Page, int Index)> chunks,
+        Guid leaseId,
         CancellationToken cancellationToken)
     {
         foreach (var batch in chunks.Chunk(100))
@@ -124,7 +125,7 @@ public sealed class LeaseActivatedEventHandler
                     Vectors = new Vectors { Vector = new Vector { Data = { vector.ToArray() } } },
                     Payload =
                     {
-                        ["contractId"] = chunk.ChunkId.ToString(),
+                        ["contractId"] = leaseId.ToString(),
                         ["pageNumber"] = chunk.Page,
                         ["chunkIndex"] = chunk.Index,
                         ["text"]       = chunk.Text

@@ -24,18 +24,11 @@ public class TenantDashboardController(
         var tenantId = currentUser.UserId
             ?? throw new UnauthorizedAccessException();
 
-        // Parallel queries for performance
-        var ticketStatsTask = sender.Send(new GetTicketStatisticsQuery(tenantId), ct);
-        var activeLeaseTask = sender.Send(new GetActiveLeaseQuery(tenantId), ct);
-        var unreadCountTask = sender.Send(new GetUnreadNotificationCountQuery(tenantId), ct);
-        var inquiriesTask = sender.Send(new GetMyInquiriesQuery(tenantId), ct);
-
-        await Task.WhenAll(ticketStatsTask, activeLeaseTask, unreadCountTask, inquiriesTask);
-
-        var stats = await ticketStatsTask;
-        var lease = await activeLeaseTask;
-        var unread = await unreadCountTask;
-        var inquiries = await inquiriesTask;
+        // Sequential — DbContext is not thread-safe, Task.WhenAll causes concurrency errors
+        var stats = await sender.Send(new GetTicketStatisticsQuery(tenantId), ct);
+        var lease = await sender.Send(new GetActiveLeaseQuery(tenantId), ct);
+        var unread = await sender.Send(new GetUnreadNotificationCountQuery(tenantId), ct);
+        var inquiries = await sender.Send(new GetMyInquiriesQuery(tenantId), ct);
 
         object? leaseCard = null;
         if (lease is not null)

@@ -7,6 +7,7 @@ using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using Property.Application.Features.Queries.GetPropertyById;
 using RealEstate.Host.Services;
+using Identity.Application.Queries.GetCurrentUser;
 
 namespace RealEstate.Host.Controllers;
 
@@ -20,10 +21,28 @@ public class TenantController(
 {
     private Guid UserId => currentUser.UserId ?? throw new UnauthorizedAccessException();
 
+    [HttpGet("profile")]
+    public async Task<IActionResult> GetProfile(CancellationToken ct)
+    {
+        var user = await sender.Send(new GetCurrentUserQuery(), ct);
+        if (user is null) return NotFound();
+
+        return Ok(new
+        {
+            id = user.Id,
+            fullName = user.FullName,
+            email = user.Email,
+            phone = user.Phone,
+            role = user.Role,
+            isEmailVerified = user.IsEmailVerified,
+            isActive = user.IsActive
+        });
+    }
+
     [HttpPut("profile")]
     public async Task<IActionResult> UpdateProfile([FromBody] UpdateProfileRequest req, CancellationToken ct)
     {
-        await sender.Send(new UpdateProfileCommand(UserId, req.FullName, req.Phone, req.ProfileImageUrl), ct);
+        await sender.Send(new UpdateProfileCommand(UserId, req.FullName, req.Phone, req.Email), ct);
         return NoContent();
     }
 
@@ -90,5 +109,5 @@ public class TenantController(
     }
 }
 
-public record UpdateProfileRequest(string FullName, string Phone, string? ProfileImageUrl);
+public record UpdateProfileRequest(string FullName, string Phone, string? Email);
 public record ChangePasswordRequest(string CurrentPassword, string NewPassword, string ConfirmNewPassword);
