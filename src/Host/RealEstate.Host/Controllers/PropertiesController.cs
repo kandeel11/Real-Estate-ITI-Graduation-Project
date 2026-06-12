@@ -422,8 +422,16 @@ public class PropertiesController : ControllerBase
         var userId = _currentUser.UserId;
         if (userId is null) return Unauthorized(new { error = "User not authenticated." });
 
-        await _mediator.Send(new PropertyAiDescriptionRequestCommand(id, userId.Value), ct);
-        return Accepted(new { message = "AI description is being generated. It will appear shortly.", propertyId = id });
+        try
+        {
+            await _mediator.Send(new PropertyAiDescriptionRequestCommand(id, userId.Value), ct);
+            return Accepted(new { message = "AI description is being generated. It will appear shortly.", propertyId = id });
+        }
+        catch (InvalidOperationException ex)
+        {
+            // Plan AI quota reached
+            return Conflict(new { error = ex.Message });
+        }
     }
 
     [HttpPut("{id:guid}/ai-description")]
@@ -459,18 +467,26 @@ public class PropertiesController : ControllerBase
         if (request.File is null || request.File.Length == 0)
             return BadRequest("No file provided.");
 
-        await using var stream = request.File.OpenReadStream();
-        var mediaId = await _mediator.Send(new AddPropertyMediaCommand(
-            id,
-            userId.Value,
-            stream,
-            request.File.FileName,
-            request.File.ContentType,
-            request.MediaType,
-            (int)(request.File.Length / 1024),
-            request.SortOrder), ct);
+        try
+        {
+            await using var stream = request.File.OpenReadStream();
+            var mediaId = await _mediator.Send(new AddPropertyMediaCommand(
+                id,
+                userId.Value,
+                stream,
+                request.File.FileName,
+                request.File.ContentType,
+                request.MediaType,
+                (int)(request.File.Length / 1024),
+                request.SortOrder), ct);
 
-        return Ok(new { mediaId });
+            return Ok(new { mediaId });
+        }
+        catch (InvalidOperationException ex)
+        {
+            // Plan storage limit reached
+            return Conflict(new { error = ex.Message });
+        }
     }
 
     [HttpPut("{id:guid}/media/{mediaId:guid}/primary")]

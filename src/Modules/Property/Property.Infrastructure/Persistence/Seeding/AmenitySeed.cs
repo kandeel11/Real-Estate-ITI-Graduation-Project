@@ -25,6 +25,12 @@ public static class AmenitySeed
             Amenity.Create("Intercom", "اتصال داخلي", "Building"),
             Amenity.Create("Kids Play Area", "منطقة ألعاب للأطفال", "Outdoor"),
             Amenity.Create("Pet Friendly", "مناسب للحيوانات الأليفة", "Lifestyle"),
+            Amenity.Create("High-Speed Internet", "إنترنت فائق السرعة", "Utilities"),
+            Amenity.Create("Natural Gas", "غاز طبيعي", "Utilities"),
+            Amenity.Create("Water Heater", "سخان مياه", "Utilities"),
+            Amenity.Create("Storage Room", "غرفة تخزين", "Building"),
+            Amenity.Create("Maid's Room", "غرفة خادمة", "Building"),
+            Amenity.Create("Sea / Nile View", "إطلالة على البحر / النيل", "Outdoor"),
         };
 
         await context.Amenities.AddRangeAsync(amenities);

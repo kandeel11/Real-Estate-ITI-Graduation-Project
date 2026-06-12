@@ -56,6 +56,12 @@ public class Company : BaseEntity
 
     public void Verify() => IsVerified = true;
 
+    public void SetLogo(string? logoUrl)
+    {
+        LogoUrl = logoUrl;
+        MarkAsUpdated();
+    }
+
     public void Deactivate() => IsActive = false;
 
     public void UpdateRating(decimal avg, int total)

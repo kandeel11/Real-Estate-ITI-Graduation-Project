@@ -3,6 +3,7 @@ using Document.Application.Interfaces;
 using Document.Domain.Enums;
 using Document.Domain.Events;
 using MediatR;
+using RealEstate.Shared.Kernel.Shared.IntegrationEvents;
 
 namespace Document.Application.Commands.Inquiry;
 
@@ -91,6 +92,12 @@ public class AcceptInquiryCommandHandler : IRequestHandler<AcceptInquiryCommand,
             OwnerId = inquiry.OwnerId,
             AcceptedById = cmd.AcceptedById
         }, ct);
+
+        // Feed the broker's AvgResponseTimeMinutes (Identity listens via Shared.Kernel)
+        var responseMinutes = (int)Math.Max(
+            Math.Round((inquiry.AcceptedAt!.Value - inquiry.CreatedAt).TotalMinutes), 0);
+        await _mediator.Publish(
+            new BrokerInquiryAcceptedEvent(cmd.AcceptedById, responseMinutes), ct);
 
         return CreateInquiryCommandHandler.MapToResponse(inquiry);
     }

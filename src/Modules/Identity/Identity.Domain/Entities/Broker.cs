@@ -44,4 +44,23 @@ public class Broker : BaseEntity
         TotalRatings = total;
         MarkAsUpdated();
     }
+
+    public void RecordClosedDeal()
+    {
+        ClosedDealsCount++;
+        MarkAsUpdated();
+    }
+
+    /// <summary>
+    /// Folds a new response time into the average. Without a dedicated
+    /// response counter we weight by closed conversations approximated via
+    /// a simple running blend — good enough for dashboard trends.
+    /// </summary>
+    public void RecordResponseTime(int minutes)
+    {
+        AvgResponseTimeMinutes = AvgResponseTimeMinutes == 0
+            ? minutes
+            : (AvgResponseTimeMinutes + minutes) / 2;
+        MarkAsUpdated();
+    }
 }

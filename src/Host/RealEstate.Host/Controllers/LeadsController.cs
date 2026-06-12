@@ -1,16 +1,25 @@
 using Document.Application.Commands.Lead.UpdateLeadStatus;
 using Document.Application.Queries.Lead.GetLeadsByBroker;
+using Identity.Application.Interfaces;
 using MediatR;
+using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 
 namespace RealEstate.Host.Controllers;
 
 [ApiController]
 [Route("api/leads")]
+[Authorize(Roles = "broker,company_manager,admin")]
 public class LeadsController : ControllerBase
 {
     private readonly IMediator _mediator;
-    public LeadsController(IMediator mediator) => _mediator = mediator;
+    private readonly ICurrentUserService _currentUser;
+
+    public LeadsController(IMediator mediator, ICurrentUserService currentUser)
+    {
+        _mediator = mediator;
+        _currentUser = currentUser;
+    }
 
     [HttpPut("{id}/status")]
     public async Task<IActionResult> UpdateStatus(Guid id, [FromBody] UpdateLeadStatusRequest req)
@@ -19,12 +28,17 @@ public class LeadsController : ControllerBase
             id, req.NewStatus, req.DealValue, req.Notes));
         return NoContent();
     }
-   [HttpGet("broker/{brokerId}")]
-   public async Task<IActionResult> GetByBroker(Guid brokerId)
-   {
-    var leads = await _mediator.Send(new GetLeadsByBrokerQuery(brokerId));
-    return Ok(leads);
-   }
+
+    [HttpGet("broker/{brokerId}")]
+    public async Task<IActionResult> GetByBroker(Guid brokerId)
+    {
+        // Brokers can only read their OWN leads; managers/admins can read any
+        if (_currentUser.IsInRole("broker") && _currentUser.UserId != brokerId)
+            return Forbid();
+
+        var leads = await _mediator.Send(new GetLeadsByBrokerQuery(brokerId));
+        return Ok(leads);
+    }
 }
 
 public record UpdateLeadStatusRequest(

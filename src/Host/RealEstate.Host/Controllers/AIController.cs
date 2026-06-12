@@ -70,8 +70,16 @@ namespace RealEstate.Host.Controllers
         // 💡 تعديل 5: مسحنا [AllowAnonymous] لأن الـ Command بيستخدم _currentUserService.UserId، فلو اليوزر مش عامل لوج إن هيضرب إيرور
         public async Task<IActionResult> Chat([FromBody] SendChatBotMessageCommand command, CancellationToken cancellationToken)
         {
-            var response = await _sender.Send(command, cancellationToken);
-            return Ok(response);
+            try
+            {
+                var response = await _sender.Send(command, cancellationToken);
+                return Ok(response);
+            }
+            catch (InvalidOperationException ex)
+            {
+                // AI quota reached, or invalid/ended session
+                return Conflict(new { error = ex.Message });
+            }
         }
 
         /// <summary>

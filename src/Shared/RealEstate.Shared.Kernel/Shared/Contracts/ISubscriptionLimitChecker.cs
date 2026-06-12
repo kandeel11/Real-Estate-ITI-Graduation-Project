@@ -23,4 +23,14 @@ public interface ISubscriptionLimitChecker
 
     Task<(bool Allowed, string Reason)> CheckAiRequestLimitAsync(Guid userId, Guid? companyId, CancellationToken ct = default);
     Task IncrementAiUsageAsync(Guid userId, Guid? companyId, CancellationToken ct = default);
+
+    Task<(bool Allowed, string Reason)> CheckInquiryLimitAsync(Guid userId, CancellationToken ct = default);
+    Task IncrementInquiryUsageAsync(Guid userId, CancellationToken ct = default);
+
+    Task<(bool Allowed, string Reason)> CheckStorageLimitAsync(Guid userId, Guid? companyId, decimal additionalGb, CancellationToken ct = default);
+    Task AddStorageUsageAsync(Guid userId, Guid? companyId, decimal gb, CancellationToken ct = default);
+
+    /// <summary>Plan FEATURE gates (separate from the request quota).</summary>
+    Task<(bool Allowed, string Reason)> CheckAiChatbotAccessAsync(Guid userId, Guid? companyId, CancellationToken ct = default);
+    Task<(bool Allowed, string Reason)> CheckAiDescriptionAccessAsync(Guid userId, Guid? companyId, CancellationToken ct = default);
 }
