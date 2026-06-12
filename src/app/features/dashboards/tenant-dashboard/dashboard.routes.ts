@@ -58,6 +58,13 @@ export const dashboardRoutes: Routes = [
         loadComponent: () =>
           import('./pages/ai/ai.component').then(m => m.AiComponent),
       },
+      {
+        path: 'subscription',
+        loadComponent: () =>
+          import('../../subscription/pages/subscription-plans/subscription-plans.component').then(
+            m => m.SubscriptionPlansComponent
+          ),
+      },
     ],
   },
 ];

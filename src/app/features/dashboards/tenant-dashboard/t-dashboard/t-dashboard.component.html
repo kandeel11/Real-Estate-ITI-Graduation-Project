@@ -26,7 +26,10 @@
             <div class="user-avatar-sm" aria-hidden="true">{{ userInitials }}</div>
             <div class="user-info">
                 <span class="user-name">{{ userName }}</span>
-                <span class="user-role">Tenant</span>
+                <div class="user-role-row">
+                  <span class="user-role">Tenant</span>
+                  <span class="sidebar-plan-badge">Free</span>
+                </div>
             </div>
             <button class="btn-logout" (click)="logout()" title="Sign out" aria-label="Sign out">
                 <i class="fa-solid fa-right-from-bracket"></i>
@@ -36,8 +39,8 @@
 
     <!-- ── MAIN CONTENT ────────────────────────────── -->
     <main class="main-content">
-        <div class="route-container" [@routeAnimations]="prepareRoute(outlet)">
-            <router-outlet #outlet="outlet" />
+        <div class="route-container" [@routeAnimations]="routeAnimState()">
+            <router-outlet />
         </div>
     </main>
 </div>

@@ -59,6 +59,9 @@
       <button class="section-tab" [class.tab-active]="activeSection() === 'info'" (click)="activeSection.set('info')">
         <i class="fa-regular fa-id-card me-2"></i>Personal Info
       </button>
+      <button class="section-tab" [class.tab-active]="activeSection() === 'plan'" (click)="activeSection.set('plan')">
+        <i class="fa-solid fa-crown me-2"></i>My Plan
+      </button>
       <button class="section-tab" [class.tab-active]="activeSection() === 'password'" (click)="activeSection.set('password')">
         <i class="fa-solid fa-key me-2"></i>Change Password
       </button>
@@ -77,8 +80,11 @@
           <div class="avatar-info">
             <p class="avatar-name">{{ p.fullName }}</p>
             <p class="avatar-email">{{ p.email }}</p>
-            <div class="d-flex align-items-center gap-2 mt-1">
+            <div class="d-flex align-items-center gap-2 mt-1 flex-wrap">
               <span class="role-badge">Tenant</span>
+              <span class="plan-badge-chip">
+                <i class="fa-solid fa-crown me-1"></i>Free Plan
+              </span>
               @if (p.isEmailVerified) {
                 <span class="verified-badge">
                   <i class="fa-solid fa-circle-check me-1"></i>Verified
@@ -155,6 +161,157 @@
           </div>
         </form>
       </div>
+    }
+
+    <!-- ══════════════════ MY PLAN ══════════════════ -->
+    @if (activeSection() === 'plan') {
+
+      <!-- Billing Toggle -->
+      <div class="billing-toggle-wrap mb-4">
+        <div class="billing-toggle">
+          <button class="billing-pill" [class.billing-pill-active]="billingCycle() === 'monthly'"
+                  (click)="setBilling('monthly')">Monthly</button>
+          <button class="billing-pill" [class.billing-pill-active]="billingCycle() === 'annual'"
+                  (click)="setBilling('annual')">
+            Annual&nbsp;<span class="save-tag">Save 16%</span>
+          </button>
+        </div>
+      </div>
+
+      <!-- Loading -->
+      @if (plansLoading()) {
+        <div class="loading-state">
+          <div class="spinner-border text-primary" role="status"><span class="visually-hidden">Loading…</span></div>
+        </div>
+      }
+
+      <!-- Plan Cards -->
+      @if (!plansLoading()) {
+        <div class="row g-4">
+
+          <!-- Free Plan -->
+          @if (freePlan(); as free) {
+            <div class="col-12 col-md-6">
+              <div class="plan-card plan-card--current">
+                <div class="plan-card-top">
+                  <span class="plan-badge-pill badge-current">
+                    <i class="fa-solid fa-circle-check me-1"></i>Current Plan
+                  </span>
+                  <h3 class="plan-name">Free</h3>
+                  <div class="price-area" [style.opacity]="priceOpacity()">
+                    <p class="plan-price">Free</p>
+                    <p class="price-sub">No credit card required</p>
+                  </div>
+                </div>
+                <ul class="feature-list">
+                  <li class="feature-item">
+                    <i class="fa-solid fa-check feat-yes"></i>
+                    <span>{{ free.maxAiRequestsPerMonth }} AI requests / month</span>
+                  </li>
+                  <li class="feature-item">
+                    <i class="fa-solid fa-check feat-yes"></i>
+                    <span>AI Chatbot</span>
+                  </li>
+                  <li class="feature-item">
+                    <i class="fa-solid fa-xmark feat-no"></i>
+                    <span class="feat-muted">AI Price Estimation</span>
+                  </li>
+                  <li class="feature-item">
+                    <i class="fa-solid fa-check feat-yes"></i>
+                    <span>{{ formatValue(free.maxSavedListings) }} saved listings</span>
+                  </li>
+                  <li class="feature-item">
+                    <i class="fa-solid fa-check feat-yes"></i>
+                    <span>{{ formatValue(free.maxSavedSearches) }} saved searches</span>
+                  </li>
+                  <li class="feature-item">
+                    <i class="fa-solid fa-check feat-yes"></i>
+                    <span>{{ formatValue(free.maxInquiriesPerMonth) }} inquiries / month</span>
+                  </li>
+                  <li class="feature-item">
+                    <i class="fa-solid fa-xmark feat-no"></i>
+                    <span class="feat-muted">Early access listings</span>
+                  </li>
+                  <li class="feature-item">
+                    <i class="fa-solid fa-xmark feat-no"></i>
+                    <span class="feat-muted">Priority broker response</span>
+                  </li>
+                </ul>
+                <button class="btn plan-action-btn plan-action-current" disabled>
+                  <i class="fa-solid fa-circle-check me-1"></i>Current Plan
+                </button>
+              </div>
+            </div>
+          }
+
+          <!-- Premium Plan -->
+          @if (premiumPlan(); as premium) {
+            <div class="col-12 col-md-6">
+              <div class="plan-card plan-card--premium">
+                <div class="plan-card-top">
+                  <span class="plan-badge-pill badge-popular">
+                    <i class="fa-solid fa-star me-1"></i>Most Popular
+                  </span>
+                  <h3 class="plan-name">Premium</h3>
+                  <div class="price-area" [style.opacity]="priceOpacity()">
+                    @if (billingCycle() === 'monthly') {
+                      <p class="plan-price">EGP {{ premium.priceMonthly }}</p>
+                      <p class="price-sub">per month</p>
+                    } @else {
+                      <p class="plan-price">EGP {{ premium.priceAnnual }}</p>
+                      <p class="price-sub">per year &nbsp;·&nbsp; EGP {{ annualMonthly(premium) }} / month</p>
+                    }
+                  </div>
+                </div>
+                <ul class="feature-list">
+                  <li class="feature-item">
+                    <i class="fa-solid fa-check feat-yes"></i>
+                    <span>{{ premium.maxAiRequestsPerMonth }} AI requests / month</span>
+                  </li>
+                  <li class="feature-item">
+                    <i class="fa-solid fa-check feat-yes"></i>
+                    <span>AI Chatbot</span>
+                  </li>
+                  <li class="feature-item">
+                    <i class="fa-solid fa-check feat-yes"></i>
+                    <span>AI Price Estimation</span>
+                  </li>
+                  <li class="feature-item">
+                    <i class="fa-solid fa-check feat-yes"></i>
+                    <span>{{ formatValue(premium.maxSavedListings) }} saved listings</span>
+                  </li>
+                  <li class="feature-item">
+                    <i class="fa-solid fa-check feat-yes"></i>
+                    <span>{{ formatValue(premium.maxSavedSearches) }} saved searches</span>
+                  </li>
+                  <li class="feature-item">
+                    <i class="fa-solid fa-check feat-yes"></i>
+                    <span>{{ formatValue(premium.maxInquiriesPerMonth) }} inquiries / month</span>
+                  </li>
+                  <li class="feature-item">
+                    <i class="fa-solid fa-check feat-yes"></i>
+                    <span>Early access listings</span>
+                  </li>
+                  <li class="feature-item">
+                    <i class="fa-solid fa-check feat-yes"></i>
+                    <span>Priority broker response</span>
+                  </li>
+                </ul>
+                <button class="btn plan-action-btn plan-action-upgrade" (click)="showUpgradeModal.set(true)">
+                  <i class="fa-solid fa-crown me-1"></i>Upgrade to Premium
+                </button>
+              </div>
+            </div>
+          }
+
+        </div>
+
+        <p class="plan-compare-link mt-3">
+          <a routerLink="/dashboard/subscription">
+            View full feature comparison <i class="fa-solid fa-arrow-right ms-1" style="font-size:11px;"></i>
+          </a>
+        </p>
+      }
     }
 
     <!-- ══════════════════ CHANGE PASSWORD ══════════════════ -->
@@ -240,12 +397,38 @@
             <p class="danger-action-title">Delete Account</p>
             <p class="danger-action-desc">Permanently delete your account and all associated data.</p>
           </div>
-          <button class="btn btn-outline-danger btn-sm" disabled>
-            Delete Account
-          </button>
+          <button class="btn btn-outline-danger btn-sm" disabled>Delete Account</button>
         </div>
       </div>
     }
 
   }
 </div>
+
+<!-- ── UPGRADE MODAL ──────────────────────────────── -->
+@if (showUpgradeModal()) {
+  <div class="modal-overlay" (click)="showUpgradeModal.set(false)">
+    <div class="modal-box" (click)="$event.stopPropagation()">
+      <div class="modal-icon-wrap">
+        <i class="fa-solid fa-crown"></i>
+      </div>
+      <h3 class="modal-title">Upgrade Coming Soon</h3>
+      <p class="modal-desc">
+        Online upgrade is not available yet. Please contact our support team to upgrade to
+        <strong>Premium</strong> and unlock all features.
+      </p>
+      @if (premiumPlan(); as premium) {
+        <div class="modal-plan-info">
+          <span class="modal-plan-badge"><i class="fa-solid fa-crown me-1"></i>Premium</span>
+          <span class="modal-plan-price">EGP {{ premium.priceMonthly }} / month</span>
+        </div>
+      }
+      <div class="modal-actions">
+        <a href="mailto:support@estatein.com" class="btn plan-action-btn plan-action-upgrade w-100">
+          <i class="fa-solid fa-envelope me-2"></i>Contact Support
+        </a>
+        <button class="btn btn-outline-secondary w-100" (click)="showUpgradeModal.set(false)">Close</button>
+      </div>
+    </div>
+  </div>
+}

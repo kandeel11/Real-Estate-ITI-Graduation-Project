@@ -1,8 +1,11 @@
 import { Component, OnInit, OnDestroy, inject, signal, computed } from '@angular/core';
 import { ReactiveFormsModule, FormBuilder, Validators, AbstractControl } from '@angular/forms';
+import { RouterLink } from '@angular/router';
 import { finalize } from 'rxjs';
 import { ProfileService, UserProfile } from '../../services/profile.service';
 import { ToastService } from '../../../../../shared/components/toast/toast.service';
+import { SubscriptionService } from '../../../../subscription/services/subscription.service';
+import { SubscriptionPlan } from '../../../../subscription/models/subscription.models';
 
 function passwordStrength(password: string): number {
   if (!password) return 0;
@@ -25,7 +28,7 @@ function confirmPasswordValidator(control: AbstractControl): { [key: string]: bo
 @Component({
   selector: 'app-profile',
   standalone: true,
-  imports: [ReactiveFormsModule],
+  imports: [ReactiveFormsModule, RouterLink],
   templateUrl: './profile.component.html',
   styleUrl: './profile.component.css',
 })
@@ -33,8 +36,9 @@ export class ProfileComponent implements OnInit, OnDestroy {
   private readonly profileService = inject(ProfileService);
   private readonly toast = inject(ToastService);
   private readonly fb = inject(FormBuilder);
+  private readonly subService = inject(SubscriptionService);
 
-  protected activeSection = signal<'info' | 'password' | 'danger'>('info');
+  protected activeSection = signal<'info' | 'password' | 'danger' | 'plan'>('info');
   protected loading = signal(true);
   protected error = signal<string | null>(null);
   protected profile = signal<UserProfile | null>(null);
@@ -54,7 +58,30 @@ export class ProfileComponent implements OnInit, OnDestroy {
   protected verificationCountdown = signal(0);
   private _countdownInterval: ReturnType<typeof setInterval> | null = null;
 
-  /** Set of field names currently unlocked for editing */
+  // Plan data
+  protected plans = signal<SubscriptionPlan[]>([]);
+  protected plansLoading = signal(false);
+  protected showUpgradeModal = signal(false);
+  protected billingCycle = signal<'monthly' | 'annual'>('monthly');
+  protected priceOpacity = signal(1);
+
+  // Hardcoded as FreeTenant until "get my subscription" API exists
+  protected readonly currentTier = 'FreeTenant';
+
+  protected readonly freePlan = computed(() =>
+    this.plans().find(p => p.tier === 'FreeTenant') ??
+    this.plans().find(p => p.priceMonthly === 0) ??
+    this.plans()[0] ??
+    null
+  );
+
+  protected readonly premiumPlan = computed(() =>
+    this.plans().find(p => p.tier === 'PremiumTenant') ??
+    this.plans().find(p => p.priceMonthly > 0) ??
+    this.plans()[1] ??
+    null
+  );
+
   protected readonly editingFields = signal(new Set<string>());
 
   isEditing(field: string): boolean {
@@ -109,6 +136,7 @@ export class ProfileComponent implements OnInit, OnDestroy {
 
   ngOnInit(): void {
     this.loadProfile();
+    this.loadPlans();
   }
 
   loadProfile(): void {
@@ -125,6 +153,27 @@ export class ProfileComponent implements OnInit, OnDestroy {
       });
   }
 
+  loadPlans(): void {
+    this.plansLoading.set(true);
+    this.subService.getActivePlans()
+      .pipe(finalize(() => this.plansLoading.set(false)))
+      .subscribe({ next: plans => this.plans.set(plans) });
+  }
+
+  setBilling(cycle: 'monthly' | 'annual'): void {
+    if (this.billingCycle() === cycle) return;
+    this.priceOpacity.set(0);
+    setTimeout(() => { this.billingCycle.set(cycle); this.priceOpacity.set(1); }, 150);
+  }
+
+  formatValue(value: number): string {
+    return value >= 999999 ? 'Unlimited' : value.toLocaleString();
+  }
+
+  annualMonthly(plan: SubscriptionPlan): string {
+    return (plan.priceAnnual / 12).toFixed(2);
+  }
+
   saveProfile(): void {
     if (this.profileForm.invalid) return;
     this.saveLoading.set(true);
@@ -134,7 +183,6 @@ export class ProfileComponent implements OnInit, OnDestroy {
       .pipe(finalize(() => this.saveLoading.set(false)))
       .subscribe({
         next: () => {
-          // Update signal manually — don't rely on API response shape
           this.profile.update(p => p ? { ...p, ...dto } : p);
           this.editingFields.set(new Set());
           this.toast.success('Profile updated successfully.');
@@ -181,12 +229,7 @@ export class ProfileComponent implements OnInit, OnDestroy {
     this.verificationCountdown.set(60);
     this._countdownInterval = setInterval(() => {
       this.verificationCountdown.update(n => {
-        if (n <= 1) {
-          clearInterval(this._countdownInterval!);
-          this._countdownInterval = null;
-          this.verificationSent.set(false);
-          return 0;
-        }
+        if (n <= 1) { clearInterval(this._countdownInterval!); this._countdownInterval = null; this.verificationSent.set(false); return 0; }
         return n - 1;
       });
     }, 1000);

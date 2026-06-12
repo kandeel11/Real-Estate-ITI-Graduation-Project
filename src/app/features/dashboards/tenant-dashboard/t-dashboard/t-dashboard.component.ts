@@ -1,6 +1,7 @@
-import { Component, OnInit, OnDestroy, inject } from '@angular/core';
-import { RouterOutlet, RouterLink, RouterLinkActive, Router } from '@angular/router';
+import { Component, OnInit, OnDestroy, inject, signal } from '@angular/core';
+import { RouterOutlet, RouterLink, RouterLinkActive, Router, NavigationEnd } from '@angular/router';
 import { trigger, transition, query, style, animate } from '@angular/animations';
+import { filter, Subscription } from 'rxjs';
 import { NotificationService } from '../services/notification.service';
 import { AuthService } from '../../../../core/services/auth.service';
 import { ToastComponent } from '../../../../shared/components/toast/toast.component';
@@ -35,12 +36,16 @@ export class TDashboardComponent implements OnInit, OnDestroy {
   protected readonly notificationService = inject(NotificationService);
   private readonly router = inject(Router);
 
+  protected readonly routeAnimState = signal('');
+  private _routerSub: Subscription | null = null;
+
   readonly navItems: NavItem[] = [
     { label: 'Overview',      icon: 'fa-solid fa-gauge-high',           route: '/dashboard',               exact: true },
     { label: 'My Property',   icon: 'fa-solid fa-building',             route: '/dashboard/property' },
     { label: 'My Lease',      icon: 'fa-solid fa-file-contract',        route: '/dashboard/lease' },
     { label: 'Maintenance',   icon: 'fa-solid fa-screwdriver-wrench',   route: '/dashboard/maintenance' },
     { label: 'Notifications', icon: 'fa-regular fa-bell',               route: '/dashboard/notifications' },
+    { label: 'Subscription',  icon: 'fa-solid fa-crown',                route: '/dashboard/subscription' },
     { label: 'Ratings',       icon: 'fa-regular fa-star',               route: '/dashboard/ratings' },
     { label: 'Profile',       icon: 'fa-regular fa-circle-user',        route: '/dashboard/profile' },
     { label: 'AI Assistant',  icon: 'fa-solid fa-robot',                route: '/dashboard/ai' },
@@ -49,10 +54,17 @@ export class TDashboardComponent implements OnInit, OnDestroy {
   ngOnInit(): void {
     this.notificationService.fetchUnreadCount();
     this.notificationService.startPolling();
+    this._routerSub = this.router.events.pipe(
+      filter(e => e instanceof NavigationEnd)
+    ).subscribe(() => {
+      const segments = this.router.url.split('/').filter(Boolean);
+      this.routeAnimState.set(segments[segments.length - 1] || 'root');
+    });
   }
 
   ngOnDestroy(): void {
     this.notificationService.stopPolling();
+    this._routerSub?.unsubscribe();
   }
 
   get userName(): string {
@@ -62,12 +74,6 @@ export class TDashboardComponent implements OnInit, OnDestroy {
   get userInitials(): string {
     const name = this.auth.user()?.fullName ?? '';
     return name.split(' ').slice(0, 2).map(w => w.charAt(0)).join('').toUpperCase() || 'T';
-  }
-
-  prepareRoute(outlet: RouterOutlet): string {
-    return outlet?.isActivated
-      ? (outlet.activatedRoute.snapshot.url.map(s => s.path).join('/') || 'root')
-      : '';
   }
 
   logout(): void {
