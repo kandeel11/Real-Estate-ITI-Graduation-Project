@@ -1,7 +1,6 @@
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Metadata.Builders;
 using Payment.Domain.Entities;
-using Payment.Domain.Enums;
 
 namespace Payment.Infrastructure.Persistence.Configurations;
 public sealed class RentPaymentConfiguration : IEntityTypeConfiguration<RentPayment>

@@ -1,8 +1,7 @@
 ﻿using MediatR;
-using Microsoft.Extensions.DependencyInjection;
 using Payment.Application.Behaviors;
 using FluentValidation;
-
+using Microsoft.Extensions.DependencyInjection;
 namespace Payment.Application;
 
 public static class DependencyInjection
