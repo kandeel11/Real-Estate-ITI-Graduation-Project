@@ -23,9 +23,11 @@ using Subscription.Infrastructure.Persistence;
 using Subscription.Infrastructure.Seed;
 using System.IdentityModel.Tokens.Jwt;
 using System.Text;
-using Payment.Infrastructure;
 using MaintenanceCompanies.Infrastructure;
 using MaintenanceCompanies.Application;
+using Document.Infrastructure.Persistence;
+using MaintenanceCompanies.Infrastructure.Persistence;
+using Maintenance.Infrastructure.Persistence.Contexts;
 
 namespace RealEstate.Host;
 
@@ -193,7 +195,7 @@ public class Program
             await aiDb.Database.MigrateAsync();
             await subscriptionDb.Database.MigrateAsync();
             await SubscriptionPlanSeed.SeedAsync(subscriptionDb);
-            await Property.Infrastructure.Persistence.Seeding.AmenitySeed.SeedAsync(PropertyDb);
+            await Property.Infrastructure.Persistence.Seeding.AmenitySeed.SeedAsync(propertyDb);
 
             var identityDb = scope.ServiceProvider.GetRequiredService<IdentityDbContext>();
             await identityDb.Database.MigrateAsync();
@@ -202,6 +204,15 @@ public class Program
 
             var paymentDb = scope.ServiceProvider.GetRequiredService<PaymentDbContext>();
             await paymentDb.Database.MigrateAsync();
+
+            var documentDb = scope.ServiceProvider.GetRequiredService<DocumentDbContext>();
+            await documentDb.Database.MigrateAsync();
+
+            var maintenanceCompaniesDb = scope.ServiceProvider.GetRequiredService<MaintenanceModuleDbContext>();
+            await maintenanceCompaniesDb.Database.MigrateAsync();
+
+            var maintenanceDb = scope.ServiceProvider.GetRequiredService<MaintenanceDbContext>();
+            await maintenanceDb.Database.MigrateAsync();
         }
         //stripe
         app.Use(async (context, next) =>

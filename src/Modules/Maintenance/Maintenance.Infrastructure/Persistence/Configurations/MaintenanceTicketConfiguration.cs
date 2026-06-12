@@ -25,7 +25,10 @@ public class MaintenanceTicketConfiguration : IEntityTypeConfiguration<Maintenan
         b.Property(x => x.PropertyAddress).HasMaxLength(500);
         b.Property(x => x.TenantEmail).HasMaxLength(255);
         b.Property(x => x.TenantPhone).HasMaxLength(50);
-        b.Property(x => x.Priority).IsRequired().HasConversion<string>().HasDefaultValue(TicketPriority.Medium);
+        // No DB default: the domain factory always sets Priority explicitly. A DB default
+        // here causes EF to omit the value on insert when it equals the CLR default
+        // (Emergency), silently downgrading Emergency tickets to the default. (EF warning 20601)
+        b.Property(x => x.Priority).IsRequired().HasConversion<string>();
         b.Property(x => x.Status).IsRequired().HasConversion<string>().HasDefaultValue(TicketStatus.Draft);
         b.Property(x => x.ResponsibleParty).HasConversion<string>();
         b.Property(x => x.ResolutionMethod).HasConversion<string>();
