@@ -1,4 +1,4 @@
-import { Component, inject } from '@angular/core';
+import { Component, OnInit, OnDestroy, inject } from '@angular/core';
 import { RouterOutlet, RouterLink, RouterLinkActive, Router } from '@angular/router';
 import { trigger, transition, query, style, animate } from '@angular/animations';
 import { NotificationService } from '../services/notification.service';
@@ -30,7 +30,7 @@ interface NavItem {
   styleUrl: './t-dashboard.component.css',
   animations: [routeAnimations],
 })
-export class TDashboardComponent {
+export class TDashboardComponent implements OnInit, OnDestroy {
   protected readonly auth = inject(AuthService);
   protected readonly notificationService = inject(NotificationService);
   private readonly router = inject(Router);
@@ -45,6 +45,15 @@ export class TDashboardComponent {
     { label: 'Profile',       icon: 'fa-regular fa-circle-user',        route: '/dashboard/profile' },
     { label: 'AI Assistant',  icon: 'fa-solid fa-robot',                route: '/dashboard/ai' },
   ];
+
+  ngOnInit(): void {
+    this.notificationService.fetchUnreadCount();
+    this.notificationService.startPolling();
+  }
+
+  ngOnDestroy(): void {
+    this.notificationService.stopPolling();
+  }
 
   get userName(): string {
     return this.auth.user()?.fullName ?? 'Tenant';

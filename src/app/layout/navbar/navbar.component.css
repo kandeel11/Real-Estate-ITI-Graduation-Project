@@ -107,6 +107,30 @@
   box-shadow: none;
 }
 
+/* ── Bell badge ─────────────────────────────── */
+.site-navbar__bell {
+  position: relative;
+}
+
+.bell-badge {
+  position: absolute;
+  top: 2px;
+  right: 2px;
+  min-width: 16px;
+  height: 16px;
+  padding: 0 4px;
+  background: var(--color-error);
+  color: var(--color-on-error);
+  font-size: 10px;
+  font-weight: 700;
+  border-radius: var(--radius-full);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  line-height: 1;
+  pointer-events: none;
+}
+
 /* Mobile tweaks */
 @media (max-width: 767.98px) {
   .site-navbar__actions {
