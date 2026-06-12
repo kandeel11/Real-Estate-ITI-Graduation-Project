@@ -2,6 +2,8 @@ using Identity.Application.Interfaces;
 using MediatR;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
+using Subscription.Application.Commands.CancelMySubscription;
+using Subscription.Application.Commands.UpgradeMySubscription;
 using Subscription.Application.Queries.GetMyPayments;
 using Subscription.Application.Queries.GetMySubscription;
 using Subscription.Application.Queries.GetMyUsage;
@@ -69,4 +71,46 @@ public class SubscriptionsController(IMediator mediator, ICurrentUserService cur
             ? NotFound(new { error = "No active subscription found." })
             : Ok(result);
     }
+
+    /// <summary>
+    /// Switches the caller's active subscription to another plan (catalog at
+    /// /api/subscription-plans). Charging is Phase 2 — this moves the plan and
+    /// raises SubscriptionUpgradedEvent for the Payment module.
+    /// </summary>
+    [HttpPost("mine/upgrade")]
+    public async Task<IActionResult> Upgrade([FromBody] UpgradeSubscriptionRequest req, CancellationToken ct)
+    {
+        var userId = currentUser.UserId;
+        if (userId is null) return Unauthorized(new { error = "User not authenticated." });
+
+        try
+        {
+            await mediator.Send(new UpgradeMySubscriptionCommand(userId.Value, currentUser.CompanyId, req.PlanId), ct);
+            return NoContent();
+        }
+        catch (KeyNotFoundException ex) { return NotFound(new { error = ex.Message }); }
+        catch (InvalidOperationException ex) { return BadRequest(new { error = ex.Message }); }
+    }
+
+    /// <summary>
+    /// Cancels a premium subscription — meaning the caller drops back to the
+    /// FREE plan of the same audience (the subscription is never deleted).
+    /// </summary>
+    [HttpPost("mine/cancel")]
+    public async Task<IActionResult> Cancel([FromBody] CancelSubscriptionRequest req, CancellationToken ct)
+    {
+        var userId = currentUser.UserId;
+        if (userId is null) return Unauthorized(new { error = "User not authenticated." });
+
+        try
+        {
+            await mediator.Send(new CancelMySubscriptionCommand(userId.Value, currentUser.CompanyId, req.Reason ?? string.Empty), ct);
+            return NoContent();
+        }
+        catch (KeyNotFoundException ex) { return NotFound(new { error = ex.Message }); }
+        catch (InvalidOperationException ex) { return BadRequest(new { error = ex.Message }); }
+    }
 }
+
+public record UpgradeSubscriptionRequest(Guid PlanId);
+public record CancelSubscriptionRequest(string? Reason);

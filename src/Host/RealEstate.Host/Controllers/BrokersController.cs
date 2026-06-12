@@ -1,5 +1,7 @@
 using Identity.Application.Commands.AddBroker;
 using Identity.Application.Commands.DeactivateBroker;
+using Identity.Application.Commands.DeleteBroker;
+using Identity.Application.Commands.ReactivateBroker;
 using Identity.Application.Interfaces;
 using MediatR;
 using Microsoft.AspNetCore.Authorization;
@@ -58,6 +60,47 @@ public class BrokersController(IMediator mediator, ICurrentUserService currentUs
         try
         {
             await mediator.Send(new DeactivateBrokerCommand(brokerId, companyId, currentUser.IsInRole("admin")), ct);
+            return NoContent();
+        }
+        catch (KeyNotFoundException ex) { return NotFound(new { error = ex.Message }); }
+        catch (UnauthorizedAccessException) { return Forbid(); }
+    }
+
+    /// <summary>
+    /// Reactivate a previously deactivated broker (restores their login).
+    /// Re-checks the plan's broker limit before re-enabling the seat.
+    /// </summary>
+    [HttpPost("~/api/companies/mine/brokers/{brokerId:guid}/reactivate")]
+    public async Task<IActionResult> ReactivateMyBroker(Guid brokerId, CancellationToken ct)
+    {
+        var companyId = currentUser.CompanyId;
+        if (companyId is null && !currentUser.IsInRole("admin"))
+            return BadRequest(new { error = "You are not associated with a company." });
+
+        try
+        {
+            await mediator.Send(new ReactivateBrokerCommand(brokerId, companyId, currentUser.IsInRole("admin")), ct);
+            return NoContent();
+        }
+        catch (KeyNotFoundException ex) { return NotFound(new { error = ex.Message }); }
+        catch (InvalidOperationException ex) { return BadRequest(new { error = ex.Message }); }
+        catch (UnauthorizedAccessException) { return Forbid(); }
+    }
+
+    /// <summary>
+    /// Permanently delete a broker. Their properties are NOT touched — the
+    /// manager reassigns them via PATCH /api/properties/{id}/assign-broker.
+    /// </summary>
+    [HttpDelete("~/api/companies/mine/brokers/{brokerId:guid}/permanent")]
+    public async Task<IActionResult> DeleteMyBroker(Guid brokerId, CancellationToken ct)
+    {
+        var companyId = currentUser.CompanyId;
+        if (companyId is null && !currentUser.IsInRole("admin"))
+            return BadRequest(new { error = "You are not associated with a company." });
+
+        try
+        {
+            await mediator.Send(new DeleteBrokerCommand(brokerId, companyId, currentUser.IsInRole("admin")), ct);
             return NoContent();
         }
         catch (KeyNotFoundException ex) { return NotFound(new { error = ex.Message }); }

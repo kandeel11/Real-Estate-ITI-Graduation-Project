@@ -1,6 +1,7 @@
 using MediatR;
 using Microsoft.Extensions.Logging;
 using Property.Application.Interfaces;
+using RealEstate.Shared.Kernel.Shared.Contracts;
 using RealEstate.Shared.Kernel.Shared.IntegrationEvents;
 
 namespace Property.Application.Features.Commands.DeleteProperty;
@@ -11,17 +12,20 @@ public class DeletePropertyHandler : IRequestHandler<DeletePropertyCommand>
     private readonly IMediaStorageService _storage;
     private readonly IPublisher _publisher;
     private readonly ILogger<DeletePropertyHandler> _logger;
+    private readonly ISubscriptionLimitChecker _limitChecker;
 
     public DeletePropertyHandler(
         IPropertyRepository repository,
         IMediaStorageService storage,
         IPublisher publisher,
-        ILogger<DeletePropertyHandler> logger)
+        ILogger<DeletePropertyHandler> logger,
+        ISubscriptionLimitChecker limitChecker)
     {
         _repository = repository;
         _storage = storage;
         _publisher = publisher;
         _logger = logger;
+        _limitChecker = limitChecker;
     }
 
     public async Task Handle(DeletePropertyCommand request, CancellationToken cancellationToken)
@@ -55,6 +59,9 @@ public class DeletePropertyHandler : IRequestHandler<DeletePropertyCommand>
         // 2) Soft-delete the property itself.
         property.SoftDelete();
         await _repository.SaveChangesAsync(cancellationToken);
+
+        // Free the plan slot — abandoned drafts shouldn't hoard the limit.
+        await _limitChecker.DecrementPropertyUsageAsync(property.OwnerId, property.CompanyId, cancellationToken);
 
         // 3) Tell other modules to clean up — AI removes the property's Qdrant vector.
         await _publisher.Publish(new PropertyDeletedEvent(request.PropertyId), cancellationToken);

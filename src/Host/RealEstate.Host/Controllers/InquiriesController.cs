@@ -19,10 +19,18 @@ public class InquiriesController(IMediator mediator, ICurrentUserService current
     [Authorize(Roles = "tenant")]
     public async Task<IActionResult> Create([FromBody] CreateInquiryBodyRequest req, CancellationToken ct)
     {
-        // FIX: TenantId from JWT, not body
-        var result = await mediator.Send(new CreateInquiryCommand(
-            req.PropertyId, UserId, req.OwnerId, req.CompanyId, req.Message), ct);
-        return CreatedAtAction(nameof(GetById), new { id = result.Id }, result);
+        try
+        {
+            // FIX: TenantId from JWT, not body
+            var result = await mediator.Send(new CreateInquiryCommand(
+                req.PropertyId, UserId, req.OwnerId, req.CompanyId, req.Message), ct);
+            return CreatedAtAction(nameof(GetById), new { id = result.Id }, result);
+        }
+        catch (InvalidOperationException ex)
+        {
+            // Plan inquiry limit reached
+            return Conflict(new { error = ex.Message });
+        }
     }
 
     [HttpGet("{id:guid}")]

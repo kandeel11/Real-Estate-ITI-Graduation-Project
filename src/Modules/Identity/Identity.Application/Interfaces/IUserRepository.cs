@@ -9,6 +9,7 @@ public interface IUserRepository
     Task<User?> GetByVerificationTokenAsync(string token, CancellationToken ct = default);
     Task<bool> ExistsByEmailAsync(string email, CancellationToken ct = default);
     Task<Dictionary<Guid, string>> GetFullNamesByIdsAsync(IEnumerable<Guid> ids, CancellationToken ct = default);
+    Task<(List<User> Items, int Total)> GetPagedAsync(int page, int pageSize, string? search, string? role, CancellationToken ct = default);
     Task AddAsync(User user, CancellationToken ct = default);
     Task UpdateAsync(User user, CancellationToken ct = default);  
     Task SaveChangesAsync(CancellationToken ct = default);

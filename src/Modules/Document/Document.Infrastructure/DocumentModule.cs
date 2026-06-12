@@ -23,6 +23,7 @@ public static class DocumentModule
         services.AddScoped<IAzureBlobService, AzureBlobService>();
         services.AddScoped<IInquiryRepository, InquiryRepository>();
         services.AddScoped<IInquiryStatsRepository, InquiryStatsRepository>();
+        services.AddScoped<IRatingStatsRepository, RatingStatsRepository>();
         services.AddScoped<INotificationRepository, NotificationRepository>();
         services.AddScoped<INotificationService, NotificationService>();
 	    services.AddScoped<ILeaseService, LeaseService>();

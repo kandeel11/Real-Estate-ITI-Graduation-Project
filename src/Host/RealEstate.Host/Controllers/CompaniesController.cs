@@ -1,5 +1,7 @@
 using Document.Application.Queries.Inquiry;
+using Document.Application.Queries.Rating;
 using Identity.Application.Commands.UpdateCompany;
+using Identity.Application.Commands.UpdateCompanyLogo;
 using Identity.Application.Commands.VerifyCompany;
 using Identity.Application.Interfaces;
 using Identity.Application.Queries.GetBrokersByCompany;
@@ -10,14 +12,55 @@ using MediatR;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using Property.Application.Features.Queries.GetPropertiesByCompany;
+using Property.Application.Interfaces;
 using RealEstate.Host.Services;
+using static Property.Application.Interfaces.IMediaStorageService;
 
 namespace RealEstate.Host.Controllers;
 
 [ApiController]
 [Route("api/companies")]
-public class CompaniesController(IMediator mediator, ICurrentUserService currentUser, PropertyEnrichmentService enrichment) : ControllerBase
+public class CompaniesController(
+    IMediator mediator,
+    ICurrentUserService currentUser,
+    PropertyEnrichmentService enrichment,
+    IMediaStorageService mediaStorage) : ControllerBase
 {
+    /// <summary>
+    /// Uploads the company logo and persists its URL on the company profile.
+    /// Returns the stored URL so the client can update its preview.
+    /// </summary>
+    [HttpPost("mine/logo")]
+    [Authorize(Policy = "CompanyManager")]
+    [Consumes("multipart/form-data")]
+    [RequestSizeLimit(5 * 1024 * 1024)] // 5 MB cap for logos
+    public async Task<IActionResult> UploadLogo([FromForm] UploadLogoRequest request, CancellationToken ct)
+    {
+        var companyId = currentUser.CompanyId;
+        if (companyId is null)
+            return BadRequest(new { error = "No company is associated with your account." });
+
+        if (request.File is null || request.File.Length == 0)
+            return BadRequest(new { error = "No file provided." });
+
+        var allowedTypes = new[] { "image/jpeg", "image/png", "image/webp", "image/svg+xml" };
+        if (!allowedTypes.Contains(request.File.ContentType))
+            return BadRequest(new { error = "Logo must be a JPEG, PNG, WebP, or SVG image." });
+
+        await using var stream = request.File.OpenReadStream();
+        var logoUrl = await mediaStorage.UploadAsync(
+            OwnerId: currentUser.UserId,
+            fileStream: stream,
+            fileName: request.File.FileName,
+            contentType: request.File.ContentType,
+            category: MediaCategory.Photo,
+            ct: ct);
+
+        await mediator.Send(new UpdateCompanyLogoCommand(companyId.Value, logoUrl), ct);
+
+        return Ok(new { logoUrl });
+    }
+
     /// <summary>
     /// Returns the company belonging to the logged-in company manager (reads CompanyId from JWT).
     /// Uses CompanyDetailsDto so branding fields (logo/website/description) round-trip.
@@ -196,6 +239,25 @@ public class CompaniesController(IMediator mediator, ICurrentUserService current
     }
 
     /// <summary>
+    /// Star-rating distribution across the company's ratings (by CompanyId or
+    /// any of its properties). Feeds the Performance page's ratings card.
+    /// </summary>
+    [HttpGet("mine/ratings-summary")]
+    [Authorize(Policy = "CompanyManager")]
+    public async Task<IActionResult> GetMyRatingsSummary(CancellationToken ct)
+    {
+        var companyId = currentUser.CompanyId;
+        if (companyId is null)
+            return BadRequest(new { error = "No company is associated with your account." });
+
+        var properties = await mediator.Send(new GetPropertiesByCompanyQuery(companyId.Value), ct);
+        var summary = await mediator.Send(new GetCompanyRatingSummaryQuery(
+            companyId.Value, properties.Select(p => p.Id).ToList()), ct);
+
+        return Ok(summary);
+    }
+
+    /// <summary>
     /// Recent activity feed for the manager's own company, synthesized from
     /// real events: listings created, brokers joining, inquiries received.
     /// </summary>
@@ -280,3 +342,8 @@ public record CompanyStatsResponse(
     int DealsClosed);
 
 public record CompanyActivityItem(string Type, string Text, DateTime Timestamp);
+
+public class UploadLogoRequest
+{
+    public IFormFile? File { get; init; }
+}
