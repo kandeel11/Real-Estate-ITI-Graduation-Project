@@ -63,6 +63,9 @@
                 }
 
                 @if (authenticated()) {
+                    <a class="site-navbar__icon-btn" routerLink="/dashboard" aria-label="Go to dashboard">
+                        <i class="fa-solid fa-gauge-high"></i>
+                    </a>
                     <button class="btn btn-outline-danger site-navbar__cta" (click)="logout()">
                         <i class="fa-solid fa-arrow-right-from-bracket me-1"></i>Logout
                     </button>
