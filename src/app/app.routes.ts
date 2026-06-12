@@ -65,127 +65,126 @@ export const routes: Routes = [
   // ==================== DASHBOARD LAYOUT WITH ROLE-BASED ACCESS ====================
   {
     path: 'dashboard',
-    canActivate: [roleGuard],
+    // canActivate: [roleGuard],
     children: [
       // ============ ADMIN DASHBOARD ============
       {
         path: 'admin',
-        canActivate: [roleGuard],
-        data: { expectedRole: 'admin' },
-        loadComponent: () =>
-          import('./dashboards/admin/admin-dashboard.component').then(
-            (m) => m.AdminDashboardComponent,
+        loadChildren: () =>
+          import('../../src/app/features/dashboards/Admin-dashboard/admin.routes').then(
+            (m) => m.adminRoutes,
           ),
-        children: [
-          {
-            path: 'overview',
-            loadComponent: () =>
-              import('./dashboards/admin/pages/overview/overview.component').then(
-                (m) => m.OverviewComponent,
-              ),
-          },
-          {
-            path: 'users',
-            loadComponent: () =>
-              import('./dashboards/admin/pages/users-management/users-management.component').then(
-                (m) => m.UsersManagementComponent,
-              ),
-          },
-          {
-            path: 'companies',
-            loadComponent: () =>
-              import('./dashboards/admin/pages/companies-management/companies-management.component').then(
-                (m) => m.CompaniesManagementComponent,
-              ),
-          },
-          {
-            path: 'moderation',
-            loadComponent: () =>
-              import('./dashboards/admin/pages/moderation/moderation.component').then(
-                (m) => m.ModerationComponent,
-              ),
-          },
-          {
-            path: 'reports',
-            loadComponent: () =>
-              import('./dashboards/admin/pages/reports/reports.component').then(
-                (m) => m.ReportsComponent,
-              ),
-          },
-        ],
       },
+      //   children: [
+      //     {
+      //       path: 'overview',
+      //       loadComponent: () =>
+      //         import('./dashboards/admin/pages/overview/overview.component').then(
+      //           (m) => m.OverviewComponent,
+      //         ),
+      //     },
+      //     {
+      //       path: 'users',
+      //       loadComponent: () =>
+      //         import('./dashboards/admin/pages/users-management/users-management.component').then(
+      //           (m) => m.UsersManagementComponent,
+      //         ),
+      //     },
+      //     {
+      //       path: 'companies',
+      //       loadComponent: () =>
+      //         import('./dashboards/admin/pages/companies-management/companies-management.component').then(
+      //           (m) => m.CompaniesManagementComponent,
+      //         ),
+      //     },
+      //     {
+      //       path: 'moderation',
+      //       loadComponent: () =>
+      //         import('./dashboards/admin/pages/moderation/moderation.component').then(
+      //           (m) => m.ModerationComponent,
+      //         ),
+      //     },
+      //     {
+      //       path: 'reports',
+      //       loadComponent: () =>
+      //         import('./dashboards/admin/pages/reports/reports.component').then(
+      //           (m) => m.ReportsComponent,
+      //         ),
+      //     },
+      //   ],
+      // },
 
-      // ============ COMPANY DASHBOARD ============
-      {
-        path: 'company',
-        canActivate: [roleGuard],
-        data: { expectedRole: 'company' },
-        loadComponent: () =>
-          import('./dashboards/company/company-dashboard.component').then(
-            (m) => m.CompanyDashboardComponent,
-          ),
-        children: [
-          {
-            path: '',
-            pathMatch: 'full',
-            redirectTo: 'overview',
-          },
-          {
-            path: 'overview',
-            loadComponent: () =>
-              import('./dashboards/company/pages/overview/overview.component').then(
-                (m) => m.OverviewComponent,
-              ),
-          },
-          {
-            path: 'properties',
-            loadComponent: () =>
-              import('./dashboards/company/pages/properties/properties.component').then(
-                (m) => m.PropertiesComponent,
-              ),
-          },
-          {
-            path: 'brokers',
-            loadComponent: () =>
-              import('./dashboards/company/pages/brokers/brokers.component').then(
-                (m) => m.BrokersComponent,
-              ),
-          },
-          {
-            path: 'performance',
-            loadComponent: () =>
-              import('./dashboards/company/pages/performance/performance.component').then(
-                (m) => m.PerformanceComponent,
-              ),
-          },
-          {
-            path: 'ai',
-            loadComponent: () =>
-              import('./dashboards/company/pages/ai/ai.component').then((m) => m.AiComponent),
-          },
-          {
-            path: 'leases',
-            loadComponent: () =>
-              import('./dashboards/company/pages/leases/leases.component').then(
-                (m) => m.LeasesComponent,
-              ),
-          },
-          {
-            path: 'subscriptions',
-            loadComponent: () =>
-              import('./dashboards/company/pages/subscriptions/subscriptions.component').then(
-                (m) => m.SubscriptionsComponent,
-              ),
-          },
-          {
-            path: 'settings',
-            loadComponent: () =>
-              import('./dashboards/company/pages/settings/settings.component').then(
-                (m) => m.SettingsComponent,
-              ),
-          },
-        ],
-      },
+      // // ============ COMPANY DASHBOARD ============
+      // {
+      //   path: 'company',
+      //   canActivate: [roleGuard],
+      //   data: { expectedRole: 'company' },
+      //   loadComponent: () =>
+      //     import('./dashboards/company/company-dashboard.component').then(
+      //       (m) => m.CompanyDashboardComponent,
+      //     ),
+      //   children: [
+      //     {
+      //       path: '',
+      //       pathMatch: 'full',
+      //       redirectTo: 'overview',
+      //     },
+      //     {
+      //       path: 'overview',
+      //       loadComponent: () =>
+      //         import('./dashboards/company/pages/overview/overview.component').then(
+      //           (m) => m.OverviewComponent,
+      //         ),
+      //     },
+      //     {
+      //       path: 'properties',
+      //       loadComponent: () =>
+      //         import('./dashboards/company/pages/properties/properties.component').then(
+      //           (m) => m.PropertiesComponent,
+      //         ),
+      //     },
+      //     {
+      //       path: 'brokers',
+      //       loadComponent: () =>
+      //         import('./dashboards/company/pages/brokers/brokers.component').then(
+      //           (m) => m.BrokersComponent,
+      //         ),
+      //     },
+      //     {
+      //       path: 'performance',
+      //       loadComponent: () =>
+      //         import('./dashboards/company/pages/performance/performance.component').then(
+      //           (m) => m.PerformanceComponent,
+      //         ),
+      //     },
+      //     {
+      //       path: 'ai',
+      //       loadComponent: () =>
+      //         import('./dashboards/company/pages/ai/ai.component').then((m) => m.AiComponent),
+      //     },
+      //     {
+      //       path: 'leases',
+      //       loadComponent: () =>
+      //         import('./dashboards/company/pages/leases/leases.component').then(
+      //           (m) => m.LeasesComponent,
+      //         ),
+      //     },
+      //     {
+      //       path: 'subscriptions',
+      //       loadComponent: () =>
+      //         import('./dashboards/company/pages/subscriptions/subscriptions.component').then(
+      //           (m) => m.SubscriptionsComponent,
+      //         ),
+      //     },
+      //     {
+      //       path: 'settings',
+      //       loadComponent: () =>
+      //         import('./dashboards/company/pages/settings/settings.component').then(
+      //           (m) => m.SettingsComponent,
+      //         ),
+      //     },
+      //   ],
+      // },
 
       // ============ BROKER DASHBOARD ============
       {

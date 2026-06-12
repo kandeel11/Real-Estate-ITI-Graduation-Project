@@ -1,0 +1,192 @@
+<div class="dashboard">
+    <!-- Header -->
+    <div class="page-head">
+        <h1>Overview</h1>
+        <p>Portfolio performance at a glance.</p>
+    </div>
+
+    <!-- Stats -->
+    <div class="stats-row">
+        @if (stats(); as s) {
+        <div class="stat">
+            <div class="stat__head">
+                <span class="stat__label">Total Revenue</span>
+                <div class="stat__icon"><i class="fa-regular fa-credit-card"></i></div>
+            </div>
+            <h2 class="stat__value">${{ formatMoney(s.monthlyRevenue) }}</h2>
+            <span class="stat__trend up">
+                <i class="fa-solid fa-arrow-trend-up"></i>
+                +{{ s.revenueGrowth }}% vs last month
+            </span>
+        </div>
+
+        <div class="stat">
+            <div class="stat__head">
+                <span class="stat__label">Total Expenses</span>
+                <div class="stat__icon"><i class="fa-regular fa-money-bill-1"></i></div>
+            </div>
+            <h2 class="stat__value">$82,450</h2>
+            <span class="stat__trend down">
+                <i class="fa-solid fa-arrow-trend-up"></i>
+                +2.1% vs last month
+            </span>
+        </div>
+
+        <div class="stat">
+            <div class="stat__head">
+                <span class="stat__label">Properties Active</span>
+                <div class="stat__icon"><i class="fa-solid fa-house"></i></div>
+            </div>
+            <h2 class="stat__value">42</h2>
+            <span class="stat__trend neutral">Across 3 regions</span>
+        </div>
+
+        <div class="stat">
+            <div class="stat__head">
+                <span class="stat__label">Net Yield</span>
+                <div class="stat__icon"><i class="fa-solid fa-chart-simple"></i></div>
+            </div>
+            <h2 class="stat__value">6.8%</h2>
+            <span class="stat__trend up">
+                <i class="fa-solid fa-arrow-trend-up"></i>
+                +0.4% YoY
+            </span>
+        </div>
+        } @else {
+        @for (i of [1,2,3,4]; track i) { <div class="stat skeleton"></div> }
+        }
+    </div>
+
+    <!-- Charts row -->
+    <div class="charts-row">
+        <div class="card chart-card">
+            <div class="card__head">
+                <div>
+                    <h3>Financial Performance</h3>
+                    <span class="muted">Revenue vs Expenses (YTD)</span>
+                </div>
+                <div class="head-right">
+                    <div class="legend">
+                        <span class="legend-item"><span class="dot expenses"></span> Expenses</span>
+                        <span class="legend-item"><span class="dot revenue"></span> Revenue</span>
+                    </div>
+                    <select class="select-pill">
+                        <option>This Year</option>
+                        <option>Last Year</option>
+                    </select>
+                </div>
+            </div>
+            @if (financialChart) {
+            <apx-chart [series]="financialChart.series" [chart]="financialChart.chart" [xaxis]="financialChart.xaxis"
+                [yaxis]="financialChart.yaxis" [colors]="financialChart.colors" [stroke]="financialChart.stroke"
+                [fill]="financialChart.fill" [dataLabels]="financialChart.dataLabels" [tooltip]="financialChart.tooltip"
+                [grid]="financialChart.grid" [plotOptions]="financialChart.plotOptions"
+                [markers]="financialChart.markers" [legend]="financialChart.legend" />
+            }
+        </div>
+
+        <div class="card occupancy-card">
+            <div class="card__head">
+                <div>
+                    <h3>Occupancy Rate</h3>
+                    <span class="muted">Current Portfolio Status</span>
+                </div>
+            </div>
+            @if (occupancyChart) {
+            <div class="occupancy-chart">
+                <apx-chart [series]="occupancyChart.series" [chart]="occupancyChart.chart"
+                    [labels]="occupancyChart.labels" [colors]="occupancyChart.colors" [stroke]="occupancyChart.stroke"
+                    [legend]="occupancyChart.legend" [dataLabels]="occupancyChart.dataLabels"
+                    [plotOptions]="occupancyChart.plotOptions" />
+            </div>
+            }
+            <div class="occupancy-legend">
+                <div class="leg"><span class="dot occupied"></span> Occupied ({{ occupiedCount() }})</div>
+                <div class="leg"><span class="dot vacant"></span> Vacant ({{ vacantCount() }})</div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Bottom row -->
+    <div class="bottom-row">
+        <!-- Recent Rent Activity -->
+        <div class="card">
+            <div class="card__head">
+                <div>
+                    <h3>Recent Rent Activity</h3>
+                </div>
+                <a class="link">View All</a>
+            </div>
+            <div class="activity-list">
+                @for (p of recentPayments(); track p.id) {
+                <div class="activity-row">
+                    <div class="activity-icon" [class.paid]="p.status === 'paid'"
+                        [class.processed]="p.status !== 'paid'">
+                        @if (p.status === 'paid') {
+                        <i class="fa-regular fa-credit-card"></i>
+                        } @else {
+                        <i class="fa-regular fa-clock"></i>
+                        }
+                    </div>
+                    <div class="activity-info">
+                        <strong>
+                            @if (p.status === 'paid') { Rent Received: }
+                            @else { Payment Processed: }
+                            {{ p.propertyTitle.split(' - ')[0] }}
+                        </strong>
+                        <span>{{ p.tenantName }} · {{ p.paidDate ? timeAgo(p.paidDate) : timeAgo(p.dueDate) }}</span>
+                    </div>
+                    <div class="activity-amount" [class.up]="p.status === 'paid'" [class.down]="p.status !== 'paid'">
+                        {{ p.status === 'paid' ? '+' : '-' }}${{ formatMoney(p.amount) }}
+                    </div>
+                </div>
+                }
+            </div>
+        </div>
+
+        <!-- Needs Attention -->
+        <div class="card">
+            <div class="card__head">
+                <div>
+                    <h3>Needs Attention</h3>
+                </div>
+                <span class="badge-count">{{ pendingProperties().length }} Items</span>
+            </div>
+            <div class="attention-list">
+                @for (p of pendingProperties(); track p.id; let i = $index) {
+                <div class="attention-item">
+                    <div class="attention-img">
+                        @if (p.mainImageUrl) {
+                        <img [src]="p.mainImageUrl" [alt]="p.title" />
+                        } @else {
+                        <i class="fa-solid fa-screwdriver-wrench"></i>
+                        }
+                    </div>
+                    <div class="attention-body">
+                        <div class="attention-top">
+                            <strong>{{ p.title }}</strong>
+                            <span class="attention-badge" [class.renewal]="i === 0" [class.urgent]="i === 1">
+                                {{ i === 0 ? 'Renewal' : 'Urgent' }}
+                            </span>
+                        </div>
+                        <span class="attention-meta">
+                            Unit {{ p.id }}C · {{ i === 0 ? 'Lease Expiring in 30 days' : 'Maintenance Request' }}
+                        </span>
+                        @if (p.description && i === 1) {
+                        <p class="attention-desc">{{ p.description }}</p>
+                        }
+                        <div class="attention-actions">
+                            <button class="btn-primary-sm" (click)="approve(p)">
+                                @if (i === 0) { Send Offer } @else { Approve Vendor }
+                            </button>
+                            @if (i === 0) {
+                            <button class="btn-outline-sm">Contact Tenant</button>
+                            }
+                        </div>
+                    </div>
+                </div>
+                }
+            </div>
+        </div>
+    </div>
+</div>
