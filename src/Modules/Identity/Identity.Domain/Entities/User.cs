@@ -258,11 +258,19 @@ public class User : BaseEntity
         MarkAsUpdated();
     }
 
-    public void UpdateProfile(string fullName, string phone, string? imageUrl)
+    //public void UpdateProfile(string fullName, string phone, string? imageUrl)
+    //{
+    //    FullName = fullName.Trim();
+    //    Phone = phone;
+    //    ProfileImageUrl = imageUrl;
+    //    MarkAsUpdated();
+    //}
+    public void UpdateProfile(string fullName, string phone, string? email)
     {
-        FullName = fullName.Trim();
+        FullName = fullName;
         Phone = phone;
-        ProfileImageUrl = imageUrl;
+        if (!string.IsNullOrWhiteSpace(email))
+            Email = email;
         MarkAsUpdated();
     }
 

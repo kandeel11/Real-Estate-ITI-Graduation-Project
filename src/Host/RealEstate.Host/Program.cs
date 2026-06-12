@@ -21,6 +21,7 @@ using Subscription.Infrastructure.Persistence;
 using Subscription.Infrastructure.Seed;
 using System.IdentityModel.Tokens.Jwt;
 using System.Text;
+using Payment.Infrastructure;
 using MaintenanceCompanies.Infrastructure;
 using MaintenanceCompanies.Application;
 
@@ -47,6 +48,7 @@ public class Program
         });
 
         builder.Services.AddEndpointsApiExplorer();
+
         builder.Services.AddSwaggerGen(options =>
         {
             options.CustomSchemaIds(type => type.FullName);
@@ -75,6 +77,7 @@ public class Program
             });
         });
 
+        // ── JWT ───────────────────────────────────────────────
         var jwtOptions = builder.Configuration.GetSection("Jwt").Get<JwtOptions>()
             ?? new JwtOptions { SigningKey = "default-dev-key-change-in-production-32chars" };
 
@@ -95,6 +98,7 @@ public class Program
                 };
             });
 
+        // ── Authorization Policies ────────────────────────────
         builder.Services.AddAuthorization(options =>
         {
             options.AddPolicy("AdminOnly", p => p.RequireRole("admin"));
@@ -106,11 +110,14 @@ public class Program
             options.AddPolicy("InternalServiceOnly", p => p.RequireClaim("service_type"));
         });
 
+        // ── Modules ───────────────────────────────────────────
         builder.Services.AddIdentityModule(builder.Configuration);
         builder.Services.AddPropertyModule(builder.Configuration);
         builder.Services.AddMaintenanceModule(builder.Configuration);
         builder.Services.AddSubscriptionModule(builder.Configuration);
+        builder.Services.AddPaymentModule(builder.Configuration);
 
+        // ── MediatR ───────────────────────────────────────────
         builder.Services.AddMediatR(cfg =>
         {
             cfg.RegisterServicesFromAssemblies(
@@ -132,6 +139,10 @@ public class Program
         builder.Services.AddDocumentModule(builder.Configuration);
         builder.Services.AddMaintenanceCompaniesModule(builder.Configuration);
 
+        // ── SignalR ───────────────────────────────────────────
+        builder.Services.AddSignalR();   
+
+        // ── Hangfire ──────────────────────────────────────────
         builder.Services.AddHangfire(config => config
             .SetDataCompatibilityLevel(CompatibilityLevel.Version_180)
             .UseSimpleAssemblyNameTypeSerializer()
@@ -153,6 +164,15 @@ public class Program
             options.Queues = new[] { "emails", "default" };
         });
 
+        builder.Services.AddCors(options =>
+        {
+            options.AddPolicy("AllowAngular", policy =>
+                policy.WithOrigins("http://localhost:4200")
+                      .AllowAnyHeader()
+                      .AllowAnyMethod()
+                      .AllowCredentials());
+        });
+
         var app = builder.Build();
 
         app.UseHangfireDashboard("/hangfire", new DashboardOptions
@@ -160,13 +180,15 @@ public class Program
             Authorization = new[] { new HangfireDashboardAuthFilter() }
         });
 
+        // ── Migrations + Seeding ──────────────────────────────
         using (var scope = app.Services.CreateScope())
         {
             var subscriptionDb = scope.ServiceProvider.GetRequiredService<SubscriptionDbContext>();
-            var AiDB = scope.ServiceProvider.GetRequiredService<AiDbContext>();
-            var PropertyDb = scope.ServiceProvider.GetRequiredService<PropertyDbContext>();
-            await PropertyDb.Database.MigrateAsync();
-            await AiDB.Database.MigrateAsync();
+            var aiDb = scope.ServiceProvider.GetRequiredService<AiDbContext>();
+            var propertyDb = scope.ServiceProvider.GetRequiredService<PropertyDbContext>();
+
+            await propertyDb.Database.MigrateAsync();
+            await aiDb.Database.MigrateAsync();
             await subscriptionDb.Database.MigrateAsync();
             await SubscriptionPlanSeed.SeedAsync(subscriptionDb);
             await Property.Infrastructure.Persistence.Seeding.AmenitySeed.SeedAsync(PropertyDb);
@@ -181,12 +203,9 @@ public class Program
         {
             app.UseSwagger();
             app.UseSwaggerUI(c =>
-            {
-                c.SwaggerEndpoint("/swagger/v1/swagger.json", "Real Estate API v1");
-            });
+                c.SwaggerEndpoint("/swagger/v1/swagger.json", "Real Estate API v1"));
         }
-
-        app.UseCors("Frontend");
+        app.UseCors("AllowAngular");
         app.UseAuthentication();
         app.UseAuthorization();
         app.MapControllers();

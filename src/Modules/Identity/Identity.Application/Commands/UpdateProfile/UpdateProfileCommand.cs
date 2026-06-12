@@ -7,7 +7,7 @@ public record UpdateProfileCommand(
     Guid UserId,
     string FullName,
     string Phone,
-    string? ProfileImageUrl) : IRequest;
+    string? Email) : IRequest;
 
 public class UpdateProfileHandler(IUserRepository repo) : IRequestHandler<UpdateProfileCommand>
 {
@@ -16,7 +16,7 @@ public class UpdateProfileHandler(IUserRepository repo) : IRequestHandler<Update
         var user = await repo.GetByIdAsync(cmd.UserId, ct)
             ?? throw new KeyNotFoundException("User not found.");
 
-        user.UpdateProfile(cmd.FullName, cmd.Phone, cmd.ProfileImageUrl);
+        user.UpdateProfile(cmd.FullName, cmd.Phone, cmd.Email);
         await repo.UpdateAsync(user, ct);
         await repo.SaveChangesAsync(ct);
     }

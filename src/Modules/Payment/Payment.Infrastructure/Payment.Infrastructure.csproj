@@ -1,6 +1,14 @@
 ﻿<Project Sdk="Microsoft.NET.Sdk">
 
   <ItemGroup>
+    <PackageReference Include="FluentValidation.DependencyInjectionExtensions" Version="12.1.1" />
+    <PackageReference Include="Microsoft.EntityFrameworkCore" Version="9.0.16" />
+	  <PackageReference Include="Microsoft.EntityFrameworkCore.Relational" Version="9.0.16" />
+	  <PackageReference Include="Microsoft.EntityFrameworkCore.SqlServer" Version="9.0.16" />
+	  <PackageReference Include="Microsoft.EntityFrameworkCore.Design" Version="9.0.16" />
+  </ItemGroup>
+
+  <ItemGroup>
     <ProjectReference Include="..\Payment.Application\Payment.Application.csproj" />
   </ItemGroup>
 
@@ -11,4 +19,3 @@
   </PropertyGroup>
 
 </Project>
-

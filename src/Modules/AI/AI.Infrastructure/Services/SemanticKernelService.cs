@@ -2,6 +2,7 @@
 using AI.Application.Interfaces.Common;
 using AI.Infrastructure.Plugins;
 using Microsoft.Extensions.Logging;
+using Microsoft.Identity.Client;
 using Microsoft.SemanticKernel;
 using Microsoft.SemanticKernel.ChatCompletion;
 using Microsoft.SemanticKernel.Connectors.OpenAI;
@@ -64,27 +65,64 @@ Politely refuse such requests.
             var amenitiesStr = string.Join(", ", amenities);
 
             // System Prompt + User Data
-            var prompt = $@"
-You are an expert Real Estate Copywriter. Your task is to write highly engaging property descriptions based ONLY on the provided facts.
+            
+var prompt = $@"
+You are an expert Real Estate Copywriter and SEO Content Specialist.
 
-Property Details:
-- Type: {propertyType}
+Your task is to generate HIGH-QUALITY, SEO-OPTIMIZED property descriptions using ONLY the provided facts.
+
+PROPERTY DETAILS:
+- Property Type: {propertyType}
 - Location: {location}
 - Bedrooms: {bedrooms}
 - Area: {area} sqm
 - Amenities: {amenitiesStr}
 
-CRITICAL RULES:
-1. DO NOT invent, assume, or add any features, amenities, nearby locations (like schools, shops, transport), or finishes that are not explicitly listed in the Property Details.
-2. DO NOT state whether the property is for rent or for sale, as this information is not provided.
-3. Your tone should be professional and inviting, but strictly limited to the factual data provided.
-4. You MUST respond ONLY with a valid JSON object in the exact format below.
+OBJECTIVE:
+Write clear, engaging, professional, and search-friendly property descriptions in BOTH English and Arabic.
 
-JSON FORMAT:
+STRICT FACTUAL RULES:
+1. Use ONLY the information explicitly provided in PROPERTY DETAILS.
+2. NEVER invent, assume, infer, or exaggerate:
+   - finishes or interior quality
+   - nearby landmarks, schools, transport, malls, hospitals, or attractions
+   - views, lifestyle benefits, compound features, security, parking, garden, pool, gym, etc.
+   - investment value or ROI claims
+3. DO NOT mention whether the property is for sale or rent.
+4. If a field is missing or empty, ignore it naturally and do not mention it.
+5. Do not repeat the same information unnecessarily.
+
+SEO RULES:
+1. Naturally include available keywords such as:
+   - property type
+   - location
+   - bedrooms
+   - area
+   - amenities
+2. Keep SEO natural and human-friendly.
+3. Avoid keyword stuffing.
+4. The description should be readable and suitable for property listing pages.
+
+WRITING STYLE:
+- Professional, concise, and inviting.
+- Avoid exaggerated marketing language.
+- Sound trustworthy and premium without making unsupported claims.
+- Maximum 120 words per language.
+
+OUTPUT REQUIREMENTS:
+- Return ONLY a valid JSON object.
+- No markdown.
+- No explanation.
+- No extra text.
+- Escape quotes properly for JSON validity.
+
+REQUIRED JSON FORMAT:
 {{
-  ""en"": ""English description here..."",
-  ""ar"": ""Arabic description here...""
+  ""en"": ""English property description"",
+  ""ar"": ""الوصف العربي للعقار""
 }}";
+
+
 
             //  Semantic Kernel
             var result = await _kernel.InvokePromptAsync(prompt, cancellationToken: cancellationToken);
