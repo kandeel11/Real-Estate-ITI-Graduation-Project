@@ -13,36 +13,34 @@ export const routes: Routes = [
     path: '',
     loadComponent: () =>
       import('./layouts/public-layout/public-layout.component').then(
-        (m) => m.PublicLayoutComponent
+        (m) => m.PublicLayoutComponent,
       ),
     children: [
       {
         path: '',
         loadComponent: () =>
           import('./features/properties/property-list/property-list.component').then(
-            (m) => m.PropertyListComponent
+            (m) => m.PropertyListComponent,
           ),
       },
       {
         path: 'properties/search',
         loadComponent: () =>
           import('./features/properties/property-search/property-search.component').then(
-            (m) => m.PropertySearchComponent
+            (m) => m.PropertySearchComponent,
           ),
       },
       {
         path: 'properties/:id',
         loadComponent: () =>
           import('./features/properties/property-detail/property-detail.component').then(
-            (m) => m.PropertyDetailComponent
+            (m) => m.PropertyDetailComponent,
           ),
       },
       {
         path: 'ai/chat',
         loadComponent: () =>
-          import('./features/ai/chat-rag/chat-rag.component').then(
-            (m) => m.ChatRagComponent
-          ),
+          import('./features/ai/chat-rag/chat-rag.component').then((m) => m.ChatRagComponent),
       },
     ],
   },
@@ -51,43 +49,37 @@ export const routes: Routes = [
   {
     path: 'auth',
     loadComponent: () =>
-      import('./layouts/auth-layout/auth-layout.component').then(
-        (m) => m.AuthLayoutComponent
-      ),
+      import('./layouts/auth-layout/auth-layout.component').then((m) => m.AuthLayoutComponent),
     children: [
       {
         path: 'login',
         loadComponent: () =>
-          import('./features/auth/login/login.component').then(
-            (m) => m.LoginComponent
-          ),
+          import('./features/auth/login/login.component').then((m) => m.LoginComponent),
       },
       {
         path: 'register',
         loadComponent: () =>
-          import('./features/auth/register/register.component').then(
-            (m) => m.RegisterComponent
-          ),
+          import('./features/auth/register/register.component').then((m) => m.RegisterComponent),
       },
       {
         path: 'verify-email',
         loadComponent: () =>
           import('./features/auth/verify-email/verify-email.component').then(
-            (m) => m.VerifyEmailComponent
+            (m) => m.VerifyEmailComponent,
           ),
       },
       {
         path: 'verify-otp',
         loadComponent: () =>
           import('./features/auth/verify-otp/verify-otp.component').then(
-            (m) => m.VerifyOtpComponent
+            (m) => m.VerifyOtpComponent,
           ),
       },
       {
         path: 'forgot-password',
         loadComponent: () =>
           import('./features/auth/forgot-password/forgot-password.component').then(
-            (m) => m.ForgotPasswordComponent
+            (m) => m.ForgotPasswordComponent,
           ),
       },
     ],
@@ -98,7 +90,7 @@ export const routes: Routes = [
     path: 'dashboard',
     loadComponent: () =>
       import('./layouts/dashboard-layout/dashboard-layout.component').then(
-        (m) => m.DashboardLayoutComponent
+        (m) => m.DashboardLayoutComponent,
       ),
     canActivate: [roleGuard],
     children: [
@@ -109,43 +101,43 @@ export const routes: Routes = [
         data: { expectedRole: 'admin' },
         loadComponent: () =>
           import('./dashboards/admin/admin-dashboard.component').then(
-            (m) => m.AdminDashboardComponent
+            (m) => m.AdminDashboardComponent,
           ),
         children: [
           {
             path: 'overview',
             loadComponent: () =>
-              import(
-                './dashboards/admin/pages/overview/overview.component'
-              ).then((m) => m.OverviewComponent),
+              import('./dashboards/admin/pages/overview/overview.component').then(
+                (m) => m.OverviewComponent,
+              ),
           },
           {
             path: 'users',
             loadComponent: () =>
-              import(
-                './dashboards/admin/pages/users-management/users-management.component'
-              ).then((m) => m.UsersManagementComponent),
+              import('./dashboards/admin/pages/users-management/users-management.component').then(
+                (m) => m.UsersManagementComponent,
+              ),
           },
           {
             path: 'companies',
             loadComponent: () =>
-              import(
-                './dashboards/admin/pages/companies-management/companies-management.component'
-              ).then((m) => m.CompaniesManagementComponent),
+              import('./dashboards/admin/pages/companies-management/companies-management.component').then(
+                (m) => m.CompaniesManagementComponent,
+              ),
           },
           {
             path: 'moderation',
             loadComponent: () =>
-              import(
-                './dashboards/admin/pages/moderation/moderation.component'
-              ).then((m) => m.ModerationComponent),
+              import('./dashboards/admin/pages/moderation/moderation.component').then(
+                (m) => m.ModerationComponent,
+              ),
           },
           {
             path: 'reports',
             loadComponent: () =>
-              import(
-                './dashboards/admin/pages/reports/reports.component'
-              ).then((m) => m.ReportsComponent),
+              import('./dashboards/admin/pages/reports/reports.component').then(
+                (m) => m.ReportsComponent,
+              ),
           },
         ],
       },
@@ -157,43 +149,43 @@ export const routes: Routes = [
         data: { expectedRole: 'company' },
         loadComponent: () =>
           import('./dashboards/company/company-dashboard.component').then(
-            (m) => m.CompanyDashboardComponent
+            (m) => m.CompanyDashboardComponent,
           ),
         children: [
           {
             path: 'overview',
             loadComponent: () =>
-              import(
-                './dashboards/company/pages/overview/overview.component'
-              ).then((m) => m.OverviewComponent),
+              import('./dashboards/company/pages/overview/overview.component').then(
+                (m) => m.OverviewComponent,
+              ),
           },
           {
             path: 'properties',
             loadComponent: () =>
-              import(
-                './dashboards/company/pages/properties/properties.component'
-              ).then((m) => m.PropertiesComponent),
+              import('./dashboards/company/pages/properties/properties.component').then(
+                (m) => m.PropertiesComponent,
+              ),
           },
           {
             path: 'brokers',
             loadComponent: () =>
-              import(
-                './dashboards/company/pages/brokers/brokers.component'
-              ).then((m) => m.BrokersComponent),
+              import('./dashboards/company/pages/brokers/brokers.component').then(
+                (m) => m.BrokersComponent,
+              ),
           },
           {
             path: 'leases',
             loadComponent: () =>
-              import(
-                './dashboards/company/pages/leases/leases.component'
-              ).then((m) => m.LeasesComponent),
+              import('./dashboards/company/pages/leases/leases.component').then(
+                (m) => m.LeasesComponent,
+              ),
           },
           {
             path: 'subscriptions',
             loadComponent: () =>
-              import(
-                './dashboards/company/pages/subscriptions/subscriptions.component'
-              ).then((m) => m.SubscriptionsComponent),
+              import('./dashboards/company/pages/subscriptions/subscriptions.component').then(
+                (m) => m.SubscriptionsComponent,
+              ),
           },
         ],
       },
@@ -205,84 +197,97 @@ export const routes: Routes = [
         data: { expectedRole: 'broker' },
         loadComponent: () =>
           import('./dashboards/broker/broker-dashboard.component').then(
-            (m) => m.BrokerDashboardComponent
+            (m) => m.BrokerDashboardComponent,
           ),
         children: [
+          { path: '', redirectTo: 'overview', pathMatch: 'full' },
           {
             path: 'overview',
             loadComponent: () =>
-              import(
-                './dashboards/broker/pages/overview/overview.component'
-              ).then((m) => m.OverviewComponent),
+              import('./dashboards/broker/pages/overview/overview.component').then(
+                (m) => m.OverviewComponent,
+              ),
           },
           {
-            path: 'listings',
+            path: 'properties',
             loadComponent: () =>
-              import(
-                './dashboards/broker/pages/listings/listings.component'
-              ).then((m) => m.ListingsComponent),
+              import('./dashboards/broker/pages/properties/properties.component').then(
+                (m) => m.PropertiesComponent,
+              ),
+          },
+          {
+            path: 'leads',
+            loadComponent: () =>
+              import('./dashboards/broker/pages/leads/leads.component').then(
+                (m) => m.LeadsComponent,
+              ),
+          },
+          {
+            path: 'inquiries',
+            loadComponent: () =>
+              import('./dashboards/broker/pages/inquiries/inquiries.component').then(
+                (m) => m.InquiriesComponent,
+              ),
           },
           {
             path: 'performance',
             loadComponent: () =>
-              import(
-                './dashboards/broker/pages/performance/performance.component'
-              ).then((m) => m.PerformanceComponent),
+              import('./dashboards/broker/pages/performance/performance.component').then(
+                (m) => m.PerformanceComponent,
+              ),
           },
           {
-            path: 'commissions',
+            path: 'profile',
             loadComponent: () =>
-              import(
-                './dashboards/broker/pages/commissions/commissions.component'
-              ).then((m) => m.CommissionsComponent),
+              import('./dashboards/broker/pages/profile/profile.component').then(
+                (m) => m.ProfileComponent,
+              ),
           },
         ],
-      },
-
-      // ============ TENANT DASHBOARD ============
+      }, // ============ TENANT DASHBOARD ============
       {
         path: 'tenant',
         canActivate: [roleGuard],
         data: { expectedRole: 'tenant' },
         loadComponent: () =>
           import('./dashboards/tenant/tenant-dashboard.component').then(
-            (m) => m.TenantDashboardComponent
+            (m) => m.TenantDashboardComponent,
           ),
         children: [
           {
             path: 'overview',
             loadComponent: () =>
-              import(
-                './dashboards/tenant/pages/overview/overview.component'
-              ).then((m) => m.OverviewComponent),
+              import('./dashboards/tenant/pages/overview/overview.component').then(
+                (m) => m.OverviewComponent,
+              ),
           },
           {
             path: 'my-property',
             loadComponent: () =>
-              import(
-                './dashboards/tenant/pages/my-property/my-property.component'
-              ).then((m) => m.MyPropertyComponent),
+              import('./dashboards/tenant/pages/my-property/my-property.component').then(
+                (m) => m.MyPropertyComponent,
+              ),
           },
           {
             path: 'lease',
             loadComponent: () =>
-              import(
-                './dashboards/tenant/pages/lease/lease.component'
-              ).then((m) => m.LeaseComponent),
+              import('./dashboards/tenant/pages/lease/lease.component').then(
+                (m) => m.LeaseComponent,
+              ),
           },
           {
             path: 'maintenance-requests',
             loadComponent: () =>
-              import(
-                './dashboards/tenant/pages/maintenance-requests/maintenance-requests.component'
-              ).then((m) => m.MaintenanceRequestsComponent),
+              import('./dashboards/tenant/pages/maintenance-requests/maintenance-requests.component').then(
+                (m) => m.MaintenanceRequestsComponent,
+              ),
           },
           {
             path: 'payments',
             loadComponent: () =>
-              import(
-                './dashboards/tenant/pages/payments/payments.component'
-              ).then((m) => m.PaymentsComponent),
+              import('./dashboards/tenant/pages/payments/payments.component').then(
+                (m) => m.PaymentsComponent,
+              ),
           },
         ],
       },
@@ -293,37 +298,37 @@ export const routes: Routes = [
         canActivate: [roleGuard],
         data: { expectedRole: 'maintenance-company' },
         loadComponent: () =>
-          import(
-            './dashboards/maintenance-company/maintenance-company-dashboard.component'
-          ).then((m) => m.MaintenanceCompanyDashboardComponent),
+          import('./dashboards/maintenance-company/maintenance-company-dashboard.component').then(
+            (m) => m.MaintenanceCompanyDashboardComponent,
+          ),
         children: [
           {
             path: 'overview',
             loadComponent: () =>
-              import(
-                './dashboards/maintenance-company/pages/overview/overview.component'
-              ).then((m) => m.OverviewComponent),
+              import('./dashboards/maintenance-company/pages/overview/overview.component').then(
+                (m) => m.OverviewComponent,
+              ),
           },
           {
             path: 'tickets',
             loadComponent: () =>
-              import(
-                './dashboards/maintenance-company/pages/tickets/tickets.component'
-              ).then((m) => m.TicketsComponent),
+              import('./dashboards/maintenance-company/pages/tickets/tickets.component').then(
+                (m) => m.TicketsComponent,
+              ),
           },
           {
             path: 'work-orders',
             loadComponent: () =>
-              import(
-                './dashboards/maintenance-company/pages/work-orders/work-orders.component'
-              ).then((m) => m.WorkOrdersComponent),
+              import('./dashboards/maintenance-company/pages/work-orders/work-orders.component').then(
+                (m) => m.WorkOrdersComponent,
+              ),
           },
           {
             path: 'reports',
             loadComponent: () =>
-              import(
-                './dashboards/maintenance-company/pages/reports/reports.component'
-              ).then((m) => m.ReportsComponent),
+              import('./dashboards/maintenance-company/pages/reports/reports.component').then(
+                (m) => m.ReportsComponent,
+              ),
           },
         ],
       },
