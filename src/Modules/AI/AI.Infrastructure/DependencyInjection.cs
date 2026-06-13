@@ -109,6 +109,7 @@ public static class DependencyInjection
             // Register Plugins to the Kernel
             builder.Plugins.AddFromObject(sp.GetRequiredService<PropertySearchPlugin>());
             builder.Plugins.AddFromObject(sp.GetRequiredService<ContractRetrievalPlugin>());
+                
 
             return builder.Build();
         });

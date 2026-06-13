@@ -86,9 +86,11 @@ public sealed class PropertyDuplicateCheckService : IPropertyDuplicateCheckServi
             cancellationToken: cancellationToken);
 
         var similarHits = hits
-            .Where(h => h.Id.Uuid != request.PropertyId.ToString())
-            .OrderByDescending(h => h.Score)
-            .ToList();
+    .Where(h =>
+        h.Payload.TryGetValue("propertyId", out var propertyId)
+        && propertyId.StringValue != request.PropertyId.ToString())
+    .OrderByDescending(h => h.Score)
+    .ToList();
 
         _logger.LogInformation(
             "Qdrant search returned {Count} hits above threshold {T}",
@@ -99,8 +101,8 @@ public sealed class PropertyDuplicateCheckService : IPropertyDuplicateCheckServi
 
         if (similarHits.Count == 0)
         {
-            // Rule 1: No hits found at all -> Not a duplicate
-            finalResult = CreateSafeResult(false, 0, similarHits, request,
+            // Rule 1: No hits found at all -> Not a duplicate (deterministic → full confidence)
+            finalResult = CreateSafeResult(false, 0, decisionConfidence: 1.0, similarHits, request,
                 "No similar properties found.", "Clean property.");
         }
         else
@@ -110,14 +112,14 @@ public sealed class PropertyDuplicateCheckService : IPropertyDuplicateCheckServi
 
             if (highestScore >= AutoDuplicateThreshold || (highestScore >= 0.90 && isSameOwner))
             {
-                // Rule 2: Extremely high similarity or high similarity with same owner -> Auto Duplicate
-                finalResult = CreateSafeResult(true, highestScore, similarHits, request,
+                // Rule 2: Extremely high similarity or high similarity with same owner -> Auto Duplicate (deterministic → full confidence)
+                finalResult = CreateSafeResult(true, highestScore, decisionConfidence: 1.0, similarHits, request,
                     "Exact match or very high similarity with same owner detected.", "Auto-flagged by Rule Engine.");
             }
             else if (highestScore < ClaudeReviewThreshold)
             {
-                // Rule 3: Below Claude review threshold -> Not a duplicate
-                finalResult = CreateSafeResult(false, highestScore, similarHits, request,
+                // Rule 3: Below Claude review threshold -> Not a duplicate (deterministic → full confidence)
+                finalResult = CreateSafeResult(false, highestScore, decisionConfidence: 1.0, similarHits, request,
                     "Similarity score below ambiguity threshold.", "Auto-cleared by Rule Engine.");
             }
             else
@@ -148,46 +150,81 @@ public sealed class PropertyDuplicateCheckService : IPropertyDuplicateCheckServi
     // ─────────────────────────────────────────────────────────────────────────
     // Build Structured Search Text
     // ─────────────────────────────────────────────────────────────────────────
-    private static string BuildSearchText(PropertyDuplicateCheckRequest r)
+    private static string BuildSearchText(PropertyDuplicateCheckRequest request)
     {
-        var sb = new StringBuilder();
+        // Normalize: if city == district (New Cairo case), use district only
+        var location = string.Equals(request.City, request.District, StringComparison.OrdinalIgnoreCase)
+            ? request.District
+            : $"{request.District}, {request.City}";
 
-        // Structured text generates much better embeddings
-        sb.AppendLine($"Listing Type: {r.ListingType}");
-        sb.AppendLine($"Property Type: {r.PropertyType}");
-        sb.AppendLine($"City: {r.City}");
-        sb.AppendLine($"District: {r.District}");
-        sb.AppendLine($"Street: {r.Street}");
-        sb.AppendLine($"Building: {r.BuildingName ?? "N/A"}");
-        sb.AppendLine($"Unit: {r.UnitNumber ?? "N/A"}");
-        sb.AppendLine($"Floor: {r.Floor?.ToString() ?? "N/A"}");
-        sb.AppendLine($"Area: {r.AreaInMeters} sqm");
-        sb.AppendLine($"Bedrooms: {r.Bedrooms ?? 0}");
-        sb.AppendLine($"Bathrooms: {r.Bathrooms ?? 0}");
-        sb.AppendLine($"Price: {r.Price}");
-        sb.AppendLine($"Title: {r.Title}");
-        sb.AppendLine($"Description: {r.Description}");
-
-        return sb.ToString().Trim();
+        return $"""
+        {request.PropertyType} {request.ListingType} in {location}
+        Bedrooms: {request.Bedrooms} | Bathrooms: {request.Bathrooms}
+        Floor: {request.Floor} | Area: {request.AreaInMeters}sqm
+        Price: {request.Price}
+        Street: {request.Street} | Unit: {request.UnitNumber}
+        Building: {request.BuildingName}
+        Title: {request.Title}
+        """;
     }
 
     // ─────────────────────────────────────────────────────────────────────────
     // Build Qdrant Search Filter
     // ─────────────────────────────────────────────────────────────────────────
-    private static Filter BuildSearchFilter(PropertyDuplicateCheckRequest request)
+    private Filter BuildSearchFilter(PropertyDuplicateCheckRequest request)
     {
-        return new Filter
-        {
-            Must =
-            {
-                new Condition { Field = new FieldCondition { Key = "city", Match = new Match { Keyword = request.City } } },
-                new Condition { Field = new FieldCondition { Key = "propertyType", Match = new Match { Keyword = request.PropertyType } } },
-                new Condition { Field = new FieldCondition { Key = "listingType", Match = new Match { Keyword = request.ListingType } } }
-            }
-        };
-    }
+        var conditions = new List<Condition>();
 
-    // ─────────────────────────────────────────────────────────────────────────
+        if (!string.IsNullOrWhiteSpace(request.District))
+        {
+            conditions.Add(new Condition
+            {
+                Field = new FieldCondition
+                {
+                    Key = "district",
+                    Match = new Match
+                    {
+                        Keyword = request.District
+                    }
+                }
+            });
+        }
+
+        if (!string.IsNullOrWhiteSpace(request.PropertyType))
+        {
+            conditions.Add(new Condition
+            {
+                Field = new FieldCondition
+                {
+                    Key = "propertyType",
+                    Match = new Match
+                    {
+                        Keyword = request.PropertyType
+                    }
+                }
+            });
+        }
+
+        if (!string.IsNullOrWhiteSpace(request.ListingType))
+        {
+            conditions.Add(new Condition
+            {
+                Field = new FieldCondition
+                {
+                    Key = "listingType",
+                    Match = new Match
+                    {
+                        Keyword = request.ListingType
+                    }
+                }
+            });
+        }
+
+        return conditions.Count > 0
+            ? new Filter { Must = { conditions } }
+            : new Filter();
+    }
+    //────────────────────────────────────────────────────────────────────
     // Upsert property into Qdrant
     // ─────────────────────────────────────────────────────────────────────────
     private async Task UpsertPropertyAsync(
@@ -246,26 +283,29 @@ public sealed class PropertyDuplicateCheckService : IPropertyDuplicateCheckServi
         foreach (var hit in hits)
         {
             similarSummary.AppendLine($$"""
-                ── Similar Property (Similarity: {{hit.Score:P1}}) ──
-                Owner ID     : {{hit.Payload["ownerId"].StringValue}}
-                Title        : {{hit.Payload["title"].StringValue}}
-                City         : {{hit.Payload["city"].StringValue}}
-                District     : {{hit.Payload["district"].StringValue}}
-                Street       : {{hit.Payload["street"].StringValue}}
-                Building     : {{hit.Payload["buildingName"].StringValue}}
-                Unit Number  : {{hit.Payload["unitNumber"].StringValue}}
-                Floor        : {{hit.Payload["floor"].IntegerValue}}
-                Type         : {{hit.Payload["propertyType"].StringValue}}
-                Area         : {{hit.Payload["area"].DoubleValue}} m²
-                Bedrooms     : {{hit.Payload["bedrooms"].IntegerValue}}
-                Price        : {{hit.Payload["price"].DoubleValue}}
-                """);
+    ── Similar Property (Similarity: {{hit.Score:P1}}) ──
+    Property ID  : {{hit.Payload["propertyId"].StringValue}}
+    Owner ID     : {{hit.Payload["ownerId"].StringValue}}
+    Title        : {{hit.Payload["title"].StringValue}}
+    Listing Type : {{hit.Payload["listingType"].StringValue}}
+    Type         : {{hit.Payload["propertyType"].StringValue}}
+    City         : {{hit.Payload["city"].StringValue}}
+    District     : {{hit.Payload["district"].StringValue}}
+    Street       : {{hit.Payload["street"].StringValue}}
+    Building     : {{hit.Payload["buildingName"].StringValue}}
+    Unit Number  : {{hit.Payload["unitNumber"].StringValue}}
+    Floor        : {{hit.Payload["floor"].IntegerValue}}
+    Area         : {{hit.Payload["area"].DoubleValue}} m²
+    Bedrooms     : {{hit.Payload["bedrooms"].IntegerValue}}
+    Bathrooms    : {{hit.Payload["bathrooms"].IntegerValue}}
+    Price        : {{hit.Payload["price"].DoubleValue}}
+    """);
         }
 
         var prompt = $$"""
-            You are a real estate duplicate detection specialist.
-            Determine if the new property is a duplicate of any existing listings.
-
+            You are a strict real estate duplicate detection specialist.
+            Determine whether the NEW PROPERTY is a duplicate of any CANDIDATE below.
+ 
             ═══ NEW PROPERTY ═══
             Owner ID     : {{request.OwnerId}}
             Title        : {{request.Title}}
@@ -281,34 +321,51 @@ public sealed class PropertyDuplicateCheckService : IPropertyDuplicateCheckServi
             Bedrooms     : {{request.Bedrooms ?? 0}}
             Bathrooms    : {{request.Bathrooms ?? 0}}
             Price        : {{request.Price}}
-
-            ═══ SIMILAR PROPERTIES FOUND ═══
+ 
+            ═══ CANDIDATES ═══
             {{similarSummary}}
+ 
+            ═══ STRICT DUPLICATE RULES ═══
+            Mark is_duplicate = true when MOST strong signals indicate
+            that both listings refer to the same physical property.
 
-            ═══ DUPLICATE RULES ═══
-            DEFINITELY DUPLICATE when ALL of:
-            ✓ Same city + district + street
-            ✓ Same building name (if provided)
-            ✓ Same unit number OR floor (if provided)
+            Strong signals:
+            ✓ Same district AND same street
+            ✓ Same building name (if available)
+            ✓ Same unit number OR same floor
             ✓ Same property type
-            ✓ Area within 5% difference
-            ✓ Price within 20% difference
-            ✓ OR Same owner with similar specs
+            ✓ Area within 10%
+            ✓ Price within 25%
+            ✓ Same owner increases confidence
 
-            NOT DUPLICATE when ANY of:
-            ✗ Different unit number in same building
-            ✗ Different floor with no unit number
+            A few missing fields (building/unit/floor) should NOT automatically
+            mean false if the remaining evidence is strong.
+
+            Mark is_duplicate = false when there is strong contradictory evidence:
             ✗ Different street
-            ✗ Area difference > 15%
+            ✗ Different unit number in same building
             ✗ Different property type
+            ✗ Area difference > 20%
+            ✗ Listing type mismatch (ForSale vs ForRent)
+ 
+            ═══ SCORING GUIDANCE ═══
+            Return:
+            - similarity_score:
+              how semantically similar the listings are (0-1)
 
-            ═══ ADMIN NOTE RULES ═══
-            Write a short note for the admin reviewer explaining matched fields, differing fields, and your recommendation.
-
-            Return ONLY valid JSON matching this schema exactly:
+            - decision_confidence:
+              how confident you are in your final duplicate decision (0-1)
+            This may differ from the Qdrant cosine score shown above.
+ 
+            ═══ ADMIN NOTE ═══
+            Write one concise sentence naming the matched fields, differing fields,
+            and your final recommendation.
+ 
+            Return ONLY valid JSON — no preamble, no markdown fences:
             {
               "is_duplicate": false,
-              "highest_similarity_score": 0.91,
+              "similarity_score": 0.91,
+              "decision_confidence": 0.62,
               "reasoning": "...",
               "admin_note": "..."
             }
@@ -319,6 +376,9 @@ public sealed class PropertyDuplicateCheckService : IPropertyDuplicateCheckServi
 
         var response = await _chat.GetChatMessageContentAsync(
             history, kernel: _kernel, cancellationToken: ct);
+        _logger.LogInformation(
+    "Claude raw response: {Response}",
+    response.Content);
 
         return ParseClaudeResponse(response.Content ?? "{}", similarProperties, hits, request);
     }
@@ -341,9 +401,10 @@ public sealed class PropertyDuplicateCheckService : IPropertyDuplicateCheckServi
             if (parsed == null) throw new InvalidOperationException("Deserialized object is null.");
 
             return new DuplicateCheckResult(
-                IsDuplicate: parsed.IsDuplicate,
-                HighestSimilarityScore: parsed.HighestSimilarityScore,
-                Threshold: SimilarityThreshold,
+     IsDuplicate: parsed.IsDuplicate,
+     HighestSimilarityScore: parsed.SimilarityScore,
+     DecisionConfidence: parsed.DecisionConfidence,
+                 Threshold: SimilarityThreshold,
                 SimilarProperties: similarProperties,
                 Reasoning: parsed.Reasoning ?? string.Empty,
                 AdminNote: parsed.AdminNote ?? string.Empty);
@@ -352,9 +413,10 @@ public sealed class PropertyDuplicateCheckService : IPropertyDuplicateCheckServi
         {
             _logger.LogError(ex, "Failed to parse Claude response: {Raw}", raw);
 
-            // Fallback to Rule Engine logic if LLM fails
+            // Fallback when the LLM response can't be parsed: low decision confidence
+            // forces the property into manual admin review rather than auto-acting.
             var highestScore = hits.Count > 0 ? hits.Max(h => h.Score) : 0;
-            return CreateSafeResult(highestScore >= 0.90, highestScore, hits.ToList(), request,
+            return CreateSafeResult(highestScore >= 0.90, highestScore, decisionConfidence: 0.0, hits.ToList(), request,
                 "Analysis based on similarity score only due to AI parsing failure.",
                 "Automatic analysis failed — manual review required.");
         }
@@ -442,7 +504,7 @@ public sealed class PropertyDuplicateCheckService : IPropertyDuplicateCheckServi
     // Helper to generate safe Result structs
     // ─────────────────────────────────────────────────────────────────────────
     private DuplicateCheckResult CreateSafeResult(
-        bool isDuplicate, double highestScore, List<ScoredPoint> hits, PropertyDuplicateCheckRequest req, string reason, string note)
+        bool isDuplicate, double highestScore, double decisionConfidence, List<ScoredPoint> hits, PropertyDuplicateCheckRequest req, string reason, string note)
     {
         var mappedHits = hits.Select(h => new SimilarProperty(
             PropertyId: Guid.Parse(h.Payload["propertyId"].StringValue),
@@ -455,14 +517,24 @@ public sealed class PropertyDuplicateCheckService : IPropertyDuplicateCheckServi
             MatchedFields: BuildMatchedFields(req, h)
         )).ToList();
 
-        return new DuplicateCheckResult(isDuplicate, highestScore, SimilarityThreshold, mappedHits, reason, note);
+        return new DuplicateCheckResult(isDuplicate, highestScore, decisionConfidence, SimilarityThreshold, mappedHits, reason, note);
     }
 
     // Record for safe JSON Parsing
     private sealed record ClaudeDuplicateResponse(
-        [property: JsonPropertyName("is_duplicate")] bool IsDuplicate,
-        [property: JsonPropertyName("highest_similarity_score")] double HighestSimilarityScore,
-        [property: JsonPropertyName("reasoning")] string Reasoning,
-        [property: JsonPropertyName("admin_note")] string AdminNote
-    );
+     [property: JsonPropertyName("is_duplicate")]
+    bool IsDuplicate,
+
+     [property: JsonPropertyName("similarity_score")]
+    double SimilarityScore,
+
+     [property: JsonPropertyName("decision_confidence")]
+    double DecisionConfidence,
+
+     [property: JsonPropertyName("reasoning")]
+    string Reasoning,   
+
+     [property: JsonPropertyName("admin_note")]
+    string AdminNote
+ );
 }

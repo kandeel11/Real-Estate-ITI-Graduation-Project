@@ -9,12 +9,45 @@ public static class SubscriptionPlanSeed
 {
     public static async Task SeedAsync(SubscriptionDbContext context)
     {
-        if (await context.Plans.AnyAsync())
-            return;
+        var seed = GetSeedData().ToList();
 
-        var plans = GetSeedData();
-        await context.Plans.AddRangeAsync(plans);
-        await context.SaveChangesAsync();
+        if (!await context.Plans.AnyAsync())
+        {
+            await context.Plans.AddRangeAsync(seed);
+            await context.SaveChangesAsync();
+            return;
+        }
+
+        // Existing database: keep the feature FLAGS in sync with the seed
+        // definition (limits/prices are left alone so admin tweaks survive).
+        // Needed e.g. when Free Individual gained the chatbot.
+        var existing = await context.Plans.ToListAsync();
+        var changed = false;
+        foreach (var plan in existing)
+        {
+            var s = seed.FirstOrDefault(x => x.Tier == plan.Tier);
+            if (s is null) continue;
+
+            if (plan.HasAdvancedAnalytics != s.HasAdvancedAnalytics ||
+                plan.HasFeaturedListings != s.HasFeaturedListings ||
+                plan.HasAiPriceEstimation != s.HasAiPriceEstimation ||
+                plan.HasAiChatbot != s.HasAiChatbot ||
+                plan.HasAiLeadPrioritization != s.HasAiLeadPrioritization ||
+                plan.HasAiDescriptionGenerator != s.HasAiDescriptionGenerator)
+            {
+                plan.UpdateFeatureFlags(
+                    s.HasAdvancedAnalytics,
+                    s.HasFeaturedListings,
+                    s.HasAiPriceEstimation,
+                    s.HasAiChatbot,
+                    s.HasAiLeadPrioritization,
+                    s.HasAiDescriptionGenerator);
+                changed = true;
+            }
+        }
+
+        if (changed)
+            await context.SaveChangesAsync();
     }
 
     public static IEnumerable<SubscriptionPlan> GetSeedData()
@@ -33,7 +66,9 @@ public static class SubscriptionPlanSeed
                 hasAdvancedAnalytics: false,
                 hasFeaturedListings: false,
                 hasAiPriceEstimation: false,
-                hasAiChatbot: false,
+                // Chatbot is included on free so the 10 AI requests/month
+                // are actually usable; the description generator stays premium
+                hasAiChatbot: true,
                 hasAiLeadPrioritization: false,
                 hasAiDescriptionGenerator: false),
 

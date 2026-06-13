@@ -6,12 +6,10 @@ namespace Property.Application.Features.Commands.MarkAsRented;
 public class MarkAsRentedHandler : IRequestHandler<MarkAsRentedCommand>
 {
     private readonly IPropertyRepository _repository;
-    private readonly IPublisher _publisher;
 
-    public MarkAsRentedHandler(IPropertyRepository repository, IPublisher publisher)
+    public MarkAsRentedHandler(IPropertyRepository repository)
     {
         _repository = repository;
-        _publisher = publisher;
     }
 
     public async Task Handle(MarkAsRentedCommand request, CancellationToken cancellationToken)
@@ -26,10 +24,8 @@ public class MarkAsRentedHandler : IRequestHandler<MarkAsRentedCommand>
             throw new UnauthorizedAccessException("Only the property owner or their company can mark it as rented.");
 
         property.MarkAsRented();
-        await _repository.SaveChangesAsync(cancellationToken);
 
-        foreach (var domainEvent in property.DomainEvents)
-            await _publisher.Publish(domainEvent, cancellationToken);
-        property.ClearDomainEvents();
+        // PropertyRentedEvent is dispatched by DispatchDomainEventsInterceptor after save.
+        await _repository.SaveChangesAsync(cancellationToken);
     }
 }

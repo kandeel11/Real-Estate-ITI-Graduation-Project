@@ -70,6 +70,14 @@ public class SubscriptionLimitChecker : ISubscriptionLimitChecker
         await _usageRepo.UpdateAsync(usage, ct);
     }
 
+    public async Task SyncBrokerUsageAsync(Guid companyId, int activeBrokerCount, CancellationToken ct = default)
+    {
+        var (_, _, usage) = await ResolveAsync(Guid.Empty, companyId, ct);
+        if (usage is null) return;
+        usage.SetBrokers(activeBrokerCount);
+        await _usageRepo.UpdateAsync(usage, ct);
+    }
+
     public async Task<(bool Allowed, string Reason)> CheckAiRequestLimitAsync(Guid userId, Guid? companyId, CancellationToken ct = default)
     {
         var (subscription, plan, usage) = await ResolveAsync(userId, companyId, ct);
@@ -88,6 +96,68 @@ public class SubscriptionLimitChecker : ISubscriptionLimitChecker
         if (usage is null) return;
         usage.IncrementAiUsage();
         await _usageRepo.UpdateAsync(usage, ct);
+    }
+
+    public async Task<(bool Allowed, string Reason)> CheckInquiryLimitAsync(Guid userId, CancellationToken ct = default)
+    {
+        var (subscription, plan, usage) = await ResolveAsync(userId, null, ct);
+        if (subscription is null || plan is null)
+            return (true, string.Empty);
+
+        if (usage.InquiriesUsed >= plan.MaxInquiriesPerMonth)
+            return (false, $"Inquiry limit of {plan.MaxInquiriesPerMonth}/month reached. Upgrade your plan to send more inquiries.");
+
+        return (true, string.Empty);
+    }
+
+    public async Task IncrementInquiryUsageAsync(Guid userId, CancellationToken ct = default)
+    {
+        var (_, _, usage) = await ResolveAsync(userId, null, ct);
+        if (usage is null) return;
+        usage.IncrementInquiries();
+        await _usageRepo.UpdateAsync(usage, ct);
+    }
+
+    public async Task<(bool Allowed, string Reason)> CheckStorageLimitAsync(Guid userId, Guid? companyId, decimal additionalGb, CancellationToken ct = default)
+    {
+        var (subscription, plan, usage) = await ResolveAsync(userId, companyId, ct);
+        if (subscription is null || plan is null)
+            return (true, string.Empty);
+
+        if (usage.StorageUsedGb + additionalGb > plan.MaxStorageGb)
+            return (false, $"Storage limit of {plan.MaxStorageGb} GB reached. Upgrade your plan for more space.");
+
+        return (true, string.Empty);
+    }
+
+    public async Task AddStorageUsageAsync(Guid userId, Guid? companyId, decimal gb, CancellationToken ct = default)
+    {
+        var (_, _, usage) = await ResolveAsync(userId, companyId, ct);
+        if (usage is null) return;
+        usage.AddStorage(gb);
+        await _usageRepo.UpdateAsync(usage, ct);
+    }
+
+    public async Task<(bool Allowed, string Reason)> CheckAiChatbotAccessAsync(Guid userId, Guid? companyId, CancellationToken ct = default)
+    {
+        var (subscription, plan, _) = await ResolveAsync(userId, companyId, ct);
+        if (subscription is null || plan is null)
+            return (true, string.Empty);
+
+        return plan.HasAiChatbot
+            ? (true, string.Empty)
+            : (false, "The AI chatbot is not included in your plan. Upgrade to use it.");
+    }
+
+    public async Task<(bool Allowed, string Reason)> CheckAiDescriptionAccessAsync(Guid userId, Guid? companyId, CancellationToken ct = default)
+    {
+        var (subscription, plan, _) = await ResolveAsync(userId, companyId, ct);
+        if (subscription is null || plan is null)
+            return (true, string.Empty);
+
+        return plan.HasAiDescriptionGenerator
+            ? (true, string.Empty)
+            : (false, "The AI description generator is a premium feature. Upgrade your plan or write the description manually.");
     }
 
     // ── helpers ──────────────────────────────────────────────────────────────

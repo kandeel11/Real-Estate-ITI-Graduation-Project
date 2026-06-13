@@ -19,6 +19,7 @@ using Property.Application.Features.Commands.SetVerificationStatus;
 using Property.Application.Features.Commands.SubmitPropertyForReview;
 using Property.Application.Features.Commands.TrackPropertyView;
 using Property.Application.Features.Commands.UpdateProperty;
+using Property.Application.Features.Queries.GetActiveProperties;
 using Property.Application.Features.Queries.GetAllProperties;
 using Property.Application.Features.Queries.GetFeaturedProperties;
 using Property.Application.Features.Queries.GetPendingVerification;
@@ -50,11 +51,22 @@ public class PropertiesController : ControllerBase
         _docs = docs;
     }
 
+    // Admin-only: returns ALL properties including Draft/Rejected. Public callers should
+    // use GET /api/properties/active or /search (which only expose Active listings).
     [HttpGet]
-    [AllowAnonymous]
+    [Authorize(Policy = "AdminOnly")]
     public async Task<IActionResult> GetAll(CancellationToken ct = default)
     {
         var result = await _mediator.Send(new GetAllPropertiesQuery(), ct);
+        await _enrichment.EnrichAsync(result, ct);
+        return Ok(result);
+    }
+
+    [HttpGet("active")]
+    [AllowAnonymous]
+    public async Task<IActionResult> GetActive(CancellationToken ct = default)
+    {
+        var result = await _mediator.Send(new GetActivePropertiesQuery(), ct);
         await _enrichment.EnrichAsync(result, ct);
         return Ok(result);
     }
@@ -72,9 +84,6 @@ public class PropertiesController : ControllerBase
         [FromQuery] int? bedrooms,
         [FromQuery] bool? isFurnished,
         [FromQuery] bool? petsAllowed,
-        [FromQuery] decimal? latitude,
-        [FromQuery] decimal? longitude,
-        [FromQuery] double? radiusKm,
         [FromQuery] int page = 1,
         [FromQuery] int pageSize = 20,
         CancellationToken ct = default)
@@ -82,7 +91,7 @@ public class PropertiesController : ControllerBase
         var result = await _mediator.Send(new SearchPropertiesQuery(
             city, district, propertyType, minPrice, maxPrice,
             minBedrooms, maxBedrooms, bedrooms, isFurnished, petsAllowed,
-            latitude, longitude, radiusKm, page, pageSize), ct);
+            page, pageSize), ct);
         await _enrichment.EnrichAsync(result.Items, ct);
         return Ok(result);
     }
@@ -152,9 +161,30 @@ public class PropertiesController : ControllerBase
         if (ownerId is null)
             return Unauthorized(new { error = "User not authenticated." });
 
+        // Company managers don't create listings themselves — their brokers do.
+        // (A manager-created listing would have no owner identity to verify and wouldn't
+        //  belong to a broker, so we block it and steer them to add/assign a broker.)
+        if (_currentUser.IsInRole("company_manager"))
+            return StatusCode(StatusCodes.Status403Forbidden, new
+            {
+                error = "Company managers cannot create listings directly. Add a broker to your company — brokers create and are assigned listings."
+            });
+
         // 🔍 Determine submission type from role
         var isOwnerSubmission = _currentUser.IsInRole("owner");          // ⬅ adjust to your role constants
         var isBrokerSubmission = _currentUser.IsInRole("broker");
+
+        // CompanyId / ListingBrokerId are derived from the caller's identity — never from the body:
+        //   • Owner            → both null
+        //   • Individual broker → CompanyId null,            ListingBrokerId = broker's own user id
+        //   • Company broker    → CompanyId = broker's company, ListingBrokerId = broker's own user id
+        Guid? companyId = null;
+        Guid? listingBrokerId = null;
+        if (isBrokerSubmission)
+        {
+            listingBrokerId = ownerId.Value;          // ListingBrokerId is the broker's USER id
+            companyId = _currentUser.CompanyId;       // null for individual broker, set for company broker
+        }
 
         string? nationalIdBlobPath = null;
         string? ownershipProofBlobPath = null;
@@ -193,14 +223,17 @@ public class PropertiesController : ControllerBase
         }
 
         // ── Build & send command ─────────────────────────────────────
-        var id = await _mediator.Send(new CreatePropertyCommand(
+        try
+        {
+            var id = await _mediator.Send(new CreatePropertyCommand(
        OwnerId: ownerId.Value,
-       CompanyId: request.CompanyId ?? _currentUser.CompanyId,
-       ListingBrokerId: request.ListingBrokerId,
+       CompanyId: companyId,
+       ListingBrokerId: listingBrokerId,
        Title: request.Title,
        TitleAr: request.TitleAr,
-       Description: request.Description,
-       DescriptionAr: request.DescriptionAr,
+       // Descriptions come from the AI flow later; start empty.
+       Description: string.Empty,
+       DescriptionAr: string.Empty,
        PropertyType: request.PropertyType,
        Price: request.Price,
        Bedrooms: request.Bedrooms,
@@ -211,8 +244,6 @@ public class PropertiesController : ControllerBase
        YearBuilt: request.YearBuilt,
        IsFurnished: request.IsFurnished,
        PetsAllowed: request.PetsAllowed,
-       Latitude: request.Latitude,
-       Longitude: request.Longitude,
        Address: request.Address,
        ApartmentNumber: request.ApartmentNumber,
        Country: request.Country,
@@ -229,7 +260,14 @@ public class PropertiesController : ControllerBase
        NationalIdBlobPath: nationalIdBlobPath,
        OwnershipProofBlobPath: ownershipProofBlobPath), ct);
 
-        return CreatedAtAction(nameof(GetById), new { id }, new { id });
+            return CreatedAtAction(nameof(GetById), new { id }, new { id });
+        }
+        catch (InvalidOperationException ex)
+        {
+            // Duplicate listing (same owner+title, or same address+apartment) or plan limit reached.
+            // The property is NOT created in any of these cases.
+            return Conflict(new { error = ex.Message });
+        }
     }
 
     // ─── Helper for upload ────────────────────────────────────────────
@@ -275,8 +313,6 @@ public class PropertiesController : ControllerBase
             request.YearBuilt,
             request.IsFurnished,
             request.PetsAllowed,
-            request.Latitude,
-            request.Longitude,
             request.Address,
             request.ApartmentNumber,
             request.City,
@@ -386,8 +422,16 @@ public class PropertiesController : ControllerBase
         var userId = _currentUser.UserId;
         if (userId is null) return Unauthorized(new { error = "User not authenticated." });
 
-        await _mediator.Send(new PropertyAiDescriptionRequestCommand(id, userId.Value), ct);
-        return Accepted(new { message = "AI description is being generated. It will appear shortly.", propertyId = id });
+        try
+        {
+            await _mediator.Send(new PropertyAiDescriptionRequestCommand(id, userId.Value), ct);
+            return Accepted(new { message = "AI description is being generated. It will appear shortly.", propertyId = id });
+        }
+        catch (InvalidOperationException ex)
+        {
+            // Plan AI quota reached
+            return Conflict(new { error = ex.Message });
+        }
     }
 
     [HttpPut("{id:guid}/ai-description")]
@@ -423,18 +467,26 @@ public class PropertiesController : ControllerBase
         if (request.File is null || request.File.Length == 0)
             return BadRequest("No file provided.");
 
-        await using var stream = request.File.OpenReadStream();
-        var mediaId = await _mediator.Send(new AddPropertyMediaCommand(
-            id,
-            userId.Value,
-            stream,
-            request.File.FileName,
-            request.File.ContentType,
-            request.MediaType,
-            (int)(request.File.Length / 1024),
-            request.SortOrder), ct);
+        try
+        {
+            await using var stream = request.File.OpenReadStream();
+            var mediaId = await _mediator.Send(new AddPropertyMediaCommand(
+                id,
+                userId.Value,
+                stream,
+                request.File.FileName,
+                request.File.ContentType,
+                request.MediaType,
+                (int)(request.File.Length / 1024),
+                request.SortOrder), ct);
 
-        return Ok(new { mediaId });
+            return Ok(new { mediaId });
+        }
+        catch (InvalidOperationException ex)
+        {
+            // Plan storage limit reached
+            return Conflict(new { error = ex.Message });
+        }
     }
 
     [HttpPut("{id:guid}/media/{mediaId:guid}/primary")]
@@ -489,12 +541,12 @@ public class PropertiesController : ControllerBase
 
 
 public record CreatePropertyRequest(
-    Guid? CompanyId,
-    Guid? ListingBrokerId,
+    // CompanyId & ListingBrokerId are NOT accepted from the client — they're derived from the
+    // caller's JWT (role + company_id) in the controller. See Create().
     string Title,
     string TitleAr,
-    string Description,
-    string DescriptionAr,
+    // Description/DescriptionAr are NOT collected here — they are produced by the AI
+    // description flow (request-ai-description → accept) after the property exists.
     PropertyType PropertyType,
     decimal Price,
     int Bedrooms,
@@ -505,8 +557,6 @@ public record CreatePropertyRequest(
     int YearBuilt,
     bool IsFurnished,
     bool PetsAllowed,
-    decimal Latitude,
-    decimal Longitude,
     string Address,
     int? ApartmentNumber,
     string Country,            // 🆕 needed for location verification
@@ -535,8 +585,6 @@ public record UpdatePropertyRequest(
     int YearBuilt,
     bool IsFurnished,
     bool PetsAllowed,
-    decimal Latitude,
-    decimal Longitude,
     string Address,
     int? ApartmentNumber,
     string Country,            // 🆕

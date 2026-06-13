@@ -13,6 +13,9 @@ public class TicketVendorAssignmentConfiguration : IEntityTypeConfiguration<Tick
         b.HasKey(x => x.Id);
         b.Property(x => x.Id).ValueGeneratedNever();
         b.Property(x => x.TicketId).IsRequired();
+        // Match the parent ticket's soft-delete filter so this required dependent
+        // is filtered out together with its ticket.
+        b.HasQueryFilter(x => x.Ticket.DeletedAt == null);
         b.Property(x => x.VendorId).IsRequired();
         b.Property(x => x.AssignedById).IsRequired();
         b.Property(x => x.Status).IsRequired().HasConversion<string>().HasDefaultValue(AssignmentStatus.Pending);

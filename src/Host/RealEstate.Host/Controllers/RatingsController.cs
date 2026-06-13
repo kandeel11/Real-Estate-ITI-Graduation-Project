@@ -1,54 +1,66 @@
-using Document.Application.Commands.Rating.CreateRating;
-using Document.Application.Commands.Rating.ModerateRating;
-using Document.Application.Queries.Rating.GetRatingsByTarget;
+﻿using Document.Application.Commands.Rating;
+using Document.Application.DTOs;
+using Document.Application.Queries.Rating;
+using Identity.Application.Interfaces;
 using MediatR;
+using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
+using CreateRatingCommand = Document.Application.Commands.Rating.CreateRatingCommand;
 
 namespace RealEstate.Host.Controllers;
 
 [ApiController]
 [Route("api/ratings")]
-public class RatingsController : ControllerBase
+[Authorize]
+public class RatingsController(ISender sender, ICurrentUserService currentUser) : ControllerBase
 {
-    private readonly IMediator _mediator;
-    public RatingsController(IMediator mediator) => _mediator = mediator;
+    private Guid UserId => currentUser.UserId ?? throw new UnauthorizedAccessException();
 
     [HttpPost]
-    public async Task<IActionResult> Create([FromBody] CreateRatingRequest req)
+    [Authorize(Roles = "tenant")]
+    public async Task<IActionResult> Create([FromBody] CreateRatingRequest req, CancellationToken ct)
     {
-        var id = await _mediator.Send(new CreateRatingCommand(
-            req.ReviewerId, req.LeaseId, req.PropertyId,
-            req.CompanyId, req.BrokerId, req.MaintenanceCompanyId,
-            req.Rating, req.ReviewText));
-        return Ok(new { id });
+        try
+        {
+            var result = await sender.Send(new CreateRatingCommand(
+                UserId, req.LeaseId, req.PropertyId,
+                req.MaintenanceCompanyId, req.RatingValue, req.ReviewText), ct);
+            return CreatedAtAction(nameof(GetMine), result);
+        }
+        catch (UnauthorizedAccessException) { return Forbid(); }
+        catch (InvalidOperationException ex) { return Conflict(new { error = ex.Message }); }
     }
 
-    [HttpPut("{id}/moderate")]
-    public async Task<IActionResult> Moderate(Guid id, [FromBody] ModerateRatingRequest req)
+    [HttpPut("{id:guid}")]
+    public async Task<IActionResult> Update(Guid id, [FromBody] UpdateRatingRequest req, CancellationToken ct)
     {
-        await _mediator.Send(new ModerateRatingCommand(id, req.ModeratedById, req.Status));
-        return NoContent();
+        try
+        {
+            var result = await sender.Send(new UpdateRatingCommand(id, UserId, req.RatingValue, req.ReviewText), ct);
+            return Ok(result);
+        }
+        catch (UnauthorizedAccessException) { return Forbid(); }
+        catch (InvalidOperationException ex) { return BadRequest(new { error = ex.Message }); }
     }
 
-    [HttpGet]
-    public async Task<IActionResult> GetByTarget(
-        [FromQuery] string targetType, [FromQuery] Guid targetId)
+    [HttpDelete("{id:guid}")]
+    public async Task<IActionResult> Delete(Guid id, CancellationToken ct)
     {
-        var ratings = await _mediator.Send(new GetRatingsByTargetQuery(targetType, targetId));
-        return Ok(ratings);
+        try
+        {
+            await sender.Send(new DeleteRatingCommand(id, UserId), ct);
+            return NoContent();
+        }
+        catch (UnauthorizedAccessException) { return Forbid(); }
+        catch (KeyNotFoundException) { return NotFound(); }
     }
+
+    [HttpGet("mine")]
+    public async Task<IActionResult> GetMine(CancellationToken ct)
+        => Ok(await sender.Send(new GetMyRatingsQuery(UserId), ct));
+
+    [HttpGet("property/{propertyId:guid}")]
+    [AllowAnonymous]
+    public async Task<IActionResult> GetForProperty(Guid propertyId, CancellationToken ct)
+        => Ok(await sender.Send(new GetPropertyRatingsQuery(propertyId), ct));
 }
-
-public record CreateRatingRequest(
-    Guid ReviewerId,
-    Guid? LeaseId,
-    Guid? PropertyId,
-    Guid? CompanyId,
-    Guid? BrokerId,
-    Guid? MaintenanceCompanyId,
-    int Rating,
-    string? ReviewText);
-
-public record ModerateRatingRequest(
-    Guid ModeratedById,
-    string Status);

@@ -1,6 +1,7 @@
 ﻿<Project Sdk="Microsoft.NET.Sdk">
 
   <ItemGroup>
+    <ProjectReference Include="..\..\Identity\Identity.Application\Identity.Application.csproj" />
     <ProjectReference Include="..\AI.Domain\AI.Domain.csproj" />
     <ProjectReference Include="..\..\..\Shared\RealEstate.Shared.Kernel\RealEstate.Shared.Kernel.csproj" />
   </ItemGroup>

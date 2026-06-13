@@ -8,7 +8,7 @@ using System.Threading.Tasks;
 
 namespace AI.Application.Features.Chatbot.Commands.SendMessage
 {
-    public record SendMessageCommand(Guid UserId,
+    public record SendChatBotMessageCommand(
     Guid? SessionId,
     string Message) : IRequest<SendMessageResponse>;
     

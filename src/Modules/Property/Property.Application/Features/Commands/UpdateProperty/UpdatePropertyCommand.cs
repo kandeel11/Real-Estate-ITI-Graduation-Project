@@ -20,8 +20,6 @@ public record UpdatePropertyCommand(
     int YearBuilt,
     bool IsFurnished,
     bool PetsAllowed,
-    decimal Latitude,
-    decimal Longitude,
     string Address,
     int? ApartmentNumber,
     string City,

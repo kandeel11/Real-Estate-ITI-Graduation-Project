@@ -2,6 +2,8 @@ using Document.Application.Interfaces;
 using Document.Domain.Enums;
 using Document.Domain.Events;
 using MediatR;
+using Microsoft.EntityFrameworkCore;
+using RealEstate.Shared.Kernel.Shared.IntegrationEvents;
 
 namespace Document.Application.Commands.Lead.UpdateLeadStatus;
 
@@ -58,6 +60,19 @@ public class UpdateLeadStatusHandler : IRequestHandler<UpdateLeadStatusCommand>
                 OwnerId = lead.OwnerId,
                 DealValue = lead.DealValue
             }, ct);
+
+            // Credit the assigned broker's ClosedDealsCount (Identity module
+            // listens via Shared.Kernel — modules never reference each other)
+            var assignedBrokerUserId = await _db.InquiryAssignments
+                .Where(a => a.InquiryId == lead.InquiryId)
+                .Select(a => (Guid?)a.AssignedToId)
+                .FirstOrDefaultAsync(ct);
+
+            if (assignedBrokerUserId is not null)
+            {
+                await _publisher.Publish(new BrokerDealClosedEvent(
+                    assignedBrokerUserId.Value, lead.Id, lead.DealValue), ct);
+            }
         }
     }
 }

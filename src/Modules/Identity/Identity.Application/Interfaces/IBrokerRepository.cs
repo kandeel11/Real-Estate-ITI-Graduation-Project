@@ -9,5 +9,6 @@ public interface IBrokerRepository
     Task<List<Broker>> GetByCompanyIdAsync(Guid companyId, CancellationToken ct = default);
     Task<bool> ExistsByLicenseAsync(string licenseNumber, CancellationToken ct = default);
     Task AddAsync(Broker broker, CancellationToken ct = default);
+    void Remove(Broker broker);
     Task SaveChangesAsync(CancellationToken ct = default);
 }

@@ -1,6 +1,6 @@
 using MediatR;
 using Property.Application.Interfaces;
-using Property.Domain.Enums;
+using RealEstate.Shared.Kernel.Shared.Contracts;
 using RealEstate.Shared.Kernel.Shared.IntegrationEvents;
 
 namespace Property.Application.Features.Commands.RequestAiDescription;
@@ -9,11 +9,16 @@ public class PropertyAiDescriptionRequestHandler : IRequestHandler<PropertyAiDes
 {
     private readonly IPropertyRepository _propertyRepository;
     private readonly IPublisher _publisher;
+    private readonly ISubscriptionLimitChecker _limitChecker;
 
-    public PropertyAiDescriptionRequestHandler(IPropertyRepository propertyRepository, IPublisher publisher)
+    public PropertyAiDescriptionRequestHandler(
+        IPropertyRepository propertyRepository,
+        IPublisher publisher,
+        ISubscriptionLimitChecker limitChecker)
     {
         _propertyRepository = propertyRepository;
         _publisher = publisher;
+        _limitChecker = limitChecker;
     }
 
     public async Task Handle(PropertyAiDescriptionRequestCommand request, CancellationToken cancellationToken)
@@ -24,8 +29,18 @@ public class PropertyAiDescriptionRequestHandler : IRequestHandler<PropertyAiDes
         if (property.OwnerId != request.RequestingUserId)
             throw new UnauthorizedAccessException("Only the property owner can request an AI description.");
 
-        if (property.Status == PropertyStatus.Draft)
-            throw new InvalidOperationException("Submit the property for review before generating an AI description.");
+        // Plan feature gate (description generator is premium), then the quota
+        var (featureAllowed, featureReason) = await _limitChecker.CheckAiDescriptionAccessAsync(
+            property.OwnerId, property.CompanyId, cancellationToken);
+        if (!featureAllowed)
+            throw new InvalidOperationException(featureReason);
+
+        var (allowed, reason) = await _limitChecker.CheckAiRequestLimitAsync(
+            property.OwnerId, property.CompanyId, cancellationToken);
+        if (!allowed)
+            throw new InvalidOperationException(reason);
+
+        // Allowed in any status, including Draft — owners can generate a description before submitting.
 
         await _publisher.Publish(new PropertyAiDescriptionRequestedEvent(
             PropertyId:   property.Id,
@@ -43,5 +58,8 @@ public class PropertyAiDescriptionRequestHandler : IRequestHandler<PropertyAiDes
             PetsAllowed:  property.PetsAllowed,
             Price:        property.Price
         ), cancellationToken);
+
+        // Count this generation against the plan's monthly AI quota
+        await _limitChecker.IncrementAiUsageAsync(property.OwnerId, property.CompanyId, cancellationToken);
     }
 }

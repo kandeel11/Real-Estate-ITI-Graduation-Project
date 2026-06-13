@@ -2,6 +2,7 @@
 using Document.Application.Interfaces;
 using Document.Domain.Enums;
 using MediatR;
+using RealEstate.Shared.Kernel.Shared.Contracts;
 
 namespace Document.Application.Commands.Inquiry;
 
@@ -17,17 +18,25 @@ public class CreateInquiryCommandHandler : IRequestHandler<CreateInquiryCommand,
 {
     private readonly IInquiryRepository _inquiries;
     private readonly INotificationService _notifications;
+    private readonly ISubscriptionLimitChecker _limitChecker;
 
     public CreateInquiryCommandHandler(
         IInquiryRepository inquiries,
-        INotificationService notifications)
+        INotificationService notifications,
+        ISubscriptionLimitChecker limitChecker)
     {
         _inquiries = inquiries;
         _notifications = notifications;
+        _limitChecker = limitChecker;
     }
 
     public async Task<InquiryResponse> Handle(CreateInquiryCommand cmd, CancellationToken ct)
     {
+        // Enforce the tenant plan's MaxInquiriesPerMonth
+        var (allowed, reason) = await _limitChecker.CheckInquiryLimitAsync(cmd.TenantId, ct);
+        if (!allowed)
+            throw new InvalidOperationException(reason);
+
         var inquiry = new Domain.Entities.Inquiry
         {
             Id = Guid.NewGuid(),
@@ -42,6 +51,7 @@ public class CreateInquiryCommandHandler : IRequestHandler<CreateInquiryCommand,
         };
 
         await _inquiries.AddAsync(inquiry, ct);
+        await _limitChecker.IncrementInquiryUsageAsync(cmd.TenantId, ct);
 
         await _notifications.CreateInAppAsync(
             userId: cmd.OwnerId,

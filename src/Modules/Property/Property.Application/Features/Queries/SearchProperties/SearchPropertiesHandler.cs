@@ -28,9 +28,6 @@ public class SearchPropertiesHandler : IRequestHandler<SearchPropertiesQuery, Pa
             Bedrooms = request.Bedrooms,
             IsFurnished = request.IsFurnished,
             PetsAllowed = request.PetsAllowed,
-            Latitude = request.Latitude,
-            Longitude = request.Longitude,
-            RadiusKm = request.RadiusKm,
             Page = request.Page,
             PageSize = request.PageSize
         };

@@ -14,8 +14,6 @@ public class Property : BaseEntity
     public string TitleAr { get; private set; } = string.Empty;
     public string Description { get; private set; } = string.Empty;
     public string DescriptionAr { get; private set; } = string.Empty;
-    public string? AiGeneratedDescriptionEn { get; private set; }
-    public string? AiGeneratedDescriptionAr { get; private set; }
 
     public PropertyType PropertyType { get; private set; }
     public decimal Price { get; private set; }
@@ -32,8 +30,6 @@ public class Property : BaseEntity
 
 
 
-    public decimal Latitude { get; private set; }
-    public decimal Longitude { get; private set; }
     public string Address { get; private set; } = string.Empty;
     public int? ApartmentNumber { get; private set; }
     public string City { get; private set; } = string.Empty;
@@ -51,6 +47,10 @@ public class Property : BaseEntity
     public decimal? AiDuplicateConfidence { get; private set; }
     public VerificationStatus VerificationStatus { get; private set; }
     public string? RejectionReason { get; private set; }
+
+    // Two independent verification gates. The property only goes Active when BOTH are clear.
+    public GateStatus OwnershipGate { get; private set; } = GateStatus.Pending;
+    public GateStatus DuplicateGate { get; private set; } = GateStatus.Pending;
 
     public int ViewsCount { get; private set; }
     public int InquiriesCount { get; private set; }
@@ -77,8 +77,6 @@ public class Property : BaseEntity
         int yearBuilt,
         bool isFurnished,
         bool petsAllowed,
-        decimal latitude,
-        decimal longitude,
         string address,
         int? apartmentNumber,
         string country, string governorate,
@@ -111,8 +109,6 @@ public class Property : BaseEntity
             YearBuilt = yearBuilt,
             IsFurnished = isFurnished,
             PetsAllowed = petsAllowed,
-            Latitude = latitude,
-            Longitude = longitude,
             Address = address,
             OwnerFullName = ownerFullName,
             NationalIdBlobPath = nationalIdBlobPath,
@@ -145,8 +141,6 @@ public class Property : BaseEntity
         int yearBuilt,
         bool isFurnished,
         bool petsAllowed,
-        decimal latitude,
-        decimal longitude,
         string address,
         int? apartmentNumber,
         string city,
@@ -170,8 +164,6 @@ public class Property : BaseEntity
         YearBuilt = yearBuilt;
         IsFurnished = isFurnished;
         PetsAllowed = petsAllowed;
-        Latitude = latitude;
-        Longitude = longitude;
         Address = address;
         ApartmentNumber = apartmentNumber;
         City = city;
@@ -194,6 +186,10 @@ public class Property : BaseEntity
         AddDomainEvent(new PropertySubmittedForReviewEvent(Id, OwnerId));
     }
 
+    /// <summary>
+    /// Admin override: forces a verification status directly (e.g. approve/reject from the
+    /// admin endpoint), bypassing the automatic gate evaluation.
+    /// </summary>
     public void SetVerificationStatus(VerificationStatus verificationStatus, string? rejectionReason = null)
     {
         VerificationStatus = verificationStatus;
@@ -211,6 +207,70 @@ public class Property : BaseEntity
         }
     }
 
+    // ── Two-gate verification ────────────────────────────────────────────────
+    // Ownership gate (owners only) and duplicate gate (everyone) are set independently
+    // by their respective AI flows. EvaluateGates() derives the lifecycle status from both.
+
+    /// <summary>Ownership doesn't apply (e.g. a broker listing) — the gate auto-passes.</summary>
+    public void MarkOwnershipNotRequired()
+    {
+        OwnershipGate = GateStatus.NotRequired;
+        UpdatedAt = DateTime.UtcNow;
+        EvaluateGates();
+    }
+
+    public void SetOwnershipGate(GateStatus status, string? note = null)
+    {
+        OwnershipGate = status;
+        UpdatedAt = DateTime.UtcNow;
+        if (note is not null && status is GateStatus.Failed or GateStatus.NeedsReview)
+            RejectionReason = note;
+        EvaluateGates();
+    }
+
+    public void SetDuplicateGate(GateStatus status, string? note = null)
+    {
+        DuplicateGate = status;
+        UpdatedAt = DateTime.UtcNow;
+        if (note is not null && status is GateStatus.Failed or GateStatus.NeedsReview)
+            RejectionReason = note;
+        EvaluateGates();
+    }
+
+    /// <summary>
+    /// Derives Status/VerificationStatus from the two gates:
+    ///   • either gate Failed            → Rejected
+    ///   • both gates clear              → Active (AiVerified)
+    ///   • either gate NeedsReview       → RequiresManualReview (status unchanged)
+    ///   • otherwise (a gate Pending)    → left as-is
+    /// </summary>
+    private void EvaluateGates()
+    {
+        bool ownershipClear = OwnershipGate is GateStatus.Passed or GateStatus.NotRequired;
+        bool duplicateClear = DuplicateGate is GateStatus.Passed or GateStatus.NotRequired;
+
+        if (OwnershipGate == GateStatus.Failed || DuplicateGate == GateStatus.Failed)
+        {
+            Status = PropertyStatus.Rejected;
+            VerificationStatus = VerificationStatus.Rejected;
+        }
+        else if (ownershipClear && duplicateClear)
+        {
+            VerificationStatus = VerificationStatus.AiVerified;
+            if (Status != PropertyStatus.Active)
+            {
+                Status = PropertyStatus.Active;
+                AddDomainEvent(new PropertyActivatedEvent(Id, OwnerId));
+            }
+        }
+        else if (OwnershipGate == GateStatus.NeedsReview || DuplicateGate == GateStatus.NeedsReview)
+        {
+            VerificationStatus = VerificationStatus.RequiresManualReview;
+            // Status left unchanged (Draft / PendingReview) — waiting on an admin.
+        }
+        // else: a gate is still Pending → leave everything as-is.
+    }
+
     public void SetFeatured(bool isFeatured, DateTime? featuredUntil)
     {
         IsFeatured = isFeatured;
@@ -226,8 +286,9 @@ public class Property : BaseEntity
 
     public void SetAiDescription(string? descriptionEn, string? descriptionAr)
     {
-        AiGeneratedDescriptionEn = descriptionEn;
-        AiGeneratedDescriptionAr = descriptionAr;
+        // Merged model: the accepted AI text becomes the listing's main description.
+        if (!string.IsNullOrWhiteSpace(descriptionEn)) Description = descriptionEn;
+        if (!string.IsNullOrWhiteSpace(descriptionAr)) DescriptionAr = descriptionAr;
         UpdatedAt = DateTime.UtcNow;
         AddDomainEvent(new PropertyAiDescriptionSetEvent(Id, OwnerId, CompanyId));
     }

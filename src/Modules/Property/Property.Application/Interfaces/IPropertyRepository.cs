@@ -9,9 +9,9 @@ public interface IPropertyRepository
     Task<Property.Domain.Entities.Property?> GetByIdAsync(Guid id, CancellationToken ct = default);
     Task<PagedResult<PropertySummaryDto>> SearchAsync(SearchCriteria criteria, CancellationToken ct = default);
     Task<List<PropertySummaryDto>> GetAllAsync(CancellationToken ct = default);
-    Task<List<PropertySummaryDto>> GetByOwnerAsync(Guid ownerId, CancellationToken ct = default);
+    Task<List<MyPropertySummaryDto>> GetByOwnerAsync(Guid ownerId, CancellationToken ct = default);
     Task<List<PropertySummaryDto>> GetByCompanyAsync(Guid companyId, CancellationToken ct = default);
-    Task<List<PropertySummaryDto>> GetPendingVerificationAsync(CancellationToken ct = default);
+    Task<List<MyPropertySummaryDto>> GetPendingVerificationAsync(CancellationToken ct = default);
     Task<List<PropertySummaryDto>> GetFeaturedAsync(CancellationToken ct = default);
     Task<bool> ExistsByOwnerAndTitleAsync(Guid ownerId, string title, CancellationToken ct = default);
     Task<bool> ExistsByOwnerAndAddressAsync(Guid ownerId, string address, int apartmentNumber, CancellationToken ct = default);
@@ -43,9 +43,6 @@ public class SearchCriteria
     public int? Bedrooms { get; init; }
     public bool? IsFurnished { get; init; }
     public bool? PetsAllowed { get; init; }
-    public decimal? Latitude { get; init; }
-    public decimal? Longitude { get; init; }
-    public double? RadiusKm { get; init; }
     public int Page { get; init; } = 1;
     public int PageSize { get; init; } = 20;
 }

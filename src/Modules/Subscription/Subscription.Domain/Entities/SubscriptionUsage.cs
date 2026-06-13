@@ -63,6 +63,17 @@ public class SubscriptionUsage : BaseEntity
         UpdatedAt = DateTime.UtcNow;
     }
 
+    /// <summary>
+    /// Realigns the counter to the actual number of ACTIVE brokers.
+    /// Used because deactivate/delete/reactivate would otherwise drift the
+    /// counter (it historically only ever incremented).
+    /// </summary>
+    public void SetBrokers(int activeCount)
+    {
+        BrokersUsed = Math.Max(activeCount, 0);
+        UpdatedAt = DateTime.UtcNow;
+    }
+
     public void AddStorage(decimal gb)
     {
         StorageUsedGb += gb;

@@ -1,6 +1,4 @@
-﻿// AI.Infrastructure/Services/InMemorySessionStore.cs
-
-using AI.Application.Interfaces;
+﻿using AI.Application.Interfaces;
 using Microsoft.SemanticKernel.ChatCompletion;
 
 namespace AI.Infrastructure.Services;
@@ -11,11 +9,12 @@ namespace AI.Infrastructure.Services;
 /// </summary>
 public sealed class InMemorySessionStore : ISessionStore
 {
-    private static readonly Dictionary<string, ChatHistory> _store = new();
+    // 💡 التعديل 1: تغيير نوع المفتاح (Key) في القاموس لـ Guid بدل string
+    private static readonly Dictionary<Guid, ChatHistory> _store = new();
     private static readonly SemaphoreSlim _lock = new(1, 1);
 
     public async Task<ChatHistory> GetOrCreateAsync(
-        string sessionId,
+        Guid sessionId,
         string systemPrompt,
         CancellationToken cancellationToken = default)
     {
@@ -32,8 +31,9 @@ public sealed class InMemorySessionStore : ISessionStore
         finally { _lock.Release(); }
     }
 
+    // 💡 التعديل 2: تغيير الـ sessionId لـ Guid
     public async Task SaveAsync(
-        string sessionId,
+        Guid sessionId,
         ChatHistory history,
         CancellationToken cancellationToken = default)
     {
@@ -42,8 +42,9 @@ public sealed class InMemorySessionStore : ISessionStore
         finally { _lock.Release(); }
     }
 
+    // 💡 التعديل 3: تغيير الـ sessionId لـ Guid
     public async Task DeleteAsync(
-        string sessionId,
+        Guid sessionId,
         CancellationToken cancellationToken = default)
     {
         await _lock.WaitAsync(cancellationToken);

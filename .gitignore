@@ -430,3 +430,7 @@ FodyWeavers.xsd
 
 # Claude Code
 .claude/
+
+
+# Maintenance module migrations - auto-generated
+src/Modules/Maintenance/Maintenance.Infrastructure/Migrations/
