@@ -1,0 +1,137 @@
+<div class="container py-4 listings-page">
+  <div class="d-flex justify-content-between align-items-center mb-1">
+    <h2 class="mb-0">My Listings ({{ properties().length }})</h2>
+    <a routerLink="/properties/new" class="btn btn-dark">
+      <i class="fa-solid fa-plus me-2"></i>Add Listing
+    </a>
+  </div>
+  @if (draftCount() > 0) {
+    <p class="text-muted mb-3">
+      <i class="fa-solid fa-circle-info me-1"></i>
+      You have {{ draftCount() }} unfinished draft{{ draftCount() === 1 ? '' : 's' }} —
+      use <strong>Continue setup</strong> to finish or delete them to free plan slots.
+    </p>
+  } @else {
+    <p class="text-muted mb-3">Everything you've listed, in every status.</p>
+  }
+
+  @if (actionError()) {
+    <div class="alert alert-danger">{{ actionError() }}</div>
+  }
+
+  @if (loading()) {
+    <div class="d-flex justify-content-center py-5">
+      <div class="spinner-border text-secondary" role="status">
+        <span class="visually-hidden">Loading…</span>
+      </div>
+    </div>
+  } @else if (error()) {
+    <div class="alert alert-danger d-flex justify-content-between align-items-center">
+      <span><i class="fa-solid fa-triangle-exclamation me-2"></i>{{ error() }}</span>
+      <button class="btn btn-sm btn-outline-danger" (click)="load()">Retry</button>
+    </div>
+  } @else if (properties().length === 0) {
+    <div class="card p-5 text-center text-muted">
+      <i class="fa-solid fa-house fs-1 mb-3"></i>
+      <p class="mb-3">You haven't listed any properties yet.</p>
+      <div>
+        <a routerLink="/properties/new" class="btn btn-dark">
+          <i class="fa-solid fa-plus me-2"></i>Create your first listing
+        </a>
+      </div>
+    </div>
+  } @else {
+    <div class="card">
+      <div class="table-responsive">
+        <table class="table table-hover align-middle mb-0">
+          <thead class="table-light">
+            <tr>
+              <th></th>
+              <th>Title</th>
+              <th>Location</th>
+              <th>Price</th>
+              <th>Status</th>
+              <th>Views</th>
+              <th>Created</th>
+              <th class="text-end">Actions</th>
+            </tr>
+          </thead>
+          <tbody>
+            @for (p of properties(); track p.id) {
+              <tr>
+                <td>
+                  @if (p.primaryImageUrl) {
+                    <img [src]="p.primaryImageUrl" alt="" class="thumb rounded" />
+                  } @else {
+                    <div class="thumb rounded bg-light d-flex align-items-center justify-content-center">
+                      <i class="fa-solid fa-image text-muted"></i>
+                    </div>
+                  }
+                </td>
+                <td class="fw-semibold">{{ p.title }}</td>
+                <td>{{ p.district }}, {{ p.city }}</td>
+                <td>{{ p.price | number }}/mo</td>
+                <td><span [class]="badgeClass(p.status)">{{ statusLabel(p.status) }}</span></td>
+                <td>{{ p.viewsCount | number }}</td>
+                <td class="text-nowrap">{{ p.createdAt | date: 'MMM d' }}</td>
+                <td class="text-end text-nowrap">
+                  @switch (p.status) {
+                    @case ('Draft') {
+                      <a class="btn btn-sm btn-dark me-1"
+                         [routerLink]="['/properties/new']" [queryParams]="{ propertyId: p.id }">
+                        <i class="fa-solid fa-pen-to-square me-1"></i>Continue setup
+                      </a>
+                      <button class="btn btn-sm btn-outline-success me-1"
+                              (click)="submit(p)" [disabled]="busyId() === p.id">
+                        @if (busyId() === p.id) {
+                          <span class="spinner-border spinner-border-sm"></span>
+                        } @else {
+                          Submit
+                        }
+                      </button>
+                      <button class="btn btn-sm btn-outline-danger" title="Delete"
+                              (click)="propertyToDelete.set(p)">
+                        <i class="fa-solid fa-trash"></i>
+                      </button>
+                    }
+                    @case ('Active') {
+                      <button class="btn btn-sm btn-outline-primary"
+                              (click)="markRented(p)" [disabled]="busyId() === p.id">
+                        @if (busyId() === p.id) {
+                          <span class="spinner-border spinner-border-sm"></span>
+                        } @else {
+                          Mark as Rented
+                        }
+                      </button>
+                    }
+                    @case ('Rejected') {
+                      <button class="btn btn-sm btn-outline-danger" title="Delete"
+                              (click)="propertyToDelete.set(p)">
+                        <i class="fa-solid fa-trash"></i>
+                      </button>
+                    }
+                    @default {
+                      <span class="text-muted small">—</span>
+                    }
+                  }
+                </td>
+              </tr>
+            }
+          </tbody>
+        </table>
+      </div>
+    </div>
+  }
+</div>
+
+<!-- Delete confirmation -->
+<app-confirm-modal
+  [show]="propertyToDelete() !== null"
+  title="Delete listing"
+  [message]="deleteMessage()"
+  confirmLabel="Delete"
+  confirmClass="btn-danger"
+  [loading]="deleting()"
+  (confirmed)="confirmDelete()"
+  (cancelled)="propertyToDelete.set(null)"
+/>

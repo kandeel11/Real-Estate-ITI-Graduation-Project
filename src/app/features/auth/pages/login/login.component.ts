@@ -1,9 +1,9 @@
 import { Component, inject } from '@angular/core';
 import { ReactiveFormsModule, FormBuilder, Validators } from '@angular/forms';
-import { Router, RouterLink } from '@angular/router';
+import { Router, ActivatedRoute, RouterLink } from '@angular/router';
 import { finalize } from 'rxjs';
-import { AuthService } from '../../../../core/services/auth.service';
 import { InViewDirective } from '../../../../shared/directives/in-view.directive';
+import { AuthService } from '../../../../core/services/auth.service';
 
 @Component({
   selector: 'app-login',
@@ -13,8 +13,9 @@ import { InViewDirective } from '../../../../shared/directives/in-view.directive
 })
 export class LoginComponent {
   private readonly fb = inject(FormBuilder);
-  private readonly authService = inject(AuthService);
+  private readonly auth = inject(AuthService);
   private readonly router = inject(Router);
+  private readonly route = inject(ActivatedRoute);
 
   form = this.fb.group({
     email:    ['', [Validators.required, Validators.email, Validators.pattern(/^[^\s@]+@[^\s@]+\.[^\s@]+$/)]],
@@ -23,7 +24,8 @@ export class LoginComponent {
 
   showPassword = false;
   loading = false;
-  serverError: string | null = null;
+  errorMsg: string | null = null;
+  sessionExpired = this.route.snapshot.queryParamMap.has('expired');
 
   get email()    { return this.form.get('email')!; }
   get password() { return this.form.get('password')!; }
@@ -35,18 +37,36 @@ export class LoginComponent {
     }
 
     this.loading = true;
-    this.serverError = null;
+    this.errorMsg = null;
+    this.sessionExpired = false;
 
-    const { email, password } = this.form.value;
-    this.authService.login(email!, password!)
+    const { email, password } = this.form.getRawValue();
+    // AuthService.login stores the session and maps the backend role
+    // (company_manager → company) before emitting the signed-in user
+    this.auth.login(email!, password!)
       .pipe(finalize(() => (this.loading = false)))
       .subscribe({
-        next: res => {
-          this.authService.setUser(res.user, res.accessToken, res.refreshToken);
-          this.router.navigate(['/dashboard']);
+        next: (user) => {
+          // Tenants land on the public site (their main surface); dashboard
+          // roles land on their dashboard
+          const home = user.role === 'tenant' ? '/' : this.auth.dashboardRouteFor(user.role);
+          const dashboardPrefix =
+            user.role === 'tenant'
+              ? '/dashboard'
+              : this.auth.dashboardRouteFor(user.role).replace(/\/overview$/, '');
+          const returnUrl = this.route.snapshot.queryParamMap.get('returnUrl');
+          // Only honor returnUrl if it's internal and the role can actually
+          // open it, otherwise the guard would bounce straight back to login.
+          const target =
+            returnUrl?.startsWith('/') &&
+            (!returnUrl.startsWith('/dashboard') || returnUrl.startsWith(dashboardPrefix))
+              ? returnUrl
+              : home;
+          this.router.navigateByUrl(target);
         },
-        error: () => {
-          this.serverError = 'Invalid email or password. Please try again.';
+        error: (err) => {
+          // Backend error shape: { error: "message" }
+          this.errorMsg = err?.error?.error ?? 'Sign-in failed. Please check your connection and try again.';
         },
       });
   }

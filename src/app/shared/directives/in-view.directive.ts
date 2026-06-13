@@ -16,6 +16,11 @@ export class InViewDirective implements OnInit, OnDestroy {
     if (this.inViewDelay) {
       el.style.transitionDelay = `${this.inViewDelay}ms`;
     }
+    // Not available in SSR or jsdom test environments
+    if (typeof IntersectionObserver === 'undefined') {
+      el.classList.add('visible');
+      return;
+    }
     this.observer = new IntersectionObserver(
       ([entry]) => {
         if (entry.isIntersecting) {

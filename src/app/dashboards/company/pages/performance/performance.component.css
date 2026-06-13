@@ -1,0 +1,19 @@
+.broker-name {
+  width: 120px;
+  flex-shrink: 0;
+}
+
+.deals-count {
+  width: 32px;
+  flex-shrink: 0;
+}
+
+.stars-label {
+  width: 44px;
+  flex-shrink: 0;
+}
+
+.percent-label {
+  width: 40px;
+  flex-shrink: 0;
+}

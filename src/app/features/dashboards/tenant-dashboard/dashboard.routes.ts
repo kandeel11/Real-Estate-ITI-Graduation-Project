@@ -1,12 +1,14 @@
 import { Routes } from '@angular/router';
 import { TDashboardComponent } from './t-dashboard/t-dashboard.component';
-import { authGuard } from '../../../core/guards/role.guard';
+import { roleGuard } from '../../../core/guards/role.guard';
 
 export const dashboardRoutes: Routes = [
   {
     path: '',
     component: TDashboardComponent,
-    canActivate: [authGuard],
+    // Tenant-only: other roles have their own dashboards and get bounced
+    canActivate: [roleGuard],
+    data: { expectedRole: 'tenant' },
     children: [
       {
         path: '',

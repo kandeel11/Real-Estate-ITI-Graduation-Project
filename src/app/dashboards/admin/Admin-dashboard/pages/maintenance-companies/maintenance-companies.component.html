@@ -1,0 +1,447 @@
+<div class="page">
+    <!-- ============ HEADER ============ -->
+    <div class="page-head">
+        <div class="page-head__left">
+            @if (view() === 'create') {
+            <button class="back-btn" (click)="backToList()" title="Back to list">
+                <i class="fa-solid fa-arrow-left"></i>
+            </button>
+            }
+            <div>
+                <h1>
+                    @if (view() === 'list') { Maintenance Companies }
+                    @else { Create New Company }
+                </h1>
+                <p>
+                    @if (view() === 'list') {
+                    Manage all maintenance providers in your platform.
+                    } @else {
+                    Fill in the details to onboard a new maintenance company.
+                    }
+                </p>
+            </div>
+        </div>
+
+        @if (view() === 'list') {
+        <button class="btn-primary" (click)="goToCreate()">
+            <i class="fa-solid fa-plus"></i>
+            Create Company
+        </button>
+        }
+    </div>
+
+    <!-- ============================================================ -->
+    <!-- ============         LIST VIEW              ================ -->
+    <!-- ============================================================ -->
+    @if (view() === 'list') {
+
+    <!-- Quick Stats -->
+    <div class="quick-stats">
+        <div class="quick-stat">
+            <div class="qs-icon companies"><i class="fa-solid fa-building"></i></div>
+            <div>
+                <span>Total Companies</span>
+                <strong>{{ companies().length }}</strong>
+            </div>
+        </div>
+        <div class="quick-stat">
+            <div class="qs-icon active"><i class="fa-solid fa-circle-check"></i></div>
+            <div>
+                <span>Active</span>
+                <strong>{{ companies().length }}</strong>
+            </div>
+        </div>
+        <div class="quick-stat">
+            <div class="qs-icon categories"><i class="fa-solid fa-tags"></i></div>
+            <div>
+                <span>Categories</span>
+                <strong>{{ categories().length }}</strong>
+            </div>
+        </div>
+    </div>
+
+    <!-- Search bar -->
+    <div class="card no-pad">
+        <div class="search-bar">
+            <i class="fa-solid fa-magnifying-glass"></i>
+            <input type="text" placeholder="Search by name, email, city, or category..." [value]="searchQuery()"
+                (input)="onSearchInput($event)" />
+            @if (searchQuery()) {
+            <button class="clear-btn" (click)="searchQuery.set('')" title="Clear">
+                <i class="fa-solid fa-xmark"></i>
+            </button>
+            }
+        </div>
+    </div>
+
+    <!-- Companies Grid -->
+    @if (loadingCompanies()) {
+    <div class="card">
+        <div class="loading">Loading companies...</div>
+    </div>
+    } @else if (filteredCompanies().length === 0) {
+    <div class="card">
+        <div class="empty">
+            <i class="fa-solid fa-building-circle-xmark"></i>
+            @if (searchQuery()) {
+            <p>No companies match "{{ searchQuery() }}"</p>
+            } @else {
+            <p>No companies yet. Click <strong>Create Company</strong> to add your first one.</p>
+            }
+        </div>
+    </div>
+    } @else {
+    <div class="companies-grid">
+        @for (c of filteredCompanies(); track c.id) {
+        <div class="company-card">
+            <!-- Status pill -->
+            <span class="status-pill" [class.active]="c.isActive" [class.inactive]="!c.isActive">
+                <span class="status-dot"></span>
+                {{ c.isActive ? 'Active' : 'Inactive' }}
+            </span>
+
+            <!-- Header: Logo + Name -->
+            <div class="cc-header">
+                <div class="cc-logo">
+                    @if (c.logoUrl) {
+                    <img [src]="c.logoUrl" [alt]="c.companyName" />
+                    } @else {
+                    <span>{{ initials(c.companyName) }}</span>
+                    }
+                </div>
+                <div class="cc-title">
+                    <h3>{{ c.companyName }}</h3>
+                    <span class="cc-city">
+                        <i class="fa-solid fa-location-dot"></i>
+                        {{ c.city }} · {{ c.serviceRadiusKm }}km radius
+                    </span>
+                </div>
+            </div>
+
+            <!-- Description -->
+            @if (c.description) {
+            <p class="cc-desc">{{ c.description }}</p>
+            }
+
+            <!-- Categories -->
+            <div class="cc-categories">
+                @for (cat of c.categories; track cat.id) {
+                <span class="cc-cat-chip">
+                    <i class="fa-solid" [class]="cat.icon"></i>
+                    {{ cat.name }}
+                </span>
+                }
+            </div>
+
+            <!-- Contact -->
+            <div class="cc-contact">
+                <a class="cc-contact-item" [href]="'mailto:' + c.email">
+                    <i class="fa-regular fa-envelope"></i>
+                    {{ c.email }}
+                </a>
+                <a class="cc-contact-item" [href]="'tel:' + c.phone">
+                    <i class="fa-solid fa-phone"></i>
+                    {{ c.phone }}
+                </a>
+            </div>
+
+            <!-- Stats footer -->
+            <div class="cc-stats">
+                <div class="cc-stat">
+                    <i class="fa-solid fa-star"></i>
+                    <div>
+                        <strong>{{ c.averageRating | number: '1.1-1' }}</strong>
+                        <small>Rating</small>
+                    </div>
+                </div>
+                <div class="cc-stat">
+                    <i class="fa-solid fa-circle-check"></i>
+                    <div>
+                        <strong>{{ c.completedTicketsCount }}</strong>
+                        <small>Completed</small>
+                    </div>
+                </div>
+                <div class="cc-stat">
+                    <i class="fa-solid fa-clock"></i>
+                    <div>
+                        <strong>{{ c.activeTicketsCount }}</strong>
+                        <small>Active</small>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Footer date -->
+            <div class="cc-footer">
+                <small>
+                    <i class="fa-regular fa-calendar"></i>
+                    Joined {{ formatDate(c.createdAt) }}
+                </small>
+            </div>
+        </div>
+        }
+    </div>
+    }
+    }
+
+    <!-- ============================================================ -->
+    <!-- ============        CREATE VIEW             ================ -->
+    <!-- ============================================================ -->
+    @if (view() === 'create') {
+
+    <!-- Categories Section -->
+    <div class="card">
+        <div class="card__head">
+            <div>
+                <h3>
+                    <i class="fa-solid fa-tags"></i>
+                    Service Categories
+                </h3>
+                <span class="muted">
+                    {{ categories().length }} categories available
+                </span>
+            </div>
+            <button class="btn-primary-sm" type="button" (click)="toggleAddCategory()">
+                <i class="fa-solid" [class.fa-plus]="!showAddCategory()" [class.fa-xmark]="showAddCategory()"></i>
+                {{ showAddCategory() ? 'Cancel' : 'Add Category' }}
+            </button>
+        </div>
+
+        @if (showAddCategory()) {
+        <form [formGroup]="categoryForm" (ngSubmit)="submitCategory()" class="category-form">
+            <div class="form-row">
+                <div class="form-field">
+                    <label>Category Name *</label>
+                    <input type="text" formControlName="name" placeholder="e.g. Plumbing, Electrical..." />
+                    @if (hasError(categoryForm, 'name', 'required')) {
+                    <small class="err">Name is required</small>
+                    }
+                </div>
+                <div class="form-field">
+                    <label>Description *</label>
+                    <input type="text" formControlName="description" placeholder="Short description..." />
+                    @if (hasError(categoryForm, 'description', 'required')) {
+                    <small class="err">Description is required</small>
+                    }
+                </div>
+            </div>
+
+            <div class="form-field">
+                <label>Pick an Icon *</label>
+                <div class="icon-picker">
+                    @for (icon of iconOptions; track icon) {
+                    <button type="button" class="icon-tile" [class.active]="categoryForm.value.icon === icon"
+                        (click)="pickIcon(icon)">
+                        <i class="fa-solid" [class]="icon"></i>
+                    </button>
+                    }
+                </div>
+            </div>
+
+            <div class="form-actions">
+                <button type="button" class="btn-outline-sm" (click)="toggleAddCategory()">Cancel</button>
+                <button type="submit" class="btn-primary-sm" [disabled]="savingCategory() || categoryForm.invalid">
+                    @if (savingCategory()) {
+                    <i class="fa-solid fa-spinner fa-spin"></i> Saving...
+                    } @else {
+                    <i class="fa-solid fa-check"></i> Save Category
+                    }
+                </button>
+            </div>
+        </form>
+        }
+
+        @if (loadingCategories()) {
+        <div class="loading">Loading categories...</div>
+        } @else if (categories().length === 0) {
+        <div class="empty">
+            <i class="fa-solid fa-folder-open"></i>
+            <p>No categories yet. Add your first one to get started.</p>
+        </div>
+        } @else {
+        <div class="categories-grid">
+            @for (c of categories(); track c.id) {
+            <div class="category-card">
+                <button class="cat-delete" type="button" (click)="removeCategory(c)" title="Delete">
+                    <i class="fa-solid fa-trash"></i>
+                </button>
+                <div class="cat-icon">
+                    <i class="fa-solid" [class]="c.icon"></i>
+                </div>
+                <h4>{{ c.name }}</h4>
+                <p>{{ c.description }}</p>
+            </div>
+            }
+        </div>
+        }
+    </div>
+
+    <!-- Company Form Section -->
+    <div class="card">
+        <div class="card__head">
+            <div>
+                <h3>
+                    <i class="fa-solid fa-building-user"></i>
+                    Company Profile
+                </h3>
+                <span class="muted">All fields marked with * are required.</span>
+            </div>
+        </div>
+
+        <form [formGroup]="companyForm" (ngSubmit)="submitCompany()" class="company-form">
+            <div class="form-field">
+                <label>
+                    Categories the company offers *
+                    @if (selectedCount() > 0) {
+                    <span class="counter">{{ selectedCount() }} selected</span>
+                    }
+                </label>
+                @if (categories().length === 0) {
+                <div class="hint warning">
+                    <i class="fa-solid fa-triangle-exclamation"></i>
+                    Add categories first before creating a company.
+                </div>
+                } @else {
+                <div class="category-chips">
+                    @for (c of categories(); track c.id) {
+                    <button type="button" class="chip" [class.selected]="isCategorySelected(c.id)"
+                        (click)="toggleCategorySelection(c.id)">
+                        <i class="fa-solid" [class]="c.icon"></i>
+                        <span>{{ c.name }}</span>
+                        @if (isCategorySelected(c.id)) {
+                        <i class="fa-solid fa-check check"></i>
+                        }
+                    </button>
+                    }
+                </div>
+                }
+            </div>
+
+            <hr class="divider" />
+
+            <h4 class="section-title">
+                <i class="fa-solid fa-building"></i> Company Information
+            </h4>
+            <div class="form-row">
+                <div class="form-field">
+                    <label>Company Name *</label>
+                    <input type="text" formControlName="companyName" placeholder="Acme Maintenance Co." />
+                    @if (hasError(companyForm, 'companyName', 'required')) {
+                    <small class="err">Company name is required</small>
+                    }
+                </div>
+                <div class="form-field">
+                    <label>Logo URL</label>
+                    <input type="url" formControlName="logoUrl" placeholder="https://example.com/logo.png" />
+                </div>
+            </div>
+
+            <div class="form-field">
+                <label>Description *</label>
+                <textarea formControlName="description" rows="3"
+                    placeholder="Briefly describe what this company does..."></textarea>
+                @if (hasError(companyForm, 'description', 'required')) {
+                <small class="err">Description is required</small>
+                }
+                @if (hasError(companyForm, 'description', 'minlength')) {
+                <small class="err">Description must be at least 10 characters</small>
+                }
+            </div>
+
+            <div class="form-row">
+                <div class="form-field">
+                    <label>City *</label>
+                    <input type="text" formControlName="city" placeholder="Cairo, Alexandria..." />
+                    @if (hasError(companyForm, 'city', 'required')) {
+                    <small class="err">City is required</small>
+                    }
+                </div>
+                <div class="form-field">
+                    <label>Service Radius (km) *</label>
+                    <input type="number" formControlName="serviceRadiusKm" min="1" max="500" />
+                    @if (hasError(companyForm, 'serviceRadiusKm')) {
+                    <small class="err">Must be between 1 and 500 km</small>
+                    }
+                </div>
+            </div>
+
+            <hr class="divider" />
+
+            <h4 class="section-title">
+                <i class="fa-solid fa-user-tie"></i> Owner / Contact Person
+            </h4>
+            <div class="form-row">
+                <div class="form-field">
+                    <label>Full Name *</label>
+                    <input type="text" formControlName="fullName" placeholder="Ahmed Hassan" />
+                    @if (hasError(companyForm, 'fullName', 'required')) {
+                    <small class="err">Full name is required</small>
+                    }
+                </div>
+                <div class="form-field">
+                    <label>Email *</label>
+                    <input type="email" formControlName="email" placeholder="owner@company.com" />
+                    @if (hasError(companyForm, 'email', 'required')) {
+                    <small class="err">Email is required</small>
+                    }
+                    @if (hasError(companyForm, 'email', 'email')) {
+                    <small class="err">Enter a valid email</small>
+                    }
+                </div>
+            </div>
+
+            <div class="form-row">
+                <div class="form-field">
+                    <label>Phone *</label>
+                    <input type="tel" formControlName="phone" placeholder="+20 100 123 4567" />
+                    @if (hasError(companyForm, 'phone', 'required')) {
+                    <small class="err">Phone is required</small>
+                    }
+                    @if (hasError(companyForm, 'phone', 'pattern')) {
+                    <small class="err">Enter a valid phone number</small>
+                    }
+                </div>
+                <div class="form-field">
+                    <label>
+                        Temporary Password *
+                        <button type="button" class="link-btn" (click)="generatePassword()">
+                            <i class="fa-solid fa-wand-magic-sparkles"></i> Generate
+                        </button>
+                    </label>
+                    <input type="text" formControlName="tempPassword" placeholder="At least 8 characters" />
+                    @if (hasError(companyForm, 'tempPassword', 'required')) {
+                    <small class="err">Password is required</small>
+                    }
+                    @if (hasError(companyForm, 'tempPassword', 'minlength')) {
+                    <small class="err">Password must be at least 8 characters</small>
+                    }
+                </div>
+            </div>
+
+            <div class="hint">
+                <i class="fa-solid fa-circle-info"></i>
+                The owner will receive this temporary password and must change it on first login.
+            </div>
+
+            <div class="form-actions end">
+                <button type="button" class="btn-outline-sm" (click)="backToList()">Cancel</button>
+                <button type="submit" class="btn-primary" [disabled]="!canSubmitCompany() || savingCompany()">
+                    @if (savingCompany()) {
+                    <i class="fa-solid fa-spinner fa-spin"></i> Creating...
+                    } @else {
+                    <i class="fa-solid fa-plus"></i> Create Company
+                    }
+                </button>
+            </div>
+        </form>
+    </div>
+    }
+
+    <!-- Toast -->
+    @if (toast(); as t) {
+    <div class="toast" [class.success]="t.type === 'success'" [class.error]="t.type === 'error'">
+        <i class="fa-solid" [class.fa-circle-check]="t.type === 'success'"
+            [class.fa-circle-xmark]="t.type === 'error'"></i>
+        {{ t.text }}
+    </div>
+    }
+</div>
