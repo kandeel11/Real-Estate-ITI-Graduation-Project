@@ -128,7 +128,11 @@ public class PropertyRepository : IPropertyRepository
                     .Select(m => m.MediaUrl)
                     .FirstOrDefault(),
                 ViewsCount = p.ViewsCount,
-                CreatedAt = p.CreatedAt
+                CreatedAt = p.CreatedAt,
+                AmenityIds = _context.PropertyAmenities
+                    .Where(pa => pa.PropertyId == p.Id)
+                    .Select(pa => pa.AmenityId)
+                    .ToList()
             })
             .ToListAsync(ct);
 

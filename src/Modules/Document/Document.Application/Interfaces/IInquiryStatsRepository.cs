@@ -10,4 +10,5 @@ public interface IInquiryStatsRepository
 {
     Task<int> CountByCompanyAsync(Guid companyId, DateTime? since = null, CancellationToken ct = default);
     Task<List<Inquiry>> GetRecentByCompanyAsync(Guid companyId, int take, CancellationToken ct = default);
+    Task<List<Inquiry>> GetAllByCompanyAsync(Guid companyId, CancellationToken ct = default);
 }
