@@ -74,6 +74,126 @@
   object-fit: cover;
 }
 
+.detail-gallery__arrow {
+  position: absolute;
+  top: 50%;
+  transform: translateY(-50%);
+  width: 40px;
+  height: 40px;
+  border-radius: 50%;
+  border: none;
+  background: rgba(255, 255, 255, 0.82);
+  color: #1a1a2e;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  z-index: 2;
+  font-size: 14px;
+  box-shadow: 0 2px 8px rgba(0,0,0,0.15);
+  transition: background 0.15s;
+}
+.detail-gallery__arrow:hover { background: #fff; }
+.detail-gallery__arrow--prev { left: 12px; }
+.detail-gallery__arrow--next { right: 12px; }
+
+.detail-gallery__counter {
+  position: absolute;
+  bottom: 12px;
+  left: 50%;
+  transform: translateX(-50%);
+  background: rgba(0,0,0,0.5);
+  color: #fff;
+  font-size: 12px;
+  font-weight: 600;
+  padding: 3px 10px;
+  border-radius: 999px;
+}
+
+.detail-gallery__thumb {
+  position: relative;
+}
+.detail-gallery__thumb-primary {
+  position: absolute;
+  top: 3px;
+  right: 3px;
+  background: #ffc107;
+  color: #4a3a00;
+  border-radius: 50%;
+  width: 16px;
+  height: 16px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 8px;
+}
+
+/* ── Owner photo management ── */
+.detail-owner-photos {
+  border: 1.5px dashed var(--color-primary, #4f46e5);
+  border-radius: 12px;
+  background: rgba(79, 70, 229, 0.03);
+}
+
+.detail-owner-thumb {
+  position: relative;
+  width: 90px;
+  height: 68px;
+  border-radius: 8px;
+  overflow: hidden;
+  border: 2px solid transparent;
+  flex-shrink: 0;
+}
+.detail-owner-thumb img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+}
+.detail-owner-thumb:hover .detail-owner-thumb__actions {
+  opacity: 1;
+}
+.detail-owner-thumb__actions {
+  position: absolute;
+  inset: 0;
+  background: rgba(0,0,0,0.45);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 6px;
+  opacity: 0;
+  transition: opacity 0.15s;
+}
+.detail-owner-thumb__btn {
+  background: rgba(255,255,255,0.9);
+  border: none;
+  border-radius: 50%;
+  width: 26px;
+  height: 26px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  color: #f59e0b;
+  font-size: 11px;
+  padding: 0;
+}
+.detail-owner-thumb__btn--del { color: #ef4444; }
+.detail-owner-thumb__btn:hover { background: #fff; }
+.detail-owner-thumb__primary {
+  position: absolute;
+  top: 3px;
+  right: 3px;
+  background: #ffc107;
+  color: #4a3a00;
+  border-radius: 50%;
+  width: 16px;
+  height: 16px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 8px;
+}
+
 /* ── Info ── */
 .detail__type {
   display: inline-flex;

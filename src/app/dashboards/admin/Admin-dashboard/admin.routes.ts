@@ -24,7 +24,13 @@ export const adminRoutes: Routes = [
           import('./pages/portfolio/portfolio.component').then((m) => m.PortfolioComponent),
       },
 
-      // مكان للصفحات الجاية (users, companies, approvals, etc.)
+      // Placeholder redirects until pages are built
+      { path: 'analytics', redirectTo: 'overview', pathMatch: 'full' },
+      { path: 'users', redirectTo: 'overview', pathMatch: 'full' },
+      { path: 'companies', redirectTo: 'overview', pathMatch: 'full' },
+      { path: 'approvals', redirectTo: 'overview', pathMatch: 'full' },
+      { path: 'reports', redirectTo: 'overview', pathMatch: 'full' },
+      { path: 'settings', redirectTo: 'overview', pathMatch: 'full' },
     ],
   },
 ];

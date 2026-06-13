@@ -33,6 +33,8 @@ export const API_ENDPOINTS = {
     REQUEST_AI_DESCRIPTION: (id: string) =>
       `/properties/${id}/request-ai-description`,
     MEDIA: (id: string) => `/properties/${id}/media`,
+    SET_PRIMARY_MEDIA: (id: string, mediaId: string) => `/properties/${id}/media/${mediaId}/primary`,
+    DELETE_MEDIA: (id: string, mediaId: string) => `/properties/${id}/media/${mediaId}`,
     AMENITIES: (id: string) => `/properties/${id}/amenities`,
     REMOVE_AMENITY: (id: string, amenityId: string) =>
       `/properties/${id}/amenities/${amenityId}`,
