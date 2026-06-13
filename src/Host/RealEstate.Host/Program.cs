@@ -3,6 +3,7 @@ using AI.Infrastructure;
 using AI.Infrastructure.Persistence.Contexts;
 using Document.Infrastructure;
 using Document.Infrastructure.Hubs;
+using Document.Infrastructure.Persistence;
 using Hangfire;
 using Hangfire.SqlServer;
 using Identity.Infrastructure;
@@ -10,6 +11,7 @@ using Identity.Infrastructure.Persistence;
 using Identity.Infrastructure.Seed;
 using Identity.Infrastructure.Services;
 using Maintenance.Infrastructure;
+using Maintenance.Infrastructure.Persistence.Contexts;
 using MaintenanceCompanies.Infrastructure;
 using Microsoft.AspNetCore.Authentication.JwtBearer;
 using Microsoft.EntityFrameworkCore;
@@ -186,7 +188,10 @@ public class Program
             var subscriptionDb = scope.ServiceProvider.GetRequiredService<SubscriptionDbContext>();
             var aiDb = scope.ServiceProvider.GetRequiredService<AiDbContext>();
             var propertyDb = scope.ServiceProvider.GetRequiredService<PropertyDbContext>();
-
+            var maintenanceDb = scope.ServiceProvider.GetRequiredService<MaintenanceDbContext>();
+            var documentDb = scope.ServiceProvider.GetRequiredService<DocumentDbContext>();
+            await documentDb.Database.MigrateAsync();
+            await maintenanceDb.Database.MigrateAsync();
             await propertyDb.Database.MigrateAsync();
             await aiDb.Database.MigrateAsync();
             await subscriptionDb.Database.MigrateAsync();
