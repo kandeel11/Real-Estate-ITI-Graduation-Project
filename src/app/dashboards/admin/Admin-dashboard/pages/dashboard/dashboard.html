@@ -145,48 +145,7 @@
         </div>
 
         <!-- Needs Attention -->
-        <div class="card">
-            <div class="card__head">
-                <div>
-                    <h3>Needs Attention</h3>
-                </div>
-                <span class="badge-count">{{ pendingProperties().length }} Items</span>
-            </div>
-            <div class="attention-list">
-                @for (p of pendingProperties(); track p.id; let i = $index) {
-                <div class="attention-item">
-                    <div class="attention-img">
-                        @if (p.mainImageUrl) {
-                        <img [src]="p.mainImageUrl" [alt]="p.title" />
-                        } @else {
-                        <i class="fa-solid fa-screwdriver-wrench"></i>
-                        }
-                    </div>
-                    <div class="attention-body">
-                        <div class="attention-top">
-                            <strong>{{ p.title }}</strong>
-                            <span class="attention-badge" [class.renewal]="i === 0" [class.urgent]="i === 1">
-                                {{ i === 0 ? 'Renewal' : 'Urgent' }}
-                            </span>
-                        </div>
-                        <span class="attention-meta">
-                            Unit {{ p.id }}C · {{ i === 0 ? 'Lease Expiring in 30 days' : 'Maintenance Request' }}
-                        </span>
-                        @if (p.description && i === 1) {
-                        <p class="attention-desc">{{ p.description }}</p>
-                        }
-                        <div class="attention-actions">
-                            <button class="btn-primary-sm" (click)="approve(p)">
-                                @if (i === 0) { Send Offer } @else { Approve Vendor }
-                            </button>
-                            @if (i === 0) {
-                            <button class="btn-outline-sm">Contact Tenant</button>
-                            }
-                        </div>
-                    </div>
-                </div>
-                }
-            </div>
-        </div>
+
+
     </div>
 </div>

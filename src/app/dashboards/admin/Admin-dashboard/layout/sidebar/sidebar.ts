@@ -20,7 +20,7 @@ export class SidebarComponent {
 
   navItems: NavItem[] = [
     { label: 'Dashboard', icon: 'fa-solid fa-table-cells-large', route: 'overview' },
-    { label: 'Portfolio', icon: 'fa-solid fa-building', route: 'properties' },
+    { label: 'Portfolio', icon: 'fa-solid fa-building', route: 'portfolio' },
     { label: 'Market Trends', icon: 'fa-solid fa-chart-line', route: 'analytics' },
     { label: 'Tenants', icon: 'fa-solid fa-users', route: 'users' },
     { label: 'Companies', icon: 'fa-solid fa-briefcase', route: 'companies' },
