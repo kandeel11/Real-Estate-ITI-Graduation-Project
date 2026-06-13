@@ -3,7 +3,7 @@
   <!-- Header -->
   <div class="page-header">
     <div class="header-left">
-      <h1 class="page-title"><i class="fa-regular fa-bell me-2"></i>Notifications</h1>
+      <h1 class="page-title"><i class="fa-regular fa-bell me-2"></i>{{ 'NOTIFICATIONS.TITLE' | translate }}</h1>
       @if (unreadCount() > 0) {
         <span class="unread-badge">{{ unreadCount() }} unread</span>
       }
@@ -15,15 +15,15 @@
         @if (markingAll()) {
           <span class="spinner-border spinner-border-sm me-1" role="status"></span>
         }
-        Mark all as read
+        {{ 'NOTIFICATIONS.MARK_ALL' | translate }}
       </button>
     }
   </div>
 
   <!-- Filter pills -->
   <div class="pills-row mb-4">
-    <button class="pill" [class.pill-active]="filter() === 'all'" (click)="setFilter('all')">All</button>
-    <button class="pill" [class.pill-active]="filter() === 'unread'" (click)="setFilter('unread')">Unread Only</button>
+    <button class="pill" [class.pill-active]="filter() === 'all'" (click)="setFilter('all')">{{ 'COMMON.ALL' | translate }}</button>
+    <button class="pill" [class.pill-active]="filter() === 'unread'" (click)="setFilter('unread')">{{ 'NOTIFICATIONS.UNREAD' | translate }}</button>
   </div>
 
   <!-- Loading -->
@@ -40,7 +40,7 @@
     <div class="alert alert-danger d-flex align-items-center gap-2">
       <i class="fa-solid fa-triangle-exclamation"></i>
       <span>{{ error() }}</span>
-      <button class="btn btn-sm btn-outline-danger ms-2" (click)="loadNotifications()">Try again</button>
+      <button class="btn btn-sm btn-outline-danger ms-2" (click)="loadNotifications()">{{ 'NOTIFICATIONS.TRY_AGAIN' | translate }}</button>
     </div>
   }
 
@@ -48,12 +48,8 @@
   @if (!loading() && !error() && notifications().length === 0) {
     <div class="empty-state">
       <i class="fa-regular fa-bell empty-icon"></i>
-      <p class="empty-title">
-        {{ filter() === 'unread' ? 'No Unread Notifications' : 'No Notifications' }}
-      </p>
-      <p class="empty-desc">
-        {{ filter() === 'unread' ? "You're all caught up!" : 'Your notifications will appear here.' }}
-      </p>
+      <p class="empty-title">{{ (filter() === 'unread' ? 'NOTIFICATIONS.NO_UNREAD' : 'NOTIFICATIONS.NO_NOTIFICATIONS') | translate }}</p>
+      <p class="empty-desc">{{ (filter() === 'unread' ? 'NOTIFICATIONS.ALL_CAUGHT_UP' : 'NOTIFICATIONS.WILL_APPEAR') | translate }}</p>
     </div>
   }
 

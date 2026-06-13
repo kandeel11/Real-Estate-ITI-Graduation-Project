@@ -150,6 +150,22 @@ body {
   -webkit-font-smoothing: antialiased;
 }
 
+/* Arabic font override */
+:root[lang="ar"] body,
+body.lang-ar {
+  font-family: 'Cairo', sans-serif;
+}
+
+/* RTL text alignment helpers */
+[dir="rtl"] .text-start { text-align: right !important; }
+[dir="rtl"] .text-end   { text-align: left !important; }
+[dir="rtl"] .me-1 { margin-right: 0 !important; margin-left: 0.25rem !important; }
+[dir="rtl"] .me-2 { margin-right: 0 !important; margin-left: 0.5rem !important; }
+[dir="rtl"] .me-3 { margin-right: 0 !important; margin-left: 1rem !important; }
+[dir="rtl"] .ms-1 { margin-left: 0 !important; margin-right: 0.25rem !important; }
+[dir="rtl"] .ms-2 { margin-left: 0 !important; margin-right: 0.5rem !important; }
+[dir="rtl"] .ms-auto { margin-left: 0 !important; margin-right: auto !important; }
+
 /* Override Bootstrap's primary color with ours */
 .btn-primary {
   background-color: var(--color-primary-container) !important;

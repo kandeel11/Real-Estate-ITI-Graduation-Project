@@ -27,7 +27,7 @@
                     <h3>Estatein AI</h3>
                     <span class="status">
                         <span class="online-dot"></span>
-                        Online now
+                        {{ 'CHATBOT.ONLINE' | translate }}
                     </span>
                 </div>
             </div>
@@ -51,7 +51,7 @@
         @if (loadingHistory()) {
         <div class="loading-state">
             <div class="loader"></div>
-            <span>Loading history...</span>
+            <span>{{ 'CHATBOT.LOADING_HISTORY' | translate }}</span>
         </div>
         } @else if (messages().length === 0) {
         <div class="welcome">
@@ -63,12 +63,12 @@
                         stroke-linejoin="round" />
                 </svg>
             </div>
-            <h4>Hey there! 👋</h4>
-            <p>I'm your Estatein AI assistant.<br>Ask me anything about properties.</p>
+            <h4>{{ 'CHATBOT.GREETING' | translate }}</h4>
+            <p>{{ 'CHATBOT.INTRO' | translate }}</p>
             <div class="suggestions">
-                <button (click)="draft.set('Show me luxury homes'); send()">🏡 Luxury homes</button>
-                <button (click)="draft.set('Properties under $500k'); send()">💰 Under $500k</button>
-                <button (click)="draft.set('New listings this week'); send()">✨ New listings</button>
+                <button (click)="draft.set('Show me luxury homes'); send()">🏡 {{ 'CHATBOT.SUGGESTION_LUXURY' | translate }}</button>
+                <button (click)="draft.set('Properties under $500k'); send()">💰 {{ 'CHATBOT.SUGGESTION_BUDGET' | translate }}</button>
+                <button (click)="draft.set('New listings this week'); send()">✨ {{ 'CHATBOT.SUGGESTION_NEW' | translate }}</button>
             </div>
         </div>
         }
@@ -115,9 +115,8 @@
     <!-- Composer -->
     <form class="composer" (submit)="$event.preventDefault(); send()">
         <div class="input-wrapper">
-            <!-- 👇 التعديل المهم هنا -->
             <textarea [value]="draft()" (input)="draft.set($any($event.target).value)" rows="1"
-                placeholder="Type your message..." (keydown)="onEnter($event)" [disabled]="sending()"></textarea>
+                [placeholder]="'CHATBOT.PLACEHOLDER' | translate" (keydown)="onEnter($event)" [disabled]="sending()"></textarea>
             <button type="submit" class="send-btn" [disabled]="sending() || !draft().trim()" aria-label="Send">
                 <svg viewBox="0 0 24 24" fill="none">
                     <path d="M22 2L11 13M22 2l-7 20-4-9-9-4 20-7z" stroke="currentColor" stroke-width="2"
@@ -126,7 +125,7 @@
             </button>
         </div>
         <div class="composer-hint">
-            Powered by <strong>Estatein AI</strong> · Press <kbd>Enter</kbd> to send
+            {{ 'CHATBOT.POWERED_BY' | translate }} <strong>Estatein AI</strong> · {{ 'CHATBOT.PRESS_ENTER' | translate }} <kbd>Enter</kbd> {{ 'CHATBOT.TO_SEND' | translate }}
         </div>
     </form>
 </div>

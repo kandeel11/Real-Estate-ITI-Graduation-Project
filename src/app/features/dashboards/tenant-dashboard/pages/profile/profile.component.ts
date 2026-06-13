@@ -2,6 +2,7 @@ import { Component, OnInit, OnDestroy, inject, signal, computed } from '@angular
 import { ReactiveFormsModule, FormBuilder, Validators, AbstractControl } from '@angular/forms';
 import { RouterLink } from '@angular/router';
 import { finalize } from 'rxjs';
+import { TranslatePipe } from '@ngx-translate/core';
 import { ProfileService, UserProfile } from '../../services/profile.service';
 import { ToastService } from '../../../../../shared/components/toast/toast.service';
 import { SubscriptionService } from '../../../../subscription/services/subscription.service';
@@ -28,7 +29,7 @@ function confirmPasswordValidator(control: AbstractControl): { [key: string]: bo
 @Component({
   selector: 'app-profile',
   standalone: true,
-  imports: [ReactiveFormsModule, RouterLink],
+  imports: [ReactiveFormsModule, RouterLink, TranslatePipe],
   templateUrl: './profile.component.html',
   styleUrl: './profile.component.css',
 })
@@ -115,10 +116,10 @@ export class ProfileComponent implements OnInit, OnDestroy {
 
   get pwStrengthLabel(): string {
     const s = this.pwStrength();
-    if (s <= 1) return 'Weak';
-    if (s <= 3) return 'Fair';
-    if (s <= 4) return 'Good';
-    return 'Strong';
+    if (s <= 1) return 'PROFILE.PW_WEAK';
+    if (s <= 3) return 'PROFILE.PW_FAIR';
+    if (s <= 4) return 'PROFILE.PW_GOOD';
+    return 'PROFILE.PW_STRONG';
   }
 
   get pwStrengthClass(): string {

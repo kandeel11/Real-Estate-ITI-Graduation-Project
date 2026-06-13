@@ -1,5 +1,5 @@
-import { Component, inject, signal } from '@angular/core';
-import { NgApexchartsModule } from 'ng-apexcharts';
+import { Component, inject, signal, AfterViewInit, OnDestroy, ViewChild, ElementRef } from '@angular/core';
+import ApexCharts from 'apexcharts';
 import { MaintenancePortalService } from '../services/maintenance-portal.service';
 import { CategoryEarnings, Ticket, TicketStats, TicketStatus, PaymentStatus } from '../models';
 import { DecimalPipe } from '@angular/common';
@@ -7,30 +7,38 @@ import { DecimalPipe } from '@angular/common';
 @Component({
   selector: 'app-maintenance-overview',
   standalone: true,
-  imports: [NgApexchartsModule, DecimalPipe],
+  imports: [DecimalPipe],
   templateUrl: './overview.component.html',
   styleUrls: ['./overview.component.scss'],
 })
-export class OverviewComponent {
+export class OverviewComponent implements AfterViewInit, OnDestroy {
   private service = inject(MaintenancePortalService);
+
+  @ViewChild('earningsChartEl') earningsChartEl!: ElementRef<HTMLElement>;
+  @ViewChild('statusChartEl') statusChartEl!: ElementRef<HTMLElement>;
 
   stats = signal<TicketStats | null>(null);
   categories = signal<CategoryEarnings[]>([]);
   recentTickets = signal<Ticket[]>([]);
 
-  earningsChart: any = null;
-  statusChart: any = null;
+  private earningsChart: ApexCharts | null = null;
+  private statusChart: ApexCharts | null = null;
 
-  constructor() {
+  ngAfterViewInit() {
     this.loadAll();
+  }
+
+  ngOnDestroy() {
+    this.earningsChart?.destroy();
+    this.statusChart?.destroy();
   }
 
   loadAll() {
     this.service.getStats().subscribe((s) => {
       this.stats.set(s);
 
-      // Status donut
-      this.statusChart = {
+      this.statusChart?.destroy();
+      this.statusChart = new ApexCharts(this.statusChartEl.nativeElement, {
         series: [s.openTickets, s.inProgressTickets, s.completedTickets, s.cancelledTickets],
         chart: { type: 'donut', height: 280, fontFamily: 'inherit' },
         labels: ['Open', 'In Progress', 'Completed', 'Cancelled'],
@@ -63,11 +71,13 @@ export class OverviewComponent {
             },
           },
         },
-      };
+      });
+      this.statusChart.render();
     });
 
     this.service.getMonthlyEarnings().subscribe((data) => {
-      this.earningsChart = {
+      this.earningsChart?.destroy();
+      this.earningsChart = new ApexCharts(this.earningsChartEl.nativeElement, {
         series: [{ name: 'Earnings', data: data.map((d) => d.earnings) }],
         chart: {
           type: 'area',
@@ -112,7 +122,8 @@ export class OverviewComponent {
           theme: 'light',
           y: { formatter: (val: number) => '$' + val.toLocaleString() },
         },
-      };
+      });
+      this.earningsChart.render();
     });
 
     this.service.getCategoryEarnings().subscribe((c) => this.categories.set(c));

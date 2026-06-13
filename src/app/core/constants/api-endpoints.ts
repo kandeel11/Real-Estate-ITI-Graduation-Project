@@ -10,9 +10,9 @@ export const API_ENDPOINTS = {
     LOGIN: '/auth/login',
     REGISTER: '/auth/register',
     VERIFY_EMAIL: '/auth/verify-email',
-    REQUEST_OTP: '/auth/request-otp',
+    SEND_OTP: '/auth/send-otp',
     VERIFY_OTP: '/auth/verify-otp',
-    REFRESH_TOKEN: '/auth/refresh-token',
+    REFRESH_TOKEN: '/auth/refresh',
     LOGOUT: '/auth/logout',
     FORGOT_PASSWORD: '/auth/forgot-password',
     RESET_PASSWORD: '/auth/reset-password',
@@ -39,6 +39,8 @@ export const API_ENDPOINTS = {
     GET_BY_CITY: (city: string) => `/properties/city/${city}`,
     GET_FEATURED: '/properties/featured',
     SEARCH: '/properties/search',
+    SET_FEATURED: (id: string) => `/properties/${id}/feature`,
+    MARK_RENTED: (id: string) => `/properties/${id}/rented`,
   },
 
   // ==================== AMENITIES CATALOG ====================

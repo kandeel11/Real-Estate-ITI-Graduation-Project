@@ -9,6 +9,7 @@
 import { Component, inject, signal, computed } from '@angular/core';
 import { FormsModule } from '@angular/forms';
 import { RouterLink } from '@angular/router';
+import { TranslatePipe } from '@ngx-translate/core';
 import { toSignal } from '@angular/core/rxjs-interop';
 import { CompanySubscriptionService } from '../../services/company-subscription.service';
 import { CompanyAiService } from '../../services/company-ai.service';
@@ -21,7 +22,7 @@ interface ChatMessage {
 @Component({
   selector: 'app-company-ai',
   standalone: true,
-  imports: [FormsModule, RouterLink],
+  imports: [FormsModule, RouterLink, TranslatePipe],
   templateUrl: './ai.component.html',
   styleUrl: './ai.component.css',
 })
@@ -51,20 +52,20 @@ export class AiComponent {
     return [
       {
         icon: 'fa-wand-magic-sparkles',
-        title: 'AI Description Generator',
-        text: 'Generates bilingual listing descriptions — available inside the property creation flow.',
+        titleKey: 'COMPANY_AI.FEATURE_AI_TITLE',
+        textKey: 'COMPANY_AI.FEATURE_AI_DESC',
         on: !!sub?.hasAiDescriptionGenerator,
       },
       {
         icon: 'fa-bullseye',
-        title: 'AI Lead Prioritization',
-        text: 'Ranks incoming inquiries so brokers respond to the hottest leads first.',
+        titleKey: 'COMPANY_AI.FEATURE_LEAD_TITLE',
+        textKey: 'COMPANY_AI.FEATURE_LEAD_DESC',
         on: !!sub?.hasAiLeadPrioritization,
       },
       {
         icon: 'fa-chart-line',
-        title: 'Advanced Analytics',
-        text: 'Deep performance insight across listings and brokers.',
+        titleKey: 'COMPANY_AI.FEATURE_ANALYTICS_TITLE',
+        textKey: 'COMPANY_AI.FEATURE_ANALYTICS_DESC',
         on: !!sub?.hasAdvancedAnalytics,
       },
     ];

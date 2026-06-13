@@ -1,18 +1,21 @@
 <div class="container py-4 listings-page">
   <div class="d-flex justify-content-between align-items-center mb-1">
-    <h2 class="mb-0">My Listings ({{ properties().length }})</h2>
+    <h2 class="mb-0">{{ 'MY_LISTINGS.TITLE' | translate }} ({{ properties().length }})</h2>
     <a routerLink="/properties/new" class="btn btn-dark">
-      <i class="fa-solid fa-plus me-2"></i>Add Listing
+      <i class="fa-solid fa-plus me-2"></i>{{ 'MY_LISTINGS.ADD' | translate }}
     </a>
   </div>
   @if (draftCount() > 0) {
     <p class="text-muted mb-3">
       <i class="fa-solid fa-circle-info me-1"></i>
-      You have {{ draftCount() }} unfinished draft{{ draftCount() === 1 ? '' : 's' }} —
-      use <strong>Continue setup</strong> to finish or delete them to free plan slots.
+      @if (draftCount() === 1) {
+        {{ 'MY_LISTINGS.DRAFT_HINT' | translate: { count: draftCount() } }}
+      } @else {
+        {{ 'MY_LISTINGS.DRAFT_HINT_PLURAL' | translate: { count: draftCount() } }}
+      }
     </p>
   } @else {
-    <p class="text-muted mb-3">Everything you've listed, in every status.</p>
+    <p class="text-muted mb-3">{{ 'MY_LISTINGS.EMPTY_HINT' | translate }}</p>
   }
 
   @if (actionError()) {
@@ -28,15 +31,15 @@
   } @else if (error()) {
     <div class="alert alert-danger d-flex justify-content-between align-items-center">
       <span><i class="fa-solid fa-triangle-exclamation me-2"></i>{{ error() }}</span>
-      <button class="btn btn-sm btn-outline-danger" (click)="load()">Retry</button>
+      <button class="btn btn-sm btn-outline-danger" (click)="load()">{{ 'COMMON.RETRY' | translate }}</button>
     </div>
   } @else if (properties().length === 0) {
     <div class="card p-5 text-center text-muted">
       <i class="fa-solid fa-house fs-1 mb-3"></i>
-      <p class="mb-3">You haven't listed any properties yet.</p>
+      <p class="mb-3">{{ 'MY_LISTINGS.NO_LISTINGS' | translate }}</p>
       <div>
         <a routerLink="/properties/new" class="btn btn-dark">
-          <i class="fa-solid fa-plus me-2"></i>Create your first listing
+          <i class="fa-solid fa-plus me-2"></i>{{ 'MY_LISTINGS.CREATE_FIRST' | translate }}
         </a>
       </div>
     </div>
@@ -47,13 +50,13 @@
           <thead class="table-light">
             <tr>
               <th></th>
-              <th>Title</th>
-              <th>Location</th>
-              <th>Price</th>
-              <th>Status</th>
-              <th>Views</th>
-              <th>Created</th>
-              <th class="text-end">Actions</th>
+              <th>{{ 'COMMON.TITLE' | translate }}</th>
+              <th>{{ 'COMMON.LOCATION' | translate }}</th>
+              <th>{{ 'COMMON.PRICE' | translate }}</th>
+              <th>{{ 'COMMON.STATUS' | translate }}</th>
+              <th>{{ 'COMMON.VIEWS' | translate }}</th>
+              <th>{{ 'MY_LISTINGS.COL_CREATED' | translate }}</th>
+              <th class="text-end">{{ 'COMMON.ACTIONS' | translate }}</th>
             </tr>
           </thead>
           <tbody>
@@ -79,33 +82,48 @@
                     @case ('Draft') {
                       <a class="btn btn-sm btn-dark me-1"
                          [routerLink]="['/properties/new']" [queryParams]="{ propertyId: p.id }">
-                        <i class="fa-solid fa-pen-to-square me-1"></i>Continue setup
+                        <i class="fa-solid fa-pen-to-square me-1"></i>{{ 'MY_LISTINGS.CONTINUE_SETUP' | translate }}
                       </a>
                       <button class="btn btn-sm btn-outline-success me-1"
                               (click)="submit(p)" [disabled]="busyId() === p.id">
                         @if (busyId() === p.id) {
                           <span class="spinner-border spinner-border-sm"></span>
                         } @else {
-                          Submit
+                          {{ 'MY_LISTINGS.SUBMIT' | translate }}
                         }
                       </button>
-                      <button class="btn btn-sm btn-outline-danger" title="Delete"
+                      <button class="btn btn-sm btn-outline-danger" [title]="'COMMON.DELETE' | translate"
                               (click)="propertyToDelete.set(p)">
                         <i class="fa-solid fa-trash"></i>
                       </button>
                     }
                     @case ('Active') {
+                      @if (canFeature()) {
+                        <button class="btn btn-sm me-1"
+                                [class]="p.isFeatured ? 'btn-warning' : 'btn-outline-warning'"
+                                (click)="toggleFeatured(p)"
+                                [disabled]="busyId() === p.id"
+                                [title]="p.isFeatured ? ('MY_LISTINGS.REMOVE_FEATURED' | translate) : (featuredId() ? ('MY_LISTINGS.FEATURE_HINT_REPLACE' | translate) : ('MY_LISTINGS.FEATURE_HINT_SINGLE' | translate))">
+                          @if (busyId() === p.id) {
+                            <span class="spinner-border spinner-border-sm"></span>
+                          } @else if (p.isFeatured) {
+                            <i class="fa-solid fa-star me-1"></i>{{ 'MY_LISTINGS.FEATURED' | translate }}
+                          } @else {
+                            <i class="fa-regular fa-star me-1"></i>{{ 'MY_LISTINGS.FEATURE' | translate }}
+                          }
+                        </button>
+                      }
                       <button class="btn btn-sm btn-outline-primary"
                               (click)="markRented(p)" [disabled]="busyId() === p.id">
                         @if (busyId() === p.id) {
                           <span class="spinner-border spinner-border-sm"></span>
                         } @else {
-                          Mark as Rented
+                          {{ 'MY_LISTINGS.MARK_RENTED' | translate }}
                         }
                       </button>
                     }
                     @case ('Rejected') {
-                      <button class="btn btn-sm btn-outline-danger" title="Delete"
+                      <button class="btn btn-sm btn-outline-danger" [title]="'COMMON.DELETE' | translate"
                               (click)="propertyToDelete.set(p)">
                         <i class="fa-solid fa-trash"></i>
                       </button>
@@ -124,12 +142,22 @@
   }
 </div>
 
+<!-- Featured listings upgrade hint (free plan users only) -->
+@if (subscription() && !canFeature() && properties().some(p => p.status === 'Active')) {
+  <div class="alert alert-secondary d-flex align-items-center gap-2 mt-3">
+    <i class="fa-regular fa-star fs-5"></i>
+    <span>
+      <strong>{{ 'MY_LISTINGS.UPGRADE_HINT_STRONG' | translate }}</strong> {{ 'MY_LISTINGS.UPGRADE_HINT' | translate }}
+    </span>
+  </div>
+}
+
 <!-- Delete confirmation -->
 <app-confirm-modal
   [show]="propertyToDelete() !== null"
-  title="Delete listing"
+  [title]="'MY_LISTINGS.DELETE_TITLE' | translate"
   [message]="deleteMessage()"
-  confirmLabel="Delete"
+  [confirmLabel]="'MY_LISTINGS.DELETE_CONFIRM' | translate"
   confirmClass="btn-danger"
   [loading]="deleting()"
   (confirmed)="confirmDelete()"

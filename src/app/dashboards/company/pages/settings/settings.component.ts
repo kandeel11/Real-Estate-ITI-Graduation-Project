@@ -7,6 +7,7 @@
 
 import { Component, inject, signal, OnInit } from '@angular/core';
 import { ReactiveFormsModule, FormBuilder, Validators } from '@angular/forms';
+import { TranslatePipe } from '@ngx-translate/core';
 import { CompanyService } from '../../services/company.service';
 import { Company } from '../../../../shared/models/company.model';
 import {
@@ -17,7 +18,7 @@ import {
 @Component({
   selector: 'app-company-settings',
   standalone: true,
-  imports: [ReactiveFormsModule],
+  imports: [ReactiveFormsModule, TranslatePipe],
   templateUrl: './settings.component.html',
   styleUrl: './settings.component.css',
 })

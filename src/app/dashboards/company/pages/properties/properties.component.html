@@ -1,7 +1,7 @@
 <div class="d-flex justify-content-between align-items-center mb-3">
-  <h2 class="mb-0">Company Properties ({{ counts().all }} / {{ maxPropertiesLabel() }})</h2>
+  <h2 class="mb-0">{{ 'COMPANY_PROPERTIES.TITLE' | translate }} ({{ counts().all }} / {{ maxPropertiesLabel() }})</h2>
   <span class="text-muted small">
-    <i class="fa-solid fa-circle-info me-1"></i>Listings are created by your brokers
+    <i class="fa-solid fa-circle-info me-1"></i>{{ 'COMPANY_PROPERTIES.LISTINGS_HINT' | translate }}
   </span>
 </div>
 
@@ -16,7 +16,7 @@
           [class.active]="statusFilter() === tab.value"
           (click)="statusFilter.set(tab.value)"
         >
-          {{ tab.label }}
+          {{ tab.label | translate }}
           <span class="badge bg-light text-dark ms-1">{{ counts()[tab.countKey] }}</span>
         </button>
       </li>
@@ -25,7 +25,7 @@
   <input
     type="search"
     class="form-control search-box"
-    placeholder="Search by title…"
+    [placeholder]="'COMPANY_PROPERTIES.SEARCH_PLACEHOLDER' | translate"
     [value]="search()"
     (input)="onSearch($event)"
   />
@@ -40,12 +40,12 @@
 } @else if (error()) {
   <div class="alert alert-danger d-flex justify-content-between align-items-center">
     <span><i class="fa-solid fa-triangle-exclamation me-2"></i>{{ error() }}</span>
-    <button class="btn btn-sm btn-outline-danger" (click)="load()">Retry</button>
+    <button class="btn btn-sm btn-outline-danger" (click)="load()">{{ 'COMMON.RETRY' | translate }}</button>
   </div>
 } @else if (filtered().length === 0) {
   <div class="card p-5 text-center text-muted">
     <i class="fa-solid fa-house fs-1 mb-3"></i>
-    <p class="mb-0">No properties match the current filter.</p>
+    <p class="mb-0">{{ 'COMPANY_PROPERTIES.NO_MATCH' | translate }}</p>
   </div>
 } @else {
   <div class="card">
@@ -54,13 +54,13 @@
         <thead class="table-light">
           <tr>
             <th></th>
-            <th>Title</th>
-            <th>Location</th>
-            <th>Broker</th>
-            <th>Price</th>
-            <th>Status</th>
-            <th>Views</th>
-            <th class="text-end">Actions</th>
+            <th>{{ 'COMMON.TITLE' | translate }}</th>
+            <th>{{ 'COMMON.LOCATION' | translate }}</th>
+            <th>{{ 'COMPANY_PROPERTIES.COL_BROKER' | translate }}</th>
+            <th>{{ 'COMMON.PRICE' | translate }}</th>
+            <th>{{ 'COMMON.STATUS' | translate }}</th>
+            <th>{{ 'COMMON.VIEWS' | translate }}</th>
+            <th class="text-end">{{ 'COMMON.ACTIONS' | translate }}</th>
           </tr>
         </thead>
         <tbody>
@@ -78,7 +78,7 @@
               <td class="fw-semibold">
                 {{ p.title }}
                 @if (p.isFeatured) {
-                  <i class="fa-solid fa-star text-warning ms-1" title="Featured"></i>
+                  <i class="fa-solid fa-star text-warning ms-1" [title]="'COMMON.FEATURED' | translate"></i>
                 }
               </td>
               <td>{{ p.district }}, {{ p.city }}</td>
@@ -87,11 +87,11 @@
               <td><span [class]="badgeClass(p.status)">{{ statusLabel(p.status) }}</span></td>
               <td>{{ p.viewsCount | number }}</td>
               <td class="text-end">
-                <button class="btn btn-sm btn-outline-secondary me-1" title="Assign broker"
+                <button class="btn btn-sm btn-outline-secondary me-1" [title]="'COMPANY_BROKERS.ASSIGN_BROKER' | translate"
                         (click)="openAssign(p)">
                   <i class="fa-solid fa-user-tag"></i>
                 </button>
-                <button class="btn btn-sm btn-outline-secondary" title="View">
+                <button class="btn btn-sm btn-outline-secondary" [title]="'COMMON.VIEWS' | translate">
                   <i class="fa-solid fa-eye"></i>
                 </button>
               </td>
@@ -109,14 +109,14 @@
     <div class="modal-dialog modal-dialog-centered">
       <div class="modal-content">
         <div class="modal-header">
-          <h5 class="modal-title">Assign Broker</h5>
+          <h5 class="modal-title">{{ 'COMPANY_PROPERTIES.ASSIGN_BROKER_MODAL' | translate }}</h5>
           <button type="button" class="btn-close" (click)="propertyToAssign.set(null)"></button>
         </div>
         <div class="modal-body">
           <p class="text-muted">
-            Choose which broker handles <strong>{{ property.title }}</strong>.
+            {{ 'COMPANY_PROPERTIES.ASSIGN_CHOOSE' | translate }} <strong>{{ property.title }}</strong>.
             @if (property.listingBrokerName) {
-              Currently assigned to <strong>{{ property.listingBrokerName }}</strong>.
+              {{ 'COMPANY_PROPERTIES.ASSIGN_CURRENTLY' | translate }} <strong>{{ property.listingBrokerName }}</strong>.
             }
           </p>
 
@@ -126,12 +126,12 @@
 
           @if (activeBrokers().length === 0) {
             <div class="alert alert-warning py-2">
-              No active brokers available — reactivate or add one from the Brokers page first.
+              {{ 'COMPANY_PROPERTIES.NO_ACTIVE_BROKERS' | translate }}
             </div>
           } @else {
-            <label class="form-label">Broker</label>
+            <label class="form-label">{{ 'COMPANY_PROPERTIES.BROKER_LABEL' | translate }}</label>
             <select class="form-select" [value]="selectedBrokerId()" (change)="onBrokerSelected($event)">
-              <option value="" disabled>Select a broker…</option>
+              <option value="" disabled>{{ 'COMPANY_PROPERTIES.BROKER_PLACEHOLDER' | translate }}</option>
               @for (broker of activeBrokers(); track broker.id) {
                 <option [value]="broker.id">
                   {{ broker.fullName || broker.licenseNumber }}
@@ -141,14 +141,14 @@
           }
         </div>
         <div class="modal-footer">
-          <button type="button" class="btn btn-outline-secondary" (click)="propertyToAssign.set(null)">Cancel</button>
+          <button type="button" class="btn btn-outline-secondary" (click)="propertyToAssign.set(null)">{{ 'COMMON.CANCEL' | translate }}</button>
           <button type="button" class="btn btn-dark"
                   (click)="confirmAssign()"
                   [disabled]="assigning() || !selectedBrokerId() || activeBrokers().length === 0">
             @if (assigning()) {
               <span class="spinner-border spinner-border-sm me-2"></span>
             }
-            Assign
+            {{ 'COMPANY_PROPERTIES.ASSIGN' | translate }}
           </button>
         </div>
       </div>

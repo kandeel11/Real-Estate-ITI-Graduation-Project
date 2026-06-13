@@ -1,6 +1,7 @@
 import { Component, OnInit, inject, signal } from '@angular/core';
 import { DatePipe, CurrencyPipe } from '@angular/common';
 import { FormsModule } from '@angular/forms';
+import { TranslatePipe } from '@ngx-translate/core';
 import { forkJoin } from 'rxjs';
 import { finalize } from 'rxjs';
 import { LeaseService, ApiLease } from '../../services/lease.service';
@@ -28,7 +29,7 @@ interface ChatEntry {
 @Component({
   selector: 'app-my-lease',
   standalone: true,
-  imports: [DatePipe, CurrencyPipe, FormsModule],
+  imports: [DatePipe, CurrencyPipe, FormsModule, TranslatePipe],
   templateUrl: './my-lease.component.html',
   styleUrl: './my-lease.component.css',
 })

@@ -3,20 +3,20 @@
     <div class="page-head">
         <div class="page-head__left">
             @if (view() === 'create') {
-            <button class="back-btn" (click)="backToList()" title="Back to list">
+            <button class="back-btn" (click)="backToList()" [title]="'TICKET_DETAIL.BACK' | translate">
                 <i class="fa-solid fa-arrow-left"></i>
             </button>
             }
             <div>
                 <h1>
-                    @if (view() === 'list') { Maintenance Companies }
-                    @else { Create New Company }
+                    @if (view() === 'list') { {{ 'ADMIN.MAINTENANCE_COMPANIES.LIST_TITLE' | translate }} }
+                    @else { {{ 'ADMIN.MAINTENANCE_COMPANIES.CREATE_TITLE' | translate }} }
                 </h1>
                 <p>
                     @if (view() === 'list') {
-                    Manage all maintenance providers in your platform.
+                    {{ 'ADMIN.MAINTENANCE_COMPANIES.LIST_SUBTITLE' | translate }}
                     } @else {
-                    Fill in the details to onboard a new maintenance company.
+                    {{ 'ADMIN.MAINTENANCE_COMPANIES.CREATE_SUBTITLE' | translate }}
                     }
                 </p>
             </div>
@@ -25,7 +25,7 @@
         @if (view() === 'list') {
         <button class="btn-primary" (click)="goToCreate()">
             <i class="fa-solid fa-plus"></i>
-            Create Company
+            {{ 'ADMIN.MAINTENANCE_COMPANIES.CREATE_BTN' | translate }}
         </button>
         }
     </div>
@@ -40,21 +40,21 @@
         <div class="quick-stat">
             <div class="qs-icon companies"><i class="fa-solid fa-building"></i></div>
             <div>
-                <span>Total Companies</span>
+                <span>{{ 'ADMIN.MAINTENANCE_COMPANIES.STAT_TOTAL' | translate }}</span>
                 <strong>{{ companies().length }}</strong>
             </div>
         </div>
         <div class="quick-stat">
             <div class="qs-icon active"><i class="fa-solid fa-circle-check"></i></div>
             <div>
-                <span>Active</span>
+                <span>{{ 'ADMIN.MAINTENANCE_COMPANIES.STAT_ACTIVE' | translate }}</span>
                 <strong>{{ companies().length }}</strong>
             </div>
         </div>
         <div class="quick-stat">
             <div class="qs-icon categories"><i class="fa-solid fa-tags"></i></div>
             <div>
-                <span>Categories</span>
+                <span>{{ 'ADMIN.MAINTENANCE_COMPANIES.STAT_CATEGORIES' | translate }}</span>
                 <strong>{{ categories().length }}</strong>
             </div>
         </div>
@@ -64,10 +64,10 @@
     <div class="card no-pad">
         <div class="search-bar">
             <i class="fa-solid fa-magnifying-glass"></i>
-            <input type="text" placeholder="Search by name, email, city, or category..." [value]="searchQuery()"
-                (input)="onSearchInput($event)" />
+            <input type="text" [placeholder]="'ADMIN.MAINTENANCE_COMPANIES.SEARCH_PLACEHOLDER' | translate"
+                   [value]="searchQuery()" (input)="onSearchInput($event)" />
             @if (searchQuery()) {
-            <button class="clear-btn" (click)="searchQuery.set('')" title="Clear">
+            <button class="clear-btn" (click)="searchQuery.set('')" [title]="'COMMON.CANCEL' | translate">
                 <i class="fa-solid fa-xmark"></i>
             </button>
             }
@@ -77,16 +77,16 @@
     <!-- Companies Grid -->
     @if (loadingCompanies()) {
     <div class="card">
-        <div class="loading">Loading companies...</div>
+        <div class="loading">{{ 'ADMIN.MAINTENANCE_COMPANIES.LOADING' | translate }}</div>
     </div>
     } @else if (filteredCompanies().length === 0) {
     <div class="card">
         <div class="empty">
             <i class="fa-solid fa-building-circle-xmark"></i>
             @if (searchQuery()) {
-            <p>No companies match "{{ searchQuery() }}"</p>
+            <p>{{ 'ADMIN.MAINTENANCE_COMPANIES.NO_MATCH' | translate: { q: searchQuery() } }}</p>
             } @else {
-            <p>No companies yet. Click <strong>Create Company</strong> to add your first one.</p>
+            <p>{{ 'ADMIN.MAINTENANCE_COMPANIES.EMPTY' | translate }}</p>
             }
         </div>
     </div>
@@ -97,7 +97,7 @@
             <!-- Status pill -->
             <span class="status-pill" [class.active]="c.isActive" [class.inactive]="!c.isActive">
                 <span class="status-dot"></span>
-                {{ c.isActive ? 'Active' : 'Inactive' }}
+                {{ (c.isActive ? 'ADMIN.MAINTENANCE_COMPANIES.STATUS_ACTIVE' : 'ADMIN.MAINTENANCE_COMPANIES.STATUS_INACTIVE') | translate }}
             </span>
 
             <!-- Header: Logo + Name -->
@@ -113,7 +113,7 @@
                     <h3>{{ c.companyName }}</h3>
                     <span class="cc-city">
                         <i class="fa-solid fa-location-dot"></i>
-                        {{ c.city }} · {{ c.serviceRadiusKm }}km radius
+                        {{ c.city }} · {{ 'ADMIN.MAINTENANCE_COMPANIES.RADIUS' | translate: { n: c.serviceRadiusKm } }}
                     </span>
                 </div>
             </div>
@@ -151,21 +151,21 @@
                     <i class="fa-solid fa-star"></i>
                     <div>
                         <strong>{{ c.averageRating | number: '1.1-1' }}</strong>
-                        <small>Rating</small>
+                        <small>{{ 'ADMIN.MAINTENANCE_COMPANIES.RATING' | translate }}</small>
                     </div>
                 </div>
                 <div class="cc-stat">
                     <i class="fa-solid fa-circle-check"></i>
                     <div>
                         <strong>{{ c.completedTicketsCount }}</strong>
-                        <small>Completed</small>
+                        <small>{{ 'ADMIN.MAINTENANCE_COMPANIES.COMPLETED_STAT' | translate }}</small>
                     </div>
                 </div>
                 <div class="cc-stat">
                     <i class="fa-solid fa-clock"></i>
                     <div>
                         <strong>{{ c.activeTicketsCount }}</strong>
-                        <small>Active</small>
+                        <small>{{ 'ADMIN.MAINTENANCE_COMPANIES.ACTIVE_TICKETS' | translate }}</small>
                     </div>
                 </div>
             </div>
@@ -174,7 +174,7 @@
             <div class="cc-footer">
                 <small>
                     <i class="fa-regular fa-calendar"></i>
-                    Joined {{ formatDate(c.createdAt) }}
+                    {{ 'ADMIN.MAINTENANCE_COMPANIES.JOINED' | translate }} {{ formatDate(c.createdAt) }}
                 </small>
             </div>
         </div>
@@ -194,15 +194,15 @@
             <div>
                 <h3>
                     <i class="fa-solid fa-tags"></i>
-                    Service Categories
+                    {{ 'ADMIN.MAINTENANCE_COMPANIES.CATS_SECTION' | translate }}
                 </h3>
                 <span class="muted">
-                    {{ categories().length }} categories available
+                    {{ 'ADMIN.MAINTENANCE_COMPANIES.CATS_AVAILABLE' | translate: { n: categories().length } }}
                 </span>
             </div>
             <button class="btn-primary-sm" type="button" (click)="toggleAddCategory()">
                 <i class="fa-solid" [class.fa-plus]="!showAddCategory()" [class.fa-xmark]="showAddCategory()"></i>
-                {{ showAddCategory() ? 'Cancel' : 'Add Category' }}
+                {{ (showAddCategory() ? 'ADMIN.MAINTENANCE_COMPANIES.CANCEL_ADD_CAT' : 'ADMIN.MAINTENANCE_COMPANIES.ADD_CATEGORY') | translate }}
             </button>
         </div>
 
@@ -210,23 +210,23 @@
         <form [formGroup]="categoryForm" (ngSubmit)="submitCategory()" class="category-form">
             <div class="form-row">
                 <div class="form-field">
-                    <label>Category Name *</label>
+                    <label>{{ 'ADMIN.MAINTENANCE_COMPANIES.CAT_NAME' | translate }}</label>
                     <input type="text" formControlName="name" placeholder="e.g. Plumbing, Electrical..." />
                     @if (hasError(categoryForm, 'name', 'required')) {
-                    <small class="err">Name is required</small>
+                    <small class="err">{{ 'ADMIN.MAINTENANCE_COMPANIES.ERR_CAT_NAME' | translate }}</small>
                     }
                 </div>
                 <div class="form-field">
-                    <label>Description *</label>
+                    <label>{{ 'ADMIN.MAINTENANCE_COMPANIES.CAT_DESC_LABEL' | translate }}</label>
                     <input type="text" formControlName="description" placeholder="Short description..." />
                     @if (hasError(categoryForm, 'description', 'required')) {
-                    <small class="err">Description is required</small>
+                    <small class="err">{{ 'ADMIN.MAINTENANCE_COMPANIES.ERR_CAT_DESC' | translate }}</small>
                     }
                 </div>
             </div>
 
             <div class="form-field">
-                <label>Pick an Icon *</label>
+                <label>{{ 'ADMIN.MAINTENANCE_COMPANIES.CAT_ICON_LABEL' | translate }}</label>
                 <div class="icon-picker">
                     @for (icon of iconOptions; track icon) {
                     <button type="button" class="icon-tile" [class.active]="categoryForm.value.icon === icon"
@@ -238,12 +238,12 @@
             </div>
 
             <div class="form-actions">
-                <button type="button" class="btn-outline-sm" (click)="toggleAddCategory()">Cancel</button>
+                <button type="button" class="btn-outline-sm" (click)="toggleAddCategory()">{{ 'ADMIN.MAINTENANCE_COMPANIES.CANCEL_ADD_CAT' | translate }}</button>
                 <button type="submit" class="btn-primary-sm" [disabled]="savingCategory() || categoryForm.invalid">
                     @if (savingCategory()) {
-                    <i class="fa-solid fa-spinner fa-spin"></i> Saving...
+                    <i class="fa-solid fa-spinner fa-spin"></i> {{ 'ADMIN.MAINTENANCE_COMPANIES.SAVING_CAT' | translate }}
                     } @else {
-                    <i class="fa-solid fa-check"></i> Save Category
+                    <i class="fa-solid fa-check"></i> {{ 'ADMIN.MAINTENANCE_COMPANIES.SAVE_CATEGORY' | translate }}
                     }
                 </button>
             </div>
@@ -251,17 +251,17 @@
         }
 
         @if (loadingCategories()) {
-        <div class="loading">Loading categories...</div>
+        <div class="loading">{{ 'ADMIN.MAINTENANCE_COMPANIES.LOADING_CATS' | translate }}</div>
         } @else if (categories().length === 0) {
         <div class="empty">
             <i class="fa-solid fa-folder-open"></i>
-            <p>No categories yet. Add your first one to get started.</p>
+            <p>{{ 'ADMIN.MAINTENANCE_COMPANIES.NO_CATS' | translate }}</p>
         </div>
         } @else {
         <div class="categories-grid">
             @for (c of categories(); track c.id) {
             <div class="category-card">
-                <button class="cat-delete" type="button" (click)="removeCategory(c)" title="Delete">
+                <button class="cat-delete" type="button" (click)="removeCategory(c)" [title]="'COMMON.DELETE' | translate">
                     <i class="fa-solid fa-trash"></i>
                 </button>
                 <div class="cat-icon">
@@ -281,24 +281,24 @@
             <div>
                 <h3>
                     <i class="fa-solid fa-building-user"></i>
-                    Company Profile
+                    {{ 'ADMIN.MAINTENANCE_COMPANIES.COMPANY_SECTION' | translate }}
                 </h3>
-                <span class="muted">All fields marked with * are required.</span>
+                <span class="muted">{{ 'ADMIN.MAINTENANCE_COMPANIES.ALL_REQUIRED' | translate }}</span>
             </div>
         </div>
 
         <form [formGroup]="companyForm" (ngSubmit)="submitCompany()" class="company-form">
             <div class="form-field">
                 <label>
-                    Categories the company offers *
+                    {{ 'ADMIN.MAINTENANCE_COMPANIES.CATS_LABEL' | translate }}
                     @if (selectedCount() > 0) {
-                    <span class="counter">{{ selectedCount() }} selected</span>
+                    <span class="counter">{{ 'ADMIN.MAINTENANCE_COMPANIES.SELECTED' | translate: { n: selectedCount() } }}</span>
                     }
                 </label>
                 @if (categories().length === 0) {
                 <div class="hint warning">
                     <i class="fa-solid fa-triangle-exclamation"></i>
-                    Add categories first before creating a company.
+                    {{ 'ADMIN.MAINTENANCE_COMPANIES.ADD_CATS_FIRST' | translate }}
                 </div>
                 } @else {
                 <div class="category-chips">
@@ -319,47 +319,47 @@
             <hr class="divider" />
 
             <h4 class="section-title">
-                <i class="fa-solid fa-building"></i> Company Information
+                <i class="fa-solid fa-building"></i> {{ 'ADMIN.MAINTENANCE_COMPANIES.COMPANY_INFO' | translate }}
             </h4>
             <div class="form-row">
                 <div class="form-field">
-                    <label>Company Name *</label>
+                    <label>{{ 'ADMIN.MAINTENANCE_COMPANIES.COMPANY_NAME' | translate }}</label>
                     <input type="text" formControlName="companyName" placeholder="Acme Maintenance Co." />
                     @if (hasError(companyForm, 'companyName', 'required')) {
-                    <small class="err">Company name is required</small>
+                    <small class="err">{{ 'ADMIN.MAINTENANCE_COMPANIES.ERR_COMPANY_NAME' | translate }}</small>
                     }
                 </div>
                 <div class="form-field">
-                    <label>Logo URL</label>
+                    <label>{{ 'ADMIN.MAINTENANCE_COMPANIES.LOGO_URL' | translate }}</label>
                     <input type="url" formControlName="logoUrl" placeholder="https://example.com/logo.png" />
                 </div>
             </div>
 
             <div class="form-field">
-                <label>Description *</label>
+                <label>{{ 'ADMIN.MAINTENANCE_COMPANIES.DESCRIPTION' | translate }}</label>
                 <textarea formControlName="description" rows="3"
                     placeholder="Briefly describe what this company does..."></textarea>
                 @if (hasError(companyForm, 'description', 'required')) {
-                <small class="err">Description is required</small>
+                <small class="err">{{ 'ADMIN.MAINTENANCE_COMPANIES.ERR_DESC' | translate }}</small>
                 }
                 @if (hasError(companyForm, 'description', 'minlength')) {
-                <small class="err">Description must be at least 10 characters</small>
+                <small class="err">{{ 'ADMIN.MAINTENANCE_COMPANIES.ERR_DESC_MIN' | translate }}</small>
                 }
             </div>
 
             <div class="form-row">
                 <div class="form-field">
-                    <label>City *</label>
+                    <label>{{ 'ADMIN.MAINTENANCE_COMPANIES.CITY' | translate }}</label>
                     <input type="text" formControlName="city" placeholder="Cairo, Alexandria..." />
                     @if (hasError(companyForm, 'city', 'required')) {
-                    <small class="err">City is required</small>
+                    <small class="err">{{ 'ADMIN.MAINTENANCE_COMPANIES.ERR_CITY' | translate }}</small>
                     }
                 </div>
                 <div class="form-field">
-                    <label>Service Radius (km) *</label>
+                    <label>{{ 'ADMIN.MAINTENANCE_COMPANIES.RADIUS_LABEL' | translate }}</label>
                     <input type="number" formControlName="serviceRadiusKm" min="1" max="500" />
                     @if (hasError(companyForm, 'serviceRadiusKm')) {
-                    <small class="err">Must be between 1 and 500 km</small>
+                    <small class="err">{{ 'ADMIN.MAINTENANCE_COMPANIES.ERR_RADIUS' | translate }}</small>
                     }
                 </div>
             </div>
@@ -367,68 +367,68 @@
             <hr class="divider" />
 
             <h4 class="section-title">
-                <i class="fa-solid fa-user-tie"></i> Owner / Contact Person
+                <i class="fa-solid fa-user-tie"></i> {{ 'ADMIN.MAINTENANCE_COMPANIES.CONTACT_SECTION' | translate }}
             </h4>
             <div class="form-row">
                 <div class="form-field">
-                    <label>Full Name *</label>
+                    <label>{{ 'ADMIN.MAINTENANCE_COMPANIES.FULL_NAME' | translate }}</label>
                     <input type="text" formControlName="fullName" placeholder="Ahmed Hassan" />
                     @if (hasError(companyForm, 'fullName', 'required')) {
-                    <small class="err">Full name is required</small>
+                    <small class="err">{{ 'ADMIN.MAINTENANCE_COMPANIES.ERR_FULL_NAME' | translate }}</small>
                     }
                 </div>
                 <div class="form-field">
-                    <label>Email *</label>
+                    <label>{{ 'ADMIN.MAINTENANCE_COMPANIES.EMAIL' | translate }}</label>
                     <input type="email" formControlName="email" placeholder="owner@company.com" />
                     @if (hasError(companyForm, 'email', 'required')) {
-                    <small class="err">Email is required</small>
+                    <small class="err">{{ 'ADMIN.MAINTENANCE_COMPANIES.ERR_EMAIL' | translate }}</small>
                     }
                     @if (hasError(companyForm, 'email', 'email')) {
-                    <small class="err">Enter a valid email</small>
+                    <small class="err">{{ 'ADMIN.MAINTENANCE_COMPANIES.ERR_EMAIL_INVALID' | translate }}</small>
                     }
                 </div>
             </div>
 
             <div class="form-row">
                 <div class="form-field">
-                    <label>Phone *</label>
+                    <label>{{ 'ADMIN.MAINTENANCE_COMPANIES.PHONE' | translate }}</label>
                     <input type="tel" formControlName="phone" placeholder="+20 100 123 4567" />
                     @if (hasError(companyForm, 'phone', 'required')) {
-                    <small class="err">Phone is required</small>
+                    <small class="err">{{ 'ADMIN.MAINTENANCE_COMPANIES.ERR_PHONE' | translate }}</small>
                     }
                     @if (hasError(companyForm, 'phone', 'pattern')) {
-                    <small class="err">Enter a valid phone number</small>
+                    <small class="err">{{ 'ADMIN.MAINTENANCE_COMPANIES.ERR_PHONE_INVALID' | translate }}</small>
                     }
                 </div>
                 <div class="form-field">
                     <label>
-                        Temporary Password *
+                        {{ 'ADMIN.MAINTENANCE_COMPANIES.TEMP_PASSWORD' | translate }}
                         <button type="button" class="link-btn" (click)="generatePassword()">
-                            <i class="fa-solid fa-wand-magic-sparkles"></i> Generate
+                            <i class="fa-solid fa-wand-magic-sparkles"></i> {{ 'ADMIN.MAINTENANCE_COMPANIES.GENERATE' | translate }}
                         </button>
                     </label>
                     <input type="text" formControlName="tempPassword" placeholder="At least 8 characters" />
                     @if (hasError(companyForm, 'tempPassword', 'required')) {
-                    <small class="err">Password is required</small>
+                    <small class="err">{{ 'ADMIN.MAINTENANCE_COMPANIES.ERR_TEMP_PW' | translate }}</small>
                     }
                     @if (hasError(companyForm, 'tempPassword', 'minlength')) {
-                    <small class="err">Password must be at least 8 characters</small>
+                    <small class="err">{{ 'ADMIN.MAINTENANCE_COMPANIES.ERR_TEMP_PW_MIN' | translate }}</small>
                     }
                 </div>
             </div>
 
             <div class="hint">
                 <i class="fa-solid fa-circle-info"></i>
-                The owner will receive this temporary password and must change it on first login.
+                {{ 'ADMIN.MAINTENANCE_COMPANIES.TEMP_PW_HINT' | translate }}
             </div>
 
             <div class="form-actions end">
-                <button type="button" class="btn-outline-sm" (click)="backToList()">Cancel</button>
+                <button type="button" class="btn-outline-sm" (click)="backToList()">{{ 'ADMIN.MAINTENANCE_COMPANIES.CANCEL' | translate }}</button>
                 <button type="submit" class="btn-primary" [disabled]="!canSubmitCompany() || savingCompany()">
                     @if (savingCompany()) {
-                    <i class="fa-solid fa-spinner fa-spin"></i> Creating...
+                    <i class="fa-solid fa-spinner fa-spin"></i> {{ 'ADMIN.MAINTENANCE_COMPANIES.CREATING' | translate }}
                     } @else {
-                    <i class="fa-solid fa-plus"></i> Create Company
+                    <i class="fa-solid fa-plus"></i> {{ 'ADMIN.MAINTENANCE_COMPANIES.CREATE_BTN' | translate }}
                     }
                 </button>
             </div>

@@ -1,8 +1,8 @@
 <div class="maintenance-page">
   <div class="page-header">
-    <h1 class="page-title"><i class="fa-solid fa-screwdriver-wrench me-2"></i>Maintenance</h1>
-    <a routerLink="/dashboard/maintenance/create" class="btn btn-primary">
-      <i class="fa-solid fa-plus me-1"></i>New Ticket
+    <h1 class="page-title"><i class="fa-solid fa-screwdriver-wrench me-2"></i>{{ 'MAINTENANCE.TITLE' | translate }}</h1>
+    <a routerLink="/dashboard/maintenance-requests/create" class="btn btn-primary">
+      <i class="fa-solid fa-plus me-1"></i>{{ 'MAINTENANCE.NEW_TICKET' | translate }}
     </a>
   </div>
 
@@ -13,7 +13,7 @@
         <button class="filter-tab"
                 [class.filter-tab-active]="activeFilter() === tab.value"
                 (click)="setFilter(tab.value)">
-          {{ tab.label }}
+          {{ tab.label | translate }}
         </button>
       }
     </div>
@@ -41,7 +41,7 @@
     <div class="alert alert-danger d-flex align-items-center gap-2">
       <i class="fa-solid fa-triangle-exclamation"></i>
       <span>{{ error() }}</span>
-      <button class="btn btn-sm btn-outline-danger ms-auto" (click)="loadTickets()">Try again</button>
+      <button class="btn btn-sm btn-outline-danger ms-auto" (click)="loadTickets()">{{ 'MAINTENANCE.TRY_AGAIN' | translate }}</button>
     </div>
   }
 
@@ -49,17 +49,17 @@
   @if (!loading() && !error() && tickets().length === 0) {
     <div class="empty-state">
       <i class="fa-solid fa-screwdriver-wrench empty-icon"></i>
-      <p class="empty-title">No Tickets Found</p>
+      <p class="empty-title">{{ 'MAINTENANCE.NO_TICKETS' | translate }}</p>
       <p class="empty-desc">
         @if (activeFilter()) {
-          No tickets match the selected filter.
+          {{ 'MAINTENANCE.NO_MATCH' | translate }}
         } @else {
-          You haven't submitted any maintenance requests yet.
+          {{ 'MAINTENANCE.NO_SUBMITTED' | translate }}
         }
       </p>
       @if (!activeFilter()) {
-        <a routerLink="/dashboard/maintenance/create" class="btn btn-primary mt-3">
-          <i class="fa-solid fa-plus me-2"></i>Create Your First Ticket
+        <a routerLink="/dashboard/maintenance-requests/create" class="btn btn-primary mt-3">
+          <i class="fa-solid fa-plus me-2"></i>{{ 'MAINTENANCE.CREATE_FIRST' | translate }}
         </a>
       }
     </div>
@@ -68,7 +68,7 @@
   <!-- ── Ticket list ────────────────────────────────────────────── -->
   @if (!loading() && !error() && tickets().length > 0) {
     <div class="list-meta mb-2">
-      <span class="text-muted small">{{ total() }} ticket{{ total() !== 1 ? 's' : '' }} found</span>
+      <span class="text-muted small">{{ 'MAINTENANCE.TICKETS_FOUND' | translate:{count: total()} }}</span>
     </div>
 
     <div class="ticket-list">

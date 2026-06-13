@@ -1,7 +1,7 @@
 <div class="d-flex justify-content-between align-items-center mb-3">
-  <h2 class="mb-0">Team Members ({{ activeCount() }} / {{ maxBrokersLabel() }})</h2>
+  <h2 class="mb-0">{{ 'COMPANY_BROKERS.TITLE' | translate }} ({{ activeCount() }} / {{ maxBrokersLabel() }})</h2>
   <button class="btn btn-dark" (click)="openModal()">
-    <i class="fa-solid fa-plus me-2"></i>Add Broker
+    <i class="fa-solid fa-plus me-2"></i>{{ 'COMPANY_BROKERS.ADD_BROKER' | translate }}
   </button>
 </div>
 
@@ -10,7 +10,7 @@
 @if (actionError()) {
   <div class="alert alert-danger d-flex justify-content-between align-items-center">
     <span>{{ actionError() }}</span>
-    <a routerLink="/dashboard/company/subscriptions" class="alert-link">Upgrade Plan</a>
+    <a routerLink="/dashboard/company/subscriptions" class="alert-link">{{ 'COMMON.UPGRADE_PLAN' | translate }}</a>
   </div>
 }
 
@@ -24,7 +24,7 @@
           [class.active]="statusFilter() === tab.value"
           (click)="statusFilter.set(tab.value)"
         >
-          {{ tab.label }}
+          {{ tab.label | translate }}
           <span class="badge bg-light text-dark ms-1">{{ counts()[tab.value] }}</span>
         </button>
       </li>
@@ -33,7 +33,7 @@
   <input
     type="search"
     class="form-control search-box"
-    placeholder="Search by name, email or license…"
+    [placeholder]="'COMPANY_BROKERS.SEARCH_PLACEHOLDER' | translate"
     [value]="search()"
     (input)="onSearch($event)"
   />
@@ -51,13 +51,13 @@
       <table class="table table-hover align-middle mb-0">
         <thead class="table-light">
           <tr>
-            <th>Name</th>
-            <th>License</th>
-            <th>Deals</th>
-            <th>Avg Response</th>
-            <th>Rating</th>
-            <th>Status</th>
-            <th class="text-end">Actions</th>
+            <th>{{ 'COMPANY_BROKERS.COL_NAME' | translate }}</th>
+            <th>{{ 'COMPANY_BROKERS.COL_LICENSE' | translate }}</th>
+            <th>{{ 'COMPANY_BROKERS.COL_DEALS' | translate }}</th>
+            <th>{{ 'COMPANY_BROKERS.COL_AVG_RESPONSE' | translate }}</th>
+            <th>{{ 'COMPANY_BROKERS.COL_RATING' | translate }}</th>
+            <th>{{ 'COMMON.STATUS' | translate }}</th>
+            <th class="text-end">{{ 'COMMON.ACTIONS' | translate }}</th>
           </tr>
         </thead>
         <tbody>
@@ -71,7 +71,7 @@
               </td>
               <td>{{ b.licenseNumber }}</td>
               <td>{{ b.closedDealsCount }}</td>
-              <td>{{ b.avgResponseTimeMinutes }} min</td>
+              <td>{{ b.avgResponseTimeMinutes }} {{ 'COMPANY_BROKERS.MIN' | translate }}</td>
               <td>
                 <i class="fa-solid fa-star text-warning"></i>
                 {{ b.ratingAvg }}
@@ -79,15 +79,15 @@
               </td>
               <td>
                 @if (b.isActive) {
-                  <span class="badge bg-success">Active</span>
+                  <span class="badge bg-success">{{ 'COMMON.ACTIVE' | translate }}</span>
                 } @else {
-                  <span class="badge bg-secondary">Inactive</span>
+                  <span class="badge bg-secondary">{{ 'COMMON.INACTIVE' | translate }}</span>
                 }
               </td>
               <td class="text-end">
                 @if (b.isActive) {
                   <button class="btn btn-sm btn-outline-danger" (click)="deactivate(b)">
-                    Deactivate
+                    {{ 'COMPANY_BROKERS.DEACTIVATE' | translate }}
                   </button>
                 } @else {
                   <button class="btn btn-sm btn-outline-success me-1" (click)="reactivate(b)"
@@ -95,9 +95,9 @@
                     @if (reactivatingId() === b.id) {
                       <span class="spinner-border spinner-border-sm me-1"></span>
                     }
-                    Reactivate
+                    {{ 'COMPANY_BROKERS.REACTIVATE' | translate }}
                   </button>
-                  <button class="btn btn-sm btn-outline-danger" (click)="requestDelete(b)" title="Delete permanently">
+                  <button class="btn btn-sm btn-outline-danger" (click)="requestDelete(b)" [title]="'COMMON.DELETE' | translate">
                     <i class="fa-solid fa-trash"></i>
                   </button>
                 }
@@ -107,9 +107,9 @@
             <tr>
               <td colspan="7" class="text-center text-muted py-4">
                 @if (search() || statusFilter() !== 'all') {
-                  No brokers match your filters.
+                  {{ 'COMPANY_BROKERS.NO_MATCH' | translate }}
                 } @else {
-                  No brokers yet.
+                  {{ 'COMPANY_BROKERS.NO_BROKERS' | translate }}
                 }
               </td>
             </tr>
@@ -127,19 +127,19 @@
       <div class="modal-content">
         <form [formGroup]="form" (ngSubmit)="submit()">
           <div class="modal-header">
-            <h5 class="modal-title">Add Broker</h5>
+            <h5 class="modal-title">{{ 'COMPANY_BROKERS.MODAL_TITLE' | translate }}</h5>
             <button type="button" class="btn-close" (click)="closeModal()"></button>
           </div>
           <div class="modal-body">
             @if (errorMsg()) {
               <div class="alert alert-danger">
                 {{ errorMsg() }}
-                <a routerLink="/dashboard/company/subscriptions" class="alert-link ms-1">Upgrade Plan</a>
+                <a routerLink="/dashboard/company/subscriptions" class="alert-link ms-1">{{ 'COMMON.UPGRADE_PLAN' | translate }}</a>
               </div>
             }
 
             <div class="mb-3">
-              <label class="form-label">Full Name</label>
+              <label class="form-label">{{ 'COMPANY_BROKERS.FULL_NAME' | translate }}</label>
               <input
                 type="text"
                 class="form-control"
@@ -147,12 +147,12 @@
                 [class.is-invalid]="fullName.invalid && fullName.touched"
               />
               @if (fullName.invalid && fullName.touched) {
-                <div class="invalid-feedback">Full name (min 3 characters) is required.</div>
+                <div class="invalid-feedback">{{ 'COMPANY_BROKERS.ERR_FULL_NAME' | translate }}</div>
               }
             </div>
 
             <div class="mb-3">
-              <label class="form-label">Email</label>
+              <label class="form-label">{{ 'COMPANY_BROKERS.EMAIL' | translate }}</label>
               <input
                 type="email"
                 class="form-control"
@@ -160,26 +160,26 @@
                 [class.is-invalid]="email.invalid && email.touched"
               />
               @if (email.invalid && email.touched) {
-                <div class="invalid-feedback">A valid email is required.</div>
+                <div class="invalid-feedback">{{ 'COMPANY_BROKERS.ERR_EMAIL' | translate }}</div>
               }
             </div>
 
             <div class="mb-3">
-              <label class="form-label">Temporary Password</label>
+              <label class="form-label">{{ 'COMPANY_BROKERS.TEMP_PASSWORD' | translate }}</label>
               <input
                 type="password"
                 class="form-control"
                 formControlName="tempPassword"
                 [class.is-invalid]="tempPassword.invalid && tempPassword.touched"
               />
-              <small class="text-muted">The broker signs in with this and changes it later.</small>
+              <small class="text-muted">{{ 'COMPANY_BROKERS.TEMP_PASSWORD_HINT' | translate }}</small>
               @if (tempPassword.invalid && tempPassword.touched) {
-                <div class="invalid-feedback">A temporary password (min 8 characters) is required.</div>
+                <div class="invalid-feedback">{{ 'COMPANY_BROKERS.ERR_TEMP_PASSWORD' | translate }}</div>
               }
             </div>
 
             <div class="mb-3">
-              <label class="form-label">Phone</label>
+              <label class="form-label">{{ 'COMPANY_BROKERS.PHONE' | translate }}</label>
               <input
                 type="tel"
                 class="form-control"
@@ -187,12 +187,12 @@
                 [class.is-invalid]="phone.invalid && phone.touched"
               />
               @if (phone.invalid && phone.touched) {
-                <div class="invalid-feedback">Phone is required.</div>
+                <div class="invalid-feedback">{{ 'COMPANY_BROKERS.ERR_PHONE' | translate }}</div>
               }
             </div>
 
             <div class="mb-3">
-              <label class="form-label">License Number</label>
+              <label class="form-label">{{ 'COMPANY_BROKERS.LICENSE_NUMBER' | translate }}</label>
               <input
                 type="text"
                 class="form-control"
@@ -200,17 +200,17 @@
                 [class.is-invalid]="licenseNumber.invalid && licenseNumber.touched"
               />
               @if (licenseNumber.invalid && licenseNumber.touched) {
-                <div class="invalid-feedback">License number is required.</div>
+                <div class="invalid-feedback">{{ 'COMPANY_BROKERS.ERR_LICENSE' | translate }}</div>
               }
             </div>
           </div>
           <div class="modal-footer">
-            <button type="button" class="btn btn-outline-secondary" (click)="closeModal()">Cancel</button>
+            <button type="button" class="btn btn-outline-secondary" (click)="closeModal()">{{ 'COMMON.CANCEL' | translate }}</button>
             <button type="submit" class="btn btn-dark" [disabled]="submitting()">
               @if (submitting()) {
                 <span class="spinner-border spinner-border-sm me-2"></span>
               }
-              Add Broker
+              {{ 'COMPANY_BROKERS.ADD_BROKER' | translate }}
             </button>
           </div>
         </form>
@@ -223,9 +223,9 @@
 <!-- Deactivate confirmation -->
 <app-confirm-modal
   [show]="brokerToDeactivate() !== null"
-  title="Deactivate broker"
+  [title]="'COMPANY_BROKERS.DEACTIVATE_MODAL_TITLE' | translate"
   [message]="deactivateMessage()"
-  confirmLabel="Deactivate"
+  [confirmLabel]="'COMPANY_BROKERS.DEACTIVATE' | translate"
   confirmClass="btn-danger"
   [loading]="deactivating()"
   (confirmed)="confirmDeactivate()"
@@ -235,9 +235,9 @@
 <!-- Permanent delete confirmation -->
 <app-confirm-modal
   [show]="brokerToDelete() !== null"
-  title="Delete broker permanently"
+  [title]="'COMPANY_BROKERS.DELETE_MODAL_TITLE' | translate"
   [message]="deleteMessage()"
-  confirmLabel="Delete"
+  [confirmLabel]="'COMMON.DELETE' | translate"
   confirmClass="btn-danger"
   [loading]="deleting()"
   (confirmed)="confirmDelete()"

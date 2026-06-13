@@ -1,8 +1,8 @@
 <div class="detail-page">
 
   <!-- ── Back ───────────────────────────────────────────────────── -->
-  <a routerLink="/dashboard/maintenance" class="back-link">
-    <i class="fa-solid fa-arrow-left me-1"></i>Back to Tickets
+  <a routerLink="/dashboard/maintenance-requests" class="back-link">
+    <i class="fa-solid fa-arrow-left me-1"></i>{{ 'TICKET_DETAIL.BACK' | translate }}
   </a>
 
   <!-- ── Loading ────────────────────────────────────────────────── -->
@@ -17,7 +17,7 @@
     <div class="alert alert-danger d-flex align-items-center gap-2">
       <i class="fa-solid fa-triangle-exclamation"></i>
       <span>{{ error() }}</span>
-      <button class="btn btn-sm btn-outline-danger ms-auto" (click)="refresh()">Retry</button>
+      <button class="btn btn-sm btn-outline-danger ms-auto" (click)="refresh()">{{ 'COMMON.RETRY' | translate }}</button>
     </div>
   }
 
@@ -40,17 +40,17 @@
           <span class="detail-address"><i class="fa-solid fa-location-dot me-1"></i>{{ t.propertyAddress }}</span>
           @if (isCancellable() && !showCancelConfirm()) {
             <button class="btn btn-sm btn-outline-danger mt-2" (click)="showCancelConfirm.set(true)" [disabled]="cancelLoading()">
-              <i class="fa-solid fa-ban me-1"></i>Cancel Ticket
+              <i class="fa-solid fa-ban me-1"></i>{{ 'TICKET_DETAIL.CANCEL_TICKET' | translate }}
             </button>
           }
           @if (showCancelConfirm()) {
             <div class="cancel-confirm">
-              <span class="text-muted small">Are you sure?</span>
+              <span class="text-muted small">{{ 'TICKET_DETAIL.CONFIRM_CANCEL' | translate }}</span>
               <button class="btn btn-sm btn-danger" (click)="cancelTicket()" [disabled]="cancelLoading()">
                 @if (cancelLoading()) { <span class="spinner-border spinner-border-sm me-1" role="status"></span> }
-                Yes, Cancel
+                {{ 'TICKET_DETAIL.YES_CANCEL' | translate }}
               </button>
-              <button class="btn btn-sm btn-outline-secondary" (click)="showCancelConfirm.set(false)">No</button>
+              <button class="btn btn-sm btn-outline-secondary" (click)="showCancelConfirm.set(false)">{{ 'TICKET_DETAIL.NO' | translate }}</button>
             </div>
           }
         </div>
@@ -64,7 +64,7 @@
     <!-- ══ 2. STATUS TIMELINE (STEPPER) ══════════════════════════ -->
     @if (t.status !== 'Cancelled' && t.status !== 'Rejected') {
       <div class="detail-card mb-4">
-        <h2 class="section-title"><i class="fa-solid fa-timeline me-2"></i>Progress</h2>
+        <h2 class="section-title"><i class="fa-solid fa-timeline me-2"></i>{{ 'TICKET_DETAIL.PROGRESS_TITLE' | translate }}</h2>
         <div class="stepper-row">
           @for (step of timelineSteps; track step.key; let i = $index) {
             <div class="stepper-step" [class]="'step-' + stepState(i)">
@@ -75,7 +75,7 @@
                   <i class="fa-solid {{ step.icon }}"></i>
                 }
               </div>
-              <span class="stepper-label">{{ step.label }}</span>
+              <span class="stepper-label">{{ step.labelKey | translate }}</span>
             </div>
             @if (i < timelineSteps.length - 1) {
               <div class="stepper-connector" [class.connector-done]="stepState(i) === 'done'"></div>
@@ -88,10 +88,10 @@
     <!-- ══ 3. AI EVALUATION ═══════════════════════════════════════ -->
     @if (t.aiEvaluation; as ai) {
       <div class="detail-card mb-4 ai-eval-card">
-        <h2 class="section-title"><i class="fa-solid fa-robot me-2 text-primary"></i>AI Evaluation</h2>
+        <h2 class="section-title"><i class="fa-solid fa-robot me-2 text-primary"></i>{{ 'TICKET_DETAIL.AI_TITLE' | translate }}</h2>
         <div class="ai-meta-grid">
           <div class="ai-meta-item">
-            <span class="ai-meta-label">Responsible Party</span>
+            <span class="ai-meta-label">{{ 'TICKET_DETAIL.AI_RESPONSIBLE' | translate }}</span>
             <span class="ai-meta-value"
                   [class.badge-owner]="ai.responsibleParty === 'Owner'"
                   [class.badge-tenant]="ai.responsibleParty === 'Tenant'">
@@ -99,16 +99,16 @@
             </span>
           </div>
           <div class="ai-meta-item">
-            <span class="ai-meta-label">Category</span>
+            <span class="ai-meta-label">{{ 'TICKET_DETAIL.AI_CATEGORY' | translate }}</span>
             <span class="ai-meta-value">{{ ai.category }}</span>
           </div>
           <div class="ai-meta-item">
-            <span class="ai-meta-label">Evaluated At</span>
+            <span class="ai-meta-label">{{ 'TICKET_DETAIL.AI_EVALUATED_AT' | translate }}</span>
             <span class="ai-meta-value">{{ ai.evaluatedAt | date:'medium' }}</span>
           </div>
         </div>
         <div class="ai-conf-row">
-          <span class="ai-meta-label">Confidence Score: <strong>{{ ai.confidenceScore }}%</strong></span>
+          <span class="ai-meta-label">{{ 'TICKET_DETAIL.AI_CONFIDENCE' | translate }} <strong>{{ ai.confidenceScore }}%</strong></span>
           <div class="conf-bar"><div class="conf-fill" [style.width.%]="ai.confidenceScore"></div></div>
         </div>
         <p class="ai-reasoning">{{ ai.reasoning }}</p>
@@ -118,24 +118,24 @@
     <!-- ══ 4. DECISION PANEL ══════════════════════════════════════ -->
     @if (t.status === 'WaitingForTenantDecision' && t.resolutionMethod === null) {
       <div class="detail-card mb-4 decision-card">
-        <h2 class="section-title"><i class="fa-solid fa-scale-balanced me-2"></i>Your Decision Required</h2>
-        <p class="text-muted small mb-3">Based on the AI evaluation, you are responsible for this repair. How would you like to proceed?</p>
+        <h2 class="section-title"><i class="fa-solid fa-scale-balanced me-2"></i>{{ 'TICKET_DETAIL.DECISION_TITLE' | translate }}</h2>
+        <p class="text-muted small mb-3">{{ 'TICKET_DETAIL.DECISION_DESC' | translate }}</p>
         <div class="decision-options">
           <button class="decision-btn decision-platform" (click)="requestDecision(0)" [disabled]="decisionLoading()">
             <i class="fa-solid fa-building decision-btn-icon"></i>
-            <span class="decision-btn-title">Use Platform Vendor</span>
-            <span class="decision-btn-desc">We assign a vetted vendor on your behalf</span>
+            <span class="decision-btn-title">{{ 'TICKET_DETAIL.PLATFORM_TITLE' | translate }}</span>
+            <span class="decision-btn-desc">{{ 'TICKET_DETAIL.PLATFORM_DESC' | translate }}</span>
           </button>
           <button class="decision-btn decision-external" (click)="requestDecision(1)" [disabled]="decisionLoading()">
             <i class="fa-solid fa-user-gear decision-btn-icon"></i>
-            <span class="decision-btn-title">Use External Technician</span>
-            <span class="decision-btn-desc">You handle it with your own contractor</span>
+            <span class="decision-btn-title">{{ 'TICKET_DETAIL.EXTERNAL_TITLE' | translate }}</span>
+            <span class="decision-btn-desc">{{ 'TICKET_DETAIL.EXTERNAL_DESC' | translate }}</span>
           </button>
         </div>
         @if (decisionLoading()) {
           <div class="d-flex align-items-center gap-2 mt-3">
             <div class="spinner-border spinner-border-sm text-primary" role="status"></div>
-            <span class="text-muted small">Submitting decision…</span>
+            <span class="text-muted small">{{ 'TICKET_DETAIL.SUBMITTING_DECISION' | translate }}</span>
           </div>
         }
       </div>
@@ -144,7 +144,7 @@
     <!-- ══ 5. ATTACHMENTS ═════════════════════════════════════════ -->
     @if (t.attachments.length > 0) {
       <div class="detail-card mb-4">
-        <h2 class="section-title"><i class="fa-solid fa-paperclip me-2"></i>Attachments</h2>
+        <h2 class="section-title"><i class="fa-solid fa-paperclip me-2"></i>{{ 'TICKET_DETAIL.ATTACHMENTS_TITLE' | translate }}</h2>
         <div class="attach-grid">
           @for (a of t.attachments; track a.id) {
             <div class="attach-item" (click)="isImage(a.fileType) ? openLightbox(a.fileUrl) : null"
@@ -169,14 +169,14 @@
       <div class="detail-card mb-4 complete-card">
         <div class="complete-card-inner">
           <div>
-            <h2 class="section-title mb-1"><i class="fa-solid fa-user-gear me-2"></i>External Technician</h2>
-            <p class="text-muted small mb-0">Once the repair is done, mark this ticket as complete.</p>
+            <h2 class="section-title mb-1"><i class="fa-solid fa-user-gear me-2"></i>{{ 'TICKET_DETAIL.COMPLETE_TITLE' | translate }}</h2>
+            <p class="text-muted small mb-0">{{ 'TICKET_DETAIL.COMPLETE_HINT' | translate }}</p>
           </div>
           <button class="btn btn-success" (click)="markAsComplete()" [disabled]="markCompleteLoading()">
             @if (markCompleteLoading()) {
-              <span class="spinner-border spinner-border-sm me-2" role="status"></span>Completing…
+              <span class="spinner-border spinner-border-sm me-2" role="status"></span>{{ 'TICKET_DETAIL.COMPLETING' | translate }}
             } @else {
-              <i class="fa-solid fa-circle-check me-2"></i>Mark as Complete
+              <i class="fa-solid fa-circle-check me-2"></i>{{ 'TICKET_DETAIL.MARK_COMPLETE' | translate }}
             }
           </button>
         </div>
@@ -186,9 +186,9 @@
     <!-- ══ 6. COMMENTS ═══════════════════════════════════════════ -->
     @if (!isExternalDecision()) {
       <div class="detail-card mb-4">
-        <h2 class="section-title"><i class="fa-solid fa-comments me-2"></i>Comments</h2>
+        <h2 class="section-title"><i class="fa-solid fa-comments me-2"></i>{{ 'TICKET_DETAIL.COMMENTS_TITLE' | translate }}</h2>
       @if (visibleComments().length === 0) {
-        <p class="text-muted small">No comments yet. Be the first to add one.</p>
+        <p class="text-muted small">{{ 'TICKET_DETAIL.NO_COMMENTS' | translate }}</p>
       } @else {
         <div class="comments-list mb-3">
           @for (c of visibleComments(); track c.id) {
@@ -208,7 +208,7 @@
 
       @if (t.status !== 'Completed' && t.status !== 'Cancelled' && t.status !== 'Rejected') {
           <div class="comment-input-row">
-            <input class="form-control" type="text" placeholder="Add a comment…"
+            <input class="form-control" type="text" [placeholder]="'TICKET_DETAIL.COMMENT_PLACEHOLDER' | translate"
                    [(ngModel)]="newComment" (keyup.enter)="addComment()" [disabled]="commentLoading()" />
             <button class="btn btn-primary" (click)="addComment()"
                     [disabled]="!newComment.trim() || commentLoading()">
@@ -226,7 +226,7 @@
     <!-- ══ 7. STATUS HISTORY ══════════════════════════════════════ -->
     @if (t.statusHistory.length > 0) {
       <div class="detail-card mb-4">
-        <h2 class="section-title"><i class="fa-solid fa-clock-rotate-left me-2"></i>Status History</h2>
+        <h2 class="section-title"><i class="fa-solid fa-clock-rotate-left me-2"></i>{{ 'TICKET_DETAIL.HISTORY_TITLE' | translate }}</h2>
         <div class="history-list">
           @for (h of t.statusHistory; track $index) {
             <div class="history-item">
@@ -252,7 +252,7 @@
     <!-- ══ 8. PAYMENT ════════════════════════════════════════════ -->
     @if (t.payment; as pay) {
       <div class="detail-card mb-4">
-        <h2 class="section-title"><i class="fa-solid fa-credit-card me-2"></i>Payment</h2>
+        <h2 class="section-title"><i class="fa-solid fa-credit-card me-2"></i>{{ 'TICKET_DETAIL.PAYMENT_TITLE' | translate }}</h2>
         <div class="payment-row">
           <div class="payment-amount">{{ formatCurrency(pay.amount, pay.currency) }}</div>
           <span class="ticket-badge" [class]="pay.status === 'Paid' ? 'status-done' : 'status-awaiting-payment'">
@@ -260,15 +260,15 @@
           </span>
         </div>
         @if (pay.paidAt) {
-          <p class="text-muted small mt-1"><i class="fa-regular fa-calendar-check me-1"></i>Paid on {{ pay.paidAt | date:'medium' }}</p>
+          <p class="text-muted small mt-1"><i class="fa-regular fa-calendar-check me-1"></i>{{ 'TICKET_DETAIL.PAID_ON' | translate }} {{ pay.paidAt | date:'medium' }}</p>
         }
         @if (pay.transactionId) {
-          <p class="text-muted small">Tx ID: {{ pay.transactionId }}</p>
+          <p class="text-muted small">{{ 'TICKET_DETAIL.TX_ID' | translate }} {{ pay.transactionId }}</p>
         }
 
         @if (t.status === 'AwaitingPayment' && pay.status !== 'Paid') {
           <button class="btn btn-primary mt-3" (click)="showPayModal.set(true)">
-            <i class="fa-solid fa-money-bill-wave me-2"></i>Pay Now
+            <i class="fa-solid fa-money-bill-wave me-2"></i>{{ 'TICKET_DETAIL.PAY_NOW' | translate }}
           </button>
         }
       </div>
@@ -333,9 +333,9 @@
 <!-- ── DECISION CONFIRM MODAL ─────────────────────────────────── -->
 <app-confirm-modal
   [show]="pendingDecision() !== null"
-  [title]="decisionModalTitle()"
-  [message]="decisionModalMessage()"
-  [confirmLabel]="decisionModalLabel()"
+  [title]="decisionModalTitle() | translate"
+  [message]="decisionModalMessage() | translate"
+  [confirmLabel]="decisionModalLabel() | translate"
   [loading]="decisionLoading()"
   (confirmed)="confirmDecision()"
   (cancelled)="cancelDecisionModal()">
@@ -354,24 +354,24 @@
   <div class="modal-overlay" (click)="showPayModal.set(false)">
     <div class="pay-modal" (click)="$event.stopPropagation()">
       <div class="pay-modal-header">
-        <h3><i class="fa-solid fa-money-bill-wave me-2 text-primary"></i>Submit Payment</h3>
+        <h3><i class="fa-solid fa-money-bill-wave me-2 text-primary"></i>{{ 'TICKET_DETAIL.PAY_MODAL_TITLE' | translate }}</h3>
         <button class="modal-close-btn" (click)="showPayModal.set(false)"><i class="fa-solid fa-xmark"></i></button>
       </div>
       <div class="pay-modal-body">
-        <p class="text-muted small mb-3">Enter your transaction ID from your payment receipt.</p>
+        <p class="text-muted small mb-3">{{ 'TICKET_DETAIL.PAY_MODAL_HINT' | translate }}</p>
         <div class="form-group">
-          <label class="pay-label">Transaction ID <span style="color:var(--color-error)">*</span></label>
+          <label class="pay-label">{{ 'TICKET_DETAIL.TRANSACTION_ID' | translate }} <span style="color:var(--color-error)">*</span></label>
           <input type="text" class="form-control" [(ngModel)]="transactionId"
                  placeholder="e.g. TXN-123456789" />
         </div>
       </div>
       <div class="pay-modal-footer">
-        <button class="btn btn-outline-secondary" (click)="showPayModal.set(false)" [disabled]="payLoading()">Cancel</button>
+        <button class="btn btn-outline-secondary" (click)="showPayModal.set(false)" [disabled]="payLoading()">{{ 'COMMON.CANCEL' | translate }}</button>
         <button class="btn btn-primary" (click)="pay()" [disabled]="!transactionId.trim() || payLoading()">
           @if (payLoading()) {
-            <span class="spinner-border spinner-border-sm me-2" role="status"></span>Processing…
+            <span class="spinner-border spinner-border-sm me-2" role="status"></span>{{ 'TICKET_DETAIL.PROCESSING' | translate }}
           } @else {
-            <i class="fa-solid fa-check me-2"></i>Confirm Payment
+            <i class="fa-solid fa-check me-2"></i>{{ 'TICKET_DETAIL.CONFIRM_PAYMENT' | translate }}
           }
         </button>
       </div>

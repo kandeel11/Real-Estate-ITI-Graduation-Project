@@ -2,6 +2,7 @@ import { Component, OnInit, inject, signal, computed } from '@angular/core';
 import { DatePipe } from '@angular/common';
 import { Router, RouterLink } from '@angular/router';
 import { finalize } from 'rxjs';
+import { TranslatePipe } from '@ngx-translate/core';
 import {
   MaintenanceService,
   TicketListItem,
@@ -11,7 +12,7 @@ import {
 @Component({
   selector: 'app-maintenance',
   standalone: true,
-  imports: [DatePipe, RouterLink],
+  imports: [DatePipe, RouterLink, TranslatePipe],
   templateUrl: './maintenance.component.html',
   styleUrl: './maintenance.component.css',
 })
@@ -28,12 +29,12 @@ export class MaintenanceComponent implements OnInit {
   protected activeFilter = signal('');
 
   readonly filterTabs = [
-    { label: 'All', value: '' },
-    { label: 'Draft', value: 'Draft' },
-    { label: 'Submitted', value: 'Submitted' },
-    { label: 'In Progress', value: 'InProgress' },
-    { label: 'Completed', value: 'Completed' },
-    { label: 'Cancelled', value: 'Cancelled' },
+    { label: 'COMMON.ALL', value: '' },
+    { label: 'COMMON.DRAFT', value: 'Draft' },
+    { label: 'MAINTENANCE.SUBMITTED', value: 'Submitted' },
+    { label: 'MAINTENANCE.IN_PROGRESS', value: 'InProgress' },
+    { label: 'MAINTENANCE.COMPLETED', value: 'Completed' },
+    { label: 'MAINTENANCE.CANCELLED', value: 'Cancelled' },
   ];
 
   protected readonly totalPages = computed(() => Math.ceil(this.total() / this.pageSize));
@@ -80,7 +81,7 @@ export class MaintenanceComponent implements OnInit {
   }
 
   openDetail(ticket: TicketListItem): void {
-    this.router.navigate(['/dashboard/maintenance', ticket.id]);
+    this.router.navigate(['/dashboard/maintenance-requests', ticket.id]);
   }
 
   priorityClass(p: TicketPriority): string {

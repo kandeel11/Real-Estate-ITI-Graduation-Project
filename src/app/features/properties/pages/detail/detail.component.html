@@ -2,7 +2,7 @@
   <div class="container-xl py-4">
 
     <a routerLink="/properties" class="detail__back">
-      <i class="fa-solid fa-arrow-left me-1"></i>Back to listings
+      <i class="fa-solid fa-arrow-left me-1"></i>{{ 'DETAIL.BACK' | translate }}
     </a>
 
     @if (loading()) {
@@ -30,7 +30,7 @@
                 <div class="detail-gallery__placeholder"><i class="fa-regular fa-image"></i></div>
               }
               @if (p.isFeatured) {
-                <span class="detail-gallery__featured"><i class="fa-solid fa-star fa-xs"></i>&nbsp;Featured</span>
+                <span class="detail-gallery__featured"><i class="fa-solid fa-star fa-xs"></i>&nbsp;{{ 'DETAIL.FEATURED' | translate }}</span>
               }
             </div>
             @if (p.media.length > 1) {
@@ -57,24 +57,24 @@
             </div>
             <div class="text-end">
               <span class="detail__price">{{ p.price | number }} EGP</span>
-              <span class="detail__price-label d-block">per month</span>
+              <span class="detail__price-label d-block">{{ 'DETAIL.PER_MONTH' | translate }}</span>
             </div>
           </div>
 
           <!-- Specs -->
           <div class="detail-specs card p-3 mb-4">
             <div class="row text-center g-2">
-              <div class="col"><i class="fa-solid fa-bed text-primary"></i><div class="fw-semibold">{{ p.bedrooms }}</div><small class="text-muted">Bedrooms</small></div>
-              <div class="col"><i class="fa-solid fa-bath text-primary"></i><div class="fw-semibold">{{ p.bathrooms }}</div><small class="text-muted">Bathrooms</small></div>
-              <div class="col"><i class="fa-solid fa-ruler-combined text-primary"></i><div class="fw-semibold">{{ p.areaSqm }}</div><small class="text-muted">m² area</small></div>
-              <div class="col"><i class="fa-solid fa-stairs text-primary"></i><div class="fw-semibold">{{ p.floorNumber }}/{{ p.totalFloors }}</div><small class="text-muted">Floor</small></div>
-              <div class="col"><i class="fa-solid fa-calendar text-primary"></i><div class="fw-semibold">{{ p.yearBuilt }}</div><small class="text-muted">Built</small></div>
+              <div class="col"><i class="fa-solid fa-bed text-primary"></i><div class="fw-semibold">{{ p.bedrooms }}</div><small class="text-muted">{{ 'DETAIL.BEDROOMS' | translate }}</small></div>
+              <div class="col"><i class="fa-solid fa-bath text-primary"></i><div class="fw-semibold">{{ p.bathrooms }}</div><small class="text-muted">{{ 'DETAIL.BATHROOMS' | translate }}</small></div>
+              <div class="col"><i class="fa-solid fa-ruler-combined text-primary"></i><div class="fw-semibold">{{ p.areaSqm }}</div><small class="text-muted">{{ 'DETAIL.AREA' | translate }}</small></div>
+              <div class="col"><i class="fa-solid fa-stairs text-primary"></i><div class="fw-semibold">{{ p.floorNumber }}/{{ p.totalFloors }}</div><small class="text-muted">{{ 'DETAIL.FLOOR' | translate }}</small></div>
+              <div class="col"><i class="fa-solid fa-calendar text-primary"></i><div class="fw-semibold">{{ p.yearBuilt }}</div><small class="text-muted">{{ 'DETAIL.BUILT' | translate }}</small></div>
             </div>
           </div>
 
           <!-- Description -->
           @if (p.description) {
-            <h5 class="mb-2">Description</h5>
+            <h5 class="mb-2">{{ 'DETAIL.DESCRIPTION' | translate }}</h5>
             <p class="detail__desc mb-2">{{ p.description }}</p>
           }
           @if (p.descriptionAr) {
@@ -83,13 +83,13 @@
 
           <!-- Features -->
           <div class="d-flex flex-wrap gap-3 mb-4">
-            @if (p.isFurnished) { <span class="detail__feature"><i class="fa-solid fa-couch me-1"></i>Furnished</span> }
-            @if (p.petsAllowed) { <span class="detail__feature"><i class="fa-solid fa-paw me-1"></i>Pets allowed</span> }
+            @if (p.isFurnished) { <span class="detail__feature"><i class="fa-solid fa-couch me-1"></i>{{ 'DETAIL.FURNISHED' | translate }}</span> }
+            @if (p.petsAllowed) { <span class="detail__feature"><i class="fa-solid fa-paw me-1"></i>{{ 'DETAIL.PETS_ALLOWED' | translate }}</span> }
           </div>
 
           <!-- Amenities -->
           @if (p.amenities.length > 0) {
-            <h5 class="mb-3">Amenities</h5>
+            <h5 class="mb-3">{{ 'DETAIL.AMENITIES' | translate }}</h5>
             <div class="row g-2 mb-2">
               @for (a of p.amenities; track a.id) {
                 <div class="col-6 col-md-4">
@@ -103,44 +103,44 @@
         <!-- Right: contact / inquiry -->
         <div class="col-12 col-lg-4">
           <div class="detail-aside card p-4">
-            <h5 class="mb-1">Interested?</h5>
+            <h5 class="mb-1">{{ 'DETAIL.INTERESTED' | translate }}</h5>
             <p class="text-muted small mb-3">
-              Listed by
+              {{ 'DETAIL.LISTED_BY' | translate }}
               <strong>{{ p.listingBrokerName || p.listingDisplayName || 'the owner' }}</strong>.
-              Send an inquiry and they'll get back to you.
+              {{ 'DETAIL.INQUIRY_HINT' | translate }}
             </p>
 
             @if (inquirySent()) {
               <div class="alert alert-success mb-0">
                 <i class="fa-solid fa-circle-check me-2"></i>
-                Your inquiry was sent! The listing contact will reach out to you.
+                {{ 'DETAIL.INQUIRY_SENT' | translate }}
               </div>
             } @else if (isTenant()) {
               @if (inquiryError()) {
                 <div class="alert alert-danger py-2">{{ inquiryError() }}</div>
               }
-              <label class="form-label small fw-semibold">Your message</label>
+              <label class="form-label small fw-semibold">{{ 'DETAIL.YOUR_MESSAGE' | translate }}</label>
               <textarea class="form-control mb-3" rows="4" [(ngModel)]="message"
-                        placeholder="Hi, I'm interested in this property. Is it still available?"></textarea>
+                        [placeholder]="'DETAIL.MESSAGE_PLACEHOLDER' | translate"></textarea>
               <button class="btn btn-primary w-100" (click)="sendInquiry()" [disabled]="sending()">
                 @if (sending()) {
-                  <span class="spinner-border spinner-border-sm me-2"></span>Sending…
+                  <span class="spinner-border spinner-border-sm me-2"></span>{{ 'DETAIL.SENDING' | translate }}
                 } @else {
-                  <i class="fa-regular fa-paper-plane me-2"></i>Send Inquiry
+                  <i class="fa-regular fa-paper-plane me-2"></i>{{ 'DETAIL.SEND_INQUIRY' | translate }}
                 }
               </button>
             } @else if (isAuthenticated()) {
               <div class="alert alert-info mb-0">
                 <i class="fa-solid fa-circle-info me-2"></i>
-                Only tenant accounts can send inquiries.
+                {{ 'DETAIL.TENANTS_ONLY' | translate }}
               </div>
             } @else {
               <a routerLink="/auth/login" [queryParams]="{ returnUrl: '/properties/' + p.id }"
                  class="btn btn-primary w-100">
-                <i class="fa-solid fa-right-to-bracket me-2"></i>Sign in to inquire
+                <i class="fa-solid fa-right-to-bracket me-2"></i>{{ 'DETAIL.SIGN_IN' | translate }}
               </a>
               <p class="text-center small text-muted mt-2 mb-0">
-                New here? <a routerLink="/auth/register">Create a free account</a>
+                {{ 'DETAIL.NEW_HERE' | translate }} <a routerLink="/auth/register">{{ 'DETAIL.CREATE_ACCOUNT' | translate }}</a>
               </p>
             }
           </div>

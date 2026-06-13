@@ -1,6 +1,7 @@
 import { Component, OnInit, inject, signal, computed } from '@angular/core';
 import { Router } from '@angular/router';
 import { finalize } from 'rxjs';
+import { TranslatePipe } from '@ngx-translate/core';
 import { AppNotification, NotificationService } from '../../services/notification.service';
 import { ToastService } from '../../../../../shared/components/toast/toast.service';
 
@@ -9,7 +10,7 @@ const PAGE_SIZE = 20;
 @Component({
   selector: 'app-notifications',
   standalone: true,
-  imports: [],
+  imports: [TranslatePipe],
   templateUrl: './notifications.component.html',
   styleUrl: './notifications.component.css',
 })

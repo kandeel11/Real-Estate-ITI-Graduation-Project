@@ -6,6 +6,7 @@
 
 import { Component, inject, computed } from '@angular/core';
 import { DecimalPipe, DatePipe } from '@angular/common';
+import { TranslatePipe } from '@ngx-translate/core';
 import { toSignal } from '@angular/core/rxjs-interop';
 import { CompanyService } from '../../services/company.service';
 import { CompanySubscriptionService } from '../../services/company-subscription.service';
@@ -22,7 +23,7 @@ const ACTIVITY_ICONS: Record<string, string> = {
 @Component({
   selector: 'app-company-overview',
   standalone: true,
-  imports: [DecimalPipe, DatePipe, UsageMeterComponent, OverLimitBannerComponent],
+  imports: [DecimalPipe, DatePipe, UsageMeterComponent, OverLimitBannerComponent, TranslatePipe],
   templateUrl: './overview.component.html',
   styleUrl: './overview.component.css',
 })

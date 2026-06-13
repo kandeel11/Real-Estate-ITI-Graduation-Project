@@ -6,16 +6,16 @@
     <aside class="sidebar">
         <div class="sidebar-brand">
             <i class="fa-solid fa-building-columns brand-icon"></i>
-            <span class="brand-name">TenantHub</span>
+            <span class="brand-name">{{ 'TENANT_NAV.BRAND' | translate }}</span>
         </div>
 
         <nav class="sidebar-nav" aria-label="Dashboard navigation">
             @for (item of navItems; track item.route) {
             <a class="nav-item" [routerLink]="item.route" routerLinkActive="active"
-                [routerLinkActiveOptions]="{ exact: !!item.exact }" [attr.aria-label]="item.label">
+                [routerLinkActiveOptions]="{ exact: !!item.exact }" [attr.aria-label]="item.label | translate">
                 <i [class]="item.icon"></i>
-                <span class="nav-label">{{ item.label }}</span>
-                @if (item.label === 'Notifications' && notificationService.unreadCount() > 0) {
+                <span class="nav-label">{{ item.label | translate }}</span>
+                @if (item.id === 'notifications' && notificationService.unreadCount() > 0) {
                 <span class="badge-count">{{ notificationService.unreadCount() }}</span>
                 }
             </a>
@@ -27,11 +27,11 @@
             <div class="user-info">
                 <span class="user-name">{{ userName }}</span>
                 <div class="user-role-row">
-                  <span class="user-role">Tenant</span>
+                  <span class="user-role">{{ 'TENANT_NAV.ROLE' | translate }}</span>
                   <span class="sidebar-plan-badge">Free</span>
                 </div>
             </div>
-            <button class="btn-logout" (click)="logout()" title="Sign out" aria-label="Sign out">
+            <button class="btn-logout" (click)="logout()" [title]="'TENANT_NAV.LOGOUT' | translate" aria-label="Sign out">
                 <i class="fa-solid fa-right-from-bracket"></i>
             </button>
         </div>
@@ -52,18 +52,18 @@
         [routerLinkActiveOptions]="{ exact: !!item.exact }">
         <span class="tab-icon-wrap">
             <i [class]="item.icon"></i>
-            @if (item.label === 'Notifications' && notificationService.unreadCount() > 0) {
+            @if (item.id === 'notifications' && notificationService.unreadCount() > 0) {
             <span class="tab-badge">{{ notificationService.unreadCount() }}</span>
             }
         </span>
-        <span class="tab-label">{{ item.label }}</span>
+        <span class="tab-label">{{ item.label | translate }}</span>
     </a>
     }
     <button class="tab-item tab-logout" (click)="logout()" aria-label="Sign out">
         <span class="tab-icon-wrap">
             <i class="fa-solid fa-right-from-bracket"></i>
         </span>
-        <span class="tab-label">Logout</span>
+        <span class="tab-label">{{ 'TENANT_NAV.LOGOUT' | translate }}</span>
     </button>
 </nav>
 

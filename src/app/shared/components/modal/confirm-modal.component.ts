@@ -15,10 +15,12 @@
  */
 
 import { Component, Input, Output, EventEmitter } from '@angular/core';
+import { TranslatePipe } from '@ngx-translate/core';
 
 @Component({
   selector: 'app-confirm-modal',
   standalone: true,
+  imports: [TranslatePipe],
   templateUrl: './confirm-modal.component.html',
   styleUrl: './confirm-modal.component.css',
 })

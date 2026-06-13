@@ -1,39 +1,72 @@
 /**
  * Auth Interceptor (functional)
- * Attaches the Bearer token to outgoing requests, and ends the session when
- * the JWT is no longer valid:
- *  - token already expired before a request → log out + redirect immediately
- *  - backend replies 401 to an authenticated request → log out + redirect
- * Auth endpoints (/auth/*) are exempt so a wrong password on login doesn't
- * trigger the session-expired flow.
+ * Attaches the Bearer token to outgoing requests and handles session expiry:
+ *
+ *  - token already expired before a request → try silent refresh first; if
+ *    refresh fails, call sessionExpired() and abort.
+ *  - backend replies 401 → try silent refresh → retry original request once →
+ *    only then call sessionExpired().
+ *  - concurrent 401s while a refresh is in-flight are queued and replayed
+ *    with the new token so only one refresh call goes out.
+ *  - /auth/* endpoints are exempt so a wrong password doesn't trigger logout.
  */
 
-import { HttpInterceptorFn, HttpErrorResponse } from '@angular/common/http';
+import { HttpInterceptorFn, HttpErrorResponse, HttpRequest, HttpHandlerFn } from '@angular/common/http';
 import { inject } from '@angular/core';
-import { throwError, catchError } from 'rxjs';
+import { BehaviorSubject, filter, switchMap, take, throwError, catchError } from 'rxjs';
 import { AuthService } from '../services/auth.service';
+
+// Module-level refresh state — shared across all interceptor invocations
+let isRefreshing = false;
+const refreshToken$ = new BehaviorSubject<string | null>(null);
+
+function addBearer(req: HttpRequest<unknown>, token: string) {
+  return req.clone({ setHeaders: { Authorization: `Bearer ${token}` } });
+}
+
+function handleRefresh(
+  authService: AuthService,
+  req: HttpRequest<unknown>,
+  next: HttpHandlerFn
+) {
+  if (!isRefreshing) {
+    isRefreshing = true;
+    refreshToken$.next(null);
+
+    return authService.refresh().pipe(
+      switchMap((newToken) => {
+        isRefreshing = false;
+        refreshToken$.next(newToken);
+        return next(addBearer(req, newToken));
+      }),
+      catchError((err) => {
+        isRefreshing = false;
+        refreshToken$.next(null);
+        authService.sessionExpired();
+        return throwError(() => err);
+      })
+    );
+  }
+
+  // Another request triggered the refresh — wait for it to finish, then retry
+  return refreshToken$.pipe(
+    filter((token): token is string => token !== null),
+    take(1),
+    switchMap((token) => next(addBearer(req, token)))
+  );
+}
 
 export const authInterceptor: HttpInterceptorFn = (req, next) => {
   const authService = inject(AuthService);
   const token = authService.getToken();
   const isAuthEndpoint = req.url.includes('/auth/');
 
-  // Token already expired — don't bother the backend
+  // Pre-flight expiry check — try to refresh rather than immediately logging out
   if (token && !isAuthEndpoint && authService.isTokenExpired()) {
-    authService.sessionExpired();
-    return throwError(
-      () =>
-        new HttpErrorResponse({
-          status: 401,
-          statusText: 'Session expired',
-          url: req.url,
-        })
-    );
+    return handleRefresh(authService, req, next);
   }
 
-  const authedReq = token
-    ? req.clone({ setHeaders: { Authorization: `Bearer ${token}` } })
-    : req;
+  const authedReq = token ? addBearer(req, token) : req;
 
   return next(authedReq).pipe(
     catchError((error) => {
@@ -43,7 +76,7 @@ export const authInterceptor: HttpInterceptorFn = (req, next) => {
         !isAuthEndpoint &&
         authService.authenticated()
       ) {
-        authService.sessionExpired();
+        return handleRefresh(authService, req, next);
       }
       return throwError(() => error);
     })

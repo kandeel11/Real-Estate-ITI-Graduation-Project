@@ -1,0 +1,6 @@
+/* Inherits .login-* and .lf-* classes from the shared login design system */
+
+.lf__select {
+  appearance: none;
+  cursor: pointer;
+}

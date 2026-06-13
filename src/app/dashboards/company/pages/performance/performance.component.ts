@@ -6,6 +6,7 @@
 
 import { Component, inject, computed } from '@angular/core';
 import { DecimalPipe } from '@angular/common';
+import { TranslatePipe } from '@ngx-translate/core';
 import { toSignal } from '@angular/core/rxjs-interop';
 import { catchError, of } from 'rxjs';
 import { CompanyService } from '../../services/company.service';
@@ -14,7 +15,7 @@ import { Broker, RatingSummary } from '../../../../shared/models/company.model';
 @Component({
   selector: 'app-company-performance',
   standalone: true,
-  imports: [DecimalPipe],
+  imports: [DecimalPipe, TranslatePipe],
   templateUrl: './performance.component.html',
   styleUrl: './performance.component.css',
 })

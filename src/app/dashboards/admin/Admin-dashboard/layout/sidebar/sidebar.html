@@ -6,17 +6,17 @@
         @if (!collapsed()) {
         <div class="brand-text">
             <h2>Estatein</h2>
-            <span>Admin Access</span>
+            <span>{{ 'ADMIN.SIDEBAR.ADMIN_ACCESS' | translate }}</span>
         </div>
         }
     </div>
 
     <nav class="sidebar__nav">
         @for (item of navItems; track item.route) {
-        <a [routerLink]="item.route" routerLinkActive="active" class="nav-item" [title]="item.label">
+        <a [routerLink]="item.route" routerLinkActive="active" class="nav-item" [title]="item.labelKey | translate">
             <i [class]="item.icon"></i>
             @if (!collapsed()) {
-            <span class="nav-label">{{ item.label }}</span>
+            <span class="nav-label">{{ item.labelKey | translate }}</span>
             @if (item.badge) {
             <span class="nav-badge">{{ item.badge }}</span>
             }
@@ -28,15 +28,15 @@
     <div class="sidebar__footer">
         <button class="ai-insights">
             <i class="fa-solid fa-wand-magic-sparkles"></i>
-            @if (!collapsed()) { <span>AI Insights</span> }
+            @if (!collapsed()) { <span>{{ 'ADMIN.SIDEBAR.AI_INSIGHTS' | translate }}</span> }
         </button>
         <a class="nav-item" routerLink="/support">
             <i class="fa-regular fa-circle-question"></i>
-            @if (!collapsed()) { <span class="nav-label">Support</span> }
+            @if (!collapsed()) { <span class="nav-label">{{ 'ADMIN.SIDEBAR.SUPPORT' | translate }}</span> }
         </a>
         <a class="nav-item logout" routerLink="/login">
             <i class="fa-solid fa-right-from-bracket"></i>
-            @if (!collapsed()) { <span class="nav-label">Log Out</span> }
+            @if (!collapsed()) { <span class="nav-label">{{ 'ADMIN.SIDEBAR.LOGOUT' | translate }}</span> }
         </a>
     </div>
 </aside>

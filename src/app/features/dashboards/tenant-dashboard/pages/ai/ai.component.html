@@ -1,12 +1,12 @@
 <div class="ai-page">
   <div class="page-header">
-    <h1 class="page-title"><i class="fa-solid fa-robot me-2"></i>AI Assistant</h1>
+    <h1 class="page-title"><i class="fa-solid fa-robot me-2"></i>{{ 'TENANT_AI.TITLE' | translate }}</h1>
     <div class="pills-row">
       <button class="pill" [class.pill-active]="activeTab() === 'search'" (click)="activeTab.set('search')">
-        <i class="fa-solid fa-magnifying-glass me-1"></i>Property Search
+        <i class="fa-solid fa-magnifying-glass me-1"></i>{{ 'TENANT_AI.SEARCH_TAB' | translate }}
       </button>
       <button class="pill" [class.pill-active]="activeTab() === 'chat'" (click)="activeTab.set('chat')">
-        <i class="fa-solid fa-comment-dots me-1"></i>Ask AI
+        <i class="fa-solid fa-comment-dots me-1"></i>{{ 'TENANT_AI.CHAT_TAB' | translate }}
       </button>
     </div>
   </div>
@@ -21,7 +21,7 @@
         <input
           class="search-input"
           type="text"
-          placeholder="Describe what you're looking for… e.g. '2-bed apartment in Brooklyn under $3,000'"
+          [placeholder]="'TENANT_AI.SEARCH_PLACEHOLDER' | translate"
           [(ngModel)]="searchQuery"
           (keyup.enter)="search()"
         />
@@ -29,14 +29,14 @@
           @if (searchLoading()) {
             <span class="spinner-border spinner-border-sm" role="status"></span>
           } @else {
-            Search
+            {{ 'TENANT_AI.SEARCH' | translate }}
           }
         </button>
       </div>
       @if (searchQuery.trim()) {
         <div class="search-actions">
           <button class="btn btn-sm btn-outline-primary" (click)="saveSearch()" [disabled]="saveLoading()">
-            <i class="fa-regular fa-bookmark me-1"></i>Save Search
+            <i class="fa-regular fa-bookmark me-1"></i>{{ 'TENANT_AI.SAVE_SEARCH' | translate }}
           </button>
         </div>
       }
@@ -45,7 +45,7 @@
     <!-- Saved searches -->
     @if (savedSearches().length > 0) {
       <div class="saved-searches mb-4">
-        <p class="saved-label"><i class="fa-regular fa-bookmark me-1"></i>Saved Searches</p>
+        <p class="saved-label"><i class="fa-regular fa-bookmark me-1"></i>{{ 'TENANT_AI.SAVED_SEARCHES' | translate }}</p>
         <div class="saved-chips">
           @for (s of savedSearches(); track s.id) {
             <div class="saved-chip">
@@ -64,8 +64,8 @@
       @if (searchResults().length === 0) {
         <div class="empty-state">
           <i class="fa-solid fa-house-circle-xmark empty-icon"></i>
-          <p class="empty-title">No Properties Found</p>
-          <p class="empty-desc">Try adjusting your search terms.</p>
+          <p class="empty-title">{{ 'TENANT_AI.NO_PROPERTIES' | translate }}</p>
+          <p class="empty-desc">{{ 'TENANT_AI.NO_PROPERTIES_DESC' | translate }}</p>
         </div>
       } @else {
         <div class="results-grid">
@@ -120,7 +120,7 @@
         <input
           class="chat-input"
           type="text"
-          placeholder="Ask me anything…"
+          [placeholder]="'TENANT_AI.CHAT_PLACEHOLDER' | translate"
           [(ngModel)]="chatInput"
           (keyup.enter)="sendMessage()"
           [disabled]="chatLoading()"

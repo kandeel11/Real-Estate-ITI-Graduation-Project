@@ -9,6 +9,7 @@
 import { Component, inject } from '@angular/core';
 import { RouterOutlet, RouterLink, RouterLinkActive, Router } from '@angular/router';
 import { trigger, transition, query, style, animate } from '@angular/animations';
+import { TranslatePipe } from '@ngx-translate/core';
 import { AuthService } from '../../core/services/auth.service';
 
 const routeAnimations = trigger('routeAnimations', [
@@ -21,6 +22,7 @@ const routeAnimations = trigger('routeAnimations', [
 ]);
 
 interface NavItem {
+  id: string;
   label: string;
   icon: string;
   route: string;
@@ -30,7 +32,7 @@ interface NavItem {
 @Component({
   selector: 'app-company-dashboard',
   standalone: true,
-  imports: [RouterOutlet, RouterLink, RouterLinkActive],
+  imports: [RouterOutlet, RouterLink, RouterLinkActive, TranslatePipe],
   templateUrl: './company-dashboard.component.html',
   styleUrl: './company-dashboard.component.css',
   animations: [routeAnimations],
@@ -40,14 +42,14 @@ export class CompanyDashboardComponent {
   private readonly router = inject(Router);
 
   readonly navItems: NavItem[] = [
-    { label: 'Overview',     icon: 'fa-solid fa-gauge-high',     route: '/dashboard/company/overview' },
-    { label: 'Properties',   icon: 'fa-solid fa-building',       route: '/dashboard/company/properties' },
-    { label: 'Brokers',      icon: 'fa-solid fa-users',          route: '/dashboard/company/brokers' },
-    { label: 'Performance',  icon: 'fa-solid fa-chart-line',     route: '/dashboard/company/performance' },
-    { label: 'Inquiries',    icon: 'fa-regular fa-envelope',     route: '/dashboard/company/inquiries' },
-    { label: 'AI Assistant', icon: 'fa-solid fa-robot',          route: '/dashboard/company/ai' },
-    { label: 'Subscription', icon: 'fa-regular fa-credit-card',  route: '/dashboard/company/subscriptions' },
-    { label: 'Settings',     icon: 'fa-solid fa-gear',           route: '/dashboard/company/settings' },
+    { id: 'overview',      label: 'COMPANY_NAV.OVERVIEW',      icon: 'fa-solid fa-gauge-high',    route: '/dashboard/company/overview' },
+    { id: 'properties',    label: 'COMPANY_NAV.PROPERTIES',    icon: 'fa-solid fa-building',      route: '/dashboard/company/properties' },
+    { id: 'brokers',       label: 'COMPANY_NAV.BROKERS',       icon: 'fa-solid fa-users',         route: '/dashboard/company/brokers' },
+    { id: 'performance',   label: 'COMPANY_NAV.PERFORMANCE',   icon: 'fa-solid fa-chart-line',    route: '/dashboard/company/performance' },
+    { id: 'inquiries',     label: 'COMPANY_NAV.INQUIRIES',     icon: 'fa-regular fa-envelope',    route: '/dashboard/company/inquiries' },
+    { id: 'ai',            label: 'COMPANY_NAV.AI_ASSISTANT',  icon: 'fa-solid fa-robot',         route: '/dashboard/company/ai' },
+    { id: 'subscription',  label: 'COMPANY_NAV.SUBSCRIPTION',  icon: 'fa-regular fa-credit-card', route: '/dashboard/company/subscriptions' },
+    { id: 'settings',      label: 'COMPANY_NAV.SETTINGS',      icon: 'fa-solid fa-gear',          route: '/dashboard/company/settings' },
   ];
 
   get userName(): string {

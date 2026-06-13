@@ -1,6 +1,6 @@
 <div class="my-property-page">
   <div class="page-header">
-    <h1 class="page-title"><i class="fa-solid fa-building me-2"></i>My Properties</h1>
+    <h1 class="page-title"><i class="fa-solid fa-building me-2"></i>{{ 'MY_PROPERTY.TITLE' | translate }}</h1>
   </div>
 
   <!-- ── LOADING ──────────────────────────────────── -->
@@ -17,7 +17,7 @@
     <div class="alert alert-danger d-flex align-items-center gap-2">
       <i class="fa-solid fa-triangle-exclamation"></i>
       <span>{{ error() }}</span>
-      <button class="btn btn-sm btn-outline-danger ms-2" (click)="loadData()">Try again</button>
+      <button class="btn btn-sm btn-outline-danger ms-2" (click)="loadData()">{{ 'MY_PROPERTY.TRY_AGAIN' | translate }}</button>
     </div>
   }
 
@@ -25,8 +25,8 @@
   @if (!loading() && !error() && properties().length === 0) {
     <div class="empty-state">
       <i class="fa-solid fa-house-circle-xmark empty-icon"></i>
-      <p class="empty-title">No Rented Properties</p>
-      <p class="empty-desc">You don't have any active or past rental properties yet.</p>
+      <p class="empty-title">{{ 'MY_PROPERTY.NO_PROPERTIES' | translate }}</p>
+      <p class="empty-desc">{{ 'MY_PROPERTY.NO_PROPERTIES_DESC' | translate }}</p>
     </div>
   }
 
@@ -44,11 +44,11 @@
           </div>
         }
         <span class="lease-badge" [class.badge-active]="prop.isActive" [class.badge-past]="!prop.isActive">
-          {{ prop.isActive ? 'Active' : 'Past' }}
+          {{ prop.isActive ? ('MY_PROPERTY.ACTIVE' | translate) : ('MY_PROPERTY.PAST' | translate) }}
         </span>
         @if (prop.isActive && prop.daysUntilExpiry <= 60) {
           <span class="expiry-badge">
-            <i class="fa-regular fa-clock me-1"></i>{{ prop.daysUntilExpiry }}d left
+            <i class="fa-regular fa-clock me-1"></i>{{ prop.daysUntilExpiry }}{{ 'MY_PROPERTY.DAYS_LEFT' | translate }}
           </span>
         }
       </div>
@@ -78,12 +78,12 @@
           </span>
           @if (prop.isFurnished) {
             <span class="amenity-chip">
-              <i class="fa-solid fa-couch"></i> Furnished
+              <i class="fa-solid fa-couch"></i> {{ 'MY_PROPERTY.FURNISHED' | translate }}
             </span>
           }
           @if (prop.petsAllowed) {
             <span class="amenity-chip">
-              <i class="fa-solid fa-paw"></i> Pets allowed
+              <i class="fa-solid fa-paw"></i> {{ 'MY_PROPERTY.PETS_ALLOWED' | translate }}
             </span>
           }
           @for (a of prop.amenities; track a.id) {
@@ -96,19 +96,19 @@
         <!-- Rent + Dates -->
         <div class="lease-meta mb-3">
           <div class="lease-meta-item">
-            <span class="meta-label">Monthly Rent</span>
+            <span class="meta-label">{{ 'MY_PROPERTY.MONTHLY_RENT' | translate }}</span>
             <span class="meta-value rent">{{ prop.monthlyRent | currency:'EGP':'symbol':'1.0-0' }}</span>
           </div>
           <div class="lease-meta-item">
-            <span class="meta-label">Lease Start</span>
+            <span class="meta-label">{{ 'MY_PROPERTY.LEASE_START' | translate }}</span>
             <span class="meta-value">{{ prop.startDate | date:'mediumDate' }}</span>
           </div>
           <div class="lease-meta-item">
-            <span class="meta-label">Lease End</span>
+            <span class="meta-label">{{ 'MY_PROPERTY.LEASE_END' | translate }}</span>
             <span class="meta-value">{{ prop.endDate | date:'mediumDate' }}</span>
           </div>
           <div class="lease-meta-item">
-            <span class="meta-label">Days Remaining</span>
+            <span class="meta-label">{{ 'MY_PROPERTY.DAYS_REMAINING' | translate }}</span>
             <span class="meta-value" [class.expiry-warn]="prop.daysUntilExpiry <= 60">
               {{ prop.daysUntilExpiry }}
             </span>
@@ -118,10 +118,10 @@
         <!-- Action Buttons -->
         <div class="d-flex gap-2 mb-3 flex-wrap">
           <a class="btn btn-primary btn-sm" routerLink="/dashboard/lease">
-            <i class="fa-solid fa-file-contract me-1"></i>View Lease
+            <i class="fa-solid fa-file-contract me-1"></i>{{ 'MY_PROPERTY.VIEW_LEASE' | translate }}
           </a>
-          <a class="btn btn-outline-primary btn-sm" routerLink="/dashboard/maintenance">
-            <i class="fa-solid fa-screwdriver-wrench me-1"></i>New Ticket
+          <a class="btn btn-outline-primary btn-sm" routerLink="/dashboard/maintenance-requests/create">
+            <i class="fa-solid fa-screwdriver-wrench me-1"></i>{{ 'MY_PROPERTY.NEW_TICKET' | translate }}
           </a>
           @if (prop.isActive) {
             <button class="btn btn-outline-warning btn-sm" (click)="openRatingModal(prop)">
@@ -132,7 +132,7 @@
 
         <!-- Photo Gallery -->
         @if (prop.media.length > 0) {
-          <div class="gallery-label">Photos</div>
+          <div class="gallery-label">{{ 'MY_PROPERTY.PHOTOS' | translate }}</div>
           <div class="photo-gallery">
             @for (m of prop.media; track m.id) {
               <button class="gallery-thumb" (click)="openLightbox(m.url)">

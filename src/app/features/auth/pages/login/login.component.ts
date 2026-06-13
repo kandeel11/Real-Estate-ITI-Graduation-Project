@@ -2,12 +2,13 @@ import { Component, inject } from '@angular/core';
 import { ReactiveFormsModule, FormBuilder, Validators } from '@angular/forms';
 import { Router, ActivatedRoute, RouterLink } from '@angular/router';
 import { finalize } from 'rxjs';
+import { TranslatePipe } from '@ngx-translate/core';
 import { InViewDirective } from '../../../../shared/directives/in-view.directive';
 import { AuthService } from '../../../../core/services/auth.service';
 
 @Component({
   selector: 'app-login',
-  imports: [ReactiveFormsModule, RouterLink, InViewDirective],
+  imports: [ReactiveFormsModule, RouterLink, InViewDirective, TranslatePipe],
   templateUrl: './login.component.html',
   styleUrl: './login.component.css'
 })
@@ -26,6 +27,7 @@ export class LoginComponent {
   loading = false;
   errorMsg: string | null = null;
   sessionExpired = this.route.snapshot.queryParamMap.has('expired');
+  emailVerified  = this.route.snapshot.queryParamMap.has('verified');
 
   get email()    { return this.form.get('email')!; }
   get password() { return this.form.get('password')!; }

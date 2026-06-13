@@ -3,6 +3,7 @@ import { FormBuilder, ReactiveFormsModule, Validators, FormGroup } from '@angula
 import { MaintenanceService } from '../../Services/maintenance';
 import { MaintenanceCategory, MaintenanceCompany } from '../../Models';
 import { DecimalPipe } from '@angular/common';
+import { TranslatePipe } from '@ngx-translate/core';
 
 type Toast = { type: 'success' | 'error'; text: string } | null;
 type View = 'list' | 'create';
@@ -10,7 +11,7 @@ type View = 'list' | 'create';
 @Component({
   selector: 'app-maintenance-companies',
   standalone: true,
-  imports: [ReactiveFormsModule, DecimalPipe],
+  imports: [ReactiveFormsModule, DecimalPipe, TranslatePipe],
   templateUrl: './maintenance-companies.component.html',
   styleUrls: ['./maintenance-companies.component.scss'],
 })

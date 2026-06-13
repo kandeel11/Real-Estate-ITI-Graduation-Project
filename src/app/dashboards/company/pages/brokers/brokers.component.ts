@@ -9,6 +9,7 @@
 import { Component, inject, signal, computed, OnInit } from '@angular/core';
 import { ReactiveFormsModule, FormBuilder, Validators } from '@angular/forms';
 import { RouterLink } from '@angular/router';
+import { TranslatePipe } from '@ngx-translate/core';
 import { toSignal } from '@angular/core/rxjs-interop';
 import { CompanyService } from '../../services/company.service';
 import { CompanySubscriptionService } from '../../services/company-subscription.service';
@@ -21,7 +22,7 @@ type StatusFilter = 'all' | 'active' | 'inactive';
 @Component({
   selector: 'app-company-brokers',
   standalone: true,
-  imports: [ReactiveFormsModule, RouterLink, ConfirmModalComponent, OverLimitBannerComponent],
+  imports: [ReactiveFormsModule, RouterLink, ConfirmModalComponent, OverLimitBannerComponent, TranslatePipe],
   templateUrl: './brokers.component.html',
   styleUrl: './brokers.component.css',
 })
@@ -60,9 +61,9 @@ export class BrokersComponent implements OnInit {
   }));
 
   readonly tabs: { label: string; value: StatusFilter }[] = [
-    { label: 'All',      value: 'all' },
-    { label: 'Active',   value: 'active' },
-    { label: 'Inactive', value: 'inactive' },
+    { label: 'COMMON.ALL',      value: 'all' },
+    { label: 'COMMON.ACTIVE',   value: 'active' },
+    { label: 'COMMON.INACTIVE', value: 'inactive' },
   ];
 
   activeCount = computed(() => this.brokers().filter((b) => b.isActive).length);

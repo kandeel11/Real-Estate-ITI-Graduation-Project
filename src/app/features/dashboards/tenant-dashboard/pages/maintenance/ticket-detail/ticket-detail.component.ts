@@ -14,10 +14,11 @@ import { ToastService } from '../../../../../../shared/components/toast/toast.se
 import { ConfirmModalComponent } from '../../../../../../shared/components/modal/confirm-modal.component';
 import { StarRatingComponent } from '../../../../../../shared/components/star-rating/star-rating.component';
 import { RatingModalComponent } from '../../../../../../shared/components/rating-modal/rating-modal.component';
+import { TranslatePipe } from '@ngx-translate/core';
 
 interface TimelineStep {
   key: string;
-  label: string;
+  labelKey: string;
   icon: string;
   matchStatuses: string[];
 }
@@ -37,20 +38,20 @@ const STATUS_ORDER: Record<string, number> = {
 };
 
 const TIMELINE_STEPS: TimelineStep[] = [
-  { key: 'Draft',      label: 'Draft',       icon: 'fa-file-pen',              matchStatuses: ['Draft'] },
-  { key: 'Submitted',  label: 'Submitted',   icon: 'fa-paper-plane',           matchStatuses: ['Submitted'] },
-  { key: 'AIReview',   label: 'AI Review',   icon: 'fa-robot',                 matchStatuses: ['UnderAiReview', 'AiEvaluated'] },
-  { key: 'Decision',   label: 'Decision',    icon: 'fa-scale-balanced',        matchStatuses: ['WaitingForOwnerDecision', 'WaitingForTenantDecision'] },
-  { key: 'Assigned',   label: 'Assigned',    icon: 'fa-user-gear',             matchStatuses: ['AssignedToVendor', 'VendorAccepted'] },
-  { key: 'InProgress', label: 'In Progress', icon: 'fa-screwdriver-wrench',    matchStatuses: ['InProgress'] },
-  { key: 'Payment',    label: 'Payment',     icon: 'fa-credit-card',           matchStatuses: ['AwaitingPayment'] },
-  { key: 'Completed',  label: 'Completed',   icon: 'fa-circle-check',          matchStatuses: ['Completed'] },
+  { key: 'Draft',      labelKey: 'TICKET_DETAIL.STEP_DRAFT',       icon: 'fa-file-pen',              matchStatuses: ['Draft'] },
+  { key: 'Submitted',  labelKey: 'TICKET_DETAIL.STEP_SUBMITTED',   icon: 'fa-paper-plane',           matchStatuses: ['Submitted'] },
+  { key: 'AIReview',   labelKey: 'TICKET_DETAIL.STEP_AI_REVIEW',   icon: 'fa-robot',                 matchStatuses: ['UnderAiReview', 'AiEvaluated'] },
+  { key: 'Decision',   labelKey: 'TICKET_DETAIL.STEP_DECISION',    icon: 'fa-scale-balanced',        matchStatuses: ['WaitingForOwnerDecision', 'WaitingForTenantDecision'] },
+  { key: 'Assigned',   labelKey: 'TICKET_DETAIL.STEP_ASSIGNED',    icon: 'fa-user-gear',             matchStatuses: ['AssignedToVendor', 'VendorAccepted'] },
+  { key: 'InProgress', labelKey: 'TICKET_DETAIL.STEP_IN_PROGRESS', icon: 'fa-screwdriver-wrench',    matchStatuses: ['InProgress'] },
+  { key: 'Payment',    labelKey: 'TICKET_DETAIL.STEP_PAYMENT',     icon: 'fa-credit-card',           matchStatuses: ['AwaitingPayment'] },
+  { key: 'Completed',  labelKey: 'TICKET_DETAIL.STEP_COMPLETED',   icon: 'fa-circle-check',          matchStatuses: ['Completed'] },
 ];
 
 @Component({
   selector: 'app-ticket-detail',
   standalone: true,
-  imports: [DatePipe, FormsModule, RouterLink, ConfirmModalComponent, StarRatingComponent, RatingModalComponent],
+  imports: [DatePipe, FormsModule, RouterLink, ConfirmModalComponent, StarRatingComponent, RatingModalComponent, TranslatePipe],
   templateUrl: './ticket-detail.component.html',
   styleUrl: './ticket-detail.component.css',
 })
@@ -122,22 +123,22 @@ export class TicketDetailComponent implements OnInit {
   });
 
   protected readonly decisionModalTitle = computed(() =>
-    this.pendingDecision() === 0 ? 'Assign to Platform Vendor?' : 'Use External Technician?'
+    this.pendingDecision() === 0 ? 'TICKET_DETAIL.PLATFORM_MODAL_TITLE' : 'TICKET_DETAIL.EXTERNAL_MODAL_TITLE'
   );
 
   protected readonly decisionModalMessage = computed(() =>
     this.pendingDecision() === 0
-      ? 'A vetted vendor will be assigned to handle this repair on your behalf. You cannot change this decision after confirming.'
-      : 'You will handle this repair with your own contractor. Once confirmed, you can mark the ticket as complete when the work is done.'
+      ? 'TICKET_DETAIL.PLATFORM_MODAL_MSG'
+      : 'TICKET_DETAIL.EXTERNAL_MODAL_MSG'
   );
 
   protected readonly decisionModalLabel = computed(() =>
-    this.pendingDecision() === 0 ? 'Yes, Assign Vendor' : 'Yes, Use External'
+    this.pendingDecision() === 0 ? 'TICKET_DETAIL.PLATFORM_MODAL_LABEL' : 'TICKET_DETAIL.EXTERNAL_MODAL_LABEL'
   );
 
   ngOnInit(): void {
     const id = this.route.snapshot.paramMap.get('id');
-    if (!id) { this.router.navigate(['/dashboard/maintenance']); return; }
+    if (!id) { this.router.navigate(['/dashboard/maintenance-requests']); return; }
     this.loadTicket(id);
   }
 

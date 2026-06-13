@@ -1,7 +1,0 @@
-.nav-pills .nav-link {
-  color: var(--color-on-surface-variant, #444);
-}
-
-.nav-pills .nav-link.active {
-  background: #212529;
-}

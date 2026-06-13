@@ -1,13 +1,13 @@
 <div class="my-lease-page">
   <div class="page-header">
-    <h1 class="page-title"><i class="fa-solid fa-file-contract me-2"></i>My Lease</h1>
+    <h1 class="page-title"><i class="fa-solid fa-file-contract me-2"></i>{{ 'MY_LEASE.TITLE' | translate }}</h1>
 
     <div class="pills-row">
       <button class="pill" [class.pill-active]="activeTab() === 'active'" (click)="activeTab.set('active')">
-        Active Lease
+        {{ 'MY_LEASE.ACTIVE_TAB' | translate }}
       </button>
       <button class="pill" [class.pill-active]="activeTab() === 'history'" (click)="activeTab.set('history')">
-        Lease History
+        {{ 'MY_LEASE.HISTORY_TAB' | translate }}
       </button>
     </div>
   </div>
@@ -26,7 +26,7 @@
     <div class="alert alert-danger d-flex align-items-center gap-2">
       <i class="fa-solid fa-triangle-exclamation"></i>
       <span>{{ error() }}</span>
-      <button class="btn btn-sm btn-outline-danger ms-2" (click)="loadData()">Try again</button>
+      <button class="btn btn-sm btn-outline-danger ms-2" (click)="loadData()">{{ 'MY_LEASE.TRY_AGAIN' | translate }}</button>
     </div>
   }
 
@@ -36,8 +36,8 @@
     @if (!activeLease()) {
       <div class="empty-state">
         <i class="fa-solid fa-file-circle-xmark empty-icon"></i>
-        <p class="empty-title">No Active Lease</p>
-        <p class="empty-desc">You don't have an active lease at the moment.</p>
+        <p class="empty-title">{{ 'MY_LEASE.NO_ACTIVE' | translate }}</p>
+        <p class="empty-desc">{{ 'MY_LEASE.NO_ACTIVE_DESC' | translate }}</p>
       </div>
     } @else {
       @let lease = activeLease()!;
@@ -46,8 +46,7 @@
       @if (lease.daysUntilExpiry <= 30) {
         <div class="expiry-banner">
           <i class="fa-solid fa-triangle-exclamation me-2"></i>
-          Your lease expires in <strong>{{ lease.daysUntilExpiry }} days</strong>.
-          Contact your landlord to discuss renewal options.
+          {{ 'MY_LEASE.EXPIRY_WARNING' | translate:{days: lease.daysUntilExpiry} }}
         </div>
       }
 
@@ -57,41 +56,41 @@
           <div>
             <h2 class="lease-property">{{ lease.propertyAddress }}</h2>
             <span class="status-badge" [class.badge-active]="lease.isActive" [class.badge-ended]="!lease.isActive">
-              {{ lease.isActive ? 'Active' : 'Ended' }}
+              {{ lease.isActive ? ('MY_LEASE.ACTIVE' | translate) : ('MY_LEASE.ENDED' | translate) }}
             </span>
           </div>
           <button class="btn btn-primary btn-sm" (click)="downloadContract(lease)">
-            <i class="fa-solid fa-download me-1"></i>Download Contract
+            <i class="fa-solid fa-download me-1"></i>{{ 'MY_LEASE.DOWNLOAD' | translate }}
           </button>
         </div>
 
         <div class="lease-details-grid">
           <div class="detail-item">
-            <span class="detail-label">Monthly Rent</span>
+            <span class="detail-label">{{ 'MY_LEASE.MONTHLY_RENT' | translate }}</span>
             <span class="detail-value rent">{{ lease.rentAmount | currency:'EGP':'symbol':'1.0-0' }}</span>
           </div>
           <div class="detail-item">
-            <span class="detail-label">Security Deposit</span>
+            <span class="detail-label">{{ 'MY_LEASE.SECURITY_DEPOSIT' | translate }}</span>
             <span class="detail-value">{{ lease.securityDeposit | currency:'EGP':'symbol':'1.0-0' }}</span>
           </div>
           <div class="detail-item">
-            <span class="detail-label">Lease Start</span>
+            <span class="detail-label">{{ 'MY_LEASE.LEASE_START' | translate }}</span>
             <span class="detail-value">{{ lease.startDate | date:'mediumDate' }}</span>
           </div>
           <div class="detail-item">
-            <span class="detail-label">Lease End</span>
+            <span class="detail-label">{{ 'MY_LEASE.LEASE_END' | translate }}</span>
             <span class="detail-value">{{ lease.endDate | date:'mediumDate' }}</span>
           </div>
           <div class="detail-item">
-            <span class="detail-label">Days Remaining</span>
+            <span class="detail-label">{{ 'MY_LEASE.DAYS' | translate }}</span>
             <span class="detail-value" [class.text-danger]="lease.daysUntilExpiry <= 30">
-              {{ lease.daysUntilExpiry }} days
+              {{ lease.daysUntilExpiry }}
             </span>
           </div>
           <div class="detail-item">
-            <span class="detail-label">Payment Day</span>
+            <span class="detail-label">{{ 'MY_LEASE.PAYMENT_DAY' | translate }}</span>
             <span class="detail-value">
-              {{ lease.paymentDayOfMonth }}{{ ordinalSuffix(lease.paymentDayOfMonth) }} of month
+              {{ lease.paymentDayOfMonth }}{{ ordinalSuffix(lease.paymentDayOfMonth) }} {{ 'MY_LEASE.OF_MONTH' | translate }}
             </span>
           </div>
         </div>
@@ -99,7 +98,7 @@
         <!-- Progress bar -->
         <div class="progress-wrap mt-3">
           <div class="progress-header">
-            <span class="progress-label">Lease elapsed</span>
+            <span class="progress-label">{{ 'MY_LEASE.ELAPSED' | translate }}</span>
             <span class="progress-pct">{{ leaseElapsedPercent(lease) }}%</span>
           </div>
           <div class="progress-track">
@@ -112,8 +111,8 @@
       <div class="chat-panel">
         <div class="chat-panel-header">
           <i class="fa-solid fa-robot text-primary me-2"></i>
-          <span>Ask about your lease</span>
-          <span class="chat-badge">AI Powered</span>
+          <span>{{ 'MY_LEASE.ASK_LEASE' | translate }}</span>
+          <span class="chat-badge">{{ 'MY_LEASE.AI_POWERED' | translate }}</span>
         </div>
 
         @if (chatMessages().length > 0) {
@@ -136,7 +135,7 @@
           <input
             class="chat-input"
             type="text"
-            placeholder="Ask anything about your lease terms…"
+            [placeholder]="'MY_LEASE.CHAT_PLACEHOLDER' | translate"
             [(ngModel)]="chatInput"
             (keyup.enter)="sendChatMessage()"
             [disabled]="chatLoading()"
@@ -157,8 +156,8 @@
     @if (leaseHistory().length === 0) {
       <div class="empty-state">
         <i class="fa-solid fa-clock-rotate-left empty-icon"></i>
-        <p class="empty-title">No Lease History</p>
-        <p class="empty-desc">Your past leases will appear here.</p>
+        <p class="empty-title">{{ 'MY_LEASE.NO_HISTORY' | translate }}</p>
+        <p class="empty-desc">{{ 'MY_LEASE.NO_HISTORY_DESC' | translate }}</p>
       </div>
     } @else {
       <div class="history-list">
@@ -174,7 +173,7 @@
               </div>
               <div class="d-flex align-items-center gap-3">
                 <span class="status-badge" [class.badge-active]="lease.isActive" [class.badge-ended]="!lease.isActive">
-                  {{ lease.isActive ? 'Active' : 'Ended' }}
+                  {{ lease.isActive ? ('MY_LEASE.ACTIVE' | translate) : ('MY_LEASE.ENDED' | translate) }}
                 </span>
                 <span class="rent-tag">{{ lease.rentAmount | currency:'EGP':'symbol':'1.0-0' }}/mo</span>
                 <i class="fa-solid" [class.fa-chevron-down]="expandedLeaseId() !== lease.id"
@@ -186,29 +185,29 @@
               <div class="history-detail">
                 <div class="lease-details-grid">
                   <div class="detail-item">
-                    <span class="detail-label">Monthly Rent</span>
+                    <span class="detail-label">{{ 'MY_LEASE.MONTHLY_RENT' | translate }}</span>
                     <span class="detail-value rent">{{ lease.rentAmount | currency:'EGP':'symbol':'1.0-0' }}</span>
                   </div>
                   <div class="detail-item">
-                    <span class="detail-label">Security Deposit</span>
+                    <span class="detail-label">{{ 'MY_LEASE.SECURITY_DEPOSIT' | translate }}</span>
                     <span class="detail-value">{{ lease.securityDeposit | currency:'EGP':'symbol':'1.0-0' }}</span>
                   </div>
                   <div class="detail-item">
-                    <span class="detail-label">Start Date</span>
+                    <span class="detail-label">{{ 'MY_LEASE.START_DATE' | translate }}</span>
                     <span class="detail-value">{{ lease.startDate | date:'mediumDate' }}</span>
                   </div>
                   <div class="detail-item">
-                    <span class="detail-label">End Date</span>
+                    <span class="detail-label">{{ 'MY_LEASE.END_DATE' | translate }}</span>
                     <span class="detail-value">{{ lease.endDate | date:'mediumDate' }}</span>
                   </div>
                   <div class="detail-item">
-                    <span class="detail-label">Payment Day</span>
-                    <span class="detail-value">{{ lease.paymentDayOfMonth }}{{ ordinalSuffix(lease.paymentDayOfMonth) }} of month</span>
+                    <span class="detail-label">{{ 'MY_LEASE.PAYMENT_DAY' | translate }}</span>
+                    <span class="detail-value">{{ lease.paymentDayOfMonth }}{{ ordinalSuffix(lease.paymentDayOfMonth) }} {{ 'MY_LEASE.OF_MONTH' | translate }}</span>
                   </div>
                 </div>
                 @if (lease.contractFileUrl) {
                   <button class="btn btn-outline-primary btn-sm mt-3" (click)="downloadContract(lease)">
-                    <i class="fa-solid fa-download me-1"></i>Download Contract
+                    <i class="fa-solid fa-download me-1"></i>{{ 'MY_LEASE.DOWNLOAD' | translate }}
                   </button>
                 }
               </div>

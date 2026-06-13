@@ -108,6 +108,14 @@ export class PropertyService {
     );
   }
 
+  /** POST /api/properties/{id}/feature — feature or unfeature a listing (premium only, 1 at a time). */
+  setFeatured(propertyId: string, isFeatured: boolean): Observable<void> {
+    return this.http.post<void>(
+      `${this.baseUrl}${API_ENDPOINTS.PROPERTIES.SET_FEATURED(propertyId)}`,
+      { isFeatured, featuredUntil: null }
+    );
+  }
+
   // ─── Creation flow ────────────────────────────────────────────────
   // POST /api/properties is multipart/form-data; keys match the backend's
   // CreatePropertyRequest. Ownership files are required only for owners —

@@ -10,6 +10,7 @@ import {
 } from '@angular/core';
 import { FormsModule } from '@angular/forms';
 import { Subscription } from 'rxjs';
+import { TranslatePipe } from '@ngx-translate/core';
 import { finalize } from 'rxjs/operators';
 import { ChatRole, HistoryMessage } from '../models';
 import { ChatbotService } from '../Services/chatbot-service';
@@ -17,7 +18,7 @@ import { ChatbotService } from '../Services/chatbot-service';
 @Component({
   selector: 'app-chat-widget',
   standalone: true,
-  imports: [FormsModule],
+  imports: [FormsModule, TranslatePipe],
   templateUrl: './chat-widget-component.html',
   styleUrls: ['./chat-widget-component.scss'],
 })
@@ -126,12 +127,15 @@ export class ChatWidgetComponent implements OnInit, OnDestroy {
           ]);
         },
         error: (err) => {
-          this.errorMsg.set(err.message || 'Something went wrong.');
+          const friendly =
+            err?.error?.error ??
+            err?.error?.message ??
+            'The AI assistant is temporarily unavailable. Please try again later.';
           this.messages.update((msgs) => [
             ...msgs,
             {
               role: ChatRole.Assistant,
-              message: '⚠️ Unable to get a response.',
+              message: `⚠️ ${friendly}`,
             },
           ]);
         },

@@ -88,12 +88,7 @@
                     <span><span class="dot earnings"></span> Earnings</span>
                 </div>
             </div>
-            @if (earningsChart) {
-            <apx-chart [series]="earningsChart.series" [chart]="earningsChart.chart" [xaxis]="earningsChart.xaxis"
-                [yaxis]="earningsChart.yaxis" [colors]="earningsChart.colors" [stroke]="earningsChart.stroke"
-                [fill]="earningsChart.fill" [dataLabels]="earningsChart.dataLabels" [tooltip]="earningsChart.tooltip"
-                [grid]="earningsChart.grid" [markers]="earningsChart.markers" />
-            }
+            <div #earningsChartEl></div>
         </div>
 
         <!-- Status donut -->
@@ -104,11 +99,7 @@
                     <span class="muted">Current distribution</span>
                 </div>
             </div>
-            @if (statusChart) {
-            <apx-chart [series]="statusChart.series" [chart]="statusChart.chart" [labels]="statusChart.labels"
-                [colors]="statusChart.colors" [legend]="statusChart.legend" [stroke]="statusChart.stroke"
-                [dataLabels]="statusChart.dataLabels" [plotOptions]="statusChart.plotOptions" />
-            }
+            <div #statusChartEl></div>
         </div>
     </div>
 

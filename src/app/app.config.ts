@@ -1,9 +1,3 @@
-/**
- * Application Configuration
- * Configures providers, interceptors, HTTP client, and other dependencies
- * Used with bootstrapApplication in main.ts
- */
-
 import { ApplicationConfig } from '@angular/core';
 import {
   provideRouter,
@@ -13,6 +7,8 @@ import {
 } from '@angular/router';
 import { provideHttpClient, withInterceptors } from '@angular/common/http';
 import { provideAnimations } from '@angular/platform-browser/animations';
+import { provideTranslateService } from '@ngx-translate/core';
+import { provideTranslateHttpLoader } from '@ngx-translate/http-loader';
 import { routes } from './app.routes';
 import { authInterceptor } from './core/interceptors/auth.interceptor';
 
@@ -25,5 +21,9 @@ export const appConfig: ApplicationConfig = {
     ),
     provideHttpClient(withInterceptors([authInterceptor])),
     provideAnimations(),
+    provideTranslateService({
+      lang: (localStorage.getItem('lang') as 'en' | 'ar') ?? 'en',
+    }),
+    provideTranslateHttpLoader({ prefix: '/i18n/', suffix: '.json' }),
   ],
 };

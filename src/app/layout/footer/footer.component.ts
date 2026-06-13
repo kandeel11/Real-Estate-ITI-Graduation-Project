@@ -1,9 +1,10 @@
 import { Component } from '@angular/core';
 import { RouterLink } from '@angular/router';
+import { TranslatePipe } from '@ngx-translate/core';
 
 @Component({
   selector: 'app-footer',
-  imports: [RouterLink],
+  imports: [RouterLink, TranslatePipe],
   templateUrl: './footer.component.html',
   styleUrl: './footer.component.css'
 })
@@ -11,33 +12,33 @@ export class FooterComponent {
   currentYear = new Date().getFullYear();
 
   homeLinks = [
-    { label: 'Hero Section', path: '/' },
-    { label: 'Features',     path: '/' },
-    { label: 'Properties',   path: '/properties' },
-    { label: 'Testimonials', path: '/' },
-    { label: "FAQ's",        path: '/' },
+    { labelKey: 'FOOTER.HOME_LINKS.HERO',         path: '/' },
+    { labelKey: 'FOOTER.HOME_LINKS.FEATURES',     path: '/' },
+    { labelKey: 'FOOTER.HOME_LINKS.PROPERTIES',   path: '/properties' },
+    { labelKey: 'FOOTER.HOME_LINKS.TESTIMONIALS', path: '/' },
+    { labelKey: 'FOOTER.HOME_LINKS.FAQS',         path: '/' },
   ];
 
   aboutLinks = [
-    { label: 'Our Story',    path: '/about' },
-    { label: 'Our Works',    path: '/about' },
-    { label: 'How It Works', path: '/about' },
-    { label: 'Our Team',     path: '/about' },
-    { label: 'Our Clients',  path: '/about' },
+    { labelKey: 'FOOTER.ABOUT_LINKS.OUR_STORY',    path: '/about' },
+    { labelKey: 'FOOTER.ABOUT_LINKS.OUR_WORKS',    path: '/about' },
+    { labelKey: 'FOOTER.ABOUT_LINKS.HOW_IT_WORKS', path: '/about' },
+    { labelKey: 'FOOTER.ABOUT_LINKS.OUR_TEAM',     path: '/about' },
+    { labelKey: 'FOOTER.ABOUT_LINKS.OUR_CLIENTS',  path: '/about' },
   ];
 
   serviceLinks = [
-    { label: 'Valuation Mastery',    path: '/services' },
-    { label: 'Strategic Marketing',  path: '/services' },
-    { label: 'Negotiation Wizardry', path: '/services' },
-    { label: 'Closing Success',      path: '/services' },
-    { label: 'Property Management',  path: '/services' },
+    { labelKey: 'FOOTER.SERVICE_LINKS.VALUATION',   path: '/services' },
+    { labelKey: 'FOOTER.SERVICE_LINKS.MARKETING',   path: '/services' },
+    { labelKey: 'FOOTER.SERVICE_LINKS.NEGOTIATION', path: '/services' },
+    { labelKey: 'FOOTER.SERVICE_LINKS.CLOSING',     path: '/services' },
+    { labelKey: 'FOOTER.SERVICE_LINKS.MANAGEMENT',  path: '/services' },
   ];
 
   legalLinks = [
-    { label: 'Privacy Policy',   path: '/privacy' },
-    { label: 'Terms of Service', path: '/terms' },
-    { label: 'Cookie Settings',  path: '/cookies' },
-    { label: 'Global Locations', path: '/locations' },
+    { labelKey: 'FOOTER.LEGAL.PRIVACY',   path: '/privacy' },
+    { labelKey: 'FOOTER.LEGAL.TERMS',     path: '/terms' },
+    { labelKey: 'FOOTER.LEGAL.COOKIES',   path: '/cookies' },
+    { labelKey: 'FOOTER.LEGAL.LOCATIONS', path: '/locations' },
   ];
 }

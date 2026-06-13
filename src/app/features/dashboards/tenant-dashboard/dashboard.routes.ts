@@ -26,17 +26,17 @@ export const dashboardRoutes: Routes = [
           import('./pages/my-lease/my-lease.component').then(m => m.MyLeaseComponent),
       },
       {
-        path: 'maintenance',
+        path: 'maintenance-requests',
         loadComponent: () =>
           import('./pages/maintenance/maintenance.component').then(m => m.MaintenanceComponent),
       },
       {
-        path: 'maintenance/create',
+        path: 'maintenance-requests/create',
         loadComponent: () =>
           import('./pages/maintenance/create-ticket/create-ticket.component').then(m => m.CreateTicketComponent),
       },
       {
-        path: 'maintenance/:id',
+        path: 'maintenance-requests/:id',
         loadComponent: () =>
           import('./pages/maintenance/ticket-detail/ticket-detail.component').then(m => m.TicketDetailComponent),
       },
