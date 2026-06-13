@@ -18,6 +18,11 @@ export const adminRoutes: Routes = [
             (m) => m.MaintenanceCompaniesComponent,
           ),
       },
+      {
+        path: 'portfolio',
+        loadComponent: () =>
+          import('./pages/portfolio/portfolio.component').then((m) => m.PortfolioComponent),
+      },
 
       // مكان للصفحات الجاية (users, companies, approvals, etc.)
     ],
