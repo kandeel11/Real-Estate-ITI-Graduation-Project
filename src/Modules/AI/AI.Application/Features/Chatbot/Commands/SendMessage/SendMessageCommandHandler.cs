@@ -104,7 +104,17 @@ public sealed class SendMessageCommandHandler
         // ── 3. Call the AI ──────────────────────────────────────────────────
         _logger.LogInformation("Sending message to AI. SessionId: {SessionId}", session.Id);
 
-        var aiResponse = await _ai.SendChatMessageAsync(chatHistory, cancellationToken);
+        ChatbotAiResponse aiResponse;
+        try
+        {
+            aiResponse = await _ai.SendChatMessageAsync(chatHistory, cancellationToken);
+        }
+        catch (Exception ex)
+        {
+            _logger.LogError(ex, "AI service call failed for session {SessionId}", session.Id);
+            throw new InvalidOperationException(
+                "The AI assistant is temporarily unavailable. Please try again later.");
+        }
 
         // ── 4. Create and Append Assistant Message DIRECTLY to DbSet ──────────
         var assistantMessage = ChatbotMessage.CreateAssistantMessage(

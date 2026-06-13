@@ -273,6 +273,14 @@ public class PropertyRepository : IPropertyRepository
             })
             .ToListAsync(ct);
 
+    public async Task<Domain.Entities.Property?> GetCurrentlyFeaturedByOwnerAsync(
+        Guid ownerId, Guid? companyId, CancellationToken ct = default)
+        => await _context.Properties
+            .Where(p => p.IsFeatured &&
+                        (companyId.HasValue ? p.CompanyId == companyId : p.OwnerId == ownerId) &&
+                        p.DeletedAt == null)
+            .FirstOrDefaultAsync(ct);
+
     public async Task<bool> ExistsByOwnerAndTitleAsync(Guid ownerId, string title, CancellationToken ct = default)
     {
         var normalized = (title ?? string.Empty).Trim().ToLower();
