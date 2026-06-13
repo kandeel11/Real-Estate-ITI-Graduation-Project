@@ -5,7 +5,6 @@
  */
 
 import { ApplicationConfig, importProvidersFrom } from '@angular/core';
-.
 import {
   provideRouter,
   withPreloading,
