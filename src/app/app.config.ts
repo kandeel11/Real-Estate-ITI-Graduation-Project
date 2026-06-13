@@ -21,7 +21,9 @@ export const appConfig: ApplicationConfig = {
     ),
     provideHttpClient(withInterceptors([authInterceptor])),
     provideAnimations(),
-    provideTranslateService({ lang: 'en' }),
+    provideTranslateService({
+      lang: (localStorage.getItem('lang') as 'en' | 'ar') ?? 'en',
+    }),
     provideTranslateHttpLoader({ prefix: '/i18n/', suffix: '.json' }),
   ],
 };
