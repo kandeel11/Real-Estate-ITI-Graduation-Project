@@ -80,7 +80,7 @@ export class MaintenanceComponent implements OnInit {
   }
 
   openDetail(ticket: TicketListItem): void {
-    this.router.navigate(['/dashboard/maintenance', ticket.id]);
+    this.router.navigate(['/dashboard/maintenance-requests', ticket.id]);
   }
 
   priorityClass(p: TicketPriority): string {

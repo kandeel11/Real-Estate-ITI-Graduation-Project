@@ -87,7 +87,7 @@ export class NotificationsComponent implements OnInit {
 
   private navigateToEntity(notif: AppNotification): void {
     const routes: Record<string, string> = {
-      maintenance: '/dashboard/maintenance',
+      maintenance: '/dashboard/maintenance-requests',
       lease:       '/dashboard/lease',
       payment:     '/dashboard/profile',
       rating:      '/dashboard/ratings',

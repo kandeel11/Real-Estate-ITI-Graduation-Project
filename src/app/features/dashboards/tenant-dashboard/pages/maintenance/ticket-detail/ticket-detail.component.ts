@@ -127,7 +127,7 @@ export class TicketDetailComponent implements OnInit {
 
   ngOnInit(): void {
     const id = this.route.snapshot.paramMap.get('id');
-    if (!id) { this.router.navigate(['/dashboard/maintenance']); return; }
+    if (!id) { this.router.navigate(['/dashboard/maintenance-requests']); return; }
     this.loadTicket(id);
   }
 

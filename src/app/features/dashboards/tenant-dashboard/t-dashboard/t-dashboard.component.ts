@@ -39,7 +39,7 @@ export class TDashboardComponent {
     { label: 'Overview',      icon: 'fa-solid fa-gauge-high',           route: '/dashboard',               exact: true },
     { label: 'My Property',   icon: 'fa-solid fa-building',             route: '/dashboard/property' },
     { label: 'My Lease',      icon: 'fa-solid fa-file-contract',        route: '/dashboard/lease' },
-    { label: 'Maintenance',   icon: 'fa-solid fa-screwdriver-wrench',   route: '/dashboard/maintenance' },
+    { label: 'Maintenance',   icon: 'fa-solid fa-screwdriver-wrench',   route: '/dashboard/maintenance-requests' },
     { label: 'Notifications', icon: 'fa-regular fa-bell',               route: '/dashboard/notifications' },
     { label: 'Ratings',       icon: 'fa-regular fa-star',               route: '/dashboard/ratings' },
     { label: 'Profile',       icon: 'fa-regular fa-circle-user',        route: '/dashboard/profile' },

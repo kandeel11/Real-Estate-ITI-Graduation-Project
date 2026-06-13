@@ -275,12 +275,12 @@ export class CreateTicketComponent implements OnInit, OnDestroy {
 
   viewTicket(): void {
     const id = this.submittedTicketId();
-    if (id) this.router.navigate(['/dashboard/maintenance', id]);
-    else this.router.navigate(['/dashboard/maintenance']);
+    if (id) this.router.navigate(['/dashboard/maintenance-requests', id]);
+    else this.router.navigate(['/dashboard/maintenance-requests']);
   }
 
   goBackToList(): void {
-    this.router.navigate(['/dashboard/maintenance']);
+    this.router.navigate(['/dashboard/maintenance-requests']);
   }
 
   readonly priorities: TicketPriority[] = ['Low', 'Medium', 'Emergency'];
