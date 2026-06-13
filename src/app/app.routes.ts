@@ -71,9 +71,7 @@ export const routes: Routes = [
       {
         path: 'admin',
         loadChildren: () =>
-          import('../../src/app/features/dashboards/Admin-dashboard/admin.routes').then(
-            (m) => m.adminRoutes,
-          ),
+          import('../app/dashboards/admin/Admin-dashboard/admin.routes').then((m) => m.adminRoutes),
       },
       //   children: [
       //     {
@@ -277,43 +275,11 @@ export const routes: Routes = [
 
       // ============ MAINTENANCE COMPANY DASHBOARD ============
       {
-        path: 'maintenance-company',
-        canActivate: [roleGuard],
-        data: { expectedRole: 'maintenance-company' },
-        loadComponent: () =>
-          import('./dashboards/maintenance-company/maintenance-company-dashboard.component').then(
-            (m) => m.MaintenanceCompanyDashboardComponent,
+        path: 'maintenance',
+        loadChildren: () =>
+          import('./dashboards/maintenance-company/maintenance.routes').then(
+            (m) => m.maintenanceRoutes,
           ),
-        children: [
-          {
-            path: 'overview',
-            loadComponent: () =>
-              import('./dashboards/maintenance-company/pages/overview/overview.component').then(
-                (m) => m.OverviewComponent,
-              ),
-          },
-          {
-            path: 'tickets',
-            loadComponent: () =>
-              import('./dashboards/maintenance-company/pages/tickets/tickets.component').then(
-                (m) => m.TicketsComponent,
-              ),
-          },
-          {
-            path: 'work-orders',
-            loadComponent: () =>
-              import('./dashboards/maintenance-company/pages/work-orders/work-orders.component').then(
-                (m) => m.WorkOrdersComponent,
-              ),
-          },
-          {
-            path: 'reports',
-            loadComponent: () =>
-              import('./dashboards/maintenance-company/pages/reports/reports.component').then(
-                (m) => m.ReportsComponent,
-              ),
-          },
-        ],
       },
       // ============ TENANT DASHBOARD (catches /dashboard and /dashboard/*) ============
       {
