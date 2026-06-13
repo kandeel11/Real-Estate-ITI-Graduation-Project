@@ -1,0 +1,26 @@
+.wizard {
+  max-width: 960px;
+}
+
+.photo-tile {
+  position: relative;
+  width: 110px;
+  height: 82px;
+  overflow: hidden;
+}
+
+.photo-tile img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+}
+
+.photo-status {
+  position: absolute;
+  top: 4px;
+  right: 4px;
+  background: rgba(255, 255, 255, 0.85);
+  border-radius: 50%;
+  padding: 2px 4px;
+  line-height: 1;
+}

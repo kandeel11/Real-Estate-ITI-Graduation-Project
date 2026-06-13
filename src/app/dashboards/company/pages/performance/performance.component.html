@@ -1,0 +1,95 @@
+<h2 class="mb-4">Performance</h2>
+
+@if (loading()) {
+  <div class="d-flex justify-content-center py-5">
+    <div class="spinner-border text-secondary" role="status">
+      <span class="visually-hidden">Loading…</span>
+    </div>
+  </div>
+} @else {
+  @if (metricsMissing()) {
+    <div class="alert alert-info">
+      <i class="fa-solid fa-circle-info me-2"></i>
+      No deals recorded yet — these metrics fill in as your brokers close deals.
+    </div>
+  }
+  <div class="row g-3">
+    <!-- Deals closed by broker -->
+    <div class="col-12">
+      <div class="card p-3">
+        <h5 class="mb-3">Deals Closed by Broker</h5>
+        @for (b of dealsRanking(); track b.id) {
+          <div class="d-flex align-items-center gap-3 mb-2">
+            <span class="broker-name small text-truncate">{{ b.fullName || b.licenseNumber }}</span>
+            <div class="progress flex-grow-1" style="height: 18px;">
+              <div
+                class="progress-bar bg-dark"
+                [style.width.%]="barWidth(b)"
+              ></div>
+            </div>
+            <span class="fw-semibold deals-count text-end">{{ b.closedDealsCount }}</span>
+          </div>
+        }
+      </div>
+    </div>
+
+    <!-- Avg response time -->
+    <div class="col-lg-6">
+      <div class="card p-3 h-100">
+        <h5 class="mb-3">Avg Response Time</h5>
+        @if (fastest(); as f) {
+          <div class="d-flex justify-content-between py-2 border-bottom">
+            <span><i class="fa-solid fa-bolt text-success me-2"></i>Best</span>
+            <span class="fw-semibold">{{ f.fullName || f.licenseNumber }} ({{ f.avgResponseTimeMinutes }} min)</span>
+          </div>
+        }
+        @if (slowest(); as s) {
+          <div class="d-flex justify-content-between py-2 border-bottom">
+            <span><i class="fa-solid fa-hourglass-half text-danger me-2"></i>Worst</span>
+            <span class="fw-semibold">{{ s.fullName || s.licenseNumber }} ({{ s.avgResponseTimeMinutes }} min)</span>
+          </div>
+        }
+        <div class="d-flex justify-content-between py-2">
+          <span><i class="fa-solid fa-scale-balanced text-secondary me-2"></i>Average</span>
+          <span class="fw-semibold">{{ avgResponse() | number: '1.0-1' }} min</span>
+        </div>
+      </div>
+    </div>
+
+    <!-- Ratings distribution -->
+    <div class="col-lg-6">
+      <div class="card p-3 h-100">
+        <h5 class="mb-3">
+          Ratings Distribution
+          @if (ratingsSummary(); as summary) {
+            @if (summary.total > 0) {
+              <span class="text-muted fs-6 fw-normal">
+                · {{ summary.average }} <i class="fa-solid fa-star text-warning"></i>
+                ({{ summary.total }} ratings)
+              </span>
+            }
+          }
+        </h5>
+        @if (ratingsSummary(); as summary) {
+          @if (summary.total === 0) {
+            <p class="text-muted mb-0">No ratings yet — they appear as tenants rate their experience.</p>
+          } @else {
+            @for (row of summary.buckets; track row.stars) {
+              <div class="d-flex align-items-center gap-2 mb-2">
+                <span class="small stars-label">
+                  {{ row.stars }} <i class="fa-solid fa-star text-warning"></i>
+                </span>
+                <div class="progress flex-grow-1" style="height: 12px;">
+                  <div class="progress-bar bg-warning" [style.width.%]="row.percent"></div>
+                </div>
+                <span class="small text-muted percent-label text-end">{{ row.percent }}%</span>
+              </div>
+            }
+          }
+        } @else {
+          <p class="text-muted mb-0">Ratings are unavailable right now.</p>
+        }
+      </div>
+    </div>
+  </div>
+}

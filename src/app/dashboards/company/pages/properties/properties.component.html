@@ -1,0 +1,158 @@
+<div class="d-flex justify-content-between align-items-center mb-3">
+  <h2 class="mb-0">Company Properties ({{ counts().all }} / {{ maxPropertiesLabel() }})</h2>
+  <span class="text-muted small">
+    <i class="fa-solid fa-circle-info me-1"></i>Listings are created by your brokers
+  </span>
+</div>
+
+<app-over-limit-banner [used]="counts().all" [max]="propertyMax()" label="properties" />
+
+<div class="d-flex flex-wrap justify-content-between align-items-center gap-2 mb-3">
+  <ul class="nav nav-pills">
+    @for (tab of tabs; track tab.value) {
+      <li class="nav-item">
+        <button
+          class="nav-link"
+          [class.active]="statusFilter() === tab.value"
+          (click)="statusFilter.set(tab.value)"
+        >
+          {{ tab.label }}
+          <span class="badge bg-light text-dark ms-1">{{ counts()[tab.countKey] }}</span>
+        </button>
+      </li>
+    }
+  </ul>
+  <input
+    type="search"
+    class="form-control search-box"
+    placeholder="Search by title…"
+    [value]="search()"
+    (input)="onSearch($event)"
+  />
+</div>
+
+@if (loading()) {
+  <div class="d-flex justify-content-center py-5">
+    <div class="spinner-border text-secondary" role="status">
+      <span class="visually-hidden">Loading…</span>
+    </div>
+  </div>
+} @else if (error()) {
+  <div class="alert alert-danger d-flex justify-content-between align-items-center">
+    <span><i class="fa-solid fa-triangle-exclamation me-2"></i>{{ error() }}</span>
+    <button class="btn btn-sm btn-outline-danger" (click)="load()">Retry</button>
+  </div>
+} @else if (filtered().length === 0) {
+  <div class="card p-5 text-center text-muted">
+    <i class="fa-solid fa-house fs-1 mb-3"></i>
+    <p class="mb-0">No properties match the current filter.</p>
+  </div>
+} @else {
+  <div class="card">
+    <div class="table-responsive">
+      <table class="table table-hover align-middle mb-0">
+        <thead class="table-light">
+          <tr>
+            <th></th>
+            <th>Title</th>
+            <th>Location</th>
+            <th>Broker</th>
+            <th>Price</th>
+            <th>Status</th>
+            <th>Views</th>
+            <th class="text-end">Actions</th>
+          </tr>
+        </thead>
+        <tbody>
+          @for (p of filtered(); track p.id) {
+            <tr>
+              <td>
+                @if (p.primaryImageUrl) {
+                  <img [src]="p.primaryImageUrl" alt="" class="thumb rounded" />
+                } @else {
+                  <div class="thumb rounded bg-light d-flex align-items-center justify-content-center">
+                    <i class="fa-solid fa-image text-muted"></i>
+                  </div>
+                }
+              </td>
+              <td class="fw-semibold">
+                {{ p.title }}
+                @if (p.isFeatured) {
+                  <i class="fa-solid fa-star text-warning ms-1" title="Featured"></i>
+                }
+              </td>
+              <td>{{ p.district }}, {{ p.city }}</td>
+              <td>{{ p.listingBrokerName ?? '—' }}</td>
+              <td>{{ p.price | number }}/mo</td>
+              <td><span [class]="badgeClass(p.status)">{{ statusLabel(p.status) }}</span></td>
+              <td>{{ p.viewsCount | number }}</td>
+              <td class="text-end">
+                <button class="btn btn-sm btn-outline-secondary me-1" title="Assign broker"
+                        (click)="openAssign(p)">
+                  <i class="fa-solid fa-user-tag"></i>
+                </button>
+                <button class="btn btn-sm btn-outline-secondary" title="View">
+                  <i class="fa-solid fa-eye"></i>
+                </button>
+              </td>
+            </tr>
+          }
+        </tbody>
+      </table>
+    </div>
+  </div>
+}
+
+<!-- Assign broker modal -->
+@if (propertyToAssign(); as property) {
+  <div class="modal d-block" tabindex="-1" role="dialog">
+    <div class="modal-dialog modal-dialog-centered">
+      <div class="modal-content">
+        <div class="modal-header">
+          <h5 class="modal-title">Assign Broker</h5>
+          <button type="button" class="btn-close" (click)="propertyToAssign.set(null)"></button>
+        </div>
+        <div class="modal-body">
+          <p class="text-muted">
+            Choose which broker handles <strong>{{ property.title }}</strong>.
+            @if (property.listingBrokerName) {
+              Currently assigned to <strong>{{ property.listingBrokerName }}</strong>.
+            }
+          </p>
+
+          @if (assignError()) {
+            <div class="alert alert-danger py-2">{{ assignError() }}</div>
+          }
+
+          @if (activeBrokers().length === 0) {
+            <div class="alert alert-warning py-2">
+              No active brokers available — reactivate or add one from the Brokers page first.
+            </div>
+          } @else {
+            <label class="form-label">Broker</label>
+            <select class="form-select" [value]="selectedBrokerId()" (change)="onBrokerSelected($event)">
+              <option value="" disabled>Select a broker…</option>
+              @for (broker of activeBrokers(); track broker.id) {
+                <option [value]="broker.id">
+                  {{ broker.fullName || broker.licenseNumber }}
+                </option>
+              }
+            </select>
+          }
+        </div>
+        <div class="modal-footer">
+          <button type="button" class="btn btn-outline-secondary" (click)="propertyToAssign.set(null)">Cancel</button>
+          <button type="button" class="btn btn-dark"
+                  (click)="confirmAssign()"
+                  [disabled]="assigning() || !selectedBrokerId() || activeBrokers().length === 0">
+            @if (assigning()) {
+              <span class="spinner-border spinner-border-sm me-2"></span>
+            }
+            Assign
+          </button>
+        </div>
+      </div>
+    </div>
+  </div>
+  <div class="modal-backdrop show"></div>
+}

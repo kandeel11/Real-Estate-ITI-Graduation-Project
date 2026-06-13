@@ -1,0 +1,185 @@
+<h2 class="mb-4">Subscription</h2>
+
+@if (planSuccess()) {
+  <div class="alert alert-success">
+    <i class="fa-solid fa-circle-check me-2"></i>{{ planSuccess() }}
+  </div>
+}
+@if (planError() && !showPlanModal()) {
+  <div class="alert alert-danger">{{ planError() }}</div>
+}
+
+@if (loading()) {
+  <div class="d-flex justify-content-center py-5">
+    <div class="spinner-border text-secondary" role="status">
+      <span class="visually-hidden">Loading…</span>
+    </div>
+  </div>
+} @else if (!subscription()) {
+  <div class="alert alert-warning d-flex justify-content-between align-items-center">
+    <span>
+      <i class="fa-solid fa-triangle-exclamation me-2"></i>
+      No active subscription found for this account — choose a plan to get back up and running.
+    </span>
+    <button class="btn btn-dark btn-sm" (click)="openPlanModal()">Choose a Plan</button>
+  </div>
+} @else {
+  @if (subscription(); as sub) {
+    <!-- Plan card -->
+    <div class="card p-4 mb-4 plan-card text-white">
+      <div class="d-flex justify-content-between align-items-start">
+        <div>
+          <div class="text-uppercase fw-bold fs-5">
+            {{ sub.planName }}
+            <span class="badge bg-light text-dark ms-2 align-middle">{{ sub.status }}</span>
+          </div>
+          <div class="opacity-75">
+            {{ sub.priceMonthly | currency: 'USD' : 'symbol' : '1.0-0' }}/month
+            · Renews {{ sub.endDate | date: 'MMM d, y' }}
+            @if (sub.isAutoRenew) {
+              <span class="badge bg-light text-dark ms-2">Auto-renew on</span>
+            }
+          </div>
+        </div>
+        <div class="d-flex gap-2">
+          <button class="btn btn-light" (click)="openPlanModal()">
+            <i class="fa-solid fa-crown me-1"></i>Upgrade Plan
+          </button>
+          @if (isPremium()) {
+            <button class="btn btn-outline-light" (click)="showCancelConfirm.set(true)">Cancel</button>
+          }
+        </div>
+      </div>
+    </div>
+
+    <!-- Usage meters -->
+    @if (usage(); as u) {
+      <h5 class="mb-3">Usage This Period</h5>
+      <div class="row g-3 mb-4">
+        <div class="col-md-3">
+          <app-usage-meter label="Properties" [used]="u.propertiesUsed" [max]="sub.maxProperties" />
+        </div>
+        <div class="col-md-3">
+          <app-usage-meter label="Brokers" [used]="u.brokersUsed" [max]="sub.maxBrokers" />
+        </div>
+        <div class="col-md-3">
+          <app-usage-meter label="AI Requests" [used]="u.aiRequestsUsed" [max]="sub.maxAiRequestsPerMonth" />
+        </div>
+        <div class="col-md-3">
+          <app-usage-meter label="Storage (GB)" [used]="u.storageUsedGb" [max]="sub.maxStorageGb" />
+        </div>
+      </div>
+    }
+
+    <div class="row g-3">
+      <!-- Plan features (from real plan flags) -->
+      <div class="col-lg-6">
+        <div class="card p-3 h-100">
+          <h5 class="mb-3">Plan Features</h5>
+          <div class="row">
+            @for (feature of features(); track feature.label) {
+              <div class="col-6 mb-2" [class.text-muted]="!feature.on">
+                @if (feature.on) {
+                  <i class="fa-solid fa-circle-check text-success me-2"></i>
+                } @else {
+                  <i class="fa-solid fa-circle-xmark text-secondary me-2"></i>
+                }
+                {{ feature.label }}
+              </div>
+            }
+          </div>
+        </div>
+      </div>
+
+      <!-- Payment history -->
+      <div class="col-lg-6">
+        <div class="card p-3 h-100">
+          <h5 class="mb-3">Recent Invoices</h5>
+          @if (invoices().length === 0) {
+            <p class="text-muted mb-0">
+              No invoices yet — free plans aren't charged, and paid invoices
+              appear here once billing starts.
+            </p>
+          } @else {
+            <table class="table table-sm mb-0">
+              <tbody>
+                @for (inv of invoices(); track inv.id) {
+                  <tr>
+                    <td>{{ (inv.paidAt ?? inv.dueDate) | date: 'MMM d, y' }}</td>
+                    <td>{{ inv.amount | currency: inv.currency || 'USD' : 'symbol' : '1.2-2' }}</td>
+                    <td class="text-end"><span [class]="invoiceBadge(inv.status)">{{ inv.status }}</span></td>
+                  </tr>
+                }
+              </tbody>
+            </table>
+          }
+        </div>
+      </div>
+    </div>
+  }
+}
+
+<!-- Manage Plan modal -->
+@if (showPlanModal()) {
+  <div class="modal d-block" tabindex="-1" role="dialog">
+    <div class="modal-dialog modal-dialog-centered">
+      <div class="modal-content">
+        <div class="modal-header">
+          <h5 class="modal-title">Upgrade Plan</h5>
+          <button type="button" class="btn-close" (click)="showPlanModal.set(false)"></button>
+        </div>
+        <div class="modal-body">
+          <p class="text-muted small">
+            Your plan changes after a successful payment. Online payment isn't
+            integrated yet, so for now the upgrade applies immediately without a charge.
+          </p>
+
+          @if (planError()) {
+            <div class="alert alert-danger py-2">{{ planError() }}</div>
+          }
+
+          @if (companyPlans().length === 0) {
+            <div class="d-flex justify-content-center py-3">
+              <div class="spinner-border spinner-border-sm text-secondary"></div>
+            </div>
+          } @else {
+            <label class="form-label">Plan</label>
+            <select class="form-select" [value]="selectedPlanId()" (change)="onPlanSelected($event)">
+              <option value="" disabled>Select a plan…</option>
+              @for (plan of companyPlans(); track plan.id) {
+                <option [value]="plan.id" [disabled]="plan.name === subscription()?.planName">
+                  {{ plan.name }} — ${{ plan.priceMonthly }}/mo ·
+                  {{ plan.maxProperties }} properties · {{ plan.maxBrokers }} brokers
+                </option>
+              }
+            </select>
+          }
+        </div>
+        <div class="modal-footer">
+          <button type="button" class="btn btn-outline-secondary" (click)="showPlanModal.set(false)">Close</button>
+          <button type="button" class="btn btn-dark"
+                  (click)="confirmUpgrade()"
+                  [disabled]="planActionBusy() || !selectedPlanId()">
+            @if (planActionBusy()) {
+              <span class="spinner-border spinner-border-sm me-2"></span>
+            }
+            Upgrade
+          </button>
+        </div>
+      </div>
+    </div>
+  </div>
+  <div class="modal-backdrop show"></div>
+}
+
+<!-- Cancel confirmation -->
+<app-confirm-modal
+  [show]="showCancelConfirm()"
+  title="Cancel subscription"
+  message="Cancel your premium subscription? You'll be moved back to the Free plan — your company and data stay exactly as they are, only the premium limits and features go away."
+  confirmLabel="Cancel Subscription"
+  confirmClass="btn-danger"
+  [loading]="cancelling()"
+  (confirmed)="confirmCancel()"
+  (cancelled)="showCancelConfirm.set(false)"
+/>

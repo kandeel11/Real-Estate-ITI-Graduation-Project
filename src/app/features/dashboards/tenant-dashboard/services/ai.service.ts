@@ -1,6 +1,6 @@
 import { Injectable, inject } from '@angular/core';
 import { HttpClient } from '@angular/common/http';
-import { Observable, of, catchError } from 'rxjs';
+import { Observable, of, catchError, map } from 'rxjs';
 import { environment } from '../../../../../environments/environment';
 
 export interface AiChatMessage {
@@ -41,8 +41,26 @@ export class AiService {
   private readonly http = inject(HttpClient);
   private readonly base = environment.apiUrl;
 
+  // Backend contract: POST /AI/chatbot/chat { sessionId?, message } →
+  // { sessionId, replyText }; the user comes from the JWT. The session id is
+  // tracked here so the page can keep passing the whole message list.
+  private chatSessionId: string | null = null;
+
   chat(messages: AiChatMessage[]): Observable<AiChatResponse> {
-    return this.http.post<AiChatResponse>(`${this.base}/AI/chat`, { messages });
+    const lastUserMessage =
+      [...messages].reverse().find((m) => m.role === 'user')?.content ?? '';
+    const body = this.chatSessionId
+      ? { sessionId: this.chatSessionId, message: lastUserMessage }
+      : { message: lastUserMessage };
+
+    return this.http
+      .post<{ sessionId: string; replyText: string }>(`${this.base}/AI/chatbot/chat`, body)
+      .pipe(
+        map((res) => {
+          this.chatSessionId = res.sessionId;
+          return { message: res.replyText };
+        })
+      );
   }
 
   chatRag(data: ChatRagRequest): Observable<AiChatResponse> {

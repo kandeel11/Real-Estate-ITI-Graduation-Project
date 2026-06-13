@@ -1,0 +1,151 @@
+<main class="detail">
+  <div class="container-xl py-4">
+
+    <a routerLink="/properties" class="detail__back">
+      <i class="fa-solid fa-arrow-left me-1"></i>Back to listings
+    </a>
+
+    @if (loading()) {
+      <div class="d-flex justify-content-center py-5">
+        <div class="spinner-border text-primary" role="status">
+          <span class="visually-hidden">Loading…</span>
+        </div>
+      </div>
+    } @else if (error()) {
+      <div class="alert alert-danger mt-3">
+        <i class="fa-solid fa-triangle-exclamation me-2"></i>{{ error() }}
+      </div>
+    } @else if (property(); as p) {
+      <div class="row g-4 mt-1">
+
+        <!-- Left: gallery + info -->
+        <div class="col-12 col-lg-8">
+
+          <!-- Gallery -->
+          <div class="detail-gallery mb-4">
+            <div class="detail-gallery__main">
+              @if (activeImage()) {
+                <img [src]="activeImage()" [alt]="p.title" />
+              } @else {
+                <div class="detail-gallery__placeholder"><i class="fa-regular fa-image"></i></div>
+              }
+              @if (p.isFeatured) {
+                <span class="detail-gallery__featured"><i class="fa-solid fa-star fa-xs"></i>&nbsp;Featured</span>
+              }
+            </div>
+            @if (p.media.length > 1) {
+              <div class="detail-gallery__thumbs">
+                @for (m of p.media; track m.id) {
+                  <button type="button" class="detail-gallery__thumb"
+                          [class.active]="activeImage() === m.mediaUrl"
+                          (click)="activeImage.set(m.mediaUrl)">
+                    <img [src]="m.mediaUrl" alt="" />
+                  </button>
+                }
+              </div>
+            }
+          </div>
+
+          <!-- Title + price -->
+          <div class="d-flex justify-content-between align-items-start flex-wrap gap-2 mb-3">
+            <div>
+              <span class="detail__type"><i [class]="typeIcon(p.propertyType)"></i>&nbsp;{{ p.propertyType }}</span>
+              <h1 class="detail__title mt-2 mb-1">{{ p.title }}</h1>
+              <p class="detail__loc mb-0">
+                <i class="fa-solid fa-location-dot fa-xs"></i>&nbsp;{{ p.address }}, {{ p.district }}, {{ p.city }}
+              </p>
+            </div>
+            <div class="text-end">
+              <span class="detail__price">{{ p.price | number }} EGP</span>
+              <span class="detail__price-label d-block">per month</span>
+            </div>
+          </div>
+
+          <!-- Specs -->
+          <div class="detail-specs card p-3 mb-4">
+            <div class="row text-center g-2">
+              <div class="col"><i class="fa-solid fa-bed text-primary"></i><div class="fw-semibold">{{ p.bedrooms }}</div><small class="text-muted">Bedrooms</small></div>
+              <div class="col"><i class="fa-solid fa-bath text-primary"></i><div class="fw-semibold">{{ p.bathrooms }}</div><small class="text-muted">Bathrooms</small></div>
+              <div class="col"><i class="fa-solid fa-ruler-combined text-primary"></i><div class="fw-semibold">{{ p.areaSqm }}</div><small class="text-muted">m² area</small></div>
+              <div class="col"><i class="fa-solid fa-stairs text-primary"></i><div class="fw-semibold">{{ p.floorNumber }}/{{ p.totalFloors }}</div><small class="text-muted">Floor</small></div>
+              <div class="col"><i class="fa-solid fa-calendar text-primary"></i><div class="fw-semibold">{{ p.yearBuilt }}</div><small class="text-muted">Built</small></div>
+            </div>
+          </div>
+
+          <!-- Description -->
+          @if (p.description) {
+            <h5 class="mb-2">Description</h5>
+            <p class="detail__desc mb-2">{{ p.description }}</p>
+          }
+          @if (p.descriptionAr) {
+            <p class="detail__desc detail__desc--ar" dir="rtl">{{ p.descriptionAr }}</p>
+          }
+
+          <!-- Features -->
+          <div class="d-flex flex-wrap gap-3 mb-4">
+            @if (p.isFurnished) { <span class="detail__feature"><i class="fa-solid fa-couch me-1"></i>Furnished</span> }
+            @if (p.petsAllowed) { <span class="detail__feature"><i class="fa-solid fa-paw me-1"></i>Pets allowed</span> }
+          </div>
+
+          <!-- Amenities -->
+          @if (p.amenities.length > 0) {
+            <h5 class="mb-3">Amenities</h5>
+            <div class="row g-2 mb-2">
+              @for (a of p.amenities; track a.id) {
+                <div class="col-6 col-md-4">
+                  <span class="detail__amenity"><i class="fa-solid fa-circle-check text-success me-2"></i>{{ a.name }}</span>
+                </div>
+              }
+            </div>
+          }
+        </div>
+
+        <!-- Right: contact / inquiry -->
+        <div class="col-12 col-lg-4">
+          <div class="detail-aside card p-4">
+            <h5 class="mb-1">Interested?</h5>
+            <p class="text-muted small mb-3">
+              Listed by
+              <strong>{{ p.listingBrokerName || p.listingDisplayName || 'the owner' }}</strong>.
+              Send an inquiry and they'll get back to you.
+            </p>
+
+            @if (inquirySent()) {
+              <div class="alert alert-success mb-0">
+                <i class="fa-solid fa-circle-check me-2"></i>
+                Your inquiry was sent! The listing contact will reach out to you.
+              </div>
+            } @else if (isTenant()) {
+              @if (inquiryError()) {
+                <div class="alert alert-danger py-2">{{ inquiryError() }}</div>
+              }
+              <label class="form-label small fw-semibold">Your message</label>
+              <textarea class="form-control mb-3" rows="4" [(ngModel)]="message"
+                        placeholder="Hi, I'm interested in this property. Is it still available?"></textarea>
+              <button class="btn btn-primary w-100" (click)="sendInquiry()" [disabled]="sending()">
+                @if (sending()) {
+                  <span class="spinner-border spinner-border-sm me-2"></span>Sending…
+                } @else {
+                  <i class="fa-regular fa-paper-plane me-2"></i>Send Inquiry
+                }
+              </button>
+            } @else if (isAuthenticated()) {
+              <div class="alert alert-info mb-0">
+                <i class="fa-solid fa-circle-info me-2"></i>
+                Only tenant accounts can send inquiries.
+              </div>
+            } @else {
+              <a routerLink="/auth/login" [queryParams]="{ returnUrl: '/properties/' + p.id }"
+                 class="btn btn-primary w-100">
+                <i class="fa-solid fa-right-to-bracket me-2"></i>Sign in to inquire
+              </a>
+              <p class="text-center small text-muted mt-2 mb-0">
+                New here? <a routerLink="/auth/register">Create a free account</a>
+              </p>
+            }
+          </div>
+        </div>
+      </div>
+    }
+  </div>
+</main>
