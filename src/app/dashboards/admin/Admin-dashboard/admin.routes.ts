@@ -23,6 +23,22 @@ export const adminRoutes: Routes = [
         loadComponent: () =>
           import('./pages/portfolio/portfolio.component').then((m) => m.PortfolioComponent),
       },
+      {
+        path: 'users',
+        loadComponent: () => import('./pages/users/users.component').then((m) => m.UsersComponent),
+      },
+      {
+        path: 'market-trends',
+        loadComponent: () =>
+          import('./pages/market-trends/market-trends.component').then(
+            (m) => m.MarketTrendsComponent,
+          ),
+      },
+      {
+        path: 'settings',
+        loadComponent: () =>
+          import('./pages/settings/settings.component').then((m) => m.SettingsComponent),
+      },
 
       // مكان للصفحات الجاية (users, companies, approvals, etc.)
     ],

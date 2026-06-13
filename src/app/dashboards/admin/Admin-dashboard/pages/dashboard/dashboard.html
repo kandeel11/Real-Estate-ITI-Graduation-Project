@@ -37,8 +37,8 @@
                 <span class="stat__label">Properties Active</span>
                 <div class="stat__icon"><i class="fa-solid fa-house"></i></div>
             </div>
-            <h2 class="stat__value">42</h2>
-            <span class="stat__trend neutral">Across 3 regions</span>
+            <h2 class="stat__value">{{ totalActiveCount() }}</h2>
+            <span class="stat__trend neutral">Across {{ regionsCount() }} regions</span>
         </div>
 
         <div class="stat">
@@ -145,6 +145,32 @@
         </div>
 
         <!-- Needs Attention -->
+        <div class="chart-card-container">
+            <div class="card-header">
+                <h3>User Demographics</h3>
+                <p>Registered users by role</p>
+            </div>
+
+            <div class="chart-body">
+                @if (usersChart) {
+                <apx-chart [series]="usersChart.series" [chart]="usersChart.chart" [labels]="usersChart.labels"
+                    [colors]="usersChart.colors" [plotOptions]="usersChart.plotOptions" [stroke]="usersChart.stroke"
+                    [tooltip]="usersChart.tooltip" [dataLabels]="usersChart.dataLabels" [legend]="usersChart.legend">
+                </apx-chart>
+                } @else {
+                <div class="loading-chart"><i class="fa-solid fa-spinner fa-spin"></i> Loading...</div>
+                }
+            </div>
+
+            <div class="chart-footer-legend">
+                @for (item of userRolesLegend(); track item.label) {
+                <span class="legend-item">
+                    <span class="dot" [style.background-color]="item.color"></span>
+                    {{ item.label }} ({{ item.count }})
+                </span>
+                }
+            </div>
+        </div>
 
 
     </div>
