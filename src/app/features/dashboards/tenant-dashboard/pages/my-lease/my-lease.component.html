@@ -1,0 +1,221 @@
+<div class="my-lease-page">
+  <div class="page-header">
+    <h1 class="page-title"><i class="fa-solid fa-file-contract me-2"></i>My Lease</h1>
+
+    <div class="pills-row">
+      <button class="pill" [class.pill-active]="activeTab() === 'active'" (click)="activeTab.set('active')">
+        Active Lease
+      </button>
+      <button class="pill" [class.pill-active]="activeTab() === 'history'" (click)="activeTab.set('history')">
+        Lease History
+      </button>
+    </div>
+  </div>
+
+  <!-- ── LOADING ──────────────────────────────────── -->
+  @if (loading()) {
+    <div class="loading-state">
+      <div class="spinner-border text-primary" role="status">
+        <span class="visually-hidden">Loading…</span>
+      </div>
+    </div>
+  }
+
+  <!-- ── ERROR ────────────────────────────────────── -->
+  @if (!loading() && error()) {
+    <div class="alert alert-danger d-flex align-items-center gap-2">
+      <i class="fa-solid fa-triangle-exclamation"></i>
+      <span>{{ error() }}</span>
+      <button class="btn btn-sm btn-outline-danger ms-2" (click)="loadData()">Try again</button>
+    </div>
+  }
+
+  <!-- ══════════════════ ACTIVE LEASE ══════════════════ -->
+  @if (!loading() && !error() && activeTab() === 'active') {
+
+    @if (!activeLease()) {
+      <div class="empty-state">
+        <i class="fa-solid fa-file-circle-xmark empty-icon"></i>
+        <p class="empty-title">No Active Lease</p>
+        <p class="empty-desc">You don't have an active lease at the moment.</p>
+      </div>
+    } @else {
+      @let lease = activeLease()!;
+
+      <!-- Expiry warning banner -->
+      @if (lease.daysUntilExpiry <= 30) {
+        <div class="expiry-banner">
+          <i class="fa-solid fa-triangle-exclamation me-2"></i>
+          Your lease expires in <strong>{{ lease.daysUntilExpiry }} days</strong>.
+          Contact your landlord to discuss renewal options.
+        </div>
+      }
+
+      <!-- Main lease card -->
+      <div class="lease-card mb-4">
+        <div class="lease-card-header">
+          <div>
+            <h2 class="lease-property">{{ lease.propertyAddress }}</h2>
+            <span class="status-badge" [class.badge-active]="lease.isActive" [class.badge-ended]="!lease.isActive">
+              {{ lease.isActive ? 'Active' : 'Ended' }}
+            </span>
+          </div>
+          <button class="btn btn-primary btn-sm" (click)="downloadContract(lease)">
+            <i class="fa-solid fa-download me-1"></i>Download Contract
+          </button>
+        </div>
+
+        <div class="lease-details-grid">
+          <div class="detail-item">
+            <span class="detail-label">Monthly Rent</span>
+            <span class="detail-value rent">{{ lease.rentAmount | currency:'EGP':'symbol':'1.0-0' }}</span>
+          </div>
+          <div class="detail-item">
+            <span class="detail-label">Security Deposit</span>
+            <span class="detail-value">{{ lease.securityDeposit | currency:'EGP':'symbol':'1.0-0' }}</span>
+          </div>
+          <div class="detail-item">
+            <span class="detail-label">Lease Start</span>
+            <span class="detail-value">{{ lease.startDate | date:'mediumDate' }}</span>
+          </div>
+          <div class="detail-item">
+            <span class="detail-label">Lease End</span>
+            <span class="detail-value">{{ lease.endDate | date:'mediumDate' }}</span>
+          </div>
+          <div class="detail-item">
+            <span class="detail-label">Days Remaining</span>
+            <span class="detail-value" [class.text-danger]="lease.daysUntilExpiry <= 30">
+              {{ lease.daysUntilExpiry }} days
+            </span>
+          </div>
+          <div class="detail-item">
+            <span class="detail-label">Payment Day</span>
+            <span class="detail-value">
+              {{ lease.paymentDayOfMonth }}{{ ordinalSuffix(lease.paymentDayOfMonth) }} of month
+            </span>
+          </div>
+        </div>
+
+        <!-- Progress bar -->
+        <div class="progress-wrap mt-3">
+          <div class="progress-header">
+            <span class="progress-label">Lease elapsed</span>
+            <span class="progress-pct">{{ leaseElapsedPercent(lease) }}%</span>
+          </div>
+          <div class="progress-track">
+            <div class="progress-fill" [style.width]="leaseElapsedPercent(lease) + '%'"></div>
+          </div>
+        </div>
+      </div>
+
+      <!-- AI Chat Panel -->
+      <div class="chat-panel">
+        <div class="chat-panel-header">
+          <i class="fa-solid fa-robot text-primary me-2"></i>
+          <span>Ask about your lease</span>
+          <span class="chat-badge">AI Powered</span>
+        </div>
+
+        @if (chatMessages().length > 0) {
+          <div class="chat-messages">
+            @for (msg of chatMessages(); track $index) {
+              <div class="chat-bubble" [class.bubble-user]="msg.role === 'user'"
+                   [class.bubble-ai]="msg.role === 'assistant'">
+                {{ msg.content }}
+              </div>
+            }
+            @if (chatLoading()) {
+              <div class="chat-bubble bubble-ai typing-indicator">
+                <span></span><span></span><span></span>
+              </div>
+            }
+          </div>
+        }
+
+        <div class="chat-input-row">
+          <input
+            class="chat-input"
+            type="text"
+            placeholder="Ask anything about your lease terms…"
+            [(ngModel)]="chatInput"
+            (keyup.enter)="sendChatMessage()"
+            [disabled]="chatLoading()"
+          />
+          <button class="btn btn-primary btn-sm chat-send"
+                  (click)="sendChatMessage()"
+                  [disabled]="!chatInput.trim() || chatLoading()">
+            <i class="fa-solid fa-paper-plane"></i>
+          </button>
+        </div>
+      </div>
+    }
+  }
+
+  <!-- ══════════════════ LEASE HISTORY ══════════════════ -->
+  @if (!loading() && !error() && activeTab() === 'history') {
+
+    @if (leaseHistory().length === 0) {
+      <div class="empty-state">
+        <i class="fa-solid fa-clock-rotate-left empty-icon"></i>
+        <p class="empty-title">No Lease History</p>
+        <p class="empty-desc">Your past leases will appear here.</p>
+      </div>
+    } @else {
+      <div class="history-list">
+        @for (lease of leaseHistory(); track lease.id) {
+          <div class="history-card mb-3">
+            <div class="history-card-header" (click)="toggleExpand(lease.id)" role="button" tabindex="0"
+                 (keydown.enter)="toggleExpand(lease.id)">
+              <div class="history-main">
+                <div class="history-address">{{ lease.propertyAddress }}</div>
+                <div class="history-dates">
+                  {{ lease.startDate | date:'mediumDate' }} — {{ lease.endDate | date:'mediumDate' }}
+                </div>
+              </div>
+              <div class="d-flex align-items-center gap-3">
+                <span class="status-badge" [class.badge-active]="lease.isActive" [class.badge-ended]="!lease.isActive">
+                  {{ lease.isActive ? 'Active' : 'Ended' }}
+                </span>
+                <span class="rent-tag">{{ lease.rentAmount | currency:'EGP':'symbol':'1.0-0' }}/mo</span>
+                <i class="fa-solid" [class.fa-chevron-down]="expandedLeaseId() !== lease.id"
+                   [class.fa-chevron-up]="expandedLeaseId() === lease.id"></i>
+              </div>
+            </div>
+
+            @if (expandedLeaseId() === lease.id) {
+              <div class="history-detail">
+                <div class="lease-details-grid">
+                  <div class="detail-item">
+                    <span class="detail-label">Monthly Rent</span>
+                    <span class="detail-value rent">{{ lease.rentAmount | currency:'EGP':'symbol':'1.0-0' }}</span>
+                  </div>
+                  <div class="detail-item">
+                    <span class="detail-label">Security Deposit</span>
+                    <span class="detail-value">{{ lease.securityDeposit | currency:'EGP':'symbol':'1.0-0' }}</span>
+                  </div>
+                  <div class="detail-item">
+                    <span class="detail-label">Start Date</span>
+                    <span class="detail-value">{{ lease.startDate | date:'mediumDate' }}</span>
+                  </div>
+                  <div class="detail-item">
+                    <span class="detail-label">End Date</span>
+                    <span class="detail-value">{{ lease.endDate | date:'mediumDate' }}</span>
+                  </div>
+                  <div class="detail-item">
+                    <span class="detail-label">Payment Day</span>
+                    <span class="detail-value">{{ lease.paymentDayOfMonth }}{{ ordinalSuffix(lease.paymentDayOfMonth) }} of month</span>
+                  </div>
+                </div>
+                @if (lease.contractFileUrl) {
+                  <button class="btn btn-outline-primary btn-sm mt-3" (click)="downloadContract(lease)">
+                    <i class="fa-solid fa-download me-1"></i>Download Contract
+                  </button>
+                }
+              </div>
+            }
+          </div>
+        }
+      </div>
+    }
+  }
+</div>

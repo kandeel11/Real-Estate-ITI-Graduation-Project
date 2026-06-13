@@ -1,21 +1,6 @@
-/**
- * Authentication Service
- * Manages user authentication state via Angular Signals
- * Provides reactive role-based access control
- */
-
 import { Injectable, signal, computed, inject } from '@angular/core';
 import { HttpClient } from '@angular/common/http';
 import { environment } from '../../../environments/environment';
-
-export interface AuthUser {
-  id: string;
-  email: string;
-  firstName: string;
-  lastName: string;
-  role: UserRole;
-  profileImage?: string;
-}
 
 export type UserRole =
   | 'admin'
@@ -24,30 +9,39 @@ export type UserRole =
   | 'tenant'
   | 'maintenance-company';
 
+export interface AuthUser {
+  id: string;
+  email: string;
+  fullName: string;
+  role: UserRole;
+  companyId: string | null;
+  isEmailVerified: boolean;
+}
+
+export interface LoginResponse {
+  accessToken: string;
+  refreshToken: string;
+  expiresAt: string;
+  user: AuthUser;
+}
+
 @Injectable({
   providedIn: 'root',
 })
 export class AuthService {
   private readonly http = inject(HttpClient);
 
-  // Reactive state using Signals
   private readonly currentUser = signal<AuthUser | null>(null);
   private readonly isAuthenticated = signal<boolean>(false);
-  private readonly isLoading = signal<boolean>(false);
 
-  // Computed signals for derived state
   readonly user = this.currentUser.asReadonly();
   readonly authenticated = this.isAuthenticated.asReadonly();
-  readonly loading = this.isLoading.asReadonly();
-  readonly userRole = computed(() => this.currentUser()?.role || null);
+  readonly userRole = computed(() => this.currentUser()?.role ?? null);
 
   constructor() {
     this.initializeAuth();
   }
 
-  /**
-   * Initialize authentication from stored session
-   */
   private initializeAuth(): void {
     const storedUser = localStorage.getItem('auth_user');
     if (storedUser) {
@@ -61,32 +55,23 @@ export class AuthService {
     }
   }
 
-  /**
-   * Authenticate user with credentials
-   */
   login(email: string, password: string) {
-    this.isLoading.set(true);
-    return this.http
-      .post<{ user: AuthUser; token: string }>(
-        `${environment.apiUrl}/auth/login`,
-        { email, password }
-      );
+    return this.http.post<LoginResponse>(
+      `${environment.apiUrl}/auth/login`,
+      { email, password }
+    );
   }
 
-  /**
-   * Set authenticated user after successful login
-   */
-  setUser(user: AuthUser, token: string): void {
+  setUser(user: AuthUser, accessToken: string, refreshToken?: string): void {
     this.currentUser.set(user);
     this.isAuthenticated.set(true);
     localStorage.setItem('auth_user', JSON.stringify(user));
-    localStorage.setItem('auth_token', token);
-    this.isLoading.set(false);
+    localStorage.setItem('auth_token', accessToken);
+    if (refreshToken) {
+      localStorage.setItem('auth_refresh_token', refreshToken);
+    }
   }
 
-  /**
-   * Clear authentication state
-   */
   logout(): void {
     this.clearAuth();
   }
@@ -96,25 +81,17 @@ export class AuthService {
     this.isAuthenticated.set(false);
     localStorage.removeItem('auth_user');
     localStorage.removeItem('auth_token');
+    localStorage.removeItem('auth_refresh_token');
   }
 
-  /**
-   * Get stored auth token
-   */
   getToken(): string | null {
     return localStorage.getItem('auth_token');
   }
 
-  /**
-   * Check if user has specific role
-   */
   hasRole(role: UserRole): boolean {
     return this.userRole() === role;
   }
 
-  /**
-   * Check if user has any of the provided roles
-   */
   hasAnyRole(...roles: UserRole[]): boolean {
     const currentRole = this.userRole();
     return currentRole ? roles.includes(currentRole) : false;

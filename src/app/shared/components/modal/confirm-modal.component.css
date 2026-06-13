@@ -1,0 +1,74 @@
+.cm-overlay {
+  position: fixed;
+  inset: 0;
+  background: rgba(11, 28, 48, 0.55);
+  z-index: 1600;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 16px;
+  animation: cm-fade 0.18s ease;
+}
+
+@keyframes cm-fade {
+  from { opacity: 0; }
+  to   { opacity: 1; }
+}
+
+.cm-box {
+  background: var(--color-surface-container-lowest);
+  border-radius: var(--radius-lg);
+  box-shadow: var(--shadow-hover);
+  width: 100%;
+  max-width: 420px;
+  animation: cm-slide 0.2s ease;
+}
+
+@keyframes cm-slide {
+  from { transform: translateY(-12px); opacity: 0; }
+  to   { transform: none; opacity: 1; }
+}
+
+.cm-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 18px 20px 0;
+  gap: 12px;
+}
+
+.cm-title {
+  font-size: 16px;
+  font-weight: 700;
+  color: var(--color-on-surface);
+  margin: 0;
+}
+
+.cm-close {
+  background: none;
+  border: none;
+  color: var(--color-on-surface-variant);
+  font-size: 16px;
+  cursor: pointer;
+  padding: 4px 8px;
+  border-radius: var(--radius-sm);
+  transition: background 0.15s;
+  line-height: 1;
+}
+.cm-close:hover:not(:disabled) { background: var(--color-surface-container-low); }
+.cm-close:disabled { opacity: 0.4; cursor: not-allowed; }
+
+.cm-message {
+  font-size: 14px;
+  color: var(--color-on-surface-variant);
+  line-height: 1.6;
+  margin: 12px 20px 0;
+}
+
+.cm-footer {
+  display: flex;
+  justify-content: flex-end;
+  gap: 8px;
+  padding: 16px 20px 18px;
+  margin-top: 4px;
+}

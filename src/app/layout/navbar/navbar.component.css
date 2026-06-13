@@ -1,0 +1,142 @@
+.site-navbar {
+  background-color: rgba(248, 249, 255, 0.85);
+  backdrop-filter: blur(12px);
+  -webkit-backdrop-filter: blur(12px);
+  border-bottom: 1px solid rgba(199, 196, 216, 0.30);
+  min-height: 80px;
+  transition: box-shadow var(--transition-default);
+}
+
+.site-navbar--scrolled {
+  box-shadow: var(--shadow-soft);
+}
+
+/* ── Brand ──────────────────────────────────── */
+.site-navbar__brand {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  text-decoration: none;
+  transition: opacity var(--transition-default);
+}
+
+.site-navbar__brand:hover {
+  opacity: 0.8;
+}
+
+.site-navbar__brand-icon {
+  color: var(--color-primary);
+  font-size: 24px;
+}
+
+.site-navbar__brand-name {
+  font-size: var(--font-headline-md-size);
+  font-weight: 700;
+  color: var(--color-primary);
+  line-height: 1;
+}
+
+/* ── Links ──────────────────────────────────── */
+.site-navbar__link {
+  font-size: var(--font-body-md-size);
+  font-weight: 500;
+  color: var(--color-on-surface-variant);
+  padding-bottom: 4px;
+  border-bottom: 2px solid transparent;
+  transition: color var(--transition-default),
+              border-color var(--transition-default);
+}
+
+.site-navbar__link:hover {
+  color: var(--color-primary);
+}
+
+.site-navbar__link.active {
+  color: var(--color-primary);
+  font-weight: 700;
+  border-bottom-color: var(--color-primary);
+}
+
+/* ── Actions ────────────────────────────────── */
+.site-navbar__actions {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.site-navbar__icon-btn {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 38px;
+  height: 38px;
+  padding: 0;
+  background: none;
+  border: none;
+  border-radius: var(--radius-md);
+  color: var(--color-on-surface-variant);
+  font-size: 16px;
+  cursor: pointer;
+  transition: color var(--transition-default),
+              background-color var(--transition-default);
+}
+
+.site-navbar__icon-btn:hover {
+  color: var(--color-primary);
+  background-color: rgba(211, 228, 254, 0.50);
+}
+
+.site-navbar__cta {
+  padding: 8px 22px;
+  border-radius: var(--radius-md);
+  font-size: var(--font-label-md-size);
+  font-weight: var(--font-label-md-weight);
+  letter-spacing: var(--font-label-md-spacing);
+}
+
+/* ── Mobile toggler ─────────────────────────── */
+.site-navbar__toggler {
+  border: none;
+  padding: 8px;
+  background: none;
+  color: var(--color-on-surface-variant);
+  font-size: 20px;
+}
+
+.site-navbar__toggler:focus {
+  box-shadow: none;
+}
+
+/* ── Bell badge ─────────────────────────────── */
+.site-navbar__bell {
+  position: relative;
+}
+
+.bell-badge {
+  position: absolute;
+  top: 2px;
+  right: 2px;
+  min-width: 16px;
+  height: 16px;
+  padding: 0 4px;
+  background: var(--color-error);
+  color: var(--color-on-error);
+  font-size: 10px;
+  font-weight: 700;
+  border-radius: var(--radius-full);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  line-height: 1;
+  pointer-events: none;
+}
+
+/* Mobile tweaks */
+@media (max-width: 767.98px) {
+  .site-navbar__actions {
+    margin-top: 12px;
+    padding-top: 12px;
+    border-top: 1px solid rgba(199, 196, 216, 0.30);
+    justify-content: flex-start;
+  }
+}
