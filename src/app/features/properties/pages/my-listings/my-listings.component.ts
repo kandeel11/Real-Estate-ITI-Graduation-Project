@@ -12,6 +12,7 @@ import { RouterLink } from '@angular/router';
 import { PropertyService } from '../../services/property.service';
 import { Property } from '../../models/property.model';
 import { ConfirmModalComponent } from '../../../../shared/components/modal/confirm-modal.component';
+import { CompanySubscriptionService } from '../../../../dashboards/company/services/company-subscription.service';
 
 const STATUS_BADGES: Record<string, string> = {
   Draft: 'badge bg-secondary',
@@ -31,19 +32,25 @@ const STATUS_BADGES: Record<string, string> = {
 })
 export class MyListingsComponent implements OnInit {
   private propertySvc = inject(PropertyService);
+  private subSvc = inject(CompanySubscriptionService);
 
   properties = signal<Property[]>([]);
   loading = signal(true);
   error = signal<string | null>(null);
   actionError = signal<string | null>(null);
   busyId = signal<string | null>(null);
+  subscription = signal<{ hasFeaturedListings?: boolean } | null>(null);
 
   draftCount = computed(
     () => this.properties().filter((p) => p.status === 'Draft').length
   );
 
+  canFeature = computed(() => this.subscription()?.hasFeaturedListings === true);
+  featuredId = computed(() => this.properties().find((p) => p.isFeatured)?.id ?? null);
+
   ngOnInit(): void {
     this.load();
+    this.subSvc.getActive().subscribe((sub) => this.subscription.set(sub));
   }
 
   load(): void {
@@ -106,6 +113,23 @@ export class MyListingsComponent implements OnInit {
       error: (err) => {
         this.busyId.set(null);
         this.actionError.set(err?.error?.error ?? 'Failed to mark the listing as rented.');
+      },
+    });
+  }
+
+  toggleFeatured(property: Property): void {
+    if (this.busyId()) return;
+    this.busyId.set(property.id);
+    this.actionError.set(null);
+    const next = !property.isFeatured;
+    this.propertySvc.setFeatured(property.id, next).subscribe({
+      next: () => {
+        this.busyId.set(null);
+        this.load();
+      },
+      error: (err) => {
+        this.busyId.set(null);
+        this.actionError.set(err?.error?.error ?? 'Failed to update featured status.');
       },
     });
   }

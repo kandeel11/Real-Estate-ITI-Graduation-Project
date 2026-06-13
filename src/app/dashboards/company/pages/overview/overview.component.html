@@ -29,18 +29,18 @@
   }
 
   <!-- Subscription usage -->
-  @if (usage(); as u) {
+  @if (stats(); as s) {
     @if (subscription(); as sub) {
       <h5 class="mb-3">Subscription Usage</h5>
       <div class="row g-3 mb-4">
         <div class="col-md-4">
-          <app-usage-meter label="Properties" [used]="u.propertiesUsed" [max]="sub.maxProperties" />
+          <app-usage-meter label="Properties" [used]="s.totalProperties" [max]="sub.maxProperties" />
         </div>
         <div class="col-md-4">
-          <app-usage-meter label="Brokers" [used]="u.brokersUsed" [max]="sub.maxBrokers" />
+          <app-usage-meter label="Brokers" [used]="s.totalBrokers" [max]="sub.maxBrokers" />
         </div>
         <div class="col-md-4">
-          <app-usage-meter label="AI Requests" [used]="u.aiRequestsUsed" [max]="sub.maxAiRequestsPerMonth" />
+          <app-usage-meter label="AI Requests" [used]="usage()?.aiRequestsUsed ?? 0" [max]="sub.maxAiRequestsPerMonth" />
         </div>
       </div>
     }

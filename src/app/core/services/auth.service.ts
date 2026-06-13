@@ -15,7 +15,7 @@
 import { Injectable, signal, computed, inject } from '@angular/core';
 import { HttpClient } from '@angular/common/http';
 import { Router } from '@angular/router';
-import { Observable, of, delay, map, tap } from 'rxjs';
+import { Observable, of, delay, map, tap, throwError, catchError } from 'rxjs';
 import { environment } from '../../../environments/environment';
 import { API_ENDPOINTS } from '../constants/api-endpoints';
 
@@ -49,6 +49,13 @@ export interface LoginResponse {
     companyId: string | null;
     isEmailVerified: boolean;
   };
+}
+
+export interface RefreshResponse {
+  accessToken: string;
+  refreshToken: string;
+  expiresAt?: string;
+  user?: LoginResponse['user'];
 }
 
 const BACKEND_ROLE_MAP: Record<string, UserRole> = {
@@ -182,8 +189,35 @@ export class AuthService {
       );
   }
 
+  /**
+   * Exchange the stored refresh token for a new access token.
+   * Updates stored tokens and returns the new access token on success.
+   * Clears auth and throws on failure (interceptor calls sessionExpired after).
+   */
+  refresh(): Observable<string> {
+    const refreshToken = localStorage.getItem('auth_refresh_token');
+    if (!refreshToken) return throwError(() => new Error('No refresh token stored.'));
+
+    return this.http
+      .post<RefreshResponse>(
+        `${environment.apiUrl}${API_ENDPOINTS.AUTH.REFRESH_TOKEN}`,
+        { refreshToken }
+      )
+      .pipe(
+        tap((res) => {
+          const user = res.user ? this.toAuthUser(res.user) : this.user()!;
+          this.setUser(user, res.accessToken, res.refreshToken);
+        }),
+        map((res) => res.accessToken),
+        catchError((err) => {
+          this.clearAuth();
+          return throwError(() => err);
+        })
+      );
+  }
+
   /** Map the backend's user to the frontend AuthUser (role name mapped). */
-  private toAuthUser(u: LoginResponse['user']): AuthUser {
+  toAuthUser(u: LoginResponse['user']): AuthUser {
     return {
       id: u.id,
       email: u.email,

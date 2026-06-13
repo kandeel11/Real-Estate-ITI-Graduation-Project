@@ -126,12 +126,15 @@ export class ChatWidgetComponent implements OnInit, OnDestroy {
           ]);
         },
         error: (err) => {
-          this.errorMsg.set(err.message || 'Something went wrong.');
+          const friendly =
+            err?.error?.error ??
+            err?.error?.message ??
+            'The AI assistant is temporarily unavailable. Please try again later.';
           this.messages.update((msgs) => [
             ...msgs,
             {
               role: ChatRole.Assistant,
-              message: '⚠️ Unable to get a response.',
+              message: `⚠️ ${friendly}`,
             },
           ]);
         },

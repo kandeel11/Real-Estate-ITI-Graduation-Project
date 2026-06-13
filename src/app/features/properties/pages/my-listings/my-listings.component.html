@@ -95,6 +95,22 @@
                       </button>
                     }
                     @case ('Active') {
+                      <!-- Feature / Unfeature (premium only) -->
+                      @if (canFeature()) {
+                        <button class="btn btn-sm me-1"
+                                [class]="p.isFeatured ? 'btn-warning' : 'btn-outline-warning'"
+                                (click)="toggleFeatured(p)"
+                                [disabled]="busyId() === p.id"
+                                [title]="p.isFeatured ? 'Remove from featured' : (featuredId() ? 'Feature this listing (replaces current)' : 'Feature this listing')">
+                          @if (busyId() === p.id) {
+                            <span class="spinner-border spinner-border-sm"></span>
+                          } @else if (p.isFeatured) {
+                            <i class="fa-solid fa-star me-1"></i>Featured
+                          } @else {
+                            <i class="fa-regular fa-star me-1"></i>Feature
+                          }
+                        </button>
+                      }
                       <button class="btn btn-sm btn-outline-primary"
                               (click)="markRented(p)" [disabled]="busyId() === p.id">
                         @if (busyId() === p.id) {
@@ -123,6 +139,17 @@
     </div>
   }
 </div>
+
+<!-- Featured listings upgrade hint (free plan users only) -->
+@if (subscription() && !canFeature() && properties().some(p => p.status === 'Active')) {
+  <div class="alert alert-secondary d-flex align-items-center gap-2 mt-3">
+    <i class="fa-regular fa-star fs-5"></i>
+    <span>
+      <strong>Featured listings</strong> boost your visibility on the browse page.
+      Upgrade to a Premium plan to feature one active listing at a time.
+    </span>
+  </div>
+}
 
 <!-- Delete confirmation -->
 <app-confirm-modal

@@ -26,6 +26,7 @@ export class LoginComponent {
   loading = false;
   errorMsg: string | null = null;
   sessionExpired = this.route.snapshot.queryParamMap.has('expired');
+  emailVerified  = this.route.snapshot.queryParamMap.has('verified');
 
   get email()    { return this.form.get('email')!; }
   get password() { return this.form.get('password')!; }

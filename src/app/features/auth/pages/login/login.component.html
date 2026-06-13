@@ -53,7 +53,12 @@
 
       <form [formGroup]="form" (ngSubmit)="onSubmit()" novalidate class="login-card__form">
 
-        @if (sessionExpired && !errorMsg) {
+        @if (emailVerified && !errorMsg) {
+        <div class="alert alert-success py-2" role="alert">
+          <i class="fa-solid fa-circle-check me-2"></i>Email verified! You can now sign in.
+        </div>
+        }
+        @if (sessionExpired && !errorMsg && !emailVerified) {
         <div class="alert alert-info py-2" role="alert">
           <i class="fa-solid fa-clock me-2"></i>Your session expired — please sign in again.
         </div>
