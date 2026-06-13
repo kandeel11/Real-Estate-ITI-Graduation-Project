@@ -1,5 +1,14 @@
 <h2 class="mb-4">Subscription</h2>
 
+@if (planSuccess()) {
+  <div class="alert alert-success">
+    <i class="fa-solid fa-circle-check me-2"></i>{{ planSuccess() }}
+  </div>
+}
+@if (planError() && !showPlanModal()) {
+  <div class="alert alert-danger">{{ planError() }}</div>
+}
+
 @if (loading()) {
   <div class="d-flex justify-content-center py-5">
     <div class="spinner-border text-secondary" role="status">
@@ -7,11 +16,12 @@
     </div>
   </div>
 } @else if (!subscription()) {
-  <div class="alert alert-warning">
-    <i class="fa-solid fa-triangle-exclamation me-2"></i>
-    No active subscription found for this account. A plan is assigned
-    automatically when the company is registered — contact support if this
-    looks wrong.
+  <div class="alert alert-warning d-flex justify-content-between align-items-center">
+    <span>
+      <i class="fa-solid fa-triangle-exclamation me-2"></i>
+      No active subscription found for this account — choose a plan to get back up and running.
+    </span>
+    <button class="btn btn-dark btn-sm" (click)="openPlanModal()">Choose a Plan</button>
   </div>
 } @else {
   @if (subscription(); as sub) {
@@ -31,15 +41,16 @@
             }
           </div>
         </div>
-        <button class="btn btn-light" (click)="onUpgrade()">Manage Plan</button>
+        <div class="d-flex gap-2">
+          <button class="btn btn-light" (click)="openPlanModal()">
+            <i class="fa-solid fa-crown me-1"></i>Upgrade Plan
+          </button>
+          @if (isPremium()) {
+            <button class="btn btn-outline-light" (click)="showCancelConfirm.set(true)">Cancel</button>
+          }
+        </div>
       </div>
     </div>
-
-    @if (upgradeNotice()) {
-      <div class="alert alert-info">
-        <i class="fa-solid fa-circle-info me-2"></i>Plan management is coming in Phase 2 (Payment module).
-      </div>
-    }
 
     <!-- Usage meters -->
     @if (usage(); as u) {
@@ -107,3 +118,68 @@
     </div>
   }
 }
+
+<!-- Manage Plan modal -->
+@if (showPlanModal()) {
+  <div class="modal d-block" tabindex="-1" role="dialog">
+    <div class="modal-dialog modal-dialog-centered">
+      <div class="modal-content">
+        <div class="modal-header">
+          <h5 class="modal-title">Upgrade Plan</h5>
+          <button type="button" class="btn-close" (click)="showPlanModal.set(false)"></button>
+        </div>
+        <div class="modal-body">
+          <p class="text-muted small">
+            Your plan changes after a successful payment. Online payment isn't
+            integrated yet, so for now the upgrade applies immediately without a charge.
+          </p>
+
+          @if (planError()) {
+            <div class="alert alert-danger py-2">{{ planError() }}</div>
+          }
+
+          @if (companyPlans().length === 0) {
+            <div class="d-flex justify-content-center py-3">
+              <div class="spinner-border spinner-border-sm text-secondary"></div>
+            </div>
+          } @else {
+            <label class="form-label">Plan</label>
+            <select class="form-select" [value]="selectedPlanId()" (change)="onPlanSelected($event)">
+              <option value="" disabled>Select a plan…</option>
+              @for (plan of companyPlans(); track plan.id) {
+                <option [value]="plan.id" [disabled]="plan.name === subscription()?.planName">
+                  {{ plan.name }} — ${{ plan.priceMonthly }}/mo ·
+                  {{ plan.maxProperties }} properties · {{ plan.maxBrokers }} brokers
+                </option>
+              }
+            </select>
+          }
+        </div>
+        <div class="modal-footer">
+          <button type="button" class="btn btn-outline-secondary" (click)="showPlanModal.set(false)">Close</button>
+          <button type="button" class="btn btn-dark"
+                  (click)="confirmUpgrade()"
+                  [disabled]="planActionBusy() || !selectedPlanId()">
+            @if (planActionBusy()) {
+              <span class="spinner-border spinner-border-sm me-2"></span>
+            }
+            Upgrade
+          </button>
+        </div>
+      </div>
+    </div>
+  </div>
+  <div class="modal-backdrop show"></div>
+}
+
+<!-- Cancel confirmation -->
+<app-confirm-modal
+  [show]="showCancelConfirm()"
+  title="Cancel subscription"
+  message="Cancel your premium subscription? You'll be moved back to the Free plan — your company and data stay exactly as they are, only the premium limits and features go away."
+  confirmLabel="Cancel Subscription"
+  confirmClass="btn-danger"
+  [loading]="cancelling()"
+  (confirmed)="confirmCancel()"
+  (cancelled)="showCancelConfirm.set(false)"
+/>

@@ -12,6 +12,7 @@ import { Property } from '../../../../features/properties/models/property.model'
 import { CompanyService } from '../../services/company.service';
 import { CompanySubscriptionService } from '../../services/company-subscription.service';
 import { Broker } from '../../../../shared/models/company.model';
+import { OverLimitBannerComponent } from '../../../../shared/components/over-limit-banner/over-limit-banner.component';
 
 type StatusFilter = 'all' | 'Draft' | 'PendingReview' | 'Active' | 'Rented';
 type CountKey = 'all' | 'draft' | 'pending' | 'active' | 'rented';
@@ -28,7 +29,7 @@ const STATUS_BADGES: Record<string, string> = {
 @Component({
   selector: 'app-company-properties',
   standalone: true,
-  imports: [DecimalPipe],
+  imports: [DecimalPipe, OverLimitBannerComponent],
   templateUrl: './properties.component.html',
   styleUrl: './properties.component.css',
 })
@@ -42,6 +43,9 @@ export class PropertiesComponent implements OnInit {
   error = signal<string | null>(null);
 
   private subscription = toSignal(this.subSvc.getActive());
+
+  /** Numeric property limit (unlimited sentinel while loading → no false banner). */
+  propertyMax = computed(() => this.subscription()?.maxProperties ?? 999999);
 
   /** Plan's property limit — '∞' for unlimited, '…' while loading. */
   maxPropertiesLabel = computed(() => {

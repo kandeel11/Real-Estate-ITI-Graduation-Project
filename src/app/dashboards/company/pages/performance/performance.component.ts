@@ -7,8 +7,9 @@
 import { Component, inject, computed } from '@angular/core';
 import { DecimalPipe } from '@angular/common';
 import { toSignal } from '@angular/core/rxjs-interop';
+import { catchError, of } from 'rxjs';
 import { CompanyService } from '../../services/company.service';
-import { Broker } from '../../../../shared/models/company.model';
+import { Broker, RatingSummary } from '../../../../shared/models/company.model';
 
 @Component({
   selector: 'app-company-performance',
@@ -60,12 +61,10 @@ export class PerformanceComponent {
     return list.reduce((sum, b) => sum + this.response(b), 0) / list.length;
   });
 
-  // Mocked distribution until a ratings endpoint exists
-  ratingsDistribution = [
-    { stars: 5, percent: 78 },
-    { stars: 4, percent: 15 },
-    { stars: 3, percent: 5 },
-    { stars: 2, percent: 1 },
-    { stars: 1, percent: 1 },
-  ];
+  // Real distribution from GET /companies/mine/ratings-summary
+  ratingsSummary = toSignal(
+    this.companySvc.getRatingsSummary().pipe(
+      catchError(() => of(null as RatingSummary | null))
+    )
+  );
 }

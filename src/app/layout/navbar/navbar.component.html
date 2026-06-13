@@ -50,6 +50,11 @@
                     <i class="fa-regular fa-bell"></i>
                 </button>
                 @if (authenticated()) {
+                    @if (isOwner()) {
+                        <a routerLink="/my-listings" class="btn btn-outline-primary site-navbar__cta me-1">
+                            <i class="fa-solid fa-list me-1"></i>My Listings
+                        </a>
+                    }
                     @if (isTenant()) {
                         <div class="site-navbar__user" (click)="$event.stopPropagation()">
                             <button class="site-navbar__avatar" (click)="toggleMenu($event)"

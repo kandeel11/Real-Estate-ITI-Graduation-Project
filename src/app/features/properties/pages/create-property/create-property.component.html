@@ -19,6 +19,38 @@
 
   <!-- ════ STEP 1: DETAILS ════ -->
   @if (step() === 1) {
+    @if (resuming()) {
+      <div class="d-flex justify-content-center py-5">
+        <div class="spinner-border text-secondary" role="status">
+          <span class="visually-hidden">Loading draft…</span>
+        </div>
+      </div>
+    } @else {
+
+    <!-- Unfinished draft recovery -->
+    @if (pendingDraft(); as draft) {
+      <div class="alert alert-info d-flex justify-content-between align-items-center flex-wrap gap-2">
+        <span>
+          <i class="fa-solid fa-file-pen me-2"></i>
+          You have an unfinished listing — <strong>{{ draft.title }}</strong>
+          ({{ draft.district }}, {{ draft.city }}).
+        </span>
+        <span class="d-flex gap-2">
+          <button type="button" class="btn btn-dark btn-sm" (click)="resume(draft.id)">
+            Continue setup
+          </button>
+          <button type="button" class="btn btn-outline-danger btn-sm"
+                  (click)="discardDraft()" [disabled]="discardingDraft()">
+            @if (discardingDraft()) {
+              <span class="spinner-border spinner-border-sm"></span>
+            } @else {
+              Discard
+            }
+          </button>
+        </span>
+      </div>
+    }
+
     <form [formGroup]="form" (ngSubmit)="next()" class="card p-4">
       @if (createError()) {
         <div class="alert alert-danger">{{ createError() }}</div>
@@ -30,13 +62,25 @@
           <label class="form-label">Title (English)</label>
           <input class="form-control" formControlName="title"
                  [class.is-invalid]="form.get('title')!.invalid && form.get('title')!.touched" />
-          <div class="invalid-feedback">Title (min 5 characters) is required.</div>
+          <div class="invalid-feedback">
+            @if (form.get('title')!.errors?.['mustBeEnglish']) {
+              The English title must not contain Arabic text.
+            } @else {
+              Title (min 5 characters) is required.
+            }
+          </div>
         </div>
         <div class="col-md-6">
           <label class="form-label">Title (Arabic)</label>
           <input class="form-control" dir="rtl" formControlName="titleAr"
                  [class.is-invalid]="form.get('titleAr')!.invalid && form.get('titleAr')!.touched" />
-          <div class="invalid-feedback">Arabic title is required.</div>
+          <div class="invalid-feedback">
+            @if (form.get('titleAr')!.errors?.['mustBeArabic']) {
+              The Arabic title must not contain English letters.
+            } @else {
+              Arabic title is required.
+            }
+          </div>
         </div>
 
         <div class="col-md-4">
@@ -130,8 +174,9 @@
         </div>
       </div>
 
-      <!-- Ownership verification — owners only -->
-      @if (isOwner()) {
+      <!-- Ownership verification — owners only, and only on first creation
+           (the deed was already verified; edits don't re-upload) -->
+      @if (isOwner() && !isEditing()) {
         <h5 class="mt-4 mb-1">Ownership Verification</h5>
         <p class="text-muted small mb-3">
           These documents are checked by AI to verify you own this property. PDF or image (JPEG/PNG/BMP/TIFF).
@@ -161,13 +206,22 @@
         <button type="submit" class="btn btn-dark" [disabled]="creating()">
           @if (creating()) {
             <span class="spinner-border spinner-border-sm me-2"></span>
-            @if (isOwner()) { Verifying ownership… } @else { Creating… }
+            @if (isEditing()) { Saving… }
+            @else if (isOwner()) { Verifying ownership… }
+            @else { Creating… }
           } @else {
-            Next <i class="fa-solid fa-arrow-right ms-1"></i>
+            @if (isEditing()) {
+              Save &amp; Continue <i class="fa-solid fa-arrow-right ms-1"></i>
+            } @else if (isOwner()) {
+              <i class="fa-solid fa-shield-halved me-1"></i>Verify Ownership &amp; Continue
+            } @else {
+              Next <i class="fa-solid fa-arrow-right ms-1"></i>
+            }
           }
         </button>
       </div>
     </form>
+    }
   }
 
   <!-- ════ STEP 2: PHOTOS / AMENITIES / DESCRIPTION ════ -->
@@ -197,75 +251,116 @@
       @if (amenities().length === 0) {
         <p class="text-muted mb-0">No amenities available.</p>
       } @else {
-        <div class="row">
-          @for (amenity of amenities(); track amenity.id) {
-            <div class="col-6 col-md-4 col-lg-3 mb-2">
-              <div class="form-check">
-                <input type="checkbox" class="form-check-input" [id]="'am-' + amenity.id"
-                       [checked]="selectedAmenities().has(amenity.id)"
-                       (change)="toggleAmenity(amenity)" />
-                <label class="form-check-label" [for]="'am-' + amenity.id">{{ amenity.name }}</label>
+        @for (group of amenityGroups(); track group.category) {
+          <div class="text-uppercase small text-muted mt-2 mb-1">{{ group.category }}</div>
+          <div class="row">
+            @for (amenity of group.items; track amenity.id) {
+              <div class="col-6 col-md-4 col-lg-3 mb-2">
+                <div class="form-check">
+                  <input type="checkbox" class="form-check-input" [id]="'am-' + amenity.id"
+                         [checked]="selectedAmenities().has(amenity.id)"
+                         (change)="toggleAmenity(amenity)" />
+                  <label class="form-check-label" [for]="'am-' + amenity.id">{{ amenity.name }}</label>
+                </div>
               </div>
-            </div>
-          }
-        </div>
+            }
+          </div>
+        }
       }
     </div>
 
     <div class="card p-4 mb-3">
       <div class="d-flex justify-content-between align-items-center mb-2">
         <h5 class="mb-0">Description</h5>
-        <button type="button" class="btn btn-outline-dark btn-sm" (click)="generateDescription()" [disabled]="generating()">
-          @if (generating()) {
-            <span class="spinner-border spinner-border-sm me-2"></span>Generating…
-          } @else {
-            <i class="fa-solid fa-wand-magic-sparkles me-2"></i>Generate AI Description
-          }
-        </button>
+        @if (aiGeneratorAllowed()) {
+          <button type="button" class="btn btn-outline-dark btn-sm" (click)="generateDescription()" [disabled]="generating() || accepted()">
+            @if (generating()) {
+              <span class="spinner-border spinner-border-sm me-2"></span>Generating…
+            } @else {
+              <i class="fa-solid fa-wand-magic-sparkles me-2"></i>Generate AI Description
+            }
+          </button>
+        }
       </div>
-      <p class="text-muted small">
-        The AI writes an English and an Arabic description from your listing details. You can edit both before accepting.
-      </p>
+      @if (aiGeneratorAllowed()) {
+        <p class="text-muted small">
+          Let the AI write English and Arabic descriptions from your listing details — or write them yourself. You can edit before saving.
+        </p>
+      } @else {
+        <p class="text-muted small">
+          <i class="fa-solid fa-lock me-1"></i>
+          The AI description generator is a <strong>Premium</strong> feature — write your description manually below.
+        </p>
+      }
 
       @if (aiError()) {
         <div class="alert alert-warning py-2 d-flex justify-content-between align-items-center">
           <span>{{ aiError() }}</span>
-          <button type="button" class="btn btn-sm btn-outline-secondary" (click)="checkAgain()">Check again</button>
-        </div>
-      }
-
-      @if (draft()) {
-        <div class="row g-3">
-          <div class="col-md-6">
-            <label class="form-label fw-semibold">English description</label>
-            <textarea class="form-control" rows="6" [(ngModel)]="textEn"
-                      [disabled]="accepted()" [ngModelOptions]="{ standalone: true }"></textarea>
-          </div>
-          <div class="col-md-6">
-            <label class="form-label fw-semibold">Arabic description</label>
-            <textarea class="form-control" rows="6" dir="rtl" [(ngModel)]="textAr"
-                      [disabled]="accepted()" [ngModelOptions]="{ standalone: true }"></textarea>
-          </div>
-        </div>
-        <div class="mt-3">
-          @if (accepted()) {
-            <span class="text-success"><i class="fa-solid fa-circle-check me-1"></i>Description accepted and saved.</span>
-          } @else {
-            <button type="button" class="btn btn-success" (click)="acceptDescription()" [disabled]="accepting()">
-              @if (accepting()) {
-                <span class="spinner-border spinner-border-sm me-2"></span>
-              }
-              Accept Description
-            </button>
+          @if (generating() || draft()) {
+            <button type="button" class="btn btn-sm btn-outline-secondary" (click)="checkAgain()">Check again</button>
           }
         </div>
       }
+
+      <div class="row g-3">
+        <div class="col-md-6">
+          <label class="form-label fw-semibold">English description</label>
+          <textarea class="form-control" rows="6"
+                    [ngModel]="textEn()" (ngModelChange)="textEn.set($event)"
+                    [class.is-invalid]="descEnInvalid()"
+                    placeholder="Describe the property in English…"
+                    [disabled]="accepted()" [ngModelOptions]="{ standalone: true }"></textarea>
+          @if (descEnInvalid()) {
+            <div class="invalid-feedback d-block">Use English here — Arabic text isn't allowed.</div>
+          }
+        </div>
+        <div class="col-md-6">
+          <label class="form-label fw-semibold">Arabic description</label>
+          <textarea class="form-control" rows="6" dir="rtl"
+                    [ngModel]="textAr()" (ngModelChange)="textAr.set($event)"
+                    [class.is-invalid]="descArInvalid()"
+                    placeholder="اكتب وصف العقار بالعربية…"
+                    [disabled]="accepted()" [ngModelOptions]="{ standalone: true }"></textarea>
+          @if (descArInvalid()) {
+            <div class="invalid-feedback d-block">اكتب بالعربية — لا يُسمح بأحرف إنجليزية.</div>
+          }
+        </div>
+      </div>
+      <div class="mt-3">
+        @if (accepted()) {
+          <span class="text-success"><i class="fa-solid fa-circle-check me-1"></i>Description saved.</span>
+        } @else if (draft()) {
+          <button type="button" class="btn btn-success" (click)="acceptDescription()" [disabled]="accepting()">
+            @if (accepting()) {
+              <span class="spinner-border spinner-border-sm me-2"></span>
+            }
+            Accept Description
+          </button>
+        } @else {
+          <button type="button" class="btn btn-outline-success" (click)="saveManualDescription()" [disabled]="accepting()">
+            @if (accepting()) {
+              <span class="spinner-border spinner-border-sm me-2"></span>
+            }
+            Save Description
+          </button>
+        }
+      </div>
     </div>
 
     @if (submitError()) {
       <div class="alert alert-danger">{{ submitError() }}</div>
     }
-    <div class="text-end mb-4">
+    <div class="d-flex justify-content-between mb-4">
+      <!-- Owners can't go back: editing the details would invalidate the
+           ownership verification done against the uploaded deed. Brokers
+           verify nothing, so they can edit freely. -->
+      @if (!isOwner()) {
+        <button type="button" class="btn btn-outline-secondary" (click)="goBack()" [disabled]="submitting() || creating()">
+          <i class="fa-solid fa-arrow-left me-1"></i>Back to details
+        </button>
+      } @else {
+        <span></span>
+      }
       <button type="button" class="btn btn-dark" (click)="submit()" [disabled]="submitting()">
         @if (submitting()) {
           <span class="spinner-border spinner-border-sm me-2"></span>Submitting…

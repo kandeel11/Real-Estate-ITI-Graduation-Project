@@ -32,6 +32,9 @@ export class SettingsComponent implements OnInit {
   saved = signal(false);
   logoPreview = signal<string | null>(null);
 
+  /** Active settings tab. */
+  tab = signal<'company' | 'account' | 'password'>('company');
+
   // ── Company profile ─────────────────────────────────────────────
   // email/commercialRegister are not updatable via PUT /companies/mine
   form = this.fb.nonNullable.group({
@@ -109,12 +112,34 @@ export class SettingsComponent implements OnInit {
     });
   }
 
+  logoUploading = signal(false);
+  logoError = signal<string | null>(null);
+
   onLogoSelected(event: Event): void {
     const file = (event.target as HTMLInputElement).files?.[0];
     if (!file) return;
+
+    // Instant local preview while the upload runs
     const reader = new FileReader();
     reader.onload = () => this.logoPreview.set(reader.result as string);
     reader.readAsDataURL(file);
+
+    this.logoUploading.set(true);
+    this.logoError.set(null);
+
+    this.companySvc.uploadLogo(file).subscribe({
+      next: ({ logoUrl }) => {
+        this.logoUploading.set(false);
+        this.logoPreview.set(logoUrl);
+        const company = this.company();
+        if (company) this.company.set({ ...company, logoUrl });
+      },
+      error: (err) => {
+        this.logoUploading.set(false);
+        this.logoError.set(err?.error?.error ?? 'Failed to upload the logo.');
+        this.logoPreview.set(this.company()?.logoUrl ?? null);
+      },
+    });
   }
 
   save(): void {

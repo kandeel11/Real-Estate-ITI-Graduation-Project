@@ -20,6 +20,9 @@ export class NavbarComponent {
   /** Avatar dropdown is a tenant-only experience; other roles keep the plain logout button. */
   readonly isTenant = computed(() => this.authService.userRole() === 'tenant');
 
+  /** Owners have no dashboard — their listings live on the public site. */
+  readonly isOwner = computed(() => this.authService.userRole() === 'owner');
+
   readonly initials = computed(() => {
     const name = this.user()?.fullName?.trim() ?? '';
     const parts = name.split(/\s+/).filter(Boolean);

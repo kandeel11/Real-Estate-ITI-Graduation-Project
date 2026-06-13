@@ -1,5 +1,5 @@
 import { Routes } from '@angular/router';
-import { roleGuard, multiRoleGuard, dashboardRedirectGuard } from './core/guards/role.guard';
+import { roleGuard, multiRoleGuard, dashboardRedirectGuard, guestGuard } from './core/guards/role.guard';
 
 export const routes: Routes = [
   // ==================== PUBLIC LAYOUT (Navbar + Footer) ====================
@@ -26,6 +26,31 @@ export const routes: Routes = [
             (m) => m.CreatePropertyComponent,
           ),
       },
+      {
+        // Draft recovery + listing management for owners/brokers
+        path: 'my-listings',
+        canActivate: [multiRoleGuard],
+        data: { expectedRoles: ['owner', 'broker'] },
+        loadComponent: () =>
+          import('./features/properties/pages/my-listings/my-listings.component').then(
+            (m) => m.MyListingsComponent,
+          ),
+      },
+      {
+        // Public browse (must stay AFTER properties/new so 'new' isn't an :id)
+        path: 'properties',
+        loadComponent: () =>
+          import('./features/properties/pages/browse/browse.component').then(
+            (m) => m.BrowseComponent,
+          ),
+      },
+      {
+        path: 'properties/:id',
+        loadComponent: () =>
+          import('./features/properties/pages/detail/detail.component').then(
+            (m) => m.DetailComponent,
+          ),
+      },
     ],
   },
 
@@ -35,11 +60,15 @@ export const routes: Routes = [
     children: [
       {
         path: 'login',
+        // Already signed in → no double login; go home (dashboard roles
+        // chain-forward from there)
+        canActivate: [guestGuard],
         loadComponent: () =>
           import('./features/auth/pages/login/login.component').then((m) => m.LoginComponent),
       },
       {
         path: 'register',
+        canActivate: [guestGuard],
         loadComponent: () =>
           import('./features/auth/pages/register/register.component').then(
             (m) => m.RegisterComponent,
@@ -159,6 +188,13 @@ export const routes: Routes = [
               ),
           },
           {
+            path: 'inquiries',
+            loadComponent: () =>
+              import('./dashboards/company/pages/inquiries/inquiries.component').then(
+                (m) => m.InquiriesComponent,
+              ),
+          },
+          {
             path: 'ai',
             loadComponent: () =>
               import('./dashboards/company/pages/ai/ai.component').then((m) => m.AiComponent),
@@ -206,9 +242,10 @@ export const routes: Routes = [
           },
           {
             path: 'listings',
+            // Shared listings/draft-management page (same as /my-listings)
             loadComponent: () =>
-              import('./dashboards/broker/pages/listings/listings.component').then(
-                (m) => m.ListingsComponent,
+              import('./features/properties/pages/my-listings/my-listings.component').then(
+                (m) => m.MyListingsComponent,
               ),
           },
           {

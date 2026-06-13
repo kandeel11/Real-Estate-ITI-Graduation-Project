@@ -10,7 +10,6 @@ import { Component, inject, signal, computed } from '@angular/core';
 import { FormsModule } from '@angular/forms';
 import { RouterLink } from '@angular/router';
 import { toSignal } from '@angular/core/rxjs-interop';
-import { AuthService } from '../../../../core/services/auth.service';
 import { CompanySubscriptionService } from '../../services/company-subscription.service';
 import { CompanyAiService } from '../../services/company-ai.service';
 
@@ -27,7 +26,6 @@ interface ChatMessage {
   styleUrl: './ai.component.css',
 })
 export class AiComponent {
-  private readonly auth = inject(AuthService);
   private readonly subSvc = inject(CompanySubscriptionService);
   private readonly aiSvc = inject(CompanyAiService);
 
@@ -37,6 +35,9 @@ export class AiComponent {
   isPremium = computed(() =>
     (this.subscription()?.tier ?? '').startsWith('Premium')
   );
+
+  /** Chat is gated by the plan FLAG, not the tier — Free Company includes it. */
+  chatEnabled = computed(() => !!this.subscription()?.hasAiChatbot);
 
   // ── Chat state ──────────────────────────────────────────────────
   messages = signal<ChatMessage[]>([]);
@@ -55,12 +56,6 @@ export class AiComponent {
         on: !!sub?.hasAiDescriptionGenerator,
       },
       {
-        icon: 'fa-coins',
-        title: 'AI Price Estimation',
-        text: 'Market-driven price suggestions for new listings.',
-        on: !!sub?.hasAiPriceEstimation,
-      },
-      {
         icon: 'fa-bullseye',
         title: 'AI Lead Prioritization',
         text: 'Ranks incoming inquiries so brokers respond to the hottest leads first.',
@@ -77,17 +72,14 @@ export class AiComponent {
 
   send(): void {
     const text = this.draft.trim();
-    if (!text || this.sending() || !this.isPremium()) return;
-
-    const userId = this.auth.user()?.id;
-    if (!userId) return;
+    if (!text || this.sending() || !this.chatEnabled()) return;
 
     this.messages.update((m) => [...m, { role: 'user', text }]);
     this.draft = '';
     this.sending.set(true);
     this.chatError.set(null);
 
-    this.aiSvc.chat(userId, this.sessionId, text).subscribe({
+    this.aiSvc.chat(this.sessionId, text).subscribe({
       next: (res) => {
         this.sessionId = res.sessionId;
         this.messages.update((m) => [...m, { role: 'assistant', text: res.replyText }]);

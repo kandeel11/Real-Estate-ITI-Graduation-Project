@@ -33,6 +33,6 @@ describe('CompanyDashboardComponent', () => {
   it('should render all sidebar navigation items', () => {
     const el: HTMLElement = fixture.nativeElement;
     const links = el.querySelectorAll('aside .nav-item');
-    expect(links.length).toBe(7);
+    expect(links.length).toBe(8);
   });
 });

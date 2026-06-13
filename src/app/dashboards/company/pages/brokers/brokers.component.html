@@ -5,12 +5,39 @@
   </button>
 </div>
 
+<app-over-limit-banner [used]="activeCount()" [max]="brokerMax()" label="brokers" />
+
 @if (actionError()) {
   <div class="alert alert-danger d-flex justify-content-between align-items-center">
     <span>{{ actionError() }}</span>
     <a routerLink="/dashboard/company/subscriptions" class="alert-link">Upgrade Plan</a>
   </div>
 }
+
+<!-- Filter bar -->
+<div class="d-flex flex-wrap justify-content-between align-items-center gap-2 mb-3">
+  <ul class="nav nav-pills">
+    @for (tab of tabs; track tab.value) {
+      <li class="nav-item">
+        <button
+          class="nav-link"
+          [class.active]="statusFilter() === tab.value"
+          (click)="statusFilter.set(tab.value)"
+        >
+          {{ tab.label }}
+          <span class="badge bg-light text-dark ms-1">{{ counts()[tab.value] }}</span>
+        </button>
+      </li>
+    }
+  </ul>
+  <input
+    type="search"
+    class="form-control search-box"
+    placeholder="Search by name, email or license…"
+    [value]="search()"
+    (input)="onSearch($event)"
+  />
+</div>
 
 @if (loading()) {
   <div class="d-flex justify-content-center py-5">
@@ -34,7 +61,7 @@
           </tr>
         </thead>
         <tbody>
-          @for (b of brokers(); track b.id) {
+          @for (b of filtered(); track b.id) {
             <tr [class.table-secondary]="!b.isActive">
               <td>
                 <div class="fw-semibold">{{ displayName(b) }}</div>
@@ -43,14 +70,8 @@
                 }
               </td>
               <td>{{ b.licenseNumber }}</td>
-              <td>{{ b.closedDealsCount ?? '—' }}</td>
-              <td>
-                @if (b.avgResponseTimeMinutes != null) {
-                  {{ b.avgResponseTimeMinutes }} min
-                } @else {
-                  —
-                }
-              </td>
+              <td>{{ b.closedDealsCount }}</td>
+              <td>{{ b.avgResponseTimeMinutes }} min</td>
               <td>
                 <i class="fa-solid fa-star text-warning"></i>
                 {{ b.ratingAvg }}
@@ -84,7 +105,13 @@
             </tr>
           } @empty {
             <tr>
-              <td colspan="7" class="text-center text-muted py-4">No brokers yet.</td>
+              <td colspan="7" class="text-center text-muted py-4">
+                @if (search() || statusFilter() !== 'all') {
+                  No brokers match your filters.
+                } @else {
+                  No brokers yet.
+                }
+              </td>
             </tr>
           }
         </tbody>

@@ -13,9 +13,11 @@ import { environment } from '../../../../environments/environment';
 import { API_ENDPOINTS } from '../../../core/constants/api-endpoints';
 import {
   Property,
+  PropertyDetail,
   Amenity,
   DescriptionDraft,
   CreatePropertyData,
+  propertyTypeToIndex,
 } from '../models/property.model';
 
 const MOCK_PROPERTIES: Property[] = [
@@ -65,12 +67,44 @@ export class PropertyService {
     );
   }
 
-  getById(id: string): Observable<Property> {
-    if (this.useMock) {
-      return of(MOCK_PROPERTIES.find((p) => p.id === id)!).pipe(delay(200));
-    }
-    return this.http.get<Property>(
+  /**
+   * Tenant submits an inquiry on a listing. TenantId comes from the JWT;
+   * the property's owner/company are read from its detail.
+   */
+  createInquiry(propertyId: string, ownerId: string, companyId: string | null, message: string): Observable<unknown> {
+    return this.http.post(`${this.baseUrl}${API_ENDPOINTS.INQUIRIES.CREATE}`, {
+      propertyId,
+      ownerId,
+      companyId,
+      message,
+    });
+  }
+
+  getById(id: string): Observable<PropertyDetail> {
+    return this.http.get<PropertyDetail>(
       `${this.baseUrl}${API_ENDPOINTS.PROPERTIES.GET_BY_ID(id)}`
+    );
+  }
+
+  /** GET /api/properties/mine — the caller's own listings, all statuses. */
+  getMine(): Observable<Property[]> {
+    return this.http.get<Property[]>(
+      `${this.baseUrl}${API_ENDPOINTS.PROPERTIES.GET_MINE}`
+    );
+  }
+
+  /** DELETE /api/properties/{id} — soft delete; frees the plan slot. */
+  delete(propertyId: string): Observable<void> {
+    return this.http.delete<void>(
+      `${this.baseUrl}${API_ENDPOINTS.PROPERTIES.DELETE(propertyId)}`
+    );
+  }
+
+  /** POST /api/properties/{id}/mark-rented */
+  markAsRented(propertyId: string): Observable<void> {
+    return this.http.post<void>(
+      `${this.baseUrl}/properties/${propertyId}/mark-rented`,
+      {}
     );
   }
 
@@ -161,6 +195,47 @@ export class PropertyService {
     return this.http.patch(
       `${this.baseUrl}${API_ENDPOINTS.AI.ACCEPT_DESCRIPTION(generationId)}`,
       { finalTextEn, finalTextAr }
+    );
+  }
+
+  /**
+   * PUT /api/properties/{id} — full update; used by the wizard to save a
+   * manually written description (the body must carry all fields, so the
+   * step-1 values are passed back through).
+   */
+  update(
+    propertyId: string,
+    data: CreatePropertyData,
+    description: string,
+    descriptionAr: string,
+    listingBrokerId: string | null
+  ): Observable<void> {
+    return this.http.put<void>(
+      `${this.baseUrl}${API_ENDPOINTS.PROPERTIES.UPDATE(propertyId)}`,
+      {
+        title: data.title,
+        titleAr: data.titleAr,
+        description,
+        descriptionAr,
+        // numeric — the JSON PUT has no string-enum converter on the backend
+        propertyType: propertyTypeToIndex(data.propertyType),
+        price: data.price,
+        bedrooms: data.bedrooms,
+        bathrooms: data.bathrooms,
+        areaSqm: data.areaSqm,
+        floorNumber: data.floorNumber,
+        totalFloors: data.totalFloors,
+        yearBuilt: data.yearBuilt,
+        isFurnished: data.isFurnished,
+        petsAllowed: data.petsAllowed,
+        address: data.address,
+        apartmentNumber: data.apartmentNumber,
+        country: data.country,
+        governorate: data.governorate,
+        city: data.city,
+        district: data.district,
+        listingBrokerId,
+      }
     );
   }
 

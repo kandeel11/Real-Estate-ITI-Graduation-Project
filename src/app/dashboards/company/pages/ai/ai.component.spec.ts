@@ -24,7 +24,7 @@ describe('Company AiComponent', () => {
     expect(component).toBeTruthy();
   });
 
-  it('should not send chat messages while the plan is not premium', () => {
+  it('should not send chat messages while the plan does not include the chatbot', () => {
     component.draft = 'hello';
     component.send();
     expect(component.messages().length).toBe(0);

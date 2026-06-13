@@ -10,6 +10,7 @@ import { toSignal } from '@angular/core/rxjs-interop';
 import { CompanyService } from '../../services/company.service';
 import { CompanySubscriptionService } from '../../services/company-subscription.service';
 import { UsageMeterComponent } from '../../../../shared/components/usage-meter/usage-meter.component';
+import { OverLimitBannerComponent } from '../../../../shared/components/over-limit-banner/over-limit-banner.component';
 import { Broker, ActivityItem } from '../../../../shared/models/company.model';
 
 const ACTIVITY_ICONS: Record<string, string> = {
@@ -21,7 +22,7 @@ const ACTIVITY_ICONS: Record<string, string> = {
 @Component({
   selector: 'app-company-overview',
   standalone: true,
-  imports: [DecimalPipe, DatePipe, UsageMeterComponent],
+  imports: [DecimalPipe, DatePipe, UsageMeterComponent, OverLimitBannerComponent],
   templateUrl: './overview.component.html',
   styleUrl: './overview.component.css',
 })
@@ -46,6 +47,40 @@ export class OverviewComponent {
       .sort((a, b) => (b.closedDealsCount ?? 0) - (a.closedDealsCount ?? 0))
       .slice(0, 3)
   );
+
+  // ── Property-status statistics (donut + legend) ─────────────────
+  statusBreakdown = computed(() => {
+    const s = this.stats();
+    if (!s) return [];
+    const other = Math.max(
+      s.totalProperties - s.activeProperties - s.pendingProperties - s.rentedProperties,
+      0
+    );
+    const total = s.totalProperties || 0;
+    const pct = (n: number) => (total ? Math.round((n / total) * 100) : 0);
+    return [
+      { label: 'Active', count: s.activeProperties, color: '#28a745', percent: pct(s.activeProperties) },
+      { label: 'Pending', count: s.pendingProperties, color: '#ffc107', percent: pct(s.pendingProperties) },
+      { label: 'Rented', count: s.rentedProperties, color: '#0d6efd', percent: pct(s.rentedProperties) },
+      { label: 'Draft / other', count: other, color: '#adb5bd', percent: pct(other) },
+    ];
+  });
+
+  donutGradient = computed(() => {
+    const segs = this.statusBreakdown();
+    const total = this.stats()?.totalProperties ?? 0;
+    if (total === 0) return 'conic-gradient(#e9ecef 0 100%)';
+    let acc = 0;
+    const stops = segs
+      .filter((s) => s.count > 0)
+      .map((s) => {
+        const start = (acc / total) * 100;
+        acc += s.count;
+        const end = (acc / total) * 100;
+        return `${s.color} ${start}% ${end}%`;
+      });
+    return `conic-gradient(${stops.join(', ')})`;
+  });
 
   loading = computed(() => !this.company() || !this.stats());
 

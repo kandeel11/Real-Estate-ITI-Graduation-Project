@@ -14,11 +14,14 @@ import { CompanyService } from '../../services/company.service';
 import { CompanySubscriptionService } from '../../services/company-subscription.service';
 import { Broker } from '../../../../shared/models/company.model';
 import { ConfirmModalComponent } from '../../../../shared/components/modal/confirm-modal.component';
+import { OverLimitBannerComponent } from '../../../../shared/components/over-limit-banner/over-limit-banner.component';
+
+type StatusFilter = 'all' | 'active' | 'inactive';
 
 @Component({
   selector: 'app-company-brokers',
   standalone: true,
-  imports: [ReactiveFormsModule, RouterLink, ConfirmModalComponent],
+  imports: [ReactiveFormsModule, RouterLink, ConfirmModalComponent, OverLimitBannerComponent],
   templateUrl: './brokers.component.html',
   styleUrl: './brokers.component.css',
 })
@@ -35,7 +38,37 @@ export class BrokersComponent implements OnInit {
 
   private subscription = toSignal(this.subSvc.getActive());
 
+  // ── Search / filter ─────────────────────────────────────────────
+  search = signal('');
+  statusFilter = signal<StatusFilter>('all');
+
+  filtered = computed(() => {
+    let list = this.brokers();
+    if (this.statusFilter() === 'active') list = list.filter((b) => b.isActive);
+    if (this.statusFilter() === 'inactive') list = list.filter((b) => !b.isActive);
+    const q = this.search().trim().toLowerCase();
+    if (q) list = list.filter((b) =>
+      `${b.fullName} ${b.email ?? ''} ${b.licenseNumber}`.toLowerCase().includes(q)
+    );
+    return list;
+  });
+
+  counts = computed(() => ({
+    all: this.brokers().length,
+    active: this.brokers().filter((b) => b.isActive).length,
+    inactive: this.brokers().filter((b) => !b.isActive).length,
+  }));
+
+  readonly tabs: { label: string; value: StatusFilter }[] = [
+    { label: 'All',      value: 'all' },
+    { label: 'Active',   value: 'active' },
+    { label: 'Inactive', value: 'inactive' },
+  ];
+
   activeCount = computed(() => this.brokers().filter((b) => b.isActive).length);
+
+  /** Numeric broker limit (unlimited sentinel while loading → no false banner). */
+  brokerMax = computed(() => this.subscription()?.maxBrokers ?? 999999);
 
   /** Plan's broker limit — '∞' for unlimited, '…' while loading. */
   maxBrokersLabel = computed(() => {
@@ -57,6 +90,10 @@ export class BrokersComponent implements OnInit {
   get tempPassword() { return this.form.get('tempPassword')!; }
   get phone() { return this.form.get('phone')!; }
   get licenseNumber() { return this.form.get('licenseNumber')!; }
+
+  onSearch(e: Event): void {
+    this.search.set((e.target as HTMLInputElement).value);
+  }
 
   ngOnInit(): void {
     this.load();

@@ -47,11 +47,23 @@ export const API_ENDPOINTS = {
     GET_BY_PROPERTY: (propertyId: string) => `/amenities/property/${propertyId}`,
   },
 
+  // ==================== INQUIRIES MODULE ====================
+  INQUIRIES: {
+    CREATE: '/inquiries',
+    MINE: '/inquiries/mine',
+    BY_PROPERTY: (propertyId: string) => `/inquiries/property/${propertyId}`,
+  },
+
   // ==================== AI MODULE ====================
   AI: {
     DESCRIPTION_BY_PROPERTY: (propertyId: string) =>
       `/AI/descriptions/by-property/${propertyId}`,
-    ACCEPT_DESCRIPTION: (generationId: string) => `/AI/${generationId}/accept`,
+    ACCEPT_DESCRIPTION: (generationId: string) =>
+      `/AI/descriptions/${generationId}/accept`,
+    CHATBOT_CHAT: '/AI/chatbot/chat',
+    CHATBOT_SESSIONS: '/AI/chatbot/sessions',
+    CHATBOT_HISTORY: (sessionId: string) =>
+      `/AI/chatbot/sessions/${sessionId}/history`,
   },
 
   // ==================== COMPANIES MODULE ====================
@@ -64,6 +76,9 @@ export const API_ENDPOINTS = {
     MINE_BROKERS: '/companies/mine/brokers',
     MINE_STATS: '/companies/mine/stats',
     MINE_ACTIVITY: '/companies/mine/activity',
+    MINE_INQUIRIES: '/companies/mine/inquiries',
+    MINE_LOGO: '/companies/mine/logo',
+    MINE_RATINGS_SUMMARY: '/companies/mine/ratings-summary',
     UPDATE: (id: string) => `/companies/${id}`,
     VERIFY: (id: string) => `/companies/${id}/verify`,
     GET_PROPERTIES: (id: string) => `/companies/${id}/properties`,
@@ -134,10 +149,8 @@ export const API_ENDPOINTS = {
     MINE: '/subscriptions/mine',
     MINE_USAGE: '/subscriptions/mine/usage',
     MINE_PAYMENTS: '/subscriptions/mine/payments',
-    SUBSCRIBE: '/subscriptions/subscribe',
-    UPGRADE_PLAN: '/subscriptions/upgrade',
-    CANCEL_SUBSCRIPTION: '/subscriptions/cancel',
-    GET_BILLING_HISTORY: '/subscriptions/billing-history',
+    MINE_UPGRADE: '/subscriptions/mine/upgrade',
+    MINE_CANCEL: '/subscriptions/mine/cancel',
   },
 
   // ==================== PAYMENTS MODULE ====================

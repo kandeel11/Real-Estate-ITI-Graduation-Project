@@ -17,6 +17,8 @@ import {
   Broker,
   AddBrokerRequest,
   ActivityItem,
+  RatingSummary,
+  CompanyInquiry,
 } from '../../../shared/models/company.model';
 
 const MOCK_COMPANY: Company = {
@@ -95,6 +97,31 @@ export class CompanyService {
     if (this.useMock) return of([...MOCK_ACTIVITY]).pipe(delay(350));
     return this.http.get<ActivityItem[]>(
       `${this.baseUrl}${API_ENDPOINTS.COMPANIES.MINE_ACTIVITY}`
+    );
+  }
+
+  /** GET /api/companies/mine/inquiries — full inquiry history (tenant + broker enriched). */
+  getInquiries(): Observable<CompanyInquiry[]> {
+    if (this.useMock) return of([] as CompanyInquiry[]).pipe(delay(300));
+    return this.http.get<CompanyInquiry[]>(
+      `${this.baseUrl}${API_ENDPOINTS.COMPANIES.MINE_INQUIRIES}`
+    );
+  }
+
+  /** GET /api/companies/mine/ratings-summary — star distribution. */
+  getRatingsSummary(): Observable<RatingSummary> {
+    return this.http.get<RatingSummary>(
+      `${this.baseUrl}${API_ENDPOINTS.COMPANIES.MINE_RATINGS_SUMMARY}`
+    );
+  }
+
+  /** POST /api/companies/mine/logo — uploads and persists the logo, returns its URL. */
+  uploadLogo(file: File): Observable<{ logoUrl: string }> {
+    const form = new FormData();
+    form.append('File', file);
+    return this.http.post<{ logoUrl: string }>(
+      `${this.baseUrl}${API_ENDPOINTS.COMPANIES.MINE_LOGO}`,
+      form
     );
   }
 

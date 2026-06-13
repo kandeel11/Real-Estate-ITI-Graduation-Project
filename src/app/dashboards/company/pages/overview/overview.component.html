@@ -20,38 +20,12 @@
     }
   </div>
 
-  <!-- Stat cards -->
+  <!-- Over-limit notices (grandfathered after a downgrade) -->
   @if (stats(); as s) {
-    <div class="row g-3 mb-4">
-      <div class="col-6 col-lg-3">
-        <div class="card p-3 h-100">
-          <div class="text-muted small">Properties</div>
-          <div class="fs-3 fw-bold">{{ s.totalProperties | number }}</div>
-          <div class="small text-success">{{ s.activeProperties }} active · {{ s.pendingProperties }} pending</div>
-        </div>
-      </div>
-      <div class="col-6 col-lg-3">
-        <div class="card p-3 h-100">
-          <div class="text-muted small">Brokers</div>
-          <div class="fs-3 fw-bold">{{ s.totalBrokers | number }}</div>
-          <div class="small text-muted">active team members</div>
-        </div>
-      </div>
-      <div class="col-6 col-lg-3">
-        <div class="card p-3 h-100">
-          <div class="text-muted small">Total Views</div>
-          <div class="fs-3 fw-bold">{{ s.totalViews | number }}</div>
-          <div class="small text-muted">{{ s.monthlyInquiries }} inquiries this month</div>
-        </div>
-      </div>
-      <div class="col-6 col-lg-3">
-        <div class="card p-3 h-100">
-          <div class="text-muted small">Deals Closed</div>
-          <div class="fs-3 fw-bold">{{ s.dealsClosed | number }}</div>
-          <div class="small text-muted">{{ s.rentedProperties }} listings rented</div>
-        </div>
-      </div>
-    </div>
+    @if (subscription(); as sub) {
+      <app-over-limit-banner [used]="s.totalProperties" [max]="sub.maxProperties" label="properties" />
+      <app-over-limit-banner [used]="s.totalBrokers" [max]="sub.maxBrokers" label="brokers" />
+    }
   }
 
   <!-- Subscription usage -->
@@ -72,6 +46,75 @@
     }
   }
 
+  <!-- Statistics: property status + engagement -->
+  @if (stats(); as s) {
+    <div class="row g-3 mb-4">
+      <!-- Property status donut -->
+      <div class="col-lg-5">
+        <div class="card p-3 h-100">
+          <h5 class="mb-1">Property Status</h5>
+          <p class="text-muted small mb-3">Current portfolio distribution</p>
+          <div class="d-flex align-items-center gap-4">
+            <div class="status-donut" [style.background]="donutGradient()">
+              <div class="status-donut__hole">
+                <span class="status-donut__total">{{ s.totalProperties }}</span>
+                <span class="status-donut__label">listings</span>
+              </div>
+            </div>
+            <div class="flex-grow-1">
+              @for (seg of statusBreakdown(); track seg.label) {
+                <div class="d-flex align-items-center justify-content-between py-1">
+                  <span class="small">
+                    <span class="status-dot" [style.background]="seg.color"></span>{{ seg.label }}
+                  </span>
+                  <span class="small text-muted">{{ seg.count }} · {{ seg.percent }}%</span>
+                </div>
+              }
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Engagement -->
+      <div class="col-lg-7">
+        <div class="card p-3 h-100">
+          <h5 class="mb-1">Engagement</h5>
+          <p class="text-muted small mb-3">How tenants interact with your listings</p>
+          <div class="row g-3">
+            <div class="col-6 col-md-3">
+              <div class="stat-tile">
+                <i class="fa-solid fa-eye text-primary"></i>
+                <div class="stat-tile__value">{{ s.totalViews | number }}</div>
+                <div class="stat-tile__label">Total views</div>
+              </div>
+            </div>
+            <div class="col-6 col-md-3">
+              <div class="stat-tile">
+                <i class="fa-regular fa-envelope text-primary"></i>
+                <div class="stat-tile__value">{{ s.totalInquiries | number }}</div>
+                <div class="stat-tile__label">Inquiries</div>
+              </div>
+            </div>
+            <div class="col-6 col-md-3">
+              <div class="stat-tile">
+                <i class="fa-solid fa-calendar-day text-primary"></i>
+                <div class="stat-tile__value">{{ s.monthlyInquiries | number }}</div>
+                <div class="stat-tile__label">This month</div>
+              </div>
+            </div>
+            <div class="col-6 col-md-3">
+              <div class="stat-tile">
+                <i class="fa-solid fa-handshake text-primary"></i>
+                <div class="stat-tile__value">{{ s.dealsClosed | number }}</div>
+                <div class="stat-tile__label">Deals closed</div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  }
+
   <div class="row g-3">
     <!-- Top brokers -->
     <div class="col-lg-6">
@@ -84,7 +127,7 @@
               <span class="fw-semibold">{{ broker.fullName || broker.licenseNumber }}</span>
             </div>
             <div class="text-muted small">
-              {{ broker.closedDealsCount ?? 0 }} deals ·
+              {{ broker.closedDealsCount }} deals ·
               <i class="fa-solid fa-star text-warning"></i> {{ broker.ratingAvg }}
             </div>
           </div>

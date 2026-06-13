@@ -1,5 +1,5 @@
 <h2 class="mb-1"><i class="fa-solid fa-robot me-2"></i>AI Assistant</h2>
-<p class="text-muted mb-4">AI tools for your company — powered by your subscription plan.</p>
+<p class="text-muted mb-4">AI tools for your company — what's available follows your subscription plan.</p>
 
 @if (loading()) {
   <div class="d-flex justify-content-center py-5">
@@ -8,26 +8,42 @@
     </div>
   </div>
 } @else {
-  <div class="ai-gate-wrapper">
-    <!-- ── Gated content (blurred on free plans) ── -->
-    <div [class.ai-locked]="!isPremium()">
 
-      <!-- Feature cards -->
-      <div class="row g-3 mb-4">
-        @for (feature of features(); track feature.title) {
-          <div class="col-md-6 col-xl-3">
-            <div class="card p-3 h-100" [class.opacity-50]="!feature.on">
-              <div class="d-flex align-items-center gap-2 mb-2">
-                <i class="fa-solid {{ feature.icon }} text-primary"></i>
-                <span class="fw-semibold">{{ feature.title }}</span>
-              </div>
-              <p class="small text-muted mb-0">{{ feature.text }}</p>
-            </div>
+  <!-- Upgrade banner for the premium-only extras -->
+  @if (!isPremium()) {
+    <div class="alert alert-info d-flex justify-content-between align-items-center">
+      <span>
+        <i class="fa-solid fa-crown me-2"></i>
+        Premium Company adds the AI description generator, lead prioritization,
+        and advanced analytics on top of your chatbot.
+      </span>
+      <a routerLink="/dashboard/company/subscriptions" class="btn btn-dark btn-sm text-nowrap ms-3">
+        Upgrade to Premium
+      </a>
+    </div>
+  }
+
+  <!-- Feature cards (lit per your plan's flags) -->
+  <div class="row g-3 mb-4">
+    @for (feature of features(); track feature.title) {
+      <div class="col-md-6 col-xl-4">
+        <div class="card p-3 h-100" [class.opacity-50]="!feature.on">
+          <div class="d-flex align-items-center gap-2 mb-2">
+            <i class="fa-solid {{ feature.icon }} text-primary"></i>
+            <span class="fw-semibold">{{ feature.title }}</span>
+            @if (!feature.on) {
+              <i class="fa-solid fa-lock text-muted ms-auto" title="Premium feature"></i>
+            }
           </div>
-        }
+          <p class="small text-muted mb-0">{{ feature.text }}</p>
+        </div>
       </div>
+    }
+  </div>
 
-      <!-- Chat -->
+  <!-- Chat — gated by the plan's chatbot flag -->
+  <div class="ai-gate-wrapper">
+    <div [class.ai-locked]="!chatEnabled()">
       <div class="card chat-card">
         <div class="card-header bg-white fw-semibold">
           <i class="fa-solid fa-comments me-2 text-primary"></i>Ask the AI
@@ -58,27 +74,25 @@
             placeholder="e.g. 'How should I price a 3-bed apartment in Maadi?'"
             [(ngModel)]="draft"
             (keydown.enter)="send()"
-            [disabled]="!isPremium() || sending()"
+            [disabled]="!chatEnabled() || sending()"
           />
-          <button class="btn btn-dark" (click)="send()" [disabled]="!isPremium() || sending()">
+          <button class="btn btn-dark" (click)="send()" [disabled]="!chatEnabled() || sending()">
             <i class="fa-solid fa-paper-plane"></i>
           </button>
         </div>
       </div>
     </div>
 
-    <!-- ── Premium gate overlay ── -->
-    @if (!isPremium()) {
+    @if (!chatEnabled()) {
       <div class="ai-gate-overlay">
         <div class="ai-gate-box shadow">
           <i class="fa-solid fa-lock fa-2x text-primary mb-3"></i>
-          <h5 class="mb-2">Unlock AI tools with Premium</h5>
+          <h5 class="mb-2">The AI chatbot isn't in your plan</h5>
           <p class="text-muted mb-4">
-            The AI assistant, price estimation, lead prioritization, and advanced
-            analytics are part of the <strong>Premium Company</strong> plan.
+            Upgrade your subscription to chat with the AI assistant.
           </p>
           <a routerLink="/dashboard/company/subscriptions" class="btn btn-dark btn-lg">
-            <i class="fa-solid fa-crown me-2"></i>Upgrade to Premium
+            <i class="fa-solid fa-crown me-2"></i>Upgrade
           </a>
         </div>
       </div>

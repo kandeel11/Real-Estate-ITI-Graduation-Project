@@ -1,5 +1,5 @@
 import { Component, inject, signal } from '@angular/core';
-import { Router } from '@angular/router';
+import { Router, RouterLink } from '@angular/router';
 import { InViewDirective } from '../../shared/directives/in-view.directive';
 import { SearchService } from '../../features/ai/Search/Services/search-service';
 import { ParsedQuery, PropertyResult } from '../../features/ai/Search/models';
@@ -8,7 +8,7 @@ type SearchMode = 'regular' | 'smart';
 
 @Component({
   selector: 'app-home',
-  imports: [InViewDirective],
+  imports: [InViewDirective, RouterLink],
   templateUrl: './home.html',
   styleUrl: './home.scss',
 })

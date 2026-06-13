@@ -44,6 +44,7 @@ export class CompanyDashboardComponent {
     { label: 'Properties',   icon: 'fa-solid fa-building',       route: '/dashboard/company/properties' },
     { label: 'Brokers',      icon: 'fa-solid fa-users',          route: '/dashboard/company/brokers' },
     { label: 'Performance',  icon: 'fa-solid fa-chart-line',     route: '/dashboard/company/performance' },
+    { label: 'Inquiries',    icon: 'fa-regular fa-envelope',     route: '/dashboard/company/inquiries' },
     { label: 'AI Assistant', icon: 'fa-solid fa-robot',          route: '/dashboard/company/ai' },
     { label: 'Subscription', icon: 'fa-regular fa-credit-card',  route: '/dashboard/company/subscriptions' },
     { label: 'Settings',     icon: 'fa-solid fa-gear',           route: '/dashboard/company/settings' },

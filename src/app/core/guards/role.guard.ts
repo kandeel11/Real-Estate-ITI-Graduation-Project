@@ -9,6 +9,19 @@ import { CanActivateFn, Router, ActivatedRouteSnapshot } from '@angular/router';
 import { AuthService, UserRole } from '../services/auth.service';
 
 /**
+ * Guest-only guard for the auth pages (login/register): a user with an
+ * active session can't sign in again — they're sent to the home page, and
+ * dashboard roles chain-forward from there to their dashboard via
+ * dashboardRedirectGuard. Logging out re-opens the auth pages.
+ */
+export const guestGuard: CanActivateFn = () => {
+  const authService = inject(AuthService);
+  const router = inject(Router);
+
+  return authService.authenticated() ? router.parseUrl('/') : true;
+};
+
+/**
  * Sends signed-in dashboard roles (admin, company, broker, maintenance)
  * straight to their dashboard when they hit the public home page.
  * Tenants and owners keep browsing the public site — that IS their surface

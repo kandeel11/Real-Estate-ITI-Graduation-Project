@@ -15,6 +15,7 @@ import {
   SubscriptionInfo,
   SubscriptionUsage,
   PaymentItem,
+  SubscriptionPlan,
 } from '../../../shared/models/company.model';
 
 const MOCK_SUB: SubscriptionInfo = {
@@ -76,5 +77,30 @@ export class CompanySubscriptionService {
         `${this.baseUrl}${API_ENDPOINTS.SUBSCRIPTIONS.MINE_PAYMENTS}`
       )
       .pipe(catchError(() => of([])));
+  }
+
+  /** GET /api/subscription-plans — public plan catalog. */
+  getPlans(): Observable<SubscriptionPlan[]> {
+    return this.http
+      .get<SubscriptionPlan[]>(
+        `${this.baseUrl}${API_ENDPOINTS.SUBSCRIPTIONS.GET_PLANS}`
+      )
+      .pipe(catchError(() => of([])));
+  }
+
+  /** POST /api/subscriptions/mine/upgrade — moves the plan (charging is Phase 2). */
+  upgrade(planId: string): Observable<void> {
+    return this.http.post<void>(
+      `${this.baseUrl}${API_ENDPOINTS.SUBSCRIPTIONS.MINE_UPGRADE}`,
+      { planId }
+    );
+  }
+
+  /** POST /api/subscriptions/mine/cancel */
+  cancel(reason: string): Observable<void> {
+    return this.http.post<void>(
+      `${this.baseUrl}${API_ENDPOINTS.SUBSCRIPTIONS.MINE_CANCEL}`,
+      { reason }
+    );
   }
 }

@@ -5,6 +5,8 @@
   </span>
 </div>
 
+<app-over-limit-banner [used]="counts().all" [max]="propertyMax()" label="properties" />
+
 <div class="d-flex flex-wrap justify-content-between align-items-center gap-2 mb-3">
   <ul class="nav nav-pills">
     @for (tab of tabs; track tab.value) {

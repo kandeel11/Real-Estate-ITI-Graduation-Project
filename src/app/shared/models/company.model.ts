@@ -63,6 +63,42 @@ export interface ActivityItem {
   timestamp: string;
 }
 
+/** Matches the backend's CompanyInquiryResponse (GET /api/companies/mine/inquiries). */
+export interface CompanyInquiry {
+  id: string;
+  propertyId: string;
+  propertyTitle: string;
+  tenantId: string;
+  tenantName: string;
+  brokerId: string | null;
+  brokerName: string | null;
+  status: string;
+  message: string;
+  createdAt: string;
+  acceptedAt: string | null;
+  closedAt: string | null;
+}
+
+/** Matches the backend's SubscriptionPlanDto (GET /api/subscription-plans). */
+export interface SubscriptionPlan {
+  id: string;
+  name: string;
+  priceMonthly: number;
+  priceAnnual: number;
+  maxProperties: number;
+  maxBrokers: number;
+  maxAiRequestsPerMonth: number;
+  maxStorageGb: number;
+  isActive: boolean;
+}
+
+/** Matches the backend's CompanyRatingSummaryDto (GET /api/companies/mine/ratings-summary). */
+export interface RatingSummary {
+  total: number;
+  average: number;
+  buckets: { stars: number; count: number; percent: number }[];
+}
+
 /** Matches the backend's SubscriptionPaymentItemDto (GET /api/subscriptions/mine/payments). */
 export interface PaymentItem {
   id: string;
