@@ -19,7 +19,7 @@ export class SidebarComponent {
   collapsed = input<boolean>(false);
 
   navItems: NavItem[] = [
-    { label: 'Dashboard', icon: 'fa-solid fa-table-cells-large', route: 'Overview' },
+    { label: 'Dashboard', icon: 'fa-solid fa-table-cells-large', route: 'overview' },
     { label: 'Portfolio', icon: 'fa-solid fa-building', route: 'properties' },
     { label: 'Market Trends', icon: 'fa-solid fa-chart-line', route: 'analytics' },
     { label: 'Tenants', icon: 'fa-solid fa-users', route: 'users' },

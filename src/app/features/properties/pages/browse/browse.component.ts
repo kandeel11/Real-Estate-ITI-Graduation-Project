@@ -14,7 +14,7 @@ import { Property, Amenity } from '../../models/property.model';
 const PAGE_SIZE = 9;
 
 interface Chip {
-  kind: 'type' | 'city' | 'beds' | 'amenity' | 'price';
+  kind: 'type' | 'city' | 'beds' | 'amenity' | 'price' | 'furnished' | 'pets';
   value: string;
   label: string;
 }
@@ -34,7 +34,7 @@ export class BrowseComponent implements OnInit {
   loading = signal(true);
   error = signal<string | null>(null);
 
-  // ── Filters (multi-select sets + range) ─────────────────────────
+  // ── Filters (multi-select sets + range + booleans) ──────────────
   search = signal('');
   types = signal<Set<string>>(new Set());
   cities = signal<Set<string>>(new Set());
@@ -42,6 +42,8 @@ export class BrowseComponent implements OnInit {
   amenityFilter = signal<Set<string>>(new Set());
   minPrice = signal<number | null>(null);
   maxPrice = signal<number | null>(null);
+  furnished = signal(false);
+  petsAllowed = signal(false);
 
   amenitiesOpen = signal(false);
   page = signal(1);
@@ -59,10 +61,11 @@ export class BrowseComponent implements OnInit {
     return map;
   });
 
-  /** Amenities grouped by category for the dropdown. */
+  /** Amenities grouped by category — Lifestyle excluded (covered by Furnished/Pets toggles). */
   amenityGroups = computed(() => {
     const groups = new Map<string, Amenity[]>();
     for (const a of this.amenities()) {
+      if (a.category === 'Lifestyle') continue;
       const list = groups.get(a.category) ?? [];
       list.push(a);
       groups.set(a.category, list);
@@ -84,6 +87,8 @@ export class BrowseComponent implements OnInit {
       const hi = this.maxPrice() != null ? `${this.maxPrice()}` : '∞';
       out.push({ kind: 'price', value: 'price', label: `${lo}–${hi} EGP` });
     }
+    if (this.furnished()) out.push({ kind: 'furnished' as any, value: 'furnished', label: 'Furnished' });
+    if (this.petsAllowed()) out.push({ kind: 'pets' as any, value: 'pets', label: 'Pets allowed' });
     return out;
   });
 
@@ -109,6 +114,8 @@ export class BrowseComponent implements OnInit {
         const ids = new Set(p.amenityIds ?? []);
         for (const a of ams) if (!ids.has(a)) return false;
       }
+      if (this.furnished() && !p.isFurnished) return false;
+      if (this.petsAllowed() && !p.petsAllowed) return false;
       if (q) {
         const hay = `${p.title} ${p.titleAr} ${p.city} ${p.district}`.toLowerCase();
         if (!hay.includes(q)) return false;
@@ -136,6 +143,7 @@ export class BrowseComponent implements OnInit {
     effect(() => {
       this.search(); this.types(); this.cities(); this.beds();
       this.amenityFilter(); this.minPrice(); this.maxPrice();
+      this.furnished(); this.petsAllowed();
       this.page.set(1);
     });
   }
@@ -185,6 +193,8 @@ export class BrowseComponent implements OnInit {
       case 'beds': this.toggleBeds(Number(chip.value)); break;
       case 'amenity': this.toggleAmenity(chip.value); break;
       case 'price': this.minPrice.set(null); this.maxPrice.set(null); break;
+      case 'furnished': this.furnished.set(false); break;
+      case 'pets': this.petsAllowed.set(false); break;
     }
   }
 
@@ -196,6 +206,8 @@ export class BrowseComponent implements OnInit {
     this.amenityFilter.set(new Set());
     this.minPrice.set(null);
     this.maxPrice.set(null);
+    this.furnished.set(false);
+    this.petsAllowed.set(false);
   }
 
   goToPage(p: number): void {

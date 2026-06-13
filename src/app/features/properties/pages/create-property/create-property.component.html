@@ -93,7 +93,7 @@
         </div>
         <div class="col-md-4">
           <label class="form-label">Monthly Price</label>
-          <input type="number" class="form-control" formControlName="price"
+          <input type="number" class="form-control" formControlName="price" step="100" min="100"
                  [class.is-invalid]="form.get('price')!.invalid && form.get('price')!.touched" />
           <div class="invalid-feedback">A price above 0 is required.</div>
         </div>

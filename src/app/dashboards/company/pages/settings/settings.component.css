@@ -34,6 +34,8 @@
   color: #fff;
 }
 
-.settings-card {
+.settings-wrap {
   max-width: 860px;
+  margin-left: auto;
+  margin-right: auto;
 }

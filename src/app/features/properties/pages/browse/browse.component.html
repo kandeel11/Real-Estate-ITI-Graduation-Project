@@ -85,6 +85,19 @@
             </div>
           </div>
 
+          <!-- Lifestyle toggles -->
+          <div class="browse-filter-group">
+            <span class="browse-filter-group__title">Lifestyle</span>
+            <label class="browse-check">
+              <input type="checkbox" [checked]="furnished()" (change)="furnished.set(!furnished())" />
+              <span><i class="fa-solid fa-couch fa-xs me-1"></i>Furnished</span>
+            </label>
+            <label class="browse-check">
+              <input type="checkbox" [checked]="petsAllowed()" (change)="petsAllowed.set(!petsAllowed())" />
+              <span><i class="fa-solid fa-paw fa-xs me-1"></i>Pets allowed</span>
+            </label>
+          </div>
+
           <!-- Amenities (dropdown menu) -->
           <div class="browse-filter-group">
             <span class="browse-filter-group__title">Amenities</span>

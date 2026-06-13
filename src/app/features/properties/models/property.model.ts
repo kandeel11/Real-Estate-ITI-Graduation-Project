@@ -145,7 +145,7 @@ export interface Property {
   primaryImageUrl: string | null;
   viewsCount: number;
   createdAt: string;
-  amenityIds?: string[]; // present on /properties/active; absent in offline mocks
+  amenityIds?: string[]; // present on /properties/active; absent in offline mocks // present on /properties/active; absent in offline mocks
   // Enriched by the backend's PropertyEnrichmentService
   listingDisplayName: string | null;
   listingBrokerName: string | null;

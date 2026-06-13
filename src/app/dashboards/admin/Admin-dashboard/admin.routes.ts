@@ -5,9 +5,9 @@ export const adminRoutes: Routes = [
     path: '',
     loadComponent: () => import('./layout/admin-layout').then((m) => m.AdminLayoutComponent),
     children: [
-      { path: '', redirectTo: 'Overview', pathMatch: 'full' },
+      { path: '', redirectTo: 'overview', pathMatch: 'full' },
       {
-        path: 'Overview',
+        path: 'overview',
         loadComponent: () =>
           import('./pages/dashboard/dashboard').then((m) => m.DashboardComponent),
       },

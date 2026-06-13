@@ -88,7 +88,7 @@ export class CreatePropertyComponent implements OnInit {
     areaSqm: [50, [Validators.required, Validators.min(1)]],
     floorNumber: [0, Validators.min(0)],
     totalFloors: [1, Validators.min(1)],
-    yearBuilt: [2020, [Validators.min(1900), Validators.max(2030)]],
+    yearBuilt: [2020, [Validators.min(1900), Validators.max(2026)]],
     isFurnished: [false],
     petsAllowed: [false],
     address: ['', Validators.required],
