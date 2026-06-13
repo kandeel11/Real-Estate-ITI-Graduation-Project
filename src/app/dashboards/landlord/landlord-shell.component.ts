@@ -198,6 +198,6 @@ import { AuthService } from '../../core/services/auth.service';
 export class LandlordShellComponent {
   private auth = inject(AuthService);
 
-  userName = () => this.auth.user()?.fullName ?? 'User';
-  userInitial = () => this.auth.user()?.fullName?.[0]?.toUpperCase() ?? 'U';
+ userName = () => this.auth.user()?.fullName ?? 'User';
+userInitial = () => this.auth.user()?.fullName?.[0]?.toUpperCase() ?? 'U';
 }
