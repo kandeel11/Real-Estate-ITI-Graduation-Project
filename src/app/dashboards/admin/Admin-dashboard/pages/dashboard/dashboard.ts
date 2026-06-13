@@ -162,9 +162,9 @@ export class DashboardComponent {
       } as ApexPlotOptions,
     };
 
-    this.service
-      .getPendingProperties()
-      .subscribe((data) => this.pendingProperties.set(data.slice(0, 2)));
+    // this.service
+    //   .getPendingProperties()
+    //   .subscribe((data) => this.pendingProperties.set(data.slice(0, 2)));
 
     this.service.getRecentPayments().subscribe((data) => this.recentPayments.set(data.slice(0, 3)));
   }

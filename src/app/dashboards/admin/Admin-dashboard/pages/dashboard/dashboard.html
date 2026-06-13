@@ -156,8 +156,8 @@
                 @for (p of pendingProperties(); track p.id; let i = $index) {
                 <div class="attention-item">
                     <div class="attention-img">
-                        @if (p.mainImageUrl) {
-                        <img [src]="p.mainImageUrl" [alt]="p.title" />
+                        @if ($any(p).primaryImageUrl) {
+                        <img [src]="$any(p).primaryImageUrl" [alt]="p.title" />
                         } @else {
                         <i class="fa-solid fa-screwdriver-wrench"></i>
                         }
@@ -170,11 +170,8 @@
                             </span>
                         </div>
                         <span class="attention-meta">
-                            Unit {{ p.id }}C · {{ (i === 0 ? 'ADMIN.DASHBOARD.LEASE_EXPIRING' : 'ADMIN.DASHBOARD.MAINTENANCE_REQUEST') | translate }}
+                            {{ p.district }}, {{ p.city }} · {{ (i === 0 ? 'ADMIN.DASHBOARD.LEASE_EXPIRING' : 'ADMIN.DASHBOARD.MAINTENANCE_REQUEST') | translate }}
                         </span>
-                        @if (p.description && i === 1) {
-                        <p class="attention-desc">{{ p.description }}</p>
-                        }
                         <div class="attention-actions">
                             <button class="btn-primary-sm" (click)="approve(p)">
                                 {{ (i === 0 ? 'ADMIN.DASHBOARD.SEND_OFFER' : 'ADMIN.DASHBOARD.APPROVE_VENDOR') | translate }}

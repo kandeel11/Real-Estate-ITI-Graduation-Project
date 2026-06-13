@@ -1,6 +1,7 @@
-import { Component, input } from '@angular/core';
-import { RouterLink, RouterLinkActive } from '@angular/router';
+import { Component, inject, input } from '@angular/core';
+import { Router, RouterLink, RouterLinkActive } from '@angular/router';
 import { TranslatePipe } from '@ngx-translate/core';
+import { AuthService } from '../../../../../core/services/auth.service';
 
 interface NavItem {
   labelKey: string;
@@ -19,9 +20,17 @@ interface NavItem {
 export class SidebarComponent {
   collapsed = input<boolean>(false);
 
+  private readonly auth = inject(AuthService);
+  private readonly router = inject(Router);
+
+  logout(): void {
+    this.auth.logout();
+    this.router.navigate(['/auth/login']);
+  }
+
   navItems: NavItem[] = [
     { labelKey: 'ADMIN_NAV.DASHBOARD', icon: 'fa-solid fa-table-cells-large', route: 'overview' },
-    { labelKey: 'ADMIN_NAV.PORTFOLIO', icon: 'fa-solid fa-building', route: 'properties' },
+    { labelKey: 'ADMIN_NAV.PORTFOLIO', icon: 'fa-solid fa-building', route: 'portfolio' },
     { labelKey: 'ADMIN_NAV.MARKET_TRENDS', icon: 'fa-solid fa-chart-line', route: 'analytics' },
     { labelKey: 'ADMIN_NAV.TENANTS', icon: 'fa-solid fa-users', route: 'users' },
     { labelKey: 'ADMIN_NAV.COMPANIES', icon: 'fa-solid fa-briefcase', route: 'companies' },
