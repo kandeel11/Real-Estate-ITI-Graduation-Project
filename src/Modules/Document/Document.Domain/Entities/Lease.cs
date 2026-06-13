@@ -29,4 +29,7 @@ public class Lease
     public DateTime UpdatedAt { get; set; }
     public Inquiry? Inquiry { get; set; }
     public Lead? Lead { get; set; }
+    public DateTime? OwnerConfirmedAt { get; set; }
+    public DateTime? TenantConfirmedAt { get; set; }
+    public string? RejectionReason { get; set; }	
 }

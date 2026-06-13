@@ -72,6 +72,12 @@ public class AcceptInquiryCommandHandler : IRequestHandler<AcceptInquiryCommand,
 
         await _db.SaveChangesAsync(ct);
 
+        var response = CreateInquiryCommandHandler.MapToResponse(inquiry)
+            with
+        {
+            LeadId = lead.Id
+        };
+
         // إرسال notification للـ tenant
         await _notifications.CreateInAppAsync(
             userId: inquiry.TenantId,
@@ -92,6 +98,6 @@ public class AcceptInquiryCommandHandler : IRequestHandler<AcceptInquiryCommand,
             AcceptedById = cmd.AcceptedById
         }, ct);
 
-        return CreateInquiryCommandHandler.MapToResponse(inquiry);
+        return response;
     }
 }

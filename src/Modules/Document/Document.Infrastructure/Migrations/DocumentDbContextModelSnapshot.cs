@@ -231,6 +231,9 @@ namespace Document.Infrastructure.Migrations
                     b.Property<Guid?>("LeadId")
                         .HasColumnType("uniqueidentifier");
 
+                    b.Property<DateTime?>("OwnerConfirmedAt")
+                        .HasColumnType("datetime2");
+
                     b.Property<Guid>("OwnerId")
                         .HasColumnType("uniqueidentifier");
 
@@ -243,6 +246,9 @@ namespace Document.Infrastructure.Migrations
                     b.Property<Guid>("PropertyId")
                         .HasColumnType("uniqueidentifier");
 
+                    b.Property<string>("RejectionReason")
+                        .HasColumnType("nvarchar(max)");
+
                     b.Property<decimal?>("RentAmount")
                         .HasColumnType("decimal(12,2)");
 
@@ -251,6 +257,9 @@ namespace Document.Infrastructure.Migrations
 
                     b.Property<DateOnly?>("StartDate")
                         .HasColumnType("date");
+
+                    b.Property<DateTime?>("TenantConfirmedAt")
+                        .HasColumnType("datetime2");
 
                     b.Property<Guid>("TenantId")
                         .HasColumnType("uniqueidentifier");

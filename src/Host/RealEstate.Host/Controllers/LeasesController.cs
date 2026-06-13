@@ -31,17 +31,7 @@ public class LeasesController : ControllerBase
         return Ok(lease);
     }
 
-    [HttpPost("{id}/confirm")]
-    public async Task<IActionResult> Confirm(Guid id, [FromBody] ConfirmLeaseRequest req)
-    {
-        var ownerId = Guid.NewGuid();
-        await _mediator.Send(new ConfirmLeaseCommand(
-            id, ownerId,
-            req.RentAmount, req.SecurityDeposit,
-            req.StartDate, req.EndDate,
-            req.PaymentDayOfMonth));
-        return NoContent();
-    }
+   
 
     [HttpDelete("{id}")]
     public async Task<IActionResult> Terminate(Guid id, [FromBody] string reason)
@@ -49,11 +39,32 @@ public class LeasesController : ControllerBase
         await _mediator.Send(new TerminateLeaseCommand(id, reason));
         return NoContent();
     }
+    [HttpPost("{id}/confirm")]
+    public async Task<IActionResult> Confirm(Guid id, [FromBody] ConfirmLeaseRequest req)
+    {
+        var result = await _mediator.Send(new ConfirmLeaseCommand(
+        id, req.ConfirmerId,
+        req.RentAmount, req.SecurityDeposit,
+        req.StartDate, req.EndDate,
+        req.PaymentDayOfMonth));
+
+    return Ok(result);
+    }
+	
+    [HttpPost("{id}/reject")]
+    public async Task<IActionResult> Reject(Guid id, [FromBody] RejectLeaseRequest req)
+   {
+     var result = await _mediator.Send(new RejectLeaseCommand(id, req.TenantId, req.Reason));
+     return Ok(result);
+    }	 
 }
 
 public record ConfirmLeaseRequest(
+    Guid ConfirmerId,
     decimal? RentAmount,
     decimal? SecurityDeposit,
     DateOnly? StartDate,
     DateOnly? EndDate,
     int? PaymentDayOfMonth);
+
+public record RejectLeaseRequest(Guid TenantId, string Reason);
