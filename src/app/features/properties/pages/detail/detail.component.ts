@@ -9,6 +9,7 @@ import { Component, inject, signal, computed, OnInit } from '@angular/core';
 import { DecimalPipe } from '@angular/common';
 import { ActivatedRoute, RouterLink } from '@angular/router';
 import { FormsModule } from '@angular/forms';
+import { TranslatePipe } from '@ngx-translate/core';
 import { PropertyService } from '../../services/property.service';
 import { PropertyDetail } from '../../models/property.model';
 import { AuthService } from '../../../../core/services/auth.service';
@@ -16,7 +17,7 @@ import { AuthService } from '../../../../core/services/auth.service';
 @Component({
   selector: 'app-property-detail',
   standalone: true,
-  imports: [DecimalPipe, RouterLink, FormsModule],
+  imports: [DecimalPipe, RouterLink, FormsModule, TranslatePipe],
   templateUrl: './detail.component.html',
   styleUrl: './detail.component.css',
 })

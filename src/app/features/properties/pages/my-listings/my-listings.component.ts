@@ -13,6 +13,7 @@ import { PropertyService } from '../../services/property.service';
 import { Property } from '../../models/property.model';
 import { ConfirmModalComponent } from '../../../../shared/components/modal/confirm-modal.component';
 import { CompanySubscriptionService } from '../../../../dashboards/company/services/company-subscription.service';
+import { TranslatePipe } from '@ngx-translate/core';
 
 const STATUS_BADGES: Record<string, string> = {
   Draft: 'badge bg-secondary',
@@ -26,7 +27,7 @@ const STATUS_BADGES: Record<string, string> = {
 @Component({
   selector: 'app-my-listings',
   standalone: true,
-  imports: [DecimalPipe, DatePipe, RouterLink, ConfirmModalComponent],
+  imports: [DecimalPipe, DatePipe, RouterLink, ConfirmModalComponent, TranslatePipe],
   templateUrl: './my-listings.component.html',
   styleUrl: './my-listings.component.css',
 })

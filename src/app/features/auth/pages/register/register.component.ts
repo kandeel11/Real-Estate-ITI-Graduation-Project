@@ -3,6 +3,7 @@ import { ReactiveFormsModule, FormBuilder, Validators, AbstractControl } from '@
 import { Router, RouterLink } from '@angular/router';
 import { HttpClient } from '@angular/common/http';
 import { finalize } from 'rxjs';
+import { TranslatePipe } from '@ngx-translate/core';
 import { environment } from '../../../../../environments/environment';
 import { API_ENDPOINTS } from '../../../../core/constants/api-endpoints';
 
@@ -15,7 +16,7 @@ const ROLES = [
 @Component({
   selector: 'app-register',
   standalone: true,
-  imports: [ReactiveFormsModule, RouterLink],
+  imports: [ReactiveFormsModule, RouterLink, TranslatePipe],
   templateUrl: './register.component.html',
   styleUrl: './register.component.css',
 })

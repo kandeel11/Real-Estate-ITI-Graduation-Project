@@ -2,12 +2,13 @@ import { Component, OnInit, inject, signal } from '@angular/core';
 import { DatePipe } from '@angular/common';
 import { ReactiveFormsModule, FormBuilder, Validators } from '@angular/forms';
 import { finalize } from 'rxjs';
+import { TranslatePipe } from '@ngx-translate/core';
 import { CreateRatingDto, Rating, RatingService, RatingTargetType } from '../../services/rating.service';
 
 @Component({
   selector: 'app-ratings',
   standalone: true,
-  imports: [DatePipe, ReactiveFormsModule],
+  imports: [DatePipe, ReactiveFormsModule, TranslatePipe],
   templateUrl: './ratings.component.html',
   styleUrl: './ratings.component.css',
 })

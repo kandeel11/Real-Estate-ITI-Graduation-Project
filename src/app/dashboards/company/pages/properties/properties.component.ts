@@ -6,6 +6,7 @@
 
 import { Component, inject, signal, computed, OnInit } from '@angular/core';
 import { DecimalPipe } from '@angular/common';
+import { TranslatePipe } from '@ngx-translate/core';
 import { toSignal } from '@angular/core/rxjs-interop';
 import { PropertyService } from '../../../../features/properties/services/property.service';
 import { Property } from '../../../../features/properties/models/property.model';
@@ -29,7 +30,7 @@ const STATUS_BADGES: Record<string, string> = {
 @Component({
   selector: 'app-company-properties',
   standalone: true,
-  imports: [DecimalPipe, OverLimitBannerComponent],
+  imports: [DecimalPipe, OverLimitBannerComponent, TranslatePipe],
   templateUrl: './properties.component.html',
   styleUrl: './properties.component.css',
 })
@@ -82,11 +83,11 @@ export class PropertiesComponent implements OnInit {
   }));
 
   tabs: { label: string; value: StatusFilter; countKey: CountKey }[] = [
-    { label: 'All', value: 'all', countKey: 'all' },
-    { label: 'Draft', value: 'Draft', countKey: 'draft' },
-    { label: 'Pending', value: 'PendingReview', countKey: 'pending' },
-    { label: 'Active', value: 'Active', countKey: 'active' },
-    { label: 'Rented', value: 'Rented', countKey: 'rented' },
+    { label: 'COMMON.ALL',     value: 'all',          countKey: 'all' },
+    { label: 'COMMON.DRAFT',   value: 'Draft',        countKey: 'draft' },
+    { label: 'COMMON.PENDING', value: 'PendingReview', countKey: 'pending' },
+    { label: 'COMMON.ACTIVE',  value: 'Active',       countKey: 'active' },
+    { label: 'COMMON.RENTED',  value: 'Rented',       countKey: 'rented' },
   ];
 
   ngOnInit(): void {

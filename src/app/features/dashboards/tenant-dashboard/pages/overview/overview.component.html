@@ -14,7 +14,7 @@
     <div class="alert alert-danger d-flex align-items-center gap-2 mb-4">
       <i class="fa-solid fa-triangle-exclamation"></i>
       <span>{{ error() }}</span>
-      <button class="btn btn-sm btn-outline-danger ms-2" (click)="loadData()">Try again</button>
+      <button class="btn btn-sm btn-outline-danger ms-2" (click)="loadData()">{{ 'TENANT_DASH.TRY_AGAIN' | translate }}</button>
     </div>
   }
 
@@ -40,9 +40,9 @@
             <i class="fa-solid fa-file-contract"></i>
           </div>
           <div class="stat-body">
-            <p class="stat-label">Active Lease</p>
+            <p class="stat-label">{{ 'TENANT_DASH.ACTIVE_LEASE' | translate }}</p>
             <p class="stat-value" [class.stat-value-green]="activeLease() !== null">
-              {{ activeLease() ? 'Active' : 'No Lease' }}
+              {{ activeLease() ? ('TENANT_DASH.ACTIVE' | translate) : ('TENANT_DASH.NO_LEASE' | translate) }}
             </p>
           </div>
         </div>
@@ -56,7 +56,7 @@
             <i class="fa-solid fa-calendar-days"></i>
           </div>
           <div class="stat-body">
-            <p class="stat-label">Days Until Expiry</p>
+            <p class="stat-label">{{ 'TENANT_DASH.DAYS_UNTIL_EXPIRY' | translate }}</p>
             <p class="stat-value" [class]="expiryClass(activeLease()?.daysUntilExpiry ?? 999)">
               {{ activeLease() ? activeLease()!.daysUntilExpiry : '—' }}
             </p>
@@ -72,7 +72,7 @@
             <i class="fa-solid fa-building"></i>
           </div>
           <div class="stat-body">
-            <p class="stat-label">My Properties</p>
+            <p class="stat-label">{{ 'TENANT_DASH.MY_PROPERTIES' | translate }}</p>
             <p class="stat-value">{{ propertyCount() }}</p>
           </div>
         </div>
@@ -86,7 +86,7 @@
             <i class="fa-regular fa-bell"></i>
           </div>
           <div class="stat-body">
-            <p class="stat-label">Unread Notifications</p>
+            <p class="stat-label">{{ 'TENANT_DASH.UNREAD_NOTIFICATIONS' | translate }}</p>
             <p class="stat-value">
               {{ notifService.unreadCount() }}
               @if (notifService.unreadCount() > 0) {
@@ -104,43 +104,42 @@
       @if (lease.isExpiringSoon) {
         <div class="expiry-banner mb-3">
           <i class="fa-solid fa-triangle-exclamation me-2"></i>
-          Your lease expires in <strong>{{ lease.daysUntilExpiry }} days</strong>.
-          Contact your landlord to discuss renewal options.
+          <span [innerHTML]="'TENANT_DASH.LEASE_EXPIRY_BANNER' | translate: { days: lease.daysUntilExpiry }"></span>
         </div>
       }
 
       <div class="section-card mb-4">
         <div class="section-card-header">
           <h2 class="section-title">
-            <i class="fa-solid fa-file-contract me-2"></i>Active Lease
+            <i class="fa-solid fa-file-contract me-2"></i>{{ 'TENANT_DASH.ACTIVE_LEASE' | translate }}
           </h2>
           <a class="btn btn-sm btn-primary" routerLink="/dashboard/lease">
-            <i class="fa-solid fa-arrow-right me-1"></i>View Details
+            <i class="fa-solid fa-arrow-right me-1"></i>{{ 'TENANT_DASH.VIEW_DETAILS' | translate }}
           </a>
         </div>
 
         <div class="lease-info-grid">
           <div class="lease-info-item">
-            <span class="info-label"><i class="fa-solid fa-location-dot me-1"></i>Property</span>
+            <span class="info-label"><i class="fa-solid fa-location-dot me-1"></i>{{ 'TENANT_DASH.PROPERTY' | translate }}</span>
             <span class="info-value">{{ lease.propertyAddress }}</span>
           </div>
           <div class="lease-info-item">
-            <span class="info-label"><i class="fa-solid fa-money-bill me-1"></i>Monthly Rent</span>
+            <span class="info-label"><i class="fa-solid fa-money-bill me-1"></i>{{ 'TENANT_DASH.MONTHLY_RENT' | translate }}</span>
             <span class="info-value rent-amount">{{ lease.monthlyRent | currency:'EGP':'symbol':'1.0-0' }}</span>
           </div>
           <div class="lease-info-item">
-            <span class="info-label"><i class="fa-regular fa-calendar me-1"></i>Start Date</span>
+            <span class="info-label"><i class="fa-regular fa-calendar me-1"></i>{{ 'TENANT_DASH.START_DATE' | translate }}</span>
             <span class="info-value">{{ lease.startDate | date:'mediumDate' }}</span>
           </div>
           <div class="lease-info-item">
-            <span class="info-label"><i class="fa-regular fa-calendar-xmark me-1"></i>End Date</span>
+            <span class="info-label"><i class="fa-regular fa-calendar-xmark me-1"></i>{{ 'TENANT_DASH.END_DATE' | translate }}</span>
             <span class="info-value">{{ lease.endDate | date:'mediumDate' }}</span>
           </div>
         </div>
 
         <div class="lease-progress-wrap mt-3">
           <div class="lease-progress-header">
-            <span class="progress-label">Lease elapsed</span>
+            <span class="progress-label">{{ 'TENANT_DASH.LEASE_ELAPSED' | translate }}</span>
             <span class="progress-pct">{{ leaseElapsedPercent(lease) }}%</span>
           </div>
           <div class="progress-track">
@@ -152,8 +151,8 @@
       <div class="section-card mb-4">
         <div class="empty-state">
           <i class="fa-solid fa-file-circle-xmark empty-icon"></i>
-          <p class="empty-title">No Active Lease</p>
-          <p class="empty-desc">You don't have an active lease at the moment.</p>
+          <p class="empty-title">{{ 'TENANT_DASH.NO_ACTIVE_LEASE' | translate }}</p>
+          <p class="empty-desc">{{ 'TENANT_DASH.NO_ACTIVE_LEASE_DESC' | translate }}</p>
         </div>
       </div>
     }
@@ -167,29 +166,29 @@
           <div class="section-card h-100">
             <div class="section-card-header">
               <h2 class="section-title">
-                <i class="fa-solid fa-screwdriver-wrench me-2"></i>Maintenance Tickets
+                <i class="fa-solid fa-screwdriver-wrench me-2"></i>{{ 'TENANT_DASH.MAINTENANCE_TICKETS' | translate }}
               </h2>
               <a class="btn btn-sm btn-primary" routerLink="/dashboard/maintenance-requests/create">
-                <i class="fa-solid fa-plus me-1"></i>New Ticket
+                <i class="fa-solid fa-plus me-1"></i>{{ 'TENANT_DASH.NEW_TICKET' | translate }}
               </a>
             </div>
 
             <div class="ticket-stats-numbers mb-2">
               <div class="ticket-stat-item">
                 <span class="ticket-stat-num stat-waiting">{{ ts.waitingForDecision }}</span>
-                <span class="ticket-stat-label">Waiting Decision</span>
+                <span class="ticket-stat-label">{{ 'TENANT_DASH.WAITING_DECISION' | translate }}</span>
               </div>
               <div class="ticket-stat-item">
                 <span class="ticket-stat-num stat-vendor">{{ ts.assignedToVendor }}</span>
-                <span class="ticket-stat-label">With Vendor</span>
+                <span class="ticket-stat-label">{{ 'TENANT_DASH.WITH_VENDOR' | translate }}</span>
               </div>
               <div class="ticket-stat-item">
                 <span class="ticket-stat-num stat-progress">{{ ts.inProgress }}</span>
-                <span class="ticket-stat-label">In Progress</span>
+                <span class="ticket-stat-label">{{ 'TENANT_DASH.IN_PROGRESS' | translate }}</span>
               </div>
               <div class="ticket-stat-item">
                 <span class="ticket-stat-num stat-done">{{ ts.completed }}</span>
-                <span class="ticket-stat-label">Completed</span>
+                <span class="ticket-stat-label">{{ 'TENANT_DASH.COMPLETED' | translate }}</span>
               </div>
             </div>
 
@@ -216,9 +215,9 @@
                        [title]="ts.completed + ' completed'"></div>
                 }
               </div>
-              <p class="ticket-total-label">{{ ts.total }} ticket{{ ts.total !== 1 ? 's' : '' }} total</p>
+              <p class="ticket-total-label">{{ (ts.total !== 1 ? 'TENANT_DASH.TICKET_TOTAL_PLURAL' : 'TENANT_DASH.TICKET_TOTAL') | translate: { count: ts.total } }}</p>
             } @else {
-              <p class="no-tickets-hint">No maintenance tickets yet.</p>
+              <p class="no-tickets-hint">{{ 'TENANT_DASH.NO_TICKETS' | translate }}</p>
             }
           </div>
         }
@@ -230,18 +229,18 @@
           <div class="section-card h-100">
             <div class="section-card-header">
               <h2 class="section-title">
-                <i class="fa-regular fa-envelope me-2"></i>Inquiries
+                <i class="fa-regular fa-envelope me-2"></i>{{ 'TENANT_DASH.INQUIRIES' | translate }}
               </h2>
             </div>
             <div class="inq-stats">
               <div class="inq-stat">
                 <span class="inq-num" [class.text-warning]="inq.pending > 0">{{ inq.pending }}</span>
-                <span class="inq-label">Pending</span>
+                <span class="inq-label">{{ 'TENANT_DASH.PENDING' | translate }}</span>
               </div>
               <div class="inq-divider"></div>
               <div class="inq-stat">
                 <span class="inq-num">{{ inq.total }}</span>
-                <span class="inq-label">Total</span>
+                <span class="inq-label">{{ 'TENANT_DASH.TOTAL' | translate }}</span>
               </div>
             </div>
           </div>
@@ -253,14 +252,14 @@
     <div class="section-card">
       <div class="section-card-header">
         <h2 class="section-title">
-          <i class="fa-solid fa-clock-rotate-left me-2"></i>Recent Activity
+          <i class="fa-solid fa-clock-rotate-left me-2"></i>{{ 'TENANT_DASH.RECENT_ACTIVITY' | translate }}
         </h2>
       </div>
 
       @if (activity().length === 0) {
         <div class="empty-state">
           <i class="fa-regular fa-bell empty-icon"></i>
-          <p>No recent activity yet.</p>
+          <p>{{ 'TENANT_DASH.NO_ACTIVITY' | translate }}</p>
         </div>
       } @else {
         <div class="activity-list">

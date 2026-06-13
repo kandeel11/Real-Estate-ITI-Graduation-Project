@@ -2,7 +2,7 @@
 
   <!-- ── Back link ──────────────────────────────────────────────── -->
   <a routerLink="/dashboard/maintenance-requests" class="back-link">
-    <i class="fa-solid fa-arrow-left me-1"></i>Back to Tickets
+    <i class="fa-solid fa-arrow-left me-1"></i>{{ 'CREATE_TICKET.BACK' | translate }}
   </a>
 
   <div class="create-card">
@@ -13,14 +13,14 @@
         <div class="success-icon-wrap">
           <i class="fa-solid fa-circle-check"></i>
         </div>
-        <h2>Ticket Submitted!</h2>
-        <p>AI is evaluating your request. You'll be notified once the evaluation is complete.</p>
+        <h2>{{ 'CREATE_TICKET.SUCCESS_TITLE' | translate }}</h2>
+        <p>{{ 'CREATE_TICKET.SUCCESS_DESC' | translate }}</p>
         <div class="d-flex gap-3 justify-content-center flex-wrap">
           <button class="btn btn-primary" (click)="viewTicket()">
-            <i class="fa-solid fa-ticket me-2"></i>View Ticket
+            <i class="fa-solid fa-ticket me-2"></i>{{ 'CREATE_TICKET.VIEW_TICKET' | translate }}
           </button>
           <button class="btn btn-outline-secondary" (click)="goBackToList()">
-            All Tickets
+            {{ 'CREATE_TICKET.ALL_TICKETS' | translate }}
           </button>
         </div>
       </div>
@@ -31,26 +31,26 @@
       <!-- ── Step indicator ──────────────────────────────────────── -->
       <div class="step-header">
         <h1 class="create-title">
-          <i class="fa-solid fa-screwdriver-wrench me-2 text-primary"></i>New Maintenance Ticket
+          <i class="fa-solid fa-screwdriver-wrench me-2 text-primary"></i>{{ 'CREATE_TICKET.TICKET_TITLE' | translate }}
         </h1>
         <div class="stepper">
           <div class="step-item" [class.step-active]="step() === 1" [class.step-done]="step() > 1">
             <div class="step-circle">
               @if (step() > 1) { <i class="fa-solid fa-check"></i> } @else { 1 }
             </div>
-            <span class="step-label">Basic Info</span>
+            <span class="step-label">{{ 'CREATE_TICKET.STEP_BASIC' | translate }}</span>
           </div>
           <div class="step-line" [class.step-line-done]="step() > 1"></div>
           <div class="step-item" [class.step-active]="step() === 2" [class.step-done]="step() > 2">
             <div class="step-circle">
               @if (step() > 2) { <i class="fa-solid fa-check"></i> } @else { 2 }
             </div>
-            <span class="step-label">Images</span>
+            <span class="step-label">{{ 'CREATE_TICKET.STEP_IMAGES' | translate }}</span>
           </div>
           <div class="step-line" [class.step-line-done]="step() > 2"></div>
           <div class="step-item" [class.step-active]="step() === 3">
             <div class="step-circle">3</div>
-            <span class="step-label">Submit</span>
+            <span class="step-label">{{ 'CREATE_TICKET.STEP_SUBMIT' | translate }}</span>
           </div>
         </div>
       </div>
@@ -62,40 +62,40 @@
           @if (leaseLoading()) {
             <div class="lease-loading">
               <div class="spinner-border spinner-border-sm text-primary me-2" role="status"></div>
-              <span class="text-muted small">Loading your lease information…</span>
+              <span class="text-muted small">{{ 'CREATE_TICKET.LOADING_LEASE' | translate }}</span>
             </div>
           }
 
           @if (!leaseLoading() && !activeLease()) {
             <div class="alert alert-warning mb-4">
               <i class="fa-solid fa-triangle-exclamation me-2"></i>
-              No active lease found. Please contact support.
+              {{ 'CREATE_TICKET.NO_LEASE' | translate }}
             </div>
           }
 
           <div class="form-group">
-            <label class="form-label">Title <span class="req">*</span></label>
+            <label class="form-label">{{ 'CREATE_TICKET.TITLE_LABEL' | translate }} <span class="req">*</span></label>
             <input type="text" class="form-control" formControlName="title"
-                   placeholder="Brief description of the issue" />
+                   [placeholder]="'CREATE_TICKET.TITLE_PLACEHOLDER' | translate" />
             @if (basicForm.get('title')?.invalid && basicForm.get('title')?.touched) {
-              <div class="form-error"><i class="fa-solid fa-circle-exclamation me-1"></i>Title must be at least 5 characters.</div>
+              <div class="form-error"><i class="fa-solid fa-circle-exclamation me-1"></i>{{ 'CREATE_TICKET.ERR_TITLE' | translate }}</div>
             }
           </div>
 
           <div class="form-group">
             <label class="form-label">
-              Description <span class="req">*</span>
+              {{ 'CREATE_TICKET.DESC_LABEL' | translate }} <span class="req">*</span>
               <span class="char-count" [class.char-count-ok]="descLength() >= 20">{{ descLength() }} / 20 min</span>
             </label>
             <textarea class="form-control" formControlName="description" rows="4"
-                      placeholder="Describe the problem in detail (minimum 20 characters)…"></textarea>
+                      [placeholder]="'CREATE_TICKET.DESC_PLACEHOLDER' | translate"></textarea>
             @if (basicForm.get('description')?.invalid && basicForm.get('description')?.touched) {
-              <div class="form-error"><i class="fa-solid fa-circle-exclamation me-1"></i>Description must be at least 20 characters.</div>
+              <div class="form-error"><i class="fa-solid fa-circle-exclamation me-1"></i>{{ 'CREATE_TICKET.ERR_DESC' | translate }}</div>
             }
           </div>
 
           <div class="form-group">
-            <label class="form-label">Priority <span class="req">*</span></label>
+            <label class="form-label">{{ 'CREATE_TICKET.PRIORITY_LABEL' | translate }} <span class="req">*</span></label>
             <div class="priority-cards">
               @for (p of priorities; track p) {
                 <button type="button" class="priority-card"
@@ -112,19 +112,19 @@
             <div class="lease-info-row">
               <i class="fa-solid fa-house text-primary me-2"></i>
               <span class="text-muted small">
-                Property ID: <strong>{{ activeLease()!.propertyId | slice:0:8 }}…</strong> · Auto-linked to your active lease
+                Property ID: <strong>{{ activeLease()!.propertyId | slice:0:8 }}…</strong> · {{ 'CREATE_TICKET.LEASE_LINKED' | translate }}
               </span>
             </div>
           }
 
           <div class="step-actions">
-            <button type="button" class="btn btn-outline-secondary" (click)="goBackToList()">Cancel</button>
+            <button type="button" class="btn btn-outline-secondary" (click)="goBackToList()">{{ 'CREATE_TICKET.CANCEL' | translate }}</button>
             <button type="submit" class="btn btn-primary"
                     [disabled]="step1Loading() || (!leaseLoading() && !activeLease())">
               @if (step1Loading()) {
-                <span class="spinner-border spinner-border-sm me-2" role="status"></span>Creating…
+                <span class="spinner-border spinner-border-sm me-2" role="status"></span>{{ 'CREATE_TICKET.CREATING' | translate }}
               } @else {
-                Next: Upload Images <i class="fa-solid fa-arrow-right ms-2"></i>
+                {{ 'CREATE_TICKET.NEXT_IMAGES' | translate }} <i class="fa-solid fa-arrow-right ms-2"></i>
               }
             </button>
           </div>
@@ -135,7 +135,7 @@
       <!-- ══ STEP 2 — Upload Images ════════════════════════════════ -->
       @if (step() === 2) {
         <div>
-          <p class="step-subtitle">Upload at least one photo of the issue. Accepted: JPEG, PNG, WebP · Max 10 MB each.</p>
+          <p class="step-subtitle">{{ 'CREATE_TICKET.UPLOAD_HINT' | translate }}</p>
 
           <div class="upload-area"
                [class.drag-active]="dragOver()"
@@ -143,9 +143,9 @@
                (dragleave)="dragOver.set(false)"
                (drop)="onDrop($event)">
             <i class="fa-solid fa-cloud-arrow-up upload-icon"></i>
-            <p class="upload-text">Drag & drop images here, or</p>
+            <p class="upload-text">{{ 'CREATE_TICKET.DRAG_DROP' | translate }}</p>
             <label class="btn btn-outline-primary btn-sm">
-              Browse Files
+              {{ 'CREATE_TICKET.BROWSE_FILES' | translate }}
               <input type="file" accept="image/jpeg,image/png,image/webp" multiple
                      (change)="onFileSelect($event)" hidden />
             </label>
@@ -170,15 +170,15 @@
                   <div class="upload-file-info">
                     <span class="upload-file-name">{{ item.file.name }}</span>
                     <span class="upload-file-size">{{ (item.file.size / 1024).toFixed(0) }} KB</span>
-                    @if (item.status === 'uploading') { <span class="upload-status uploading">Uploading…</span> }
-                    @if (item.status === 'done')      { <span class="upload-status done"><i class="fa-solid fa-check me-1"></i>Uploaded</span> }
-                    @if (item.status === 'error')     { <span class="upload-status error"><i class="fa-solid fa-xmark me-1"></i>Failed</span> }
+                    @if (item.status === 'uploading') { <span class="upload-status uploading">{{ 'CREATE_TICKET.UPLOADING' | translate }}</span> }
+                    @if (item.status === 'done')      { <span class="upload-status done"><i class="fa-solid fa-check me-1"></i>{{ 'CREATE_TICKET.UPLOADED' | translate }}</span> }
+                    @if (item.status === 'error')     { <span class="upload-status error"><i class="fa-solid fa-xmark me-1"></i>{{ 'CREATE_TICKET.FAILED' | translate }}</span> }
                   </div>
                   <div class="upload-file-actions">
                     @if (item.status === 'error') {
-                      <button type="button" class="btn btn-sm btn-outline-primary" (click)="retryFile($index)">Retry</button>
+                      <button type="button" class="btn btn-sm btn-outline-primary" (click)="retryFile($index)">{{ 'COMMON.RETRY' | translate }}</button>
                     }
-                    <button type="button" class="upload-remove-btn" (click)="removeFile($index)" title="Remove">
+                    <button type="button" class="upload-remove-btn" (click)="removeFile($index)" [title]="'COMMON.DELETE' | translate">
                       <i class="fa-solid fa-xmark"></i>
                     </button>
                   </div>
@@ -188,15 +188,15 @@
           }
 
           @if (!hasSuccessfulUpload() && uploadedFiles().length > 0) {
-            <div class="form-error mt-2"><i class="fa-solid fa-circle-exclamation me-1"></i>At least one image must be uploaded successfully.</div>
+            <div class="form-error mt-2"><i class="fa-solid fa-circle-exclamation me-1"></i>{{ 'CREATE_TICKET.ERR_MIN_IMAGE' | translate }}</div>
           }
 
           <div class="step-actions mt-4">
-            <button type="button" class="btn btn-outline-secondary" (click)="goBackToList()">Cancel</button>
+            <button type="button" class="btn btn-outline-secondary" (click)="goBackToList()">{{ 'CREATE_TICKET.CANCEL' | translate }}</button>
             <button type="button" class="btn btn-primary"
                     [disabled]="!hasSuccessfulUpload() || !allUploadsSettled()"
                     (click)="nextStep2()">
-              Next: Contact Info <i class="fa-solid fa-arrow-right ms-2"></i>
+              {{ 'CREATE_TICKET.NEXT_CONTACT' | translate }} <i class="fa-solid fa-arrow-right ms-2"></i>
             </button>
           </div>
         </div>
@@ -208,13 +208,13 @@
 
           <!-- Summary review -->
           <div class="review-summary mb-4">
-            <h3 class="review-title"><i class="fa-solid fa-clipboard-list me-2"></i>Review Summary</h3>
+            <h3 class="review-title"><i class="fa-solid fa-clipboard-list me-2"></i>{{ 'CREATE_TICKET.REVIEW_TITLE' | translate }}</h3>
             <div class="review-row">
-              <span class="review-label">Title</span>
+              <span class="review-label">{{ 'CREATE_TICKET.REVIEW_TITLE_LABEL' | translate }}</span>
               <span class="review-value">{{ basicForm.get('title')?.value }}</span>
             </div>
             <div class="review-row">
-              <span class="review-label">Priority</span>
+              <span class="review-label">{{ 'CREATE_TICKET.REVIEW_PRIORITY' | translate }}</span>
               <span class="review-value">
                 <i class="fa-solid {{ priorityIcon(basicForm.get('priority')?.value) }} me-1"
                    [style.color]="priorityColor(basicForm.get('priority')?.value)"></i>
@@ -222,35 +222,35 @@
               </span>
             </div>
             <div class="review-row">
-              <span class="review-label">Images</span>
+              <span class="review-label">{{ 'CREATE_TICKET.REVIEW_IMAGES' | translate }}</span>
               <span class="review-value">{{ uploadedFiles().length }} file{{ uploadedFiles().length !== 1 ? 's' : '' }} uploaded</span>
             </div>
           </div>
 
           <div class="form-group">
-            <label class="form-label">Property Address <span class="req">*</span></label>
+            <label class="form-label">{{ 'CREATE_TICKET.ADDRESS_LABEL' | translate }} <span class="req">*</span></label>
             <input type="text" class="form-control" formControlName="propertyAddress"
-                   placeholder="Full property address" />
+                   [placeholder]="'CREATE_TICKET.ADDRESS_PLACEHOLDER' | translate" />
             @if (contactForm.get('propertyAddress')?.invalid && contactForm.get('propertyAddress')?.touched) {
-              <div class="form-error"><i class="fa-solid fa-circle-exclamation me-1"></i>Property address is required.</div>
+              <div class="form-error"><i class="fa-solid fa-circle-exclamation me-1"></i>{{ 'CREATE_TICKET.ERR_ADDRESS' | translate }}</div>
             }
           </div>
 
           <div class="form-row-2">
             <div class="form-group">
-              <label class="form-label">Phone Number <span class="req">*</span></label>
+              <label class="form-label">{{ 'CREATE_TICKET.PHONE_LABEL' | translate }} <span class="req">*</span></label>
               <input type="tel" class="form-control" formControlName="tenantPhone"
-                     placeholder="+1 (555) 000-0000" />
+                     [placeholder]="'CREATE_TICKET.PHONE_PLACEHOLDER' | translate" />
               @if (contactForm.get('tenantPhone')?.invalid && contactForm.get('tenantPhone')?.touched) {
-                <div class="form-error"><i class="fa-solid fa-circle-exclamation me-1"></i>Phone number is required.</div>
+                <div class="form-error"><i class="fa-solid fa-circle-exclamation me-1"></i>{{ 'CREATE_TICKET.ERR_PHONE' | translate }}</div>
               }
             </div>
             <div class="form-group">
-              <label class="form-label">Email Address <span class="req">*</span></label>
+              <label class="form-label">{{ 'CREATE_TICKET.EMAIL_LABEL' | translate }} <span class="req">*</span></label>
               <input type="email" class="form-control" formControlName="tenantEmail"
-                     placeholder="you@example.com" />
+                     [placeholder]="'CREATE_TICKET.EMAIL_PLACEHOLDER' | translate" />
               @if (contactForm.get('tenantEmail')?.invalid && contactForm.get('tenantEmail')?.touched) {
-                <div class="form-error"><i class="fa-solid fa-circle-exclamation me-1"></i>Valid email address is required.</div>
+                <div class="form-error"><i class="fa-solid fa-circle-exclamation me-1"></i>{{ 'CREATE_TICKET.ERR_EMAIL' | translate }}</div>
               }
             </div>
           </div>
@@ -259,19 +259,19 @@
             <div class="ai-polling-banner">
               <div class="spinner-border spinner-border-sm text-primary me-3" role="status"></div>
               <div>
-                <strong>Submitted!</strong>
+                <strong>{{ 'CREATE_TICKET.SUBMITTED_BANNER' | translate }}</strong>
                 <span class="ms-2 text-muted">{{ pollingMessage() }}</span>
               </div>
             </div>
           }
 
           <div class="step-actions">
-            <button type="button" class="btn btn-outline-secondary" (click)="step.set(2)" [disabled]="submitting()">Back</button>
+            <button type="button" class="btn btn-outline-secondary" (click)="step.set(2)" [disabled]="submitting()">{{ 'CREATE_TICKET.BACK_STEP' | translate }}</button>
             <button type="submit" class="btn btn-primary" [disabled]="submitting()">
               @if (submitting()) {
-                <span class="spinner-border spinner-border-sm me-2" role="status"></span>Submitting…
+                <span class="spinner-border spinner-border-sm me-2" role="status"></span>{{ 'CREATE_TICKET.SUBMITTING' | translate }}
               } @else {
-                <i class="fa-solid fa-paper-plane me-2"></i>Submit Ticket
+                <i class="fa-solid fa-paper-plane me-2"></i>{{ 'CREATE_TICKET.SUBMIT' | translate }}
               }
             </button>
           </div>

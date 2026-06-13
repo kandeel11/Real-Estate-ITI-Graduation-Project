@@ -15,7 +15,7 @@
 
       <div class="cm-footer">
         <button class="btn btn-outline-secondary" (click)="cancelled.emit()" [disabled]="loading">
-          Cancel
+          {{ 'COMMON.CANCEL' | translate }}
         </button>
         <button class="btn {{ confirmClass }}" (click)="confirmed.emit()" [disabled]="loading">
           @if (loading) {

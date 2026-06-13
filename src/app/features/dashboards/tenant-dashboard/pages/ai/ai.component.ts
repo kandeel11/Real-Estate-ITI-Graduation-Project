@@ -1,7 +1,8 @@
-import { Component, inject, signal, ElementRef, ViewChild, AfterViewChecked } from '@angular/core';
+import { Component, inject, signal, ElementRef, ViewChild, AfterViewChecked, OnInit } from '@angular/core';
 import { FormsModule } from '@angular/forms';
 import { CurrencyPipe } from '@angular/common';
 import { finalize } from 'rxjs';
+import { TranslatePipe, TranslateService } from '@ngx-translate/core';
 import { AiChatMessage, AiService, SavedSearch, SmartSearchResult } from '../../services/ai.service';
 
 interface ChatEntry {
@@ -12,14 +13,15 @@ interface ChatEntry {
 @Component({
   selector: 'app-ai',
   standalone: true,
-  imports: [FormsModule, CurrencyPipe],
+  imports: [FormsModule, CurrencyPipe, TranslatePipe],
   templateUrl: './ai.component.html',
   styleUrl: './ai.component.css',
 })
-export class AiComponent implements AfterViewChecked {
+export class AiComponent implements AfterViewChecked, OnInit {
   @ViewChild('messagesContainer') messagesContainer?: ElementRef<HTMLDivElement>;
 
   private readonly aiService = inject(AiService);
+  private readonly translate = inject(TranslateService);
 
   protected activeTab = signal<'search' | 'chat'>('search');
 
@@ -32,13 +34,17 @@ export class AiComponent implements AfterViewChecked {
   protected saveLoading = signal(false);
 
   // Chat state
-  protected messages = signal<ChatEntry[]>([
-    { role: 'assistant', content: 'Hi! I\'m your AI assistant. Ask me anything — about rental properties, lease terms, market trends, or anything else you need help with.' },
-  ]);
+  protected messages = signal<ChatEntry[]>([]);
   protected chatInput = '';
   protected chatLoading = signal(false);
 
   private shouldScroll = false;
+
+  ngOnInit(): void {
+    this.messages.set([
+      { role: 'assistant', content: this.translate.instant('TENANT_AI.CHAT_INTRO') },
+    ]);
+  }
 
   ngAfterViewChecked(): void {
     if (this.shouldScroll && this.messagesContainer) {

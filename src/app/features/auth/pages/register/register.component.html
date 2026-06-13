@@ -9,23 +9,21 @@
         <span>Estatein</span>
       </a>
       <div class="login-brand__body">
-        <h2 class="login-brand__title">Start your real estate journey today</h2>
-        <p class="login-brand__subtitle">
-          Create your free account and connect with thousands of properties and trusted brokers.
-        </p>
+        <h2 class="login-brand__title">{{ 'AUTH.REGISTER.BRAND_TITLE' | translate }}</h2>
+        <p class="login-brand__subtitle">{{ 'AUTH.REGISTER.BRAND_SUBTITLE' | translate }}</p>
       </div>
       <div class="login-brand__stats">
         <div class="login-brand__stat">
           <span class="login-brand__stat-value">200+</span>
-          <span class="login-brand__stat-label">Happy Customers</span>
+          <span class="login-brand__stat-label">{{ 'AUTH.BRAND.STATS.CUSTOMERS' | translate }}</span>
         </div>
         <div class="login-brand__stat">
           <span class="login-brand__stat-value">10k+</span>
-          <span class="login-brand__stat-label">Properties Listed</span>
+          <span class="login-brand__stat-label">{{ 'AUTH.BRAND.STATS.PROPERTIES' | translate }}</span>
         </div>
         <div class="login-brand__stat">
           <span class="login-brand__stat-value">16+</span>
-          <span class="login-brand__stat-label">Years Experience</span>
+          <span class="login-brand__stat-label">{{ 'AUTH.BRAND.STATS.EXPERIENCE' | translate }}</span>
         </div>
       </div>
     </div>
@@ -42,8 +40,8 @@
     <div class="login-card">
 
       <div class="login-card__header">
-        <h1 class="login-card__title">Create an account</h1>
-        <p class="login-card__subtitle">Join Estatein — it's free</p>
+        <h1 class="login-card__title">{{ 'AUTH.REGISTER.TITLE' | translate }}</h1>
+        <p class="login-card__subtitle">{{ 'AUTH.REGISTER.SUBTITLE' | translate }}</p>
       </div>
 
       <form [formGroup]="form" (ngSubmit)="onSubmit()" novalidate class="login-card__form">
@@ -56,52 +54,52 @@
 
         <!-- Full name -->
         <div class="lf">
-          <label class="lf__label" for="fullName">Full name</label>
+          <label class="lf__label" for="fullName">{{ 'AUTH.REGISTER.FULL_NAME' | translate }}</label>
           <div class="lf__wrap" [class.lf__wrap--err]="fullName.touched && fullName.invalid">
             <i class="fa-regular fa-user lf__icon"></i>
             <input id="fullName" type="text" formControlName="fullName" class="lf__input"
-              placeholder="Your full name" autocomplete="name" />
+              [placeholder]="'AUTH.REGISTER.FULL_NAME_PLACEHOLDER' | translate" autocomplete="name" />
           </div>
           @if (fullName.touched && fullName.errors) {
             <p class="lf__error">
-              @if (fullName.errors['required']) { Name is required. }
-              @else { Name must be at least 2 characters. }
+              @if (fullName.errors['required']) { {{ 'AUTH.REGISTER.ERRORS.NAME_REQUIRED' | translate }} }
+              @else { {{ 'AUTH.REGISTER.ERRORS.NAME_MIN' | translate }} }
             </p>
           }
         </div>
 
         <!-- Email -->
         <div class="lf">
-          <label class="lf__label" for="email">Email address</label>
+          <label class="lf__label" for="email">{{ 'AUTH.REGISTER.EMAIL' | translate }}</label>
           <div class="lf__wrap" [class.lf__wrap--err]="email.touched && email.invalid">
             <i class="fa-regular fa-envelope lf__icon"></i>
             <input id="email" type="email" formControlName="email" class="lf__input"
-              placeholder="you@example.com" autocomplete="email" />
+              [placeholder]="'AUTH.REGISTER.EMAIL_PLACEHOLDER' | translate" autocomplete="email" />
           </div>
           @if (email.touched && email.errors) {
             <p class="lf__error">
-              @if (email.errors['required']) { Email is required. }
-              @else { Please enter a valid email address. }
+              @if (email.errors['required']) { {{ 'AUTH.REGISTER.ERRORS.EMAIL_REQUIRED' | translate }} }
+              @else { {{ 'AUTH.REGISTER.ERRORS.EMAIL_INVALID' | translate }} }
             </p>
           }
         </div>
 
         <!-- Phone -->
         <div class="lf">
-          <label class="lf__label" for="phone">Phone number</label>
+          <label class="lf__label" for="phone">{{ 'AUTH.REGISTER.PHONE' | translate }}</label>
           <div class="lf__wrap" [class.lf__wrap--err]="phone.touched && phone.invalid">
             <i class="fa-solid fa-phone lf__icon"></i>
             <input id="phone" type="tel" formControlName="phone" class="lf__input"
-              placeholder="+20 10 0000 0000" autocomplete="tel" />
+              [placeholder]="'AUTH.REGISTER.PHONE_PLACEHOLDER' | translate" autocomplete="tel" />
           </div>
           @if (phone.touched && phone.errors) {
-            <p class="lf__error">Please enter a valid phone number.</p>
+            <p class="lf__error">{{ 'AUTH.REGISTER.ERRORS.PHONE_INVALID' | translate }}</p>
           }
         </div>
 
         <!-- Role -->
         <div class="lf">
-          <label class="lf__label" for="role">I am a…</label>
+          <label class="lf__label" for="role">{{ 'AUTH.REGISTER.ROLE' | translate }}</label>
           <div class="lf__wrap" [class.lf__wrap--err]="role.touched && role.invalid">
             <i class="fa-solid fa-id-badge lf__icon"></i>
             <select id="role" formControlName="role" class="lf__input lf__select">
@@ -114,11 +112,11 @@
 
         <!-- Password -->
         <div class="lf">
-          <label class="lf__label" for="password">Password</label>
+          <label class="lf__label" for="password">{{ 'AUTH.REGISTER.PASSWORD' | translate }}</label>
           <div class="lf__wrap" [class.lf__wrap--err]="password.touched && password.invalid">
             <i class="fa-solid fa-lock lf__icon"></i>
             <input id="password" [type]="showPassword ? 'text' : 'password'" formControlName="password"
-              class="lf__input" placeholder="Min. 8 characters" autocomplete="new-password" />
+              class="lf__input" [placeholder]="'AUTH.REGISTER.PASSWORD_PLACEHOLDER' | translate" autocomplete="new-password" />
             <button type="button" class="lf__toggle" (click)="showPassword = !showPassword"
               [attr.aria-label]="showPassword ? 'Hide password' : 'Show password'">
               <i [class]="'fa-regular ' + (showPassword ? 'fa-eye-slash' : 'fa-eye')"></i>
@@ -126,26 +124,26 @@
           </div>
           @if (password.touched && password.errors) {
             <p class="lf__error">
-              @if (password.errors['required']) { Password is required. }
-              @else { Password must be at least 8 characters. }
+              @if (password.errors['required']) { {{ 'AUTH.REGISTER.ERRORS.PASSWORD_REQUIRED' | translate }} }
+              @else { {{ 'AUTH.REGISTER.ERRORS.PASSWORD_MIN' | translate }} }
             </p>
           }
         </div>
 
         <!-- Confirm password -->
         <div class="lf">
-          <label class="lf__label" for="confirm">Confirm password</label>
+          <label class="lf__label" for="confirm">{{ 'AUTH.REGISTER.CONFIRM' | translate }}</label>
           <div class="lf__wrap" [class.lf__wrap--err]="confirm.touched && (confirm.invalid || form.errors?.['passwordMismatch'])">
             <i class="fa-solid fa-lock lf__icon"></i>
             <input id="confirm" [type]="showConfirm ? 'text' : 'password'" formControlName="confirm"
-              class="lf__input" placeholder="Repeat your password" autocomplete="new-password" />
+              class="lf__input" [placeholder]="'AUTH.REGISTER.CONFIRM_PLACEHOLDER' | translate" autocomplete="new-password" />
             <button type="button" class="lf__toggle" (click)="showConfirm = !showConfirm"
               [attr.aria-label]="showConfirm ? 'Hide' : 'Show'">
               <i [class]="'fa-regular ' + (showConfirm ? 'fa-eye-slash' : 'fa-eye')"></i>
             </button>
           </div>
           @if (confirm.touched && form.errors?.['passwordMismatch']) {
-            <p class="lf__error">Passwords do not match.</p>
+            <p class="lf__error">{{ 'AUTH.REGISTER.ERRORS.PASSWORDS_MISMATCH' | translate }}</p>
           }
         </div>
 
@@ -153,17 +151,17 @@
         <button type="submit" class="btn btn-primary login-card__submit" [disabled]="loading">
           @if (loading) {
             <span class="spinner-border spinner-border-sm me-2" aria-hidden="true"></span>
-            Creating account…
+            {{ 'AUTH.REGISTER.SUBMITTING' | translate }}
           } @else {
-            Create account&nbsp;<i class="fa-solid fa-arrow-right"></i>
+            {{ 'AUTH.REGISTER.SUBMIT' | translate }}&nbsp;<i class="fa-solid fa-arrow-right"></i>
           }
         </button>
 
       </form>
 
       <p class="login-card__footer">
-        Already have an account?
-        <a routerLink="/auth/login" class="login-card__footer-link">Sign in</a>
+        {{ 'AUTH.REGISTER.ALREADY_ACCOUNT' | translate }}
+        <a routerLink="/auth/login" class="login-card__footer-link">{{ 'AUTH.REGISTER.SIGN_IN' | translate }}</a>
       </p>
 
     </div>

@@ -1,26 +1,26 @@
 import { Component, HostListener, computed, inject, signal } from '@angular/core';
 import { RouterLink, RouterLinkActive, Router } from '@angular/router';
+import { TranslatePipe } from '@ngx-translate/core';
 import { AuthService } from '../../core/services/auth.service';
+import { LanguageService } from '../../core/services/language.service';
 
 @Component({
   selector: 'app-navbar',
-  imports: [RouterLink, RouterLinkActive],
+  imports: [RouterLink, RouterLinkActive, TranslatePipe],
   templateUrl: './navbar.component.html',
   styleUrl: './navbar.component.css'
 })
 export class NavbarComponent {
   private readonly authService = inject(AuthService);
   private readonly router = inject(Router);
+  readonly lang = inject(LanguageService);
 
   readonly authenticated = this.authService.authenticated;
   readonly user = this.authService.user;
   scrolled = signal(false);
   menuOpen = signal(false);
 
-  /** Avatar dropdown is a tenant-only experience; other roles keep the plain logout button. */
   readonly isTenant = computed(() => this.authService.userRole() === 'tenant');
-
-  /** Owners have no dashboard — their listings live on the public site. */
   readonly isOwner = computed(() => this.authService.userRole() === 'owner');
 
   readonly initials = computed(() => {
@@ -39,7 +39,6 @@ export class NavbarComponent {
     this.scrolled.set(window.scrollY > 10);
   }
 
-  // Close the menu when clicking anywhere outside it
   @HostListener('document:click')
   onDocumentClick() {
     this.menuOpen.set(false);

@@ -1,6 +1,7 @@
 import { Component, OnInit, inject, signal } from '@angular/core';
 import { RouterLink } from '@angular/router';
 import { DatePipe, CurrencyPipe } from '@angular/common';
+import { TranslatePipe } from '@ngx-translate/core';
 import { finalize } from 'rxjs';
 import { LeaseService, RentedPropertyItem, ApiPropertyMedia, ApiAmenity } from '../../services/lease.service';
 
@@ -29,7 +30,7 @@ interface PropertyView {
 @Component({
   selector: 'app-my-property',
   standalone: true,
-  imports: [RouterLink, DatePipe, CurrencyPipe],
+  imports: [RouterLink, DatePipe, CurrencyPipe, TranslatePipe],
   templateUrl: './my-property.component.html',
   styleUrl: './my-property.component.css',
 })

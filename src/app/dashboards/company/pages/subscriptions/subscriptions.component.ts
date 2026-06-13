@@ -7,6 +7,7 @@
 
 import { Component, inject, signal, computed, OnInit } from '@angular/core';
 import { DatePipe, CurrencyPipe } from '@angular/common';
+import { TranslatePipe } from '@ngx-translate/core';
 import { CompanySubscriptionService } from '../../services/company-subscription.service';
 import { UsageMeterComponent } from '../../../../shared/components/usage-meter/usage-meter.component';
 import { ConfirmModalComponent } from '../../../../shared/components/modal/confirm-modal.component';
@@ -20,7 +21,7 @@ import {
 @Component({
   selector: 'app-company-subscriptions',
   standalone: true,
-  imports: [DatePipe, CurrencyPipe, UsageMeterComponent, ConfirmModalComponent],
+  imports: [DatePipe, CurrencyPipe, UsageMeterComponent, ConfirmModalComponent, TranslatePipe],
   templateUrl: './subscriptions.component.html',
   styleUrl: './subscriptions.component.css',
 })
@@ -40,11 +41,11 @@ export class SubscriptionsComponent implements OnInit {
     // AI price estimation was cut from the product — not shown even though
     // the backend still returns the flag
     return [
-      { label: 'Advanced analytics', on: !!sub.hasAdvancedAnalytics },
-      { label: 'Featured listings', on: !!sub.hasFeaturedListings },
-      { label: 'AI chatbot', on: !!sub.hasAiChatbot },
-      { label: 'AI lead prioritization', on: !!sub.hasAiLeadPrioritization },
-      { label: 'AI description generator', on: !!sub.hasAiDescriptionGenerator },
+      { labelKey: 'SUBSCRIPTIONS.FEAT_ANALYTICS', on: !!sub.hasAdvancedAnalytics },
+      { labelKey: 'SUBSCRIPTIONS.FEAT_FEATURED', on: !!sub.hasFeaturedListings },
+      { labelKey: 'SUBSCRIPTIONS.FEAT_CHATBOT', on: !!sub.hasAiChatbot },
+      { labelKey: 'SUBSCRIPTIONS.FEAT_LEAD', on: !!sub.hasAiLeadPrioritization },
+      { labelKey: 'SUBSCRIPTIONS.FEAT_DESC_GEN', on: !!sub.hasAiDescriptionGenerator },
     ];
   });
 

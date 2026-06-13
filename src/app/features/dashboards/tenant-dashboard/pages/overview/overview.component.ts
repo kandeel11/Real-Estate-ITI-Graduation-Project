@@ -1,6 +1,7 @@
 import { Component, OnInit, inject, signal, computed } from '@angular/core';
 import { RouterLink } from '@angular/router';
 import { DatePipe, CurrencyPipe } from '@angular/common';
+import { TranslatePipe } from '@ngx-translate/core';
 import { forkJoin, finalize } from 'rxjs';
 import { AuthService } from '../../../../../core/services/auth.service';
 import { LeaseService } from '../../services/lease.service';
@@ -14,7 +15,7 @@ interface ActiveLeaseView extends ApiActiveLease {
 @Component({
   selector: 'app-overview',
   standalone: true,
-  imports: [RouterLink, DatePipe, CurrencyPipe],
+  imports: [RouterLink, DatePipe, CurrencyPipe, TranslatePipe],
   templateUrl: './overview.component.html',
   styleUrl: './overview.component.css',
 })

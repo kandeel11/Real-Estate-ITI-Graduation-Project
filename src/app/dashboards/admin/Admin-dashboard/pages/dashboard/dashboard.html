@@ -1,8 +1,8 @@
 <div class="dashboard">
     <!-- Header -->
     <div class="page-head">
-        <h1>Overview</h1>
-        <p>Portfolio performance at a glance.</p>
+        <h1>{{ 'ADMIN.DASHBOARD.TITLE' | translate }}</h1>
+        <p>{{ 'ADMIN.DASHBOARD.SUBTITLE' | translate }}</p>
     </div>
 
     <!-- Stats -->
@@ -10,46 +10,46 @@
         @if (stats(); as s) {
         <div class="stat">
             <div class="stat__head">
-                <span class="stat__label">Total Revenue</span>
+                <span class="stat__label">{{ 'ADMIN.DASHBOARD.STAT_REVENUE' | translate }}</span>
                 <div class="stat__icon"><i class="fa-regular fa-credit-card"></i></div>
             </div>
             <h2 class="stat__value">${{ formatMoney(s.monthlyRevenue) }}</h2>
             <span class="stat__trend up">
                 <i class="fa-solid fa-arrow-trend-up"></i>
-                +{{ s.revenueGrowth }}% vs last month
+                {{ 'ADMIN.DASHBOARD.VS_LAST_MONTH' | translate: { value: s.revenueGrowth } }}
             </span>
         </div>
 
         <div class="stat">
             <div class="stat__head">
-                <span class="stat__label">Total Expenses</span>
+                <span class="stat__label">{{ 'ADMIN.DASHBOARD.STAT_EXPENSES' | translate }}</span>
                 <div class="stat__icon"><i class="fa-regular fa-money-bill-1"></i></div>
             </div>
             <h2 class="stat__value">$82,450</h2>
             <span class="stat__trend down">
                 <i class="fa-solid fa-arrow-trend-up"></i>
-                +2.1% vs last month
+                {{ 'ADMIN.DASHBOARD.VS_LAST_MONTH' | translate: { value: '2.1' } }}
             </span>
         </div>
 
         <div class="stat">
             <div class="stat__head">
-                <span class="stat__label">Properties Active</span>
+                <span class="stat__label">{{ 'ADMIN.DASHBOARD.STAT_PROPERTIES' | translate }}</span>
                 <div class="stat__icon"><i class="fa-solid fa-house"></i></div>
             </div>
             <h2 class="stat__value">42</h2>
-            <span class="stat__trend neutral">Across 3 regions</span>
+            <span class="stat__trend neutral">{{ 'ADMIN.DASHBOARD.REGIONS' | translate }}</span>
         </div>
 
         <div class="stat">
             <div class="stat__head">
-                <span class="stat__label">Net Yield</span>
+                <span class="stat__label">{{ 'ADMIN.DASHBOARD.STAT_YIELD' | translate }}</span>
                 <div class="stat__icon"><i class="fa-solid fa-chart-simple"></i></div>
             </div>
             <h2 class="stat__value">6.8%</h2>
             <span class="stat__trend up">
                 <i class="fa-solid fa-arrow-trend-up"></i>
-                +0.4% YoY
+                {{ 'ADMIN.DASHBOARD.YOY' | translate: { value: '0.4' } }}
             </span>
         </div>
         } @else {
@@ -62,17 +62,17 @@
         <div class="card chart-card">
             <div class="card__head">
                 <div>
-                    <h3>Financial Performance</h3>
-                    <span class="muted">Revenue vs Expenses (YTD)</span>
+                    <h3>{{ 'ADMIN.DASHBOARD.FINANCIAL_TITLE' | translate }}</h3>
+                    <span class="muted">{{ 'ADMIN.DASHBOARD.FINANCIAL_SUBTITLE' | translate }}</span>
                 </div>
                 <div class="head-right">
                     <div class="legend">
-                        <span class="legend-item"><span class="dot expenses"></span> Expenses</span>
-                        <span class="legend-item"><span class="dot revenue"></span> Revenue</span>
+                        <span class="legend-item"><span class="dot expenses"></span> {{ 'ADMIN.DASHBOARD.LEGEND_EXPENSES' | translate }}</span>
+                        <span class="legend-item"><span class="dot revenue"></span> {{ 'ADMIN.DASHBOARD.LEGEND_REVENUE' | translate }}</span>
                     </div>
                     <select class="select-pill">
-                        <option>This Year</option>
-                        <option>Last Year</option>
+                        <option>{{ 'ADMIN.DASHBOARD.THIS_YEAR' | translate }}</option>
+                        <option>{{ 'ADMIN.DASHBOARD.LAST_YEAR' | translate }}</option>
                     </select>
                 </div>
             </div>
@@ -88,8 +88,8 @@
         <div class="card occupancy-card">
             <div class="card__head">
                 <div>
-                    <h3>Occupancy Rate</h3>
-                    <span class="muted">Current Portfolio Status</span>
+                    <h3>{{ 'ADMIN.DASHBOARD.OCCUPANCY_TITLE' | translate }}</h3>
+                    <span class="muted">{{ 'ADMIN.DASHBOARD.OCCUPANCY_SUBTITLE' | translate }}</span>
                 </div>
             </div>
             @if (occupancyChart) {
@@ -101,8 +101,8 @@
             </div>
             }
             <div class="occupancy-legend">
-                <div class="leg"><span class="dot occupied"></span> Occupied ({{ occupiedCount() }})</div>
-                <div class="leg"><span class="dot vacant"></span> Vacant ({{ vacantCount() }})</div>
+                <div class="leg"><span class="dot occupied"></span> {{ 'ADMIN.DASHBOARD.OCCUPIED' | translate: { n: occupiedCount() } }}</div>
+                <div class="leg"><span class="dot vacant"></span> {{ 'ADMIN.DASHBOARD.VACANT' | translate: { n: vacantCount() } }}</div>
             </div>
         </div>
     </div>
@@ -113,9 +113,9 @@
         <div class="card">
             <div class="card__head">
                 <div>
-                    <h3>Recent Rent Activity</h3>
+                    <h3>{{ 'ADMIN.DASHBOARD.RENT_TITLE' | translate }}</h3>
                 </div>
-                <a class="link">View All</a>
+                <a class="link">{{ 'ADMIN.DASHBOARD.VIEW_ALL' | translate }}</a>
             </div>
             <div class="activity-list">
                 @for (p of recentPayments(); track p.id) {
@@ -130,8 +130,8 @@
                     </div>
                     <div class="activity-info">
                         <strong>
-                            @if (p.status === 'paid') { Rent Received: }
-                            @else { Payment Processed: }
+                            @if (p.status === 'paid') { {{ 'ADMIN.DASHBOARD.RENT_RECEIVED' | translate }} }
+                            @else { {{ 'ADMIN.DASHBOARD.PAYMENT_PROCESSED' | translate }} }
                             {{ p.propertyTitle.split(' - ')[0] }}
                         </strong>
                         <span>{{ p.tenantName }} · {{ p.paidDate ? timeAgo(p.paidDate) : timeAgo(p.dueDate) }}</span>
@@ -148,9 +148,9 @@
         <div class="card">
             <div class="card__head">
                 <div>
-                    <h3>Needs Attention</h3>
+                    <h3>{{ 'ADMIN.DASHBOARD.ATTENTION_TITLE' | translate }}</h3>
                 </div>
-                <span class="badge-count">{{ pendingProperties().length }} Items</span>
+                <span class="badge-count">{{ 'ADMIN.DASHBOARD.ITEMS' | translate: { n: pendingProperties().length } }}</span>
             </div>
             <div class="attention-list">
                 @for (p of pendingProperties(); track p.id; let i = $index) {
@@ -166,21 +166,21 @@
                         <div class="attention-top">
                             <strong>{{ p.title }}</strong>
                             <span class="attention-badge" [class.renewal]="i === 0" [class.urgent]="i === 1">
-                                {{ i === 0 ? 'Renewal' : 'Urgent' }}
+                                {{ (i === 0 ? 'ADMIN.DASHBOARD.RENEWAL' : 'ADMIN.DASHBOARD.URGENT') | translate }}
                             </span>
                         </div>
                         <span class="attention-meta">
-                            Unit {{ p.id }}C · {{ i === 0 ? 'Lease Expiring in 30 days' : 'Maintenance Request' }}
+                            Unit {{ p.id }}C · {{ (i === 0 ? 'ADMIN.DASHBOARD.LEASE_EXPIRING' : 'ADMIN.DASHBOARD.MAINTENANCE_REQUEST') | translate }}
                         </span>
                         @if (p.description && i === 1) {
                         <p class="attention-desc">{{ p.description }}</p>
                         }
                         <div class="attention-actions">
                             <button class="btn-primary-sm" (click)="approve(p)">
-                                @if (i === 0) { Send Offer } @else { Approve Vendor }
+                                {{ (i === 0 ? 'ADMIN.DASHBOARD.SEND_OFFER' : 'ADMIN.DASHBOARD.APPROVE_VENDOR') | translate }}
                             </button>
                             @if (i === 0) {
-                            <button class="btn-outline-sm">Contact Tenant</button>
+                            <button class="btn-outline-sm">{{ 'ADMIN.DASHBOARD.CONTACT_TENANT' | translate }}</button>
                             }
                         </div>
                     </div>

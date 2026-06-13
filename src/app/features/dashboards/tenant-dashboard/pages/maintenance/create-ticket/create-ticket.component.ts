@@ -14,6 +14,7 @@ import { MaintenanceService, TicketPriority } from '../../../services/maintenanc
 import { LeaseService, ApiLease } from '../../../services/lease.service';
 import { ProfileService } from '../../../services/profile.service';
 import { ToastService } from '../../../../../../shared/components/toast/toast.service';
+import { TranslatePipe } from '@ngx-translate/core';
 
 export interface UploadedFileItem {
   file: File;
@@ -26,7 +27,7 @@ export interface UploadedFileItem {
 @Component({
   selector: 'app-create-ticket',
   standalone: true,
-  imports: [ReactiveFormsModule, RouterLink, SlicePipe],
+  imports: [ReactiveFormsModule, RouterLink, SlicePipe, TranslatePipe],
   templateUrl: './create-ticket.component.html',
   styleUrl: './create-ticket.component.css',
 })

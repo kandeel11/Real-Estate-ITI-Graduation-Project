@@ -3,15 +3,15 @@
     <aside class="sidebar">
         <div class="sidebar-brand">
             <i class="fa-solid fa-building brand-icon"></i>
-            <span class="brand-name">Company Hub</span>
+            <span class="brand-name">{{ 'COMPANY_NAV.BRAND' | translate }}</span>
         </div>
 
         <nav class="sidebar-nav" aria-label="Dashboard navigation">
             @for (item of navItems; track item.route) {
             <a class="nav-item" [routerLink]="item.route" routerLinkActive="active"
-                [routerLinkActiveOptions]="{ exact: !!item.exact }" [attr.aria-label]="item.label">
+                [routerLinkActiveOptions]="{ exact: !!item.exact }" [attr.aria-label]="item.label | translate">
                 <i [class]="item.icon"></i>
-                <span class="nav-label">{{ item.label }}</span>
+                <span class="nav-label">{{ item.label | translate }}</span>
             </a>
             }
         </nav>
@@ -20,9 +20,9 @@
             <div class="user-avatar-sm" aria-hidden="true">{{ userInitials }}</div>
             <div class="user-info">
                 <span class="user-name">{{ userName }}</span>
-                <span class="user-role">Company Manager</span>
+                <span class="user-role">{{ 'COMPANY_NAV.ROLE' | translate }}</span>
             </div>
-            <button class="btn-logout" (click)="logout()" title="Sign out" aria-label="Sign out">
+            <button class="btn-logout" (click)="logout()" [title]="'COMPANY_NAV.LOGOUT' | translate" aria-label="Sign out">
                 <i class="fa-solid fa-right-from-bracket"></i>
             </button>
         </div>
@@ -44,13 +44,13 @@
         <span class="tab-icon-wrap">
             <i [class]="item.icon"></i>
         </span>
-        <span class="tab-label">{{ item.label }}</span>
+        <span class="tab-label">{{ item.label | translate }}</span>
     </a>
     }
     <button class="tab-item tab-logout" (click)="logout()" aria-label="Sign out">
         <span class="tab-icon-wrap">
             <i class="fa-solid fa-right-from-bracket"></i>
         </span>
-        <span class="tab-label">Logout</span>
+        <span class="tab-label">{{ 'COMPANY_NAV.LOGOUT' | translate }}</span>
     </button>
 </nav>

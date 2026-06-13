@@ -1,6 +1,6 @@
 <div class="login-page">
 
-  <!-- Brand panel (reuses login styles) -->
+  <!-- Brand panel -->
   <div class="login-brand d-none d-lg-flex">
     <div class="login-brand__overlay"></div>
     <div class="login-brand__content">
@@ -9,23 +9,21 @@
         <span>Estatein</span>
       </a>
       <div class="login-brand__body">
-        <h2 class="login-brand__title">One step away from your new home</h2>
-        <p class="login-brand__subtitle">
-          Enter the 6-digit code we sent to your email to activate your account.
-        </p>
+        <h2 class="login-brand__title">{{ 'AUTH.VERIFY_OTP.BRAND_TITLE' | translate }}</h2>
+        <p class="login-brand__subtitle">{{ 'AUTH.VERIFY_OTP.BRAND_SUBTITLE' | translate }}</p>
       </div>
       <div class="login-brand__stats">
         <div class="login-brand__stat">
           <span class="login-brand__stat-value">200+</span>
-          <span class="login-brand__stat-label">Happy Customers</span>
+          <span class="login-brand__stat-label">{{ 'AUTH.BRAND.STATS.CUSTOMERS' | translate }}</span>
         </div>
         <div class="login-brand__stat">
           <span class="login-brand__stat-value">10k+</span>
-          <span class="login-brand__stat-label">Properties Listed</span>
+          <span class="login-brand__stat-label">{{ 'AUTH.BRAND.STATS.PROPERTIES' | translate }}</span>
         </div>
         <div class="login-brand__stat">
           <span class="login-brand__stat-value">16+</span>
-          <span class="login-brand__stat-label">Years Experience</span>
+          <span class="login-brand__stat-label">{{ 'AUTH.BRAND.STATS.EXPERIENCE' | translate }}</span>
         </div>
       </div>
     </div>
@@ -45,9 +43,9 @@
         <div class="otp-icon">
           <i class="fa-solid fa-envelope-circle-check"></i>
         </div>
-        <h1 class="login-card__title">Check your email</h1>
+        <h1 class="login-card__title">{{ 'AUTH.VERIFY_OTP.TITLE' | translate }}</h1>
         <p class="login-card__subtitle">
-          We sent a 6-digit verification code to<br />
+          {{ 'AUTH.VERIFY_OTP.SUBTITLE' | translate }}<br />
           <strong>{{ email }}</strong>
         </p>
       </div>
@@ -67,24 +65,16 @@
 
         <!-- Code input -->
         <div class="lf">
-          <label class="lf__label" for="code">Verification code</label>
+          <label class="lf__label" for="code">{{ 'AUTH.VERIFY_OTP.CODE_LABEL' | translate }}</label>
           <div class="lf__wrap" [class.lf__wrap--err]="code.touched && code.invalid">
             <i class="fa-solid fa-key lf__icon"></i>
-            <input
-              id="code"
-              type="text"
-              inputmode="numeric"
-              maxlength="6"
-              formControlName="code"
-              class="lf__input otp-input"
-              placeholder="000000"
-              autocomplete="one-time-code"
-            />
+            <input id="code" type="text" inputmode="numeric" maxlength="6" formControlName="code"
+              class="lf__input otp-input" placeholder="000000" autocomplete="one-time-code" />
           </div>
           @if (code.touched && code.errors) {
             <p class="lf__error">
-              @if (code.errors['required']) { Code is required. }
-              @else { Please enter the 6-digit code from your email. }
+              @if (code.errors['required']) { {{ 'AUTH.VERIFY_OTP.ERRORS.CODE_REQUIRED' | translate }} }
+              @else { {{ 'AUTH.VERIFY_OTP.ERRORS.CODE_INVALID' | translate }} }
             </p>
           }
         </div>
@@ -93,9 +83,9 @@
         <button type="submit" class="btn btn-primary login-card__submit" [disabled]="loading">
           @if (loading) {
             <span class="spinner-border spinner-border-sm me-2" aria-hidden="true"></span>
-            Verifying…
+            {{ 'AUTH.VERIFY_OTP.SUBMITTING' | translate }}
           } @else {
-            Verify email&nbsp;<i class="fa-solid fa-arrow-right"></i>
+            {{ 'AUTH.VERIFY_OTP.SUBMIT' | translate }}&nbsp;<i class="fa-solid fa-arrow-right"></i>
           }
         </button>
 
@@ -103,23 +93,20 @@
 
       <!-- Resend -->
       <p class="login-card__footer">
-        Didn't get the code?
+        {{ 'AUTH.VERIFY_OTP.DIDNT_GET' | translate }}
         @if (resendCooldown > 0) {
-          <span class="otp-cooldown">Resend in {{ resendCooldown }}s</span>
+          <span class="otp-cooldown">{{ 'AUTH.VERIFY_OTP.RESEND_COUNTDOWN' | translate: { seconds: resendCooldown } }}</span>
         } @else {
-          <button
-            type="button"
-            class="btn-link-inline"
-            [disabled]="resending"
-            (click)="resend()"
-          >
-            @if (resending) { Sending… } @else { Resend code }
+          <button type="button" class="btn-link-inline" [disabled]="resending" (click)="resend()">
+            @if (resending) { {{ 'AUTH.VERIFY_OTP.RESENDING' | translate }} }
+            @else { {{ 'AUTH.VERIFY_OTP.RESEND' | translate }} }
           </button>
         }
       </p>
 
       <p class="login-card__footer">
-        Wrong email? <a routerLink="/auth/register" class="login-card__footer-link">Go back</a>
+        {{ 'AUTH.VERIFY_OTP.WRONG_EMAIL' | translate }}
+        <a routerLink="/auth/register" class="login-card__footer-link">{{ 'AUTH.VERIFY_OTP.GO_BACK' | translate }}</a>
       </p>
 
     </div>

@@ -6,6 +6,7 @@
 
 import { Component, inject, signal, computed, OnInit } from '@angular/core';
 import { DatePipe } from '@angular/common';
+import { TranslatePipe } from '@ngx-translate/core';
 import { CompanyService } from '../../services/company.service';
 import { CompanyInquiry } from '../../../../shared/models/company.model';
 
@@ -21,7 +22,7 @@ const STATUS_BADGES: Record<string, string> = {
 @Component({
   selector: 'app-company-inquiries',
   standalone: true,
-  imports: [DatePipe],
+  imports: [DatePipe, TranslatePipe],
   templateUrl: './inquiries.component.html',
   styleUrl: './inquiries.component.css',
 })
@@ -52,11 +53,11 @@ export class InquiriesComponent implements OnInit {
   });
 
   tabs: { label: string; value: StatusFilter }[] = [
-    { label: 'All', value: 'all' },
-    { label: 'Pending', value: 'Pending' },
-    { label: 'Accepted', value: 'Accepted' },
-    { label: 'Closed', value: 'Closed' },
-    { label: 'Expired', value: 'Expired' },
+    { label: 'COMMON.ALL',               value: 'all' },
+    { label: 'COMMON.PENDING',           value: 'Pending' },
+    { label: 'COMPANY_INQUIRIES.ACCEPTED', value: 'Accepted' },
+    { label: 'COMPANY_INQUIRIES.CLOSED',   value: 'Closed' },
+    { label: 'COMPANY_INQUIRIES.EXPIRED',  value: 'Expired' },
   ];
 
   ngOnInit(): void {

@@ -16,11 +16,12 @@ import {
 import { AdminDashboardService } from '../../Services/admin-dashboard';
 import { DashboardStats, PendingProperty, RentPayment, AdminUser } from '../../Models';
 import { DecimalPipe } from '@angular/common';
+import { TranslatePipe } from '@ngx-translate/core';
 
 @Component({
   selector: 'app-admin-dashboard',
   standalone: true,
-  imports: [NgApexchartsModule, DecimalPipe],
+  imports: [NgApexchartsModule, DecimalPipe, TranslatePipe],
   templateUrl: './dashboard.html',
   styleUrls: ['./dashboard.scss'],
 })

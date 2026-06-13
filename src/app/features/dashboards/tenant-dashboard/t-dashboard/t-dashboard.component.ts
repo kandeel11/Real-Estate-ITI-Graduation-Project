@@ -1,6 +1,7 @@
 import { Component, inject } from '@angular/core';
 import { RouterOutlet, RouterLink, RouterLinkActive, Router } from '@angular/router';
 import { trigger, transition, query, style, animate } from '@angular/animations';
+import { TranslatePipe } from '@ngx-translate/core';
 import { NotificationService } from '../services/notification.service';
 import { AuthService } from '../../../../core/services/auth.service';
 import { ToastComponent } from '../../../../shared/components/toast/toast.component';
@@ -17,6 +18,7 @@ const routeAnimations = trigger('routeAnimations', [
 ]);
 
 interface NavItem {
+  id: string;
   label: string;
   icon: string;
   route: string;
@@ -25,7 +27,7 @@ interface NavItem {
 
 @Component({
   selector: 'app-t-dashboard',
-  imports: [RouterOutlet, RouterLink, RouterLinkActive, ToastComponent, NavbarComponent],
+  imports: [RouterOutlet, RouterLink, RouterLinkActive, ToastComponent, NavbarComponent, TranslatePipe],
   templateUrl: './t-dashboard.component.html',
   styleUrl: './t-dashboard.component.css',
   animations: [routeAnimations],
@@ -36,14 +38,14 @@ export class TDashboardComponent {
   private readonly router = inject(Router);
 
   readonly navItems: NavItem[] = [
-    { label: 'Overview',      icon: 'fa-solid fa-gauge-high',           route: '/dashboard',               exact: true },
-    { label: 'My Property',   icon: 'fa-solid fa-building',             route: '/dashboard/property' },
-    { label: 'My Lease',      icon: 'fa-solid fa-file-contract',        route: '/dashboard/lease' },
-    { label: 'Maintenance',   icon: 'fa-solid fa-screwdriver-wrench',   route: '/dashboard/maintenance-requests' },
-    { label: 'Notifications', icon: 'fa-regular fa-bell',               route: '/dashboard/notifications' },
-    { label: 'Ratings',       icon: 'fa-regular fa-star',               route: '/dashboard/ratings' },
-    { label: 'Profile',       icon: 'fa-regular fa-circle-user',        route: '/dashboard/profile' },
-    { label: 'AI Assistant',  icon: 'fa-solid fa-robot',                route: '/dashboard/ai' },
+    { id: 'overview',      label: 'TENANT_NAV.OVERVIEW',      icon: 'fa-solid fa-gauge-high',         route: '/dashboard',                       exact: true },
+    { id: 'property',      label: 'TENANT_NAV.MY_PROPERTY',   icon: 'fa-solid fa-building',           route: '/dashboard/property' },
+    { id: 'lease',         label: 'TENANT_NAV.MY_LEASE',      icon: 'fa-solid fa-file-contract',      route: '/dashboard/lease' },
+    { id: 'maintenance',   label: 'TENANT_NAV.MAINTENANCE',   icon: 'fa-solid fa-screwdriver-wrench', route: '/dashboard/maintenance-requests' },
+    { id: 'notifications', label: 'TENANT_NAV.NOTIFICATIONS', icon: 'fa-regular fa-bell',             route: '/dashboard/notifications' },
+    { id: 'ratings',       label: 'TENANT_NAV.RATINGS',       icon: 'fa-regular fa-star',             route: '/dashboard/ratings' },
+    { id: 'profile',       label: 'TENANT_NAV.PROFILE',       icon: 'fa-regular fa-circle-user',      route: '/dashboard/profile' },
+    { id: 'ai',            label: 'TENANT_NAV.AI_ASSISTANT',  icon: 'fa-solid fa-robot',              route: '/dashboard/ai' },
   ];
 
   get userName(): string {

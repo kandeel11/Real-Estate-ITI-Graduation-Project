@@ -1,9 +1,9 @@
 <div class="ratings-page">
   <div class="page-header">
-    <h1 class="page-title"><i class="fa-regular fa-star me-2"></i>Ratings &amp; Reviews</h1>
+    <h1 class="page-title"><i class="fa-regular fa-star me-2"></i>{{ 'RATINGS.TITLE' | translate }}</h1>
     <div class="pills-row">
-      <button class="pill" [class.pill-active]="activeTab() === 'reviews'" (click)="activeTab.set('reviews')">My Reviews</button>
-      <button class="pill" [class.pill-active]="activeTab() === 'write'" (click)="activeTab.set('write'); submitSuccess.set(false)">Write a Review</button>
+      <button class="pill" [class.pill-active]="activeTab() === 'reviews'" (click)="activeTab.set('reviews')">{{ 'RATINGS.MY_REVIEWS' | translate }}</button>
+      <button class="pill" [class.pill-active]="activeTab() === 'write'" (click)="activeTab.set('write'); submitSuccess.set(false)">{{ 'RATINGS.WRITE_REVIEW' | translate }}</button>
     </div>
   </div>
 
@@ -17,7 +17,7 @@
     <div class="alert alert-danger d-flex align-items-center gap-2">
       <i class="fa-solid fa-triangle-exclamation"></i>
       <span>{{ error() }}</span>
-      <button class="btn btn-sm btn-outline-danger ms-2" (click)="loadRatings()">Try again</button>
+      <button class="btn btn-sm btn-outline-danger ms-2" (click)="loadRatings()">{{ 'RATINGS.TRY_AGAIN' | translate }}</button>
     </div>
   }
 
@@ -27,9 +27,9 @@
     @if (ratings().length === 0) {
       <div class="empty-state">
         <i class="fa-regular fa-star empty-icon"></i>
-        <p class="empty-title">No Reviews Yet</p>
-        <p class="empty-desc">Reviews you submit will appear here.</p>
-        <button class="btn btn-primary btn-sm mt-2" (click)="activeTab.set('write')">Write a Review</button>
+        <p class="empty-title">{{ 'RATINGS.NO_REVIEWS' | translate }}</p>
+        <p class="empty-desc">{{ 'RATINGS.NO_REVIEWS_DESC' | translate }}</p>
+        <button class="btn btn-primary btn-sm mt-2" (click)="activeTab.set('write')">{{ 'RATINGS.WRITE_REVIEW' | translate }}</button>
       </div>
     } @else {
       <div class="reviews-list">
@@ -38,7 +38,7 @@
             <div class="review-header">
               <div>
                 <p class="review-target">{{ r.targetName }}</p>
-                <span class="review-type">{{ r.targetType === 'Property' ? 'Property' : 'Maintenance Company' }}</span>
+                <span class="review-type">{{ r.targetType === 'Property' ? ('RATINGS.PROPERTY' | translate) : ('RATINGS.MAINTENANCE_COMPANY' | translate) }}</span>
               </div>
               <span class="status-badge" [class]="statusClass(r.status)">{{ r.status }}</span>
             </div>
@@ -58,7 +58,7 @@
                 <span class="spinner-border spinner-border-sm text-danger" role="status"></span>
               } @else {
                 <button class="btn btn-sm btn-outline-danger" (click)="deleteRating(r.id)">
-                  <i class="fa-regular fa-trash-can me-1"></i>Delete
+                  <i class="fa-regular fa-trash-can me-1"></i>{{ 'COMMON.DELETE' | translate }}
                 </button>
               }
             </div>
@@ -74,26 +74,26 @@
     @if (submitSuccess()) {
       <div class="create-success">
         <div class="success-icon"><i class="fa-solid fa-circle-check"></i></div>
-        <h2>Review Submitted!</h2>
-        <p>Your review is pending moderation and will appear once approved.</p>
-        <button class="btn btn-primary" (click)="submitSuccess.set(false); activeTab.set('reviews')">View My Reviews</button>
+        <h2>{{ 'RATINGS.REVIEW_SUBMITTED' | translate }}</h2>
+        <p>{{ 'RATINGS.REVIEW_PENDING' | translate }}</p>
+        <button class="btn btn-primary" (click)="submitSuccess.set(false); activeTab.set('reviews')">{{ 'RATINGS.VIEW_MY_REVIEWS' | translate }}</button>
       </div>
     } @else {
       <div class="write-card">
-        <h2 class="write-title">Submit a Review</h2>
+        <h2 class="write-title">{{ 'RATINGS.SUBMIT_REVIEW_TITLE' | translate }}</h2>
         <form [formGroup]="writeForm" (ngSubmit)="submitReview()">
 
           <div class="form-group">
-            <label class="form-label">Review Target</label>
+            <label class="form-label">{{ 'RATINGS.REVIEW_TARGET' | translate }}</label>
             <select class="form-select" formControlName="targetType">
-              <option value="Property">Property</option>
-              <option value="MaintenanceCompany">Maintenance Company</option>
+              <option value="Property">{{ 'RATINGS.PROPERTY' | translate }}</option>
+              <option value="MaintenanceCompany">{{ 'RATINGS.MAINTENANCE_COMPANY' | translate }}</option>
             </select>
           </div>
 
           <!-- Star selector -->
           <div class="form-group">
-            <label class="form-label">Rating <span class="req">*</span></label>
+            <label class="form-label">{{ 'RATINGS.RATING_LABEL' | translate }} <span class="req">*</span></label>
             <div class="star-selector">
               @for (s of starValues; track s) {
                 <button type="button" class="star-btn"
@@ -110,16 +110,16 @@
               }
             </div>
             @if (selectedStar() === 0 && writeForm.touched) {
-              <div class="form-error">Please select a rating.</div>
+              <div class="form-error">{{ 'RATINGS.ERR_RATING' | translate }}</div>
             }
           </div>
 
           <div class="form-group">
-            <label class="form-label">Review <span class="req">*</span></label>
+            <label class="form-label">{{ 'RATINGS.REVIEW_LABEL' | translate }} <span class="req">*</span></label>
             <textarea class="form-control" formControlName="reviewText" rows="4"
-                      placeholder="Share your experience (min. 10 characters)"></textarea>
+                      [placeholder]="'RATINGS.REVIEW_PLACEHOLDER' | translate"></textarea>
             @if (writeForm.get('reviewText')?.invalid && writeForm.get('reviewText')?.touched) {
-              <div class="form-error">Review must be at least 10 characters.</div>
+              <div class="form-error">{{ 'RATINGS.ERR_REVIEW' | translate }}</div>
             }
           </div>
 
@@ -127,9 +127,9 @@
             <button type="submit" class="btn btn-primary"
                     [disabled]="writeForm.invalid || selectedStar() === 0 || submitLoading()">
               @if (submitLoading()) {
-                <span class="spinner-border spinner-border-sm me-2" role="status"></span>Submitting…
+                <span class="spinner-border spinner-border-sm me-2" role="status"></span>{{ 'RATINGS.SUBMITTING' | translate }}
               } @else {
-                <i class="fa-solid fa-paper-plane me-2"></i>Submit Review
+                <i class="fa-solid fa-paper-plane me-2"></i>{{ 'RATINGS.SUBMIT' | translate }}
               }
             </button>
           </div>

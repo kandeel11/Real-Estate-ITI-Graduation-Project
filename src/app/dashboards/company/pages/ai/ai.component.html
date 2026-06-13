@@ -1,5 +1,5 @@
-<h2 class="mb-1"><i class="fa-solid fa-robot me-2"></i>AI Assistant</h2>
-<p class="text-muted mb-4">AI tools for your company — what's available follows your subscription plan.</p>
+<h2 class="mb-1"><i class="fa-solid fa-robot me-2"></i>{{ 'COMPANY_AI.TITLE' | translate }}</h2>
+<p class="text-muted mb-4">{{ 'COMPANY_AI.SUBTITLE' | translate }}</p>
 
 @if (loading()) {
   <div class="d-flex justify-content-center py-5">
@@ -14,28 +14,27 @@
     <div class="alert alert-info d-flex justify-content-between align-items-center">
       <span>
         <i class="fa-solid fa-crown me-2"></i>
-        Premium Company adds the AI description generator, lead prioritization,
-        and advanced analytics on top of your chatbot.
+        {{ 'COMPANY_AI.UPGRADE_BANNER' | translate }}
       </span>
       <a routerLink="/dashboard/company/subscriptions" class="btn btn-dark btn-sm text-nowrap ms-3">
-        Upgrade to Premium
+        {{ 'COMPANY_AI.UPGRADE' | translate }}
       </a>
     </div>
   }
 
   <!-- Feature cards (lit per your plan's flags) -->
   <div class="row g-3 mb-4">
-    @for (feature of features(); track feature.title) {
+    @for (feature of features(); track feature.titleKey) {
       <div class="col-md-6 col-xl-4">
         <div class="card p-3 h-100" [class.opacity-50]="!feature.on">
           <div class="d-flex align-items-center gap-2 mb-2">
             <i class="fa-solid {{ feature.icon }} text-primary"></i>
-            <span class="fw-semibold">{{ feature.title }}</span>
+            <span class="fw-semibold">{{ feature.titleKey | translate }}</span>
             @if (!feature.on) {
               <i class="fa-solid fa-lock text-muted ms-auto" title="Premium feature"></i>
             }
           </div>
-          <p class="small text-muted mb-0">{{ feature.text }}</p>
+          <p class="small text-muted mb-0">{{ feature.textKey | translate }}</p>
         </div>
       </div>
     }
@@ -46,7 +45,7 @@
     <div [class.ai-locked]="!chatEnabled()">
       <div class="card chat-card">
         <div class="card-header bg-white fw-semibold">
-          <i class="fa-solid fa-comments me-2 text-primary"></i>Ask the AI
+          <i class="fa-solid fa-comments me-2 text-primary"></i>{{ 'COMPANY_AI.ASK_AI' | translate }}
         </div>
         <div class="chat-messages p-3">
           @for (msg of messages(); track $index) {
@@ -55,12 +54,12 @@
             </div>
           } @empty {
             <p class="text-muted text-center my-4">
-              Ask anything about your listings, market pricing, or how to grow your portfolio.
+              {{ 'COMPANY_AI.CHAT_EMPTY' | translate }}
             </p>
           }
           @if (sending()) {
             <div class="chat-bubble">
-              <span class="spinner-border spinner-border-sm me-2"></span>Thinking…
+              <span class="spinner-border spinner-border-sm me-2"></span>{{ 'COMPANY_AI.THINKING' | translate }}
             </div>
           }
         </div>
@@ -71,7 +70,7 @@
           <input
             type="text"
             class="form-control"
-            placeholder="e.g. 'How should I price a 3-bed apartment in Maadi?'"
+            [placeholder]="'COMPANY_AI.CHAT_PLACEHOLDER' | translate"
             [(ngModel)]="draft"
             (keydown.enter)="send()"
             [disabled]="!chatEnabled() || sending()"
@@ -87,12 +86,12 @@
       <div class="ai-gate-overlay">
         <div class="ai-gate-box shadow">
           <i class="fa-solid fa-lock fa-2x text-primary mb-3"></i>
-          <h5 class="mb-2">The AI chatbot isn't in your plan</h5>
+          <h5 class="mb-2">{{ 'COMPANY_AI.AI_GATE_TITLE' | translate }}</h5>
           <p class="text-muted mb-4">
-            Upgrade your subscription to chat with the AI assistant.
+            {{ 'COMPANY_AI.AI_GATE_DESC' | translate }}
           </p>
           <a routerLink="/dashboard/company/subscriptions" class="btn btn-dark btn-lg">
-            <i class="fa-solid fa-crown me-2"></i>Upgrade
+            <i class="fa-solid fa-crown me-2"></i>{{ 'COMPANY_AI.UPGRADE_BTN' | translate }}
           </a>
         </div>
       </div>

@@ -21,28 +21,35 @@
                 <li class="nav-item">
                     <a class="nav-link site-navbar__link" routerLink="/" routerLinkActive="active"
                         [routerLinkActiveOptions]="{exact: true}">
-                        Home
+                        {{ 'NAVBAR.HOME' | translate }}
                     </a>
                 </li>
                 <li class="nav-item">
                     <a class="nav-link site-navbar__link" routerLink="/properties" routerLinkActive="active">
-                        Properties
+                        {{ 'NAVBAR.PROPERTIES' | translate }}
                     </a>
                 </li>
                 <li class="nav-item">
                     <a class="nav-link site-navbar__link" routerLink="/services" routerLinkActive="active">
-                        Services
+                        {{ 'NAVBAR.SERVICES' | translate }}
                     </a>
                 </li>
                 <li class="nav-item">
                     <a class="nav-link site-navbar__link" routerLink="/contact" routerLinkActive="active">
-                        Contact
+                        {{ 'NAVBAR.CONTACT' | translate }}
                     </a>
                 </li>
             </ul>
 
             <!-- Right actions -->
             <div class="site-navbar__actions">
+
+                <!-- Language toggle -->
+                <button class="site-navbar__lang-btn" (click)="lang.toggle()" [title]="lang.isRtl() ? 'Switch to English' : 'التبديل إلى العربية'">
+                    <i class="fa-solid fa-globe"></i>
+                    <span>{{ lang.isRtl() ? 'EN' : 'ع' }}</span>
+                </button>
+
                 <button class="site-navbar__icon-btn" aria-label="Search">
                     <i class="fa-solid fa-magnifying-glass"></i>
                 </button>
@@ -52,7 +59,7 @@
                 @if (authenticated()) {
                     @if (isOwner()) {
                         <a routerLink="/my-listings" class="btn btn-outline-primary site-navbar__cta me-1">
-                            <i class="fa-solid fa-list me-1"></i>My Listings
+                            <i class="fa-solid fa-list me-1"></i>{{ 'NAVBAR.MY_LISTINGS' | translate }}
                         </a>
                     }
                     @if (isTenant()) {
@@ -70,23 +77,23 @@
                                     </div>
                                     <div class="site-navbar__menu-divider"></div>
                                     <a class="site-navbar__menu-item" [routerLink]="dashboardRoute()" (click)="closeMenu()">
-                                        <i class="fa-solid fa-gauge"></i>My Dashboard
+                                        <i class="fa-solid fa-gauge"></i>{{ 'NAVBAR.MY_DASHBOARD' | translate }}
                                     </a>
                                     <div class="site-navbar__menu-divider"></div>
                                     <button class="site-navbar__menu-item site-navbar__menu-item--danger" (click)="logout()">
-                                        <i class="fa-solid fa-arrow-right-from-bracket"></i>Logout
+                                        <i class="fa-solid fa-arrow-right-from-bracket"></i>{{ 'NAVBAR.LOGOUT' | translate }}
                                     </button>
                                 </div>
                             }
                         </div>
                     } @else {
                         <button class="btn btn-outline-danger site-navbar__cta" (click)="logout()">
-                            <i class="fa-solid fa-arrow-right-from-bracket me-1"></i>Logout
+                            <i class="fa-solid fa-arrow-right-from-bracket me-1"></i>{{ 'NAVBAR.LOGOUT' | translate }}
                         </button>
                     }
                 } @else {
                     <a routerLink="/auth/login" class="btn btn-primary site-navbar__cta">
-                        Login
+                        {{ 'NAVBAR.LOGIN' | translate }}
                     </a>
                 }
             </div>

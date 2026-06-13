@@ -11,24 +11,22 @@
       </a>
 
       <div class="login-brand__body">
-        <h2 class="login-brand__title">Find Your Dream Property with Confidence</h2>
-        <p class="login-brand__subtitle">
-          Join thousands of happy customers who discovered their perfect home through Estatein.
-        </p>
+        <h2 class="login-brand__title">{{ 'AUTH.LOGIN.BRAND_TITLE' | translate }}</h2>
+        <p class="login-brand__subtitle">{{ 'AUTH.LOGIN.BRAND_SUBTITLE' | translate }}</p>
       </div>
 
       <div class="login-brand__stats">
         <div class="login-brand__stat">
           <span class="login-brand__stat-value">200+</span>
-          <span class="login-brand__stat-label">Happy Customers</span>
+          <span class="login-brand__stat-label">{{ 'AUTH.BRAND.STATS.CUSTOMERS' | translate }}</span>
         </div>
         <div class="login-brand__stat">
           <span class="login-brand__stat-value">10k+</span>
-          <span class="login-brand__stat-label">Properties Listed</span>
+          <span class="login-brand__stat-label">{{ 'AUTH.BRAND.STATS.PROPERTIES' | translate }}</span>
         </div>
         <div class="login-brand__stat">
           <span class="login-brand__stat-value">16+</span>
-          <span class="login-brand__stat-label">Years Experience</span>
+          <span class="login-brand__stat-label">{{ 'AUTH.BRAND.STATS.EXPERIENCE' | translate }}</span>
         </div>
       </div>
 
@@ -38,7 +36,6 @@
   <!-- ── Right / Form panel ──────────────────────── -->
   <div class="login-form-panel">
 
-    <!-- Mobile logo -->
     <a routerLink="/" class="login-mobile-logo d-flex d-lg-none" inView>
       <i class="fa-solid fa-house-chimney"></i>
       <span>Estatein</span>
@@ -47,23 +44,22 @@
     <div class="login-card" inView [inViewDelay]="100">
 
       <div class="login-card__header">
-        <h1 class="login-card__title">Welcome back</h1>
-        <p class="login-card__subtitle">Sign in to your Estatein account</p>
+        <h1 class="login-card__title">{{ 'AUTH.LOGIN.TITLE' | translate }}</h1>
+        <p class="login-card__subtitle">{{ 'AUTH.LOGIN.SUBTITLE' | translate }}</p>
       </div>
 
       <form [formGroup]="form" (ngSubmit)="onSubmit()" novalidate class="login-card__form">
 
         @if (emailVerified && !errorMsg) {
         <div class="alert alert-success py-2" role="alert">
-          <i class="fa-solid fa-circle-check me-2"></i>Email verified! You can now sign in.
+          <i class="fa-solid fa-circle-check me-2"></i>{{ 'AUTH.LOGIN.VERIFIED_MSG' | translate }}
         </div>
         }
         @if (sessionExpired && !errorMsg && !emailVerified) {
         <div class="alert alert-info py-2" role="alert">
-          <i class="fa-solid fa-clock me-2"></i>Your session expired — please sign in again.
+          <i class="fa-solid fa-clock me-2"></i>{{ 'AUTH.LOGIN.SESSION_EXPIRED' | translate }}
         </div>
         }
-
         @if (errorMsg) {
         <div class="alert alert-danger py-2" role="alert">
           <i class="fa-solid fa-circle-exclamation me-2"></i>{{ errorMsg }}
@@ -72,16 +68,16 @@
 
         <!-- Email -->
         <div class="lf" inView [inViewDelay]="180">
-          <label class="lf__label" for="email">Email address</label>
+          <label class="lf__label" for="email">{{ 'AUTH.LOGIN.EMAIL' | translate }}</label>
           <div class="lf__wrap" [class.lf__wrap--err]="email.touched && email.invalid">
             <i class="fa-regular fa-envelope lf__icon"></i>
-            <input id="email" type="email" formControlName="email" class="lf__input" placeholder="you@example.com"
-              autocomplete="email" />
+            <input id="email" type="email" formControlName="email" class="lf__input"
+              [placeholder]="'AUTH.LOGIN.EMAIL_PLACEHOLDER' | translate" autocomplete="email" />
           </div>
           @if (email.touched && email.errors) {
           <p class="lf__error">
-            @if (email.errors['required']) { Email is required. }
-            @else if (email.errors['email'] || email.errors['pattern']) { Please enter a valid email address. }
+            @if (email.errors['required']) { {{ 'AUTH.LOGIN.ERRORS.EMAIL_REQUIRED' | translate }} }
+            @else if (email.errors['email'] || email.errors['pattern']) { {{ 'AUTH.LOGIN.ERRORS.EMAIL_INVALID' | translate }} }
           </p>
           }
         </div>
@@ -89,13 +85,13 @@
         <!-- Password -->
         <div class="lf" inView [inViewDelay]="260">
           <div class="lf__label-row">
-            <label class="lf__label" for="password">Password</label>
-            <a routerLink="/auth/forgot-password" class="lf__forgot">Forgot password?</a>
+            <label class="lf__label" for="password">{{ 'AUTH.LOGIN.PASSWORD' | translate }}</label>
+            <a routerLink="/auth/forgot-password" class="lf__forgot">{{ 'AUTH.LOGIN.FORGOT' | translate }}</a>
           </div>
           <div class="lf__wrap" [class.lf__wrap--err]="password.touched && password.invalid">
             <i class="fa-solid fa-lock lf__icon"></i>
             <input id="password" [type]="showPassword ? 'text' : 'password'" formControlName="password"
-              class="lf__input" placeholder="Min. 8 characters" autocomplete="current-password" />
+              class="lf__input" [placeholder]="'AUTH.LOGIN.PASSWORD_PLACEHOLDER' | translate" autocomplete="current-password" />
             <button type="button" class="lf__toggle" (click)="showPassword = !showPassword"
               [attr.aria-label]="showPassword ? 'Hide password' : 'Show password'">
               <i [class]="'fa-regular ' + (showPassword ? 'fa-eye-slash' : 'fa-eye')"></i>
@@ -103,28 +99,27 @@
           </div>
           @if (password.touched && password.errors) {
           <p class="lf__error">
-            @if (password.errors['required']) { Password is required. }
-            @else if (password.errors['minlength']) { Password must be at least 8 characters. }
+            @if (password.errors['required']) { {{ 'AUTH.LOGIN.ERRORS.PASSWORD_REQUIRED' | translate }} }
+            @else if (password.errors['minlength']) { {{ 'AUTH.LOGIN.ERRORS.PASSWORD_MIN' | translate }} }
           </p>
           }
         </div>
 
         <!-- Submit -->
-        <button type="submit" class="btn btn-primary login-card__submit" [disabled]="loading" inView
-          [inViewDelay]="340">
+        <button type="submit" class="btn btn-primary login-card__submit" [disabled]="loading" inView [inViewDelay]="340">
           @if (loading) {
           <span class="spinner-border spinner-border-sm me-2" aria-hidden="true"></span>
-          Signing in…
+          {{ 'AUTH.LOGIN.SUBMITTING' | translate }}
           } @else {
-          Sign in&nbsp;<i class="fa-solid fa-arrow-right"></i>
+          {{ 'AUTH.LOGIN.SUBMIT' | translate }}&nbsp;<i class="fa-solid fa-arrow-right"></i>
           }
         </button>
 
       </form>
 
       <p class="login-card__footer" inView [inViewDelay]="400">
-        Don't have an account?
-        <a routerLink="/auth/register" class="login-card__footer-link">Create one free</a>
+        {{ 'AUTH.LOGIN.NO_ACCOUNT' | translate }}
+        <a routerLink="/auth/register" class="login-card__footer-link">{{ 'AUTH.LOGIN.CREATE_ONE' | translate }}</a>
       </p>
 
     </div>

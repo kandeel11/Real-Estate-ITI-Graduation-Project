@@ -3,13 +3,14 @@ import { ReactiveFormsModule, FormBuilder, Validators } from '@angular/forms';
 import { Router, ActivatedRoute, RouterLink } from '@angular/router';
 import { HttpClient } from '@angular/common/http';
 import { finalize, interval, Subscription, takeWhile } from 'rxjs';
+import { TranslatePipe } from '@ngx-translate/core';
 import { environment } from '../../../../../environments/environment';
 import { API_ENDPOINTS } from '../../../../core/constants/api-endpoints';
 
 @Component({
   selector: 'app-verify-otp',
   standalone: true,
-  imports: [ReactiveFormsModule, RouterLink],
+  imports: [ReactiveFormsModule, RouterLink, TranslatePipe],
   templateUrl: './verify-otp.component.html',
   styleUrl: './verify-otp.component.css',
 })

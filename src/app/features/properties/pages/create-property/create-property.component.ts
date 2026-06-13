@@ -26,6 +26,7 @@ import { AuthService } from '../../../../core/services/auth.service';
 import { PropertyService } from '../../services/property.service';
 import { CompanySubscriptionService } from '../../../../dashboards/company/services/company-subscription.service';
 import { Amenity, DescriptionDraft, Property } from '../../models/property.model';
+import { TranslatePipe } from '@ngx-translate/core';
 
 interface PhotoUpload {
   name: string;
@@ -52,7 +53,7 @@ function arabicOnly(control: AbstractControl): ValidationErrors | null {
 @Component({
   selector: 'app-create-property',
   standalone: true,
-  imports: [ReactiveFormsModule, FormsModule, RouterLink],
+  imports: [ReactiveFormsModule, FormsModule, RouterLink, TranslatePipe],
   templateUrl: './create-property.component.html',
   styleUrl: './create-property.component.css',
 })

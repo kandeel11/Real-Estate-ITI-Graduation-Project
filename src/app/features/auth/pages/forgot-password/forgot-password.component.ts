@@ -12,10 +12,11 @@ import { finalize } from 'rxjs';
 import { environment } from '../../../../../environments/environment';
 import { API_ENDPOINTS } from '../../../../core/constants/api-endpoints';
 import { InViewDirective } from '../../../../shared/directives/in-view.directive';
+import { TranslatePipe } from '@ngx-translate/core';
 
 @Component({
   selector: 'app-forgot-password',
-  imports: [ReactiveFormsModule, RouterLink, InViewDirective],
+  imports: [ReactiveFormsModule, RouterLink, InViewDirective, TranslatePipe],
   templateUrl: './forgot-password.component.html',
   styleUrl: './forgot-password.component.css'
 })

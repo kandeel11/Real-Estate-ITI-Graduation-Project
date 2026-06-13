@@ -8,6 +8,7 @@
 import { Component, inject, signal, computed, effect, OnInit } from '@angular/core';
 import { DecimalPipe } from '@angular/common';
 import { RouterLink } from '@angular/router';
+import { TranslatePipe } from '@ngx-translate/core';
 import { PropertyService } from '../../services/property.service';
 import { Property, Amenity } from '../../models/property.model';
 
@@ -22,7 +23,7 @@ interface Chip {
 @Component({
   selector: 'app-property-browse',
   standalone: true,
-  imports: [DecimalPipe, RouterLink],
+  imports: [DecimalPipe, RouterLink, TranslatePipe],
   templateUrl: './browse.component.html',
   styleUrl: './browse.component.css',
 })
