@@ -10,6 +10,7 @@ using Identity.Infrastructure.Persistence;
 using Identity.Infrastructure.Seed;
 using Identity.Infrastructure.Services;
 using Maintenance.Infrastructure;
+using MaintenanceCompanies.Infrastructure;
 using Microsoft.AspNetCore.Authentication.JwtBearer;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.IdentityModel.Tokens;
@@ -23,9 +24,6 @@ using Subscription.Infrastructure.Persistence;
 using Subscription.Infrastructure.Seed;
 using System.IdentityModel.Tokens.Jwt;
 using System.Text;
-using Payment.Infrastructure;
-using MaintenanceCompanies.Infrastructure;
-using MaintenanceCompanies.Application;
 
 namespace RealEstate.Host;
 
@@ -142,7 +140,7 @@ public class Program
         builder.Services.AddMaintenanceCompaniesModule(builder.Configuration);
 
         // ── SignalR ───────────────────────────────────────────
-        builder.Services.AddSignalR();   
+        builder.Services.AddSignalR();
 
         // ── Hangfire ──────────────────────────────────────────
         builder.Services.AddHangfire(config => config
@@ -208,7 +206,7 @@ public class Program
         {
             if (context.Request.Path.StartsWithSegments("/api/stripe/webhook"))
             {
-                context.Request.EnableBuffering(); 
+                context.Request.EnableBuffering();
             }
             await next();
         });

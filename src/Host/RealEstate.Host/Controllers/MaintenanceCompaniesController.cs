@@ -3,6 +3,7 @@ using Identity.Application.Interfaces;
 using MaintenanceCompanies.Application.Commands.CreateCompany;
 using MaintenanceCompanies.Application.Commands.UpdateCompanyProfile;
 using MaintenanceCompanies.Application.DTOs.Companies;
+using MaintenanceCompanies.Application.Queries.GetAllCompany;
 using MaintenanceCompanies.Application.Queries.GetCompanyProfile;
 using MediatR;
 using Microsoft.AspNetCore.Authorization;
@@ -109,6 +110,19 @@ public class MaintenanceCompaniesController(IMediator mediator) : ControllerBase
         {
             return BadRequest(new { error = ex.Message });
         }
+    }
+    [AllowAnonymous]
+    [HttpGet]
+    public async Task<IActionResult> GetAllCompanies()
+    {
+        // بنعمل Instance من الـ Query
+        var query = new GetAllCompaniesQuery();
+
+        // بنبعتها للـ Mediator وهو هيتصرف ويوصلها للـ Handler بتاعها
+        var companies = await mediator.Send(query);
+
+        // بنرجع الداتا بـ Status Code 200 OK
+        return Ok(companies);
     }
 }
 
