@@ -94,55 +94,52 @@ export const routes: Routes = [
   // ==================== DASHBOARD LAYOUT WITH ROLE-BASED ACCESS ====================
   {
     path: 'dashboard',
-    canActivate: [roleGuard],
+    // canActivate: [roleGuard],
     children: [
       // ============ ADMIN DASHBOARD ============
       {
         path: 'admin',
-        canActivate: [roleGuard],
-        data: { expectedRole: 'admin' },
-        loadComponent: () =>
-          import('./dashboards/admin/admin-dashboard.component').then(
-            (m) => m.AdminDashboardComponent,
-          ),
-        children: [
-          {
-            path: 'overview',
-            loadComponent: () =>
-              import('./dashboards/admin/pages/overview/overview.component').then(
-                (m) => m.OverviewComponent,
-              ),
-          },
-          {
-            path: 'users',
-            loadComponent: () =>
-              import('./dashboards/admin/pages/users-management/users-management.component').then(
-                (m) => m.UsersManagementComponent,
-              ),
-          },
-          {
-            path: 'companies',
-            loadComponent: () =>
-              import('./dashboards/admin/pages/companies-management/companies-management.component').then(
-                (m) => m.CompaniesManagementComponent,
-              ),
-          },
-          {
-            path: 'moderation',
-            loadComponent: () =>
-              import('./dashboards/admin/pages/moderation/moderation.component').then(
-                (m) => m.ModerationComponent,
-              ),
-          },
-          {
-            path: 'reports',
-            loadComponent: () =>
-              import('./dashboards/admin/pages/reports/reports.component').then(
-                (m) => m.ReportsComponent,
-              ),
-          },
-        ],
+        loadChildren: () =>
+          import('../app/dashboards/admin/Admin-dashboard/admin.routes').then((m) => m.adminRoutes),
       },
+      //   children: [
+      //     {
+      //       path: 'overview',
+      //       loadComponent: () =>
+      //         import('./dashboards/admin/pages/overview/overview.component').then(
+      //           (m) => m.OverviewComponent,
+      //         ),
+      //     },
+      //     {
+      //       path: 'users',
+      //       loadComponent: () =>
+      //         import('./dashboards/admin/pages/users-management/users-management.component').then(
+      //           (m) => m.UsersManagementComponent,
+      //         ),
+      //     },
+      //     {
+      //       path: 'companies',
+      //       loadComponent: () =>
+      //         import('./dashboards/admin/pages/companies-management/companies-management.component').then(
+      //           (m) => m.CompaniesManagementComponent,
+      //         ),
+      //     },
+      //     {
+      //       path: 'moderation',
+      //       loadComponent: () =>
+      //         import('./dashboards/admin/pages/moderation/moderation.component').then(
+      //           (m) => m.ModerationComponent,
+      //         ),
+      //     },
+      //     {
+      //       path: 'reports',
+      //       loadComponent: () =>
+      //         import('./dashboards/admin/pages/reports/reports.component').then(
+      //           (m) => m.ReportsComponent,
+      //         ),
+      //     },
+      //   ],
+      // },
 
       // ============ COMPANY DASHBOARD ============
       {
@@ -315,43 +312,11 @@ export const routes: Routes = [
 
       // ============ MAINTENANCE COMPANY DASHBOARD ============
       {
-        path: 'maintenance-company',
-        canActivate: [roleGuard],
-        data: { expectedRole: 'maintenance-company' },
-        loadComponent: () =>
-          import('./dashboards/maintenance-company/maintenance-company-dashboard.component').then(
-            (m) => m.MaintenanceCompanyDashboardComponent,
+        path: 'maintenance',
+        loadChildren: () =>
+          import('./dashboards/maintenance-company/maintenance.routes').then(
+            (m) => m.maintenanceRoutes,
           ),
-        children: [
-          {
-            path: 'overview',
-            loadComponent: () =>
-              import('./dashboards/maintenance-company/pages/overview/overview.component').then(
-                (m) => m.OverviewComponent,
-              ),
-          },
-          {
-            path: 'tickets',
-            loadComponent: () =>
-              import('./dashboards/maintenance-company/pages/tickets/tickets.component').then(
-                (m) => m.TicketsComponent,
-              ),
-          },
-          {
-            path: 'work-orders',
-            loadComponent: () =>
-              import('./dashboards/maintenance-company/pages/work-orders/work-orders.component').then(
-                (m) => m.WorkOrdersComponent,
-              ),
-          },
-          {
-            path: 'reports',
-            loadComponent: () =>
-              import('./dashboards/maintenance-company/pages/reports/reports.component').then(
-                (m) => m.ReportsComponent,
-              ),
-          },
-        ],
       },
       // ============ TENANT DASHBOARD (catches /dashboard and /dashboard/*) ============
       {

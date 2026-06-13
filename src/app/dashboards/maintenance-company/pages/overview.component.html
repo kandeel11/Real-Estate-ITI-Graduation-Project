@@ -1,0 +1,214 @@
+<div class="overview">
+    <!-- Header -->
+    <div class="page-head">
+        <div>
+            <h1>Welcome back, Acme 👋</h1>
+            <p>Here's what's happening with your business today.</p>
+        </div>
+        <div class="head-actions">
+            <button class="btn-outline">
+                <i class="fa-solid fa-calendar-days"></i>
+                June 2026
+            </button>
+            <button class="btn-primary">
+                <i class="fa-solid fa-plus"></i>
+                New Quote
+            </button>
+        </div>
+    </div>
+
+    <!-- Stats -->
+    <div class="stats-row">
+        @if (stats(); as s) {
+        <div class="stat earnings">
+            <div class="stat__head">
+                <span class="stat__label">Monthly Earnings</span>
+                <div class="stat__icon"><i class="fa-solid fa-sack-dollar"></i></div>
+            </div>
+            <h2 class="stat__value">{{ formatMoney(s.monthlyEarnings) }}</h2>
+            <span class="stat__trend up">
+                <i class="fa-solid fa-arrow-trend-up"></i>
+                +{{ s.earningsGrowth }}% vs last month
+            </span>
+        </div>
+
+        <div class="stat tickets">
+            <div class="stat__head">
+                <span class="stat__label">Total Tickets</span>
+                <div class="stat__icon"><i class="fa-solid fa-ticket"></i></div>
+            </div>
+            <h2 class="stat__value">{{ s.totalTickets }}</h2>
+            <span class="stat__trend neutral">
+                <i class="fa-solid fa-clock"></i>
+                {{ s.openTickets + s.inProgressTickets }} active now
+            </span>
+        </div>
+
+        <div class="stat pending">
+            <div class="stat__head">
+                <span class="stat__label">Pending Payments</span>
+                <div class="stat__icon"><i class="fa-regular fa-clock"></i></div>
+            </div>
+            <h2 class="stat__value">{{ formatMoney(s.pendingPayments) }}</h2>
+            <span class="stat__trend warn">
+                <i class="fa-solid fa-triangle-exclamation"></i>
+                Awaiting collection
+            </span>
+        </div>
+
+        <div class="stat rating">
+            <div class="stat__head">
+                <span class="stat__label">Customer Rating</span>
+                <div class="stat__icon"><i class="fa-solid fa-star"></i></div>
+            </div>
+            <h2 class="stat__value">{{ s.averageRating }} <small>/ 5</small></h2>
+            <div class="stars">
+                @for (i of [1,2,3,4,5]; track i) {
+                <i class="fa-solid fa-star" [class.active]="i <= s.averageRating"></i>
+                }
+            </div>
+        </div>
+        } @else {
+        @for (i of [1,2,3,4]; track i) {
+        <div class="stat skeleton"></div>
+        }
+        }
+    </div>
+
+    <!-- Charts row -->
+    <div class="charts-row">
+        <!-- Earnings Trend -->
+        <div class="card chart-card">
+            <div class="card__head">
+                <div>
+                    <h3>Earnings Trend</h3>
+                    <span class="muted">Last 6 months performance</span>
+                </div>
+                <div class="legend">
+                    <span><span class="dot earnings"></span> Earnings</span>
+                </div>
+            </div>
+            @if (earningsChart) {
+            <apx-chart [series]="earningsChart.series" [chart]="earningsChart.chart" [xaxis]="earningsChart.xaxis"
+                [yaxis]="earningsChart.yaxis" [colors]="earningsChart.colors" [stroke]="earningsChart.stroke"
+                [fill]="earningsChart.fill" [dataLabels]="earningsChart.dataLabels" [tooltip]="earningsChart.tooltip"
+                [grid]="earningsChart.grid" [markers]="earningsChart.markers" />
+            }
+        </div>
+
+        <!-- Status donut -->
+        <div class="card status-card">
+            <div class="card__head">
+                <div>
+                    <h3>Ticket Status</h3>
+                    <span class="muted">Current distribution</span>
+                </div>
+            </div>
+            @if (statusChart) {
+            <apx-chart [series]="statusChart.series" [chart]="statusChart.chart" [labels]="statusChart.labels"
+                [colors]="statusChart.colors" [legend]="statusChart.legend" [stroke]="statusChart.stroke"
+                [dataLabels]="statusChart.dataLabels" [plotOptions]="statusChart.plotOptions" />
+            }
+        </div>
+    </div>
+
+    <!-- Categories breakdown -->
+    <div class="card">
+        <div class="card__head">
+            <div>
+                <h3>
+                    <i class="fa-solid fa-tags"></i>
+                    Earnings by Category
+                </h3>
+                <span class="muted">Where your money comes from</span>
+            </div>
+            <strong class="total-earnings">{{ formatMoney(totalCategoryEarnings()) }} total</strong>
+        </div>
+
+        <div class="category-list">
+            @for (c of categories(); track c.categoryId; let i = $index) {
+            <div class="cat-row">
+                <div class="cat-icon" [attr.data-i]="i">
+                    <i class="fa-solid" [class]="c.categoryIcon"></i>
+                </div>
+                <div class="cat-info">
+                    <div class="cat-top">
+                        <strong>{{ c.categoryName }}</strong>
+                        <span class="cat-earn">{{ formatMoney(c.totalEarnings) }}</span>
+                    </div>
+                    <div class="cat-bar">
+                        <div class="cat-fill" [style.width.%]="categoryPercent(c)" [attr.data-i]="i"></div>
+                    </div>
+                    <div class="cat-bottom">
+                        <span>{{ c.ticketsCount }} tickets completed</span>
+                        <span>{{ categoryPercent(c) | number: '1.0-0' }}%</span>
+                    </div>
+                </div>
+            </div>
+            }
+        </div>
+    </div>
+
+    <!-- Recent Tickets -->
+    <div class="card">
+        <div class="card__head">
+            <div>
+                <h3>
+                    <i class="fa-solid fa-ticket"></i>
+                    Recent Tickets
+                </h3>
+                <span class="muted">Your latest service requests</span>
+            </div>
+            <a class="link">View All →</a>
+        </div>
+
+        <div class="tickets-table">
+            <div class="th">
+                <span>Ticket</span>
+                <span>Customer</span>
+                <span>Category</span>
+                <span>Status</span>
+                <span class="ta-right">Amount</span>
+            </div>
+
+            @for (t of recentTickets(); track t.id) {
+            <div class="tr">
+                <div class="t-info">
+                    <div class="t-priority" [class]="t.priority"></div>
+                    <div>
+                        <strong>{{ t.title }}</strong>
+                        <span>{{ t.ticketNumber }} · {{ timeAgo(t.createdAt) }}</span>
+                    </div>
+                </div>
+                <div class="t-customer">
+                    <div class="t-avatar">{{ t.customerName.charAt(0) }}</div>
+                    <div>
+                        <strong>{{ t.customerName }}</strong>
+                        <span>{{ t.propertyTitle }}</span>
+                    </div>
+                </div>
+                <div class="t-category">
+                    <span class="cat-chip">
+                        <i class="fa-solid" [class]="t.categoryIcon"></i>
+                        {{ t.categoryName }}
+                    </span>
+                </div>
+                <div class="t-status">
+                    <span class="status-badge" [class]="t.status">
+                        {{ statusLabel(t.status) }}
+                    </span>
+                </div>
+                <div class="t-amount ta-right">
+                    <strong>{{ formatMoney(t.price) }}</strong>
+                    <span class="pay-badge" [class]="t.paymentStatus">
+                        <i class="fa-solid" [class.fa-check]="t.paymentStatus === 'paid'"
+                            [class.fa-clock]="t.paymentStatus === 'pending'"
+                            [class.fa-triangle-exclamation]="t.paymentStatus === 'overdue'"></i>
+                        {{ paymentLabel(t.paymentStatus) }}
+                    </span>
+                </div>
+            </div>
+            }
+        </div>
+    </div>
+</div>
