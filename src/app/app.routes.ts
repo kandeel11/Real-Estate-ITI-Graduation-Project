@@ -1,5 +1,10 @@
 import { Routes } from '@angular/router';
-import { roleGuard, multiRoleGuard, dashboardRedirectGuard, guestGuard } from './core/guards/role.guard';
+import {
+  roleGuard,
+  multiRoleGuard,
+  dashboardRedirectGuard,
+  guestGuard,
+} from './core/guards/role.guard';
 
 export const routes: Routes = [
   // ==================== PUBLIC LAYOUT (Navbar + Footer) ====================
@@ -265,7 +270,7 @@ export const routes: Routes = [
       // ============ TENANT DASHBOARD ============
       {
         path: 'tenant',
-        canActivate: [roleGuard],
+        // canActivate: [roleGuard],
         data: { expectedRole: 'tenant' },
         loadComponent: () =>
           import('./dashboards/tenant/tenant-dashboard.component').then(

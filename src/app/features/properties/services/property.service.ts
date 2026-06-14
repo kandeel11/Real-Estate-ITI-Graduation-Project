@@ -155,6 +155,19 @@ export class PropertyService {
     );
   }
 
+  setPrimaryMedia(propertyId: string, mediaId: string): Observable<void> {
+    return this.http.put<void>(
+      `${this.baseUrl}${API_ENDPOINTS.PROPERTIES.SET_PRIMARY_MEDIA(propertyId, mediaId)}`,
+      {}
+    );
+  }
+
+  deleteMedia(propertyId: string, mediaId: string): Observable<void> {
+    return this.http.delete<void>(
+      `${this.baseUrl}${API_ENDPOINTS.PROPERTIES.DELETE_MEDIA(propertyId, mediaId)}`
+    );
+  }
+
   uploadMedia(propertyId: string, file: File, sortOrder = 0): Observable<{ mediaId: string }> {
     const form = new FormData();
     form.append('File', file);

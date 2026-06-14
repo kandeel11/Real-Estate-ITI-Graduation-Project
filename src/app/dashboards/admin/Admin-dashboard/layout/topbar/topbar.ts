@@ -1,4 +1,5 @@
-import { Component, output } from '@angular/core';
+import { Component, inject, output } from '@angular/core';
+import { LanguageService } from '../../../../../core/services/language.service';
 
 @Component({
   selector: 'app-topbar',
@@ -9,4 +10,5 @@ import { Component, output } from '@angular/core';
 })
 export class TopbarComponent {
   menuToggle = output<void>();
+  protected readonly lang = inject(LanguageService);
 }

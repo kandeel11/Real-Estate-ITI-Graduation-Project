@@ -34,9 +34,9 @@
             <i class="fa-regular fa-circle-question"></i>
             @if (!collapsed()) { <span class="nav-label">{{ 'ADMIN.SIDEBAR.SUPPORT' | translate }}</span> }
         </a>
-        <a class="nav-item logout" routerLink="/login">
+        <button class="nav-item logout" (click)="logout()">
             <i class="fa-solid fa-right-from-bracket"></i>
             @if (!collapsed()) { <span class="nav-label">{{ 'ADMIN.SIDEBAR.LOGOUT' | translate }}</span> }
-        </a>
+        </button>
     </div>
 </aside>

@@ -24,3 +24,40 @@
   padding: 2px 4px;
   line-height: 1;
 }
+
+.photo-primary-badge {
+  position: absolute;
+  bottom: 0;
+  left: 0;
+  right: 0;
+  background: rgba(99, 91, 255, 0.88);
+  color: #fff;
+  font-size: 10px;
+  font-weight: 600;
+  text-align: center;
+  padding: 2px 4px;
+}
+
+.photo-set-primary-btn {
+  position: absolute;
+  bottom: 4px;
+  right: 4px;
+  background: rgba(255, 255, 255, 0.88);
+  border: none;
+  border-radius: 50%;
+  width: 22px;
+  height: 22px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  color: #f59e0b;
+  font-size: 11px;
+  padding: 0;
+  transition: background 0.15s;
+}
+
+.photo-set-primary-btn:hover {
+  background: #fff;
+  color: #d97706;
+}

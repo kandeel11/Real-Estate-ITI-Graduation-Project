@@ -32,6 +32,8 @@ interface PhotoUpload {
   name: string;
   preview: string;
   status: 'uploading' | 'done' | 'error';
+  mediaId?: string;
+  isPrimary: boolean;
 }
 
 const MAX_POLL_ATTEMPTS = 20;
@@ -199,6 +201,8 @@ export class CreatePropertyComponent implements OnInit {
             name: m.mediaUrl,
             preview: m.mediaUrl,
             status: 'done' as const,
+            mediaId: m.id,
+            isPrimary: m.isPrimary,
           }))
         );
 
@@ -350,21 +354,44 @@ export class CreatePropertyComponent implements OnInit {
     const id = this.propertyId();
     if (!id) return;
     const files = Array.from((event.target as HTMLInputElement).files ?? []);
+    const currentCount = this.photos().length;
 
     files.forEach((file, i) => {
+      const isFirst = currentCount === 0 && i === 0;
       const upload: PhotoUpload = {
         name: file.name,
         preview: URL.createObjectURL(file),
         status: 'uploading',
+        isPrimary: isFirst,
       };
       this.photos.update((p) => [...p, upload]);
 
-      this.propertySvc.uploadMedia(id, file, this.photos().length - 1 + i).subscribe({
-        next: () => this.setPhotoStatus(upload, 'done'),
+      this.propertySvc.uploadMedia(id, file, currentCount + i).subscribe({
+        next: (res) => {
+          this.photos.update((list) =>
+            list.map((p) => (p === upload ? { ...p, status: 'done', mediaId: res.mediaId } : p))
+          );
+          // Auto-set the first ever uploaded photo as primary in the DB
+          if (isFirst) {
+            this.propertySvc.setPrimaryMedia(id, res.mediaId).subscribe();
+          }
+        },
         error: () => this.setPhotoStatus(upload, 'error'),
       });
     });
     (event.target as HTMLInputElement).value = '';
+  }
+
+  setPrimaryPhoto(target: PhotoUpload): void {
+    const id = this.propertyId();
+    if (!id || !target.mediaId || target.isPrimary) return;
+    this.propertySvc.setPrimaryMedia(id, target.mediaId).subscribe({
+      next: () => {
+        this.photos.update((list) =>
+          list.map((p) => ({ ...p, isPrimary: p === target }))
+        );
+      },
+    });
   }
 
   private setPhotoStatus(upload: PhotoUpload, status: PhotoUpload['status']): void {
