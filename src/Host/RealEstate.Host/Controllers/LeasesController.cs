@@ -1,44 +1,36 @@
 using Document.Application.Commands.Lease.ConfirmLease;
 using Document.Application.Commands.Lease.TerminateLease;
 using Document.Application.Commands.Lease.UploadLeaseContract;
-using Document.Application.Interfaces;
 using Document.Application.Queries.Lease.GetLeaseById;
-using Identity.Application.Interfaces;
 using MediatR;
-using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 
 namespace RealEstate.Host.Controllers;
 
 [ApiController]
 [Route("api/leases")]
-public class LeasesController(IMediator mediator, ICurrentUserService currentUser) : ControllerBase
+public class LeasesController : ControllerBase
 {
+    private readonly IMediator _mediator;
+    public LeasesController(IMediator mediator) => _mediator = mediator;
+
     [HttpPost("upload")]
-    [Authorize(Roles = "owner,company_manager,broker")]
-    public async Task<IActionResult> Upload([FromForm] Guid leadId, IFormFile file, CancellationToken ct)
+    public async Task<IActionResult> Upload([FromForm] Guid leadId, IFormFile file)
     {
-        var ownerId = currentUser.UserId;   // FIX: was Guid.NewGuid()
-        if (ownerId is null) return Unauthorized();
-        var result = await mediator.Send(new UploadLeaseContractCommand(leadId, ownerId.Value, file), ct);
+        var ownerId = Guid.NewGuid();
+        var result = await _mediator.Send(new UploadLeaseContractCommand(leadId, ownerId, file));
         return Ok(result);
     }
 
-    [HttpGet("{id:guid}")]
-    [Authorize]
-    public async Task<IActionResult> GetById(Guid id, CancellationToken ct)
+    [HttpGet("{id}")]
+    public async Task<IActionResult> Get(Guid id)
     {
-        var lease = await mediator.Send(new GetLeaseByIdQuery(id), ct);
-        if (lease is null) return NotFound();
-
-        var userId = currentUser.UserId;
-        if (!currentUser.IsInRole("admin") && lease.TenantId != userId && lease.OwnerId != userId)
-            return Forbid();
-
+        var lease = await _mediator.Send(new GetLeaseByIdQuery(id));
+        if (lease == null) return NotFound();
         return Ok(lease);
     }
 
-   
+
 
     [HttpDelete("{id}")]
     public async Task<IActionResult> Terminate(Guid id, [FromBody] string reason)
@@ -55,15 +47,15 @@ public class LeasesController(IMediator mediator, ICurrentUserService currentUse
         req.StartDate, req.EndDate,
         req.PaymentDayOfMonth));
 
-    return Ok(result);
+        return Ok(result);
     }
-	
+
     [HttpPost("{id}/reject")]
     public async Task<IActionResult> Reject(Guid id, [FromBody] RejectLeaseRequest req)
-   {
-     var result = await _mediator.Send(new RejectLeaseCommand(id, req.TenantId, req.Reason));
-     return Ok(result);
-    }	 
+    {
+        var result = await _mediator.Send(new RejectLeaseCommand(id, req.TenantId, req.Reason));
+        return Ok(result);
+    }
 }
 
 public record ConfirmLeaseRequest(
