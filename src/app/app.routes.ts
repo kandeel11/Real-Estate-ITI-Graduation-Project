@@ -15,14 +15,10 @@ export const routes: Routes = [
     children: [
       {
         path: '',
-        // Dashboard roles (admin/company/broker/maintenance) go straight to
-        // their dashboard; tenants and owners browse the public site
         canActivate: [dashboardRedirectGuard],
         loadComponent: () => import('./features/home/home').then((m) => m.HomeComponent),
       },
       {
-        // Listing creation — owners and brokers only (companies monitor;
-        // their brokers create)
         path: 'properties/new',
         canActivate: [multiRoleGuard],
         data: { expectedRoles: ['owner', 'broker'] },
@@ -32,7 +28,6 @@ export const routes: Routes = [
           ),
       },
       {
-        // Draft recovery + listing management for owners/brokers
         path: 'my-listings',
         canActivate: [multiRoleGuard],
         data: { expectedRoles: ['owner', 'broker'] },
@@ -42,7 +37,6 @@ export const routes: Routes = [
           ),
       },
       {
-        // Public browse (must stay AFTER properties/new so 'new' isn't an :id)
         path: 'properties',
         loadComponent: () =>
           import('./features/properties/pages/browse/browse.component').then(
@@ -65,8 +59,6 @@ export const routes: Routes = [
     children: [
       {
         path: 'login',
-        // Already signed in → no double login; go home (dashboard roles
-        // chain-forward from there)
         canActivate: [guestGuard],
         loadComponent: () =>
           import('./features/auth/pages/login/login.component').then((m) => m.LoginComponent),
@@ -99,8 +91,6 @@ export const routes: Routes = [
   // ==================== DASHBOARD LAYOUT WITH ROLE-BASED ACCESS ====================
   {
     path: 'dashboard',
-    canActivate: [roleGuard],
-
     children: [
       // ============ ADMIN DASHBOARD ============
       {
@@ -109,6 +99,55 @@ export const routes: Routes = [
         data: { expectedRole: 'admin' },
         loadChildren: () =>
           import('../app/dashboards/admin/Admin-dashboard/admin.routes').then((m) => m.adminRoutes),
+      },
+
+      // ============ LANDLORD DASHBOARD ============
+      {
+        path: 'landlord',
+        canActivate: [roleGuard],
+        data: { expectedRole: 'owner' },
+        loadComponent: () =>
+          import('./dashboards/landlord/landlord-shell.component').then(
+            (m) => m.LandlordShellComponent,
+          ),
+        children: [
+          { path: '', redirectTo: 'overview', pathMatch: 'full' },
+          {
+            path: 'overview',
+            loadComponent: () =>
+              import('./dashboards/landlord/pages/overview/overview.component').then(
+                (m) => m.LandlordOverviewComponent,
+              ),
+          },
+          {
+            path: 'properties',
+            loadComponent: () =>
+              import('./dashboards/landlord/pages/properties/properties.component').then(
+                (m) => m.LandlordPropertiesComponent,
+              ),
+          },
+          {
+            path: 'analytics',
+            loadComponent: () =>
+              import('./dashboards/landlord/pages/analytics/analytics.component').then(
+                (m) => m.LandlordAnalyticsComponent,
+              ),
+          },
+          {
+            path: 'subscription',
+            loadComponent: () =>
+              import('./dashboards/landlord/pages/subscription/subscription.component').then(
+                (m) => m.LandlordSubscriptionComponent,
+              ),
+          },
+          {
+            path: 'profile',
+            loadComponent: () =>
+              import('./dashboards/landlord/pages/profile/profile.component').then(
+                (m) => m.LandlordProfileComponent,
+              ),
+          },
+        ],
       },
 
       // ============ COMPANY DASHBOARD ============
@@ -121,11 +160,7 @@ export const routes: Routes = [
             (m) => m.CompanyDashboardComponent,
           ),
         children: [
-          {
-            path: '',
-            pathMatch: 'full',
-            redirectTo: 'overview',
-          },
+          { path: '', pathMatch: 'full', redirectTo: 'overview' },
           {
             path: 'overview',
             loadComponent: () =>
@@ -325,6 +360,7 @@ export const routes: Routes = [
             (m) => m.maintenanceRoutes,
           ),
       },
+
       // ============ TENANT DASHBOARD (catches /dashboard and /dashboard/*) ============
       {
         path: '',
