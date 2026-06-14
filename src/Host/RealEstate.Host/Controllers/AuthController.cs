@@ -5,19 +5,22 @@ using Identity.Application.Commands.RefreshToken;
 using Identity.Application.Commands.RegisterCompany;
 using Identity.Application.Commands.RegisterIndividualUser;
 using Identity.Application.Commands.ResendVerificationEmail;
+using Identity.Application.Commands.ChangePassword;
 using Identity.Application.Commands.ResetPassword;
 using Identity.Application.Commands.VerifyEmail;
+using Identity.Application.Interfaces;
 using Identity.Application.Features.Auth.Otp.SendOtp;
 using Identity.Application.Features.Auth.Otp.VerifyOtp;
 using Identity.Application.Queries.GetCurrentUser;
 using MediatR;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
+
 namespace RealEstate.Host.Controllers;
 
 [ApiController]
 [Route("api/auth")]
-public class AuthController(IMediator mediator) : ControllerBase
+public class AuthController(IMediator mediator, ICurrentUserService currentUser) : ControllerBase
 {
     [HttpPost("register")]
     [AllowAnonymous]
@@ -167,8 +170,36 @@ public class AuthController(IMediator mediator) : ControllerBase
     [Authorize]
     public async Task<IActionResult> GetCurrentUser(CancellationToken ct)
     {
-        var result = await mediator.Send(new GetCurrentUserQuery(), ct);
-        return result is null ? NotFound() : Ok(result);
+        try
+        {
+            var result = await mediator.Send(new GetCurrentUserQuery(), ct);
+            return Ok(result);
+        }
+        catch (UnauthorizedAccessException ex)
+        {
+            return Unauthorized(new { error = ex.Message });
+        }
+    }
+
+    /// <summary>Changes the signed-in user's password.</summary>
+    [HttpPost("change-password")]
+    [Authorize]
+    public async Task<IActionResult> ChangePassword(
+        [FromBody] ChangePasswordRequest request, CancellationToken ct)
+    {
+        var userId = currentUser.UserId;
+        if (userId is null) return Unauthorized();
+
+        if (string.IsNullOrWhiteSpace(request.NewPassword) || request.NewPassword.Length < 8)
+            return BadRequest(new { error = "New password must be at least 8 characters." });
+
+        try
+        {
+            await mediator.Send(new ChangePasswordCommand(userId.Value, request.CurrentPassword, request.NewPassword), ct);
+            return NoContent();
+        }
+        catch (UnauthorizedAccessException ex) { return BadRequest(new { error = ex.Message }); }
+        catch (KeyNotFoundException ex) { return NotFound(new { error = ex.Message }); }
     }
     [HttpPost("send-otp")]
     [ProducesResponseType(typeof(SendOtpResponse), StatusCodes.Status200OK)]
@@ -180,7 +211,6 @@ public class AuthController(IMediator mediator) : ControllerBase
         return Ok(result);
     }
 
-    /// <summary>POST /api/auth/verify-otp</summary>
     [HttpPost("verify-otp")]
     [ProducesResponseType(typeof(VerifyOtpResponse), StatusCodes.Status200OK)]
     [ProducesResponseType(StatusCodes.Status400BadRequest)]
@@ -204,6 +234,7 @@ public record RegisterRequest(
 public record LoginRequest(string Email, string Password);
 public record ForgotPasswordRequest(string Email);
 public record ResetPasswordRequest(string Email, string Code, string NewPassword);
+// ChangePasswordRequest is declared in TenantController and shared across this namespace.
 public record RefreshRequest(string RefreshToken);
 public record LogoutRequest(string RefreshToken);
 public record ResendVerificationRequest(string Email);

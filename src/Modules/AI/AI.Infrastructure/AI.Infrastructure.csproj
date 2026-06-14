@@ -33,7 +33,7 @@
   </ItemGroup>
 
   <PropertyGroup>
-    <TargetFramework>net9.0</TargetFramework>
+    <TargetFramework>net10.0</TargetFramework>
     <ImplicitUsings>enable</ImplicitUsings>
     <Nullable>enable</Nullable>
 	  <NoWarn>$(NoWarn);SKEXP0001;SKEXP0011;SKEXP0020;SKEXP0026</NoWarn>

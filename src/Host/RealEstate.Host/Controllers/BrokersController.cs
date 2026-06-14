@@ -2,6 +2,7 @@ using Identity.Application.Commands.AddBroker;
 using Identity.Application.Commands.DeactivateBroker;
 using Identity.Application.Commands.DeleteBroker;
 using Identity.Application.Commands.ReactivateBroker;
+using Identity.Application.Commands.UpdateBrokerScore;
 using Identity.Application.Interfaces;
 using MediatR;
 using Microsoft.AspNetCore.Authorization;
@@ -40,7 +41,6 @@ public class BrokersController(IMediator mediator, ICurrentUserService currentUs
         [FromBody] AddBrokerRequest request,
         CancellationToken ct)
     {
-        // Company manager can only add brokers to their own company
         if (!currentUser.IsInRole("admin") && currentUser.CompanyId != companyId)
             return Forbid();
 
@@ -127,6 +127,25 @@ public class BrokersController(IMediator mediator, ICurrentUserService currentUs
             return BadRequest(new { error = ex.Message });
         }
     }
+
+    [HttpPut("{brokerId:guid}/score")]
+    [Authorize(Policy = "InternalServiceOnly")]
+    public async Task<IActionResult> UpdateScore(
+        Guid companyId,
+        Guid brokerId,
+        [FromBody] UpdateScoreRequest request,
+        CancellationToken ct)
+    {
+        try
+        {
+            await mediator.Send(new UpdateBrokerScoreCommand(brokerId, request.Score), ct);
+            return NoContent();
+        }
+        catch (InvalidOperationException ex)
+        {
+            return BadRequest(new { error = ex.Message });
+        }
+    }
 }
 
 public record AddBrokerRequest(
@@ -135,3 +154,5 @@ public record AddBrokerRequest(
     string TempPassword,
     string Phone,
     string LicenseNumber);
+
+public record UpdateScoreRequest(decimal Score);

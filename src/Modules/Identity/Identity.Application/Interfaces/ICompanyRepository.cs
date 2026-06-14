@@ -4,6 +4,7 @@ namespace Identity.Application.Interfaces;
 
 public interface ICompanyRepository
 {
+    Task<List<Company>> GetAllAsync(CancellationToken ct = default);
     Task<Company?> GetByIdAsync(Guid id, CancellationToken ct = default);
     Task<Company?> GetByManagerIdAsync(Guid managerId, CancellationToken ct = default);
     Task<Dictionary<Guid, string>> GetNamesByIdsAsync(IEnumerable<Guid> ids, CancellationToken ct = default);

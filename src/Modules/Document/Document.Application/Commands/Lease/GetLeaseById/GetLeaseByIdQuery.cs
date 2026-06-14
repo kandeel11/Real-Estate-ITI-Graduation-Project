@@ -17,4 +17,5 @@ public record LeaseDto(
     string ExtractionStatus,
     decimal? ExtractionConfidence,
     bool IsActive,
-    string ContractFileUrl);
+    string ContractFileUrl,
+    DateTime CreatedAt);

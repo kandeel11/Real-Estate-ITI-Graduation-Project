@@ -11,7 +11,8 @@ public record CreateInquiryCommand(
     Guid TenantId,
     Guid OwnerId,
     Guid? CompanyId,
-    string Message
+    string Message,
+    Guid? ListingBrokerId = null
 ) : IRequest<InquiryResponse>;
 
 public class CreateInquiryCommandHandler : IRequestHandler<CreateInquiryCommand, InquiryResponse>
@@ -19,15 +20,18 @@ public class CreateInquiryCommandHandler : IRequestHandler<CreateInquiryCommand,
     private readonly IInquiryRepository _inquiries;
     private readonly INotificationService _notifications;
     private readonly ISubscriptionLimitChecker _limitChecker;
+    private readonly IDocumentDbContext _db;
 
     public CreateInquiryCommandHandler(
         IInquiryRepository inquiries,
         INotificationService notifications,
-        ISubscriptionLimitChecker limitChecker)
+        ISubscriptionLimitChecker limitChecker,
+        IDocumentDbContext db)
     {
         _inquiries = inquiries;
         _notifications = notifications;
         _limitChecker = limitChecker;
+        _db = db;
     }
 
     public async Task<InquiryResponse> Handle(CreateInquiryCommand cmd, CancellationToken ct)
@@ -62,6 +66,32 @@ public class CreateInquiryCommandHandler : IRequestHandler<CreateInquiryCommand,
             relatedEntityId: inquiry.Id,
             ct: ct
         );
+
+        // If the property has a listing broker, route the inquiry to them so it
+        // shows in their dashboard, and notify them directly.
+        if (cmd.ListingBrokerId is Guid brokerId && brokerId != cmd.OwnerId)
+        {
+            _db.InquiryAssignments.Add(new Domain.Entities.InquiryAssignment
+            {
+                Id = Guid.NewGuid(),
+                InquiryId = inquiry.Id,
+                AssignedToId = brokerId,
+                AssignedById = cmd.OwnerId,
+                IsAccepted = false,
+                CreatedAt = DateTime.UtcNow
+            });
+            await _db.SaveChangesAsync(ct);
+
+            await _notifications.CreateInAppAsync(
+                userId: brokerId,
+                title: "New Inquiry Received",
+                body: "A tenant has submitted an inquiry on one of your listings.",
+                type: NotificationType.NewInquiry,
+                relatedEntityType: "inquiry",
+                relatedEntityId: inquiry.Id,
+                ct: ct
+            );
+        }
 
         return MapToResponse(inquiry);
     }
