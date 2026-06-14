@@ -1,4 +1,6 @@
-﻿using Document.Application.Queries.Lease;
+﻿using Document.Application.Commands.Lease.ConfirmLease;
+using Document.Application.Queries.Lease.GetLeaseById;
+using Document.Application.Queries.Lease;
 using Identity.Application.Commands.ChangePassword;
 using Identity.Application.Commands.UpdateProfile;
 using Identity.Application.Interfaces;
@@ -107,7 +109,55 @@ public class TenantController(
         var lease = await sender.Send(new GetActiveLeaseQuery(UserId), ct);
         return lease is null ? NotFound(new { message = "No active lease found." }) : Ok(lease);
     }
+
+    [HttpGet("leases/pending-offer")]
+    public async Task<IActionResult> GetPendingLeaseOffer(CancellationToken ct)
+    {
+        var lease = await sender.Send(new GetPendingLeaseOfferQuery(UserId), ct);
+        if (lease is null) return NotFound(new { message = "No pending lease offer." });
+
+        var prop = await sender.Send(new GetPropertyByIdQuery(lease.PropertyId), ct);
+
+        return Ok(new
+        {
+            id            = lease.Id,
+            propertyId    = lease.PropertyId,
+            propertyTitle = prop?.Title ?? $"Property {lease.PropertyId.ToString()[..6]}",
+            startDate     = lease.StartDate,
+            endDate       = lease.EndDate,
+            monthlyRent   = lease.RentAmount,
+            deposit       = lease.SecurityDeposit,
+            pdfUrl        = lease.ContractFileUrl,
+            status        = "pending_tenant",
+            sentAt        = lease.CreatedAt
+        });
+    }
+
+    [HttpPost("leases/{id}/accept")]
+    public async Task<IActionResult> AcceptLeaseOffer(Guid id, CancellationToken ct)
+    {
+        var lease = await sender.Send(new GetLeaseByIdQuery(id), ct);
+        if (lease is null) return NotFound(new { message = "Lease not found." });
+        if (lease.TenantId != UserId) return Forbid();
+
+        var result = await sender.Send(
+            new ConfirmLeaseCommand(id, UserId, null, null, null, null, null), ct);
+        return Ok(result);
+    }
+
+    [HttpPost("leases/{id}/decline")]
+    public async Task<IActionResult> DeclineLeaseOffer(Guid id, [FromBody] DeclineLeaseRequest req, CancellationToken ct)
+    {
+        var lease = await sender.Send(new GetLeaseByIdQuery(id), ct);
+        if (lease is null) return NotFound(new { message = "Lease not found." });
+        if (lease.TenantId != UserId) return Forbid();
+
+        var result = await sender.Send(
+            new RejectLeaseCommand(id, UserId, req.Reason ?? "Declined by tenant"), ct);
+        return Ok(result);
+    }
 }
 
 public record UpdateProfileRequest(string FullName, string Phone, string? Email);
 public record ChangePasswordRequest(string CurrentPassword, string NewPassword, string ConfirmNewPassword);
+public record DeclineLeaseRequest(string? Reason);

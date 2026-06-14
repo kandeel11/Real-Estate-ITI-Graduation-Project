@@ -11,6 +11,9 @@ public class CompanyRepository : ICompanyRepository
 
     public CompanyRepository(IdentityDbContext context) => _context = context;
 
+    public async Task<List<Company>> GetAllAsync(CancellationToken ct = default) =>
+        await _context.Companies.OrderByDescending(c => c.CreatedAt).ToListAsync(ct);
+
     public async Task<Company?> GetByIdAsync(Guid id, CancellationToken ct = default) =>
         await _context.Companies.FirstOrDefaultAsync(c => c.Id == id, ct);
 
