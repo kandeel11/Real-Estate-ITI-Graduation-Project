@@ -37,8 +37,8 @@
                 <span class="stat__label">{{ 'ADMIN.DASHBOARD.STAT_PROPERTIES' | translate }}</span>
                 <div class="stat__icon"><i class="fa-solid fa-house"></i></div>
             </div>
-            <h2 class="stat__value">42</h2>
-            <span class="stat__trend neutral">{{ 'ADMIN.DASHBOARD.REGIONS' | translate }}</span>
+            <h2 class="stat__value">{{ totalActiveCount() }}</h2>
+            <span class="stat__trend neutral">Across {{ regionsCount() }} regions</span>
         </div>
 
         <div class="stat">
@@ -144,44 +144,30 @@
             </div>
         </div>
 
-        <!-- Needs Attention -->
-        <div class="card">
-            <div class="card__head">
-                <div>
-                    <h3>{{ 'ADMIN.DASHBOARD.ATTENTION_TITLE' | translate }}</h3>
-                </div>
-                <span class="badge-count">{{ 'ADMIN.DASHBOARD.ITEMS' | translate: { n: pendingProperties().length } }}</span>
+        <!-- User Demographics -->
+        <div class="chart-card-container">
+            <div class="card-header">
+                <h3>User Demographics</h3>
+                <p>Registered users by role</p>
             </div>
-            <div class="attention-list">
-                @for (p of pendingProperties(); track p.id; let i = $index) {
-                <div class="attention-item">
-                    <div class="attention-img">
-                        @if ($any(p).primaryImageUrl) {
-                        <img [src]="$any(p).primaryImageUrl" [alt]="p.title" />
-                        } @else {
-                        <i class="fa-solid fa-screwdriver-wrench"></i>
-                        }
-                    </div>
-                    <div class="attention-body">
-                        <div class="attention-top">
-                            <strong>{{ p.title }}</strong>
-                            <span class="attention-badge" [class.renewal]="i === 0" [class.urgent]="i === 1">
-                                {{ (i === 0 ? 'ADMIN.DASHBOARD.RENEWAL' : 'ADMIN.DASHBOARD.URGENT') | translate }}
-                            </span>
-                        </div>
-                        <span class="attention-meta">
-                            {{ p.district }}, {{ p.city }} · {{ (i === 0 ? 'ADMIN.DASHBOARD.LEASE_EXPIRING' : 'ADMIN.DASHBOARD.MAINTENANCE_REQUEST') | translate }}
-                        </span>
-                        <div class="attention-actions">
-                            <button class="btn-primary-sm" (click)="approve(p)">
-                                {{ (i === 0 ? 'ADMIN.DASHBOARD.SEND_OFFER' : 'ADMIN.DASHBOARD.APPROVE_VENDOR') | translate }}
-                            </button>
-                            @if (i === 0) {
-                            <button class="btn-outline-sm">{{ 'ADMIN.DASHBOARD.CONTACT_TENANT' | translate }}</button>
-                            }
-                        </div>
-                    </div>
-                </div>
+
+            <div class="chart-body">
+                @if (usersChart) {
+                <apx-chart [series]="usersChart.series" [chart]="usersChart.chart" [labels]="usersChart.labels"
+                    [colors]="usersChart.colors" [plotOptions]="usersChart.plotOptions" [stroke]="usersChart.stroke"
+                    [tooltip]="usersChart.tooltip" [dataLabels]="usersChart.dataLabels" [legend]="usersChart.legend">
+                </apx-chart>
+                } @else {
+                <div class="loading-chart"><i class="fa-solid fa-spinner fa-spin"></i> Loading...</div>
+                }
+            </div>
+
+            <div class="chart-footer-legend">
+                @for (item of userRolesLegend(); track item.label) {
+                <span class="legend-item">
+                    <span class="dot" [style.background-color]="item.color"></span>
+                    {{ item.label }} ({{ item.count }})
+                </span>
                 }
             </div>
         </div>

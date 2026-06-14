@@ -19,8 +19,7 @@ interface NavItem {
 })
 export class SidebarComponent {
   collapsed = input<boolean>(false);
-
-  private readonly auth = inject(AuthService);
+  protected readonly auth = inject(AuthService);
   private readonly router = inject(Router);
 
   logout(): void {
@@ -41,11 +40,11 @@ export class SidebarComponent {
       badge: 17,
     },
     { labelKey: 'ADMIN_NAV.ANALYTICS', icon: 'fa-solid fa-chart-column', route: 'reports' },
-    { labelKey: 'ADMIN_NAV.SETTINGS', icon: 'fa-solid fa-gear', route: 'settings' },
     {
       labelKey: 'ADMIN_NAV.MAINTENANCE',
       icon: 'fa-solid fa-screwdriver-wrench',
       route: 'maintenance-companies',
     },
+    { labelKey: 'ADMIN_NAV.SETTINGS', icon: 'fa-solid fa-gear', route: 'settings' },
   ];
 }

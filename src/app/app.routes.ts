@@ -99,11 +99,14 @@ export const routes: Routes = [
   // ==================== DASHBOARD LAYOUT WITH ROLE-BASED ACCESS ====================
   {
     path: 'dashboard',
-    // canActivate: [roleGuard],
+    canActivate: [roleGuard],
+
     children: [
       // ============ ADMIN DASHBOARD ============
       {
         path: 'admin',
+        canActivate: [roleGuard],
+        data: { expectedRole: 'admin' },
         loadChildren: () =>
           import('../app/dashboards/admin/Admin-dashboard/admin.routes').then((m) => m.adminRoutes),
       },
@@ -270,7 +273,7 @@ export const routes: Routes = [
       // ============ TENANT DASHBOARD ============
       {
         path: 'tenant',
-        // canActivate: [roleGuard],
+        canActivate: [roleGuard],
         data: { expectedRole: 'tenant' },
         loadComponent: () =>
           import('./dashboards/tenant/tenant-dashboard.component').then(
@@ -318,6 +321,8 @@ export const routes: Routes = [
       // ============ MAINTENANCE COMPANY DASHBOARD ============
       {
         path: 'maintenance',
+        canActivate: [roleGuard],
+        data: { expectedRole: 'maintenance_company' },
         loadChildren: () =>
           import('./dashboards/maintenance-company/maintenance.routes').then(
             (m) => m.maintenanceRoutes,
