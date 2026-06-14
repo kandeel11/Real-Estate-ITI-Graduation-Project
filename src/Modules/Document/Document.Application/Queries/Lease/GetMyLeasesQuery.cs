@@ -21,6 +21,6 @@ public class GetMyLeasesHandler(IDocumentDbContext db)
             l.Id, l.PropertyId, l.TenantId, l.OwnerId,
             l.RentAmount, l.SecurityDeposit, l.StartDate, l.EndDate,
             l.PaymentDayOfMonth, l.ExtractionStatus,
-            l.ExtractionConfidence, l.IsActive, l.ContractFileUrl)).ToList();
+            l.ExtractionConfidence, l.IsActive, l.ContractFileUrl, l.CreatedAt)).ToList();
     }
 }

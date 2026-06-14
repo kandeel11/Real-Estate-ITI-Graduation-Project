@@ -18,6 +18,7 @@ public class PropertySummaryDto
     public string City { get; init; } = string.Empty;
     public string District { get; init; } = string.Empty;
     public string Status { get; init; } = string.Empty;
+    public string VerificationStatus { get; init; } = string.Empty;
     public bool IsFeatured { get; init; }
     public string? PrimaryImageUrl { get; init; }
     public int ViewsCount { get; init; }

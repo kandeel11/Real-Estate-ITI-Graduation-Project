@@ -5,6 +5,7 @@ using Identity.Application.Interfaces;
 using MediatR;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
+using Property.Application.Features.Queries.GetPropertyById;
 
 namespace RealEstate.Host.Controllers;
 
@@ -21,9 +22,14 @@ public class InquiriesController(IMediator mediator, ICurrentUserService current
     {
         try
         {
+            // Route the inquiry to the property's listing broker (if any) so it
+            // surfaces in their dashboard and they get notified.
+            var property = await mediator.Send(new GetPropertyByIdQuery(req.PropertyId), ct);
+
             // FIX: TenantId from JWT, not body
             var result = await mediator.Send(new CreateInquiryCommand(
-                req.PropertyId, UserId, req.OwnerId, req.CompanyId, req.Message), ct);
+                req.PropertyId, UserId, req.OwnerId, req.CompanyId, req.Message,
+                property?.ListingBrokerId), ct);
             return CreatedAtAction(nameof(GetById), new { id = result.Id }, result);
         }
         catch (InvalidOperationException ex)
@@ -59,6 +65,34 @@ public class InquiriesController(IMediator mediator, ICurrentUserService current
         catch (InvalidOperationException ex) { return BadRequest(ex.Message); }
     }
 
+    /// <summary>Convert an inquiry into a lead (accepts it, creating a lead + conversation).</summary>
+    [HttpPost("{id:guid}/convert-to-lead")]
+    [Authorize(Roles = "owner,broker,company_manager")]
+    public async Task<IActionResult> ConvertToLead(Guid id, CancellationToken ct)
+    {
+        try
+        {
+            var result = await mediator.Send(new AcceptInquiryCommand(id, UserId), ct);
+            return Ok(new { leadId = result.LeadId });
+        }
+        catch (KeyNotFoundException ex) { return NotFound(new { error = ex.Message }); }
+        catch (InvalidOperationException ex) { return BadRequest(new { error = ex.Message }); }
+    }
+
+    /// <summary>Broker/owner replies to an inquiry (creates a conversation message + notifies tenant).</summary>
+    [HttpPost("{id:guid}/reply")]
+    [Authorize(Roles = "owner,broker,company_manager")]
+    public async Task<IActionResult> Reply(Guid id, [FromBody] ReplyInquiryBodyRequest req, CancellationToken ct)
+    {
+        try
+        {
+            await mediator.Send(new ReplyToInquiryCommand(id, UserId, req.Text), ct);
+            return NoContent();
+        }
+        catch (KeyNotFoundException ex) { return NotFound(new { error = ex.Message }); }
+        catch (InvalidOperationException ex) { return BadRequest(new { error = ex.Message }); }
+    }
+
     [HttpPut("{id:guid}/close")]
     public async Task<IActionResult> Close(Guid id, CancellationToken ct)
     {
@@ -68,3 +102,4 @@ public class InquiriesController(IMediator mediator, ICurrentUserService current
 }
 
 public record CreateInquiryBodyRequest(Guid PropertyId, Guid OwnerId, Guid? CompanyId, string Message);
+public record ReplyInquiryBodyRequest(string Text);

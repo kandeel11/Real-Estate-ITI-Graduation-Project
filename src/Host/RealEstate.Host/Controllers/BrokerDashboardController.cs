@@ -1,0 +1,294 @@
+using Document.Application.Queries.Inquiry;
+using Document.Application.Queries.Lead.GetLeadsByBroker;
+using Document.Application.Queries.Lead.GetLeadsByProperties;
+using Document.Application.Queries.Notification;
+using Identity.Application.Interfaces;
+using MediatR;
+using Microsoft.AspNetCore.Authorization;
+using Microsoft.AspNetCore.Mvc;
+using Property.Application.DTOs;
+using Property.Application.Features.Queries.GetPropertiesByBroker;
+using RealEstate.Host.Services;
+
+namespace RealEstate.Host.Controllers;
+
+/// <summary>
+/// Self-service workspace for the logged-in broker. Mirrors TenantDashboardController.
+/// Everything is scoped to the broker's identity UserId (the convention used across
+/// the app for ListingBrokerId, lead assignment, and inquiry assignment).
+/// </summary>
+[ApiController]
+[Route("api/brokers/me")]
+[Authorize(Roles = "broker")]
+public class BrokerDashboardController(
+    ISender sender,
+    ICurrentUserService currentUser,
+    IBrokerRepository brokerRepo,
+    IUserRepository userRepo,
+    ICompanyRepository companyRepo,
+    PropertyEnrichmentService enrichment) : ControllerBase
+{
+    private Guid UserId => currentUser.UserId ?? throw new UnauthorizedAccessException();
+
+    // ── Profile ───────────────────────────────────────────────────────────────
+
+    [HttpGet]
+    public async Task<IActionResult> GetProfile(CancellationToken ct)
+    {
+        var broker = await brokerRepo.GetByUserIdAsync(UserId, ct);
+        if (broker is null) return NotFound(new { error = "Broker profile not found." });
+
+        var user = await userRepo.GetByIdAsync(broker.UserId, ct);
+        var (rank, total) = await GetRankAsync(broker.CompanyId, broker.UserId, ct);
+
+        string companyName = string.Empty;
+        if (broker.CompanyId is Guid cid)
+        {
+            var company = await companyRepo.GetByIdAsync(cid, ct);
+            companyName = company?.Name ?? string.Empty;
+        }
+
+        return Ok(new
+        {
+            id = broker.UserId,
+            name = user?.FullName ?? string.Empty,
+            email = user?.Email ?? string.Empty,
+            phone = user?.Phone ?? string.Empty,
+            license = broker.LicenseNumber,
+            companyName,
+            bio = string.Empty,
+            photo = user?.ProfileImageUrl,
+            languages = Array.Empty<string>(),
+            specializations = Array.Empty<string>(),
+            rating = broker.RatingAvg,
+            rankInCompany = rank,
+            totalBrokers = total
+        });
+    }
+
+    // ── Stats (overview cards) ──────────────────────────────────────────────────
+
+    [HttpGet("stats")]
+    public async Task<IActionResult> GetStats(CancellationToken ct)
+    {
+        var broker = await brokerRepo.GetByUserIdAsync(UserId, ct);
+        if (broker is null) return NotFound(new { error = "Broker profile not found." });
+
+        var properties = await sender.Send(new GetPropertiesByBrokerQuery(UserId), ct);
+        var propertyIds = properties.Select(p => p.Id).ToList();
+        var inquiries = await sender.Send(new GetInquiriesByPropertiesQuery(propertyIds), ct);
+        var (rank, total) = await GetRankAsync(broker.CompanyId, broker.UserId, ct);
+
+        return Ok(new
+        {
+            assignedProperties = properties.Count,
+            newInquiries = inquiries.Count(i => i.Status == "Pending"),
+            closedDeals = broker.ClosedDealsCount,
+            rating = broker.RatingAvg,
+            rankInCompany = rank,
+            totalBrokers = total
+        });
+    }
+
+    // ── Performance ─────────────────────────────────────────────────────────────
+
+    [HttpGet("performance")]
+    public async Task<IActionResult> GetPerformance(CancellationToken ct)
+    {
+        var broker = await brokerRepo.GetByUserIdAsync(UserId, ct);
+        if (broker is null) return NotFound(new { error = "Broker profile not found." });
+
+        var properties = await sender.Send(new GetPropertiesByBrokerQuery(UserId), ct);
+        var leads = await sender.Send(new GetLeadsByPropertiesQuery(properties.Select(p => p.Id).ToList()), ct);
+        var (rank, total) = await GetRankAsync(broker.CompanyId, broker.UserId, ct);
+
+        var now = DateTime.UtcNow;
+        var won = leads.Where(l => l.Status == "ClosedWon").ToList();
+
+        // Last 6 months of closed-won deals, oldest → newest
+        var monthly = new List<object>(6);
+        for (int i = 5; i >= 0; i--)
+        {
+            var month = new DateTime(now.Year, now.Month, 1).AddMonths(-i);
+            var deals = won.Count(l => l.UpdatedAt.Year == month.Year && l.UpdatedAt.Month == month.Month);
+            monthly.Add(new { month = month.ToString("MMM"), deals });
+        }
+
+        var dealsThisMonth = won.Count(l => l.UpdatedAt.Year == now.Year && l.UpdatedAt.Month == now.Month);
+
+        return Ok(new
+        {
+            dealsClosedThisMonth = dealsThisMonth,
+            avgResponseTimeMinutes = broker.AvgResponseTimeMinutes,
+            conversionRate = broker.ConversionRate,
+            rating = broker.RatingAvg,
+            ratingCount = broker.TotalRatings,
+            rankInCompany = rank,
+            totalBrokers = total.ToString(),
+            monthlyDeals = monthly
+        });
+    }
+
+    // ── Assigned properties ─────────────────────────────────────────────────────
+
+    [HttpGet("properties")]
+    public async Task<IActionResult> GetProperties(CancellationToken ct)
+    {
+        var properties = await sender.Send(new GetPropertiesByBrokerQuery(UserId), ct);
+        await enrichment.EnrichAsync(properties, ct);
+        return Ok(properties);
+    }
+
+    // ── Leads ───────────────────────────────────────────────────────────────────
+
+    [HttpGet("leads")]
+    public async Task<IActionResult> GetLeads(CancellationToken ct)
+    {
+        var properties = await sender.Send(new GetPropertiesByBrokerQuery(UserId), ct);
+        var leads = await sender.Send(new GetLeadsByPropertiesQuery(properties.Select(p => p.Id).ToList()), ct);
+        if (leads.Count == 0) return Ok(Array.Empty<object>());
+
+        var tenantNames = await userRepo.GetFullNamesByIdsAsync(
+            leads.Select(l => l.TenantId).Distinct(), ct);
+        var propertyTitles = properties.ToDictionary(p => p.Id, p => p.Title);
+
+        var result = leads.Select(l => new
+        {
+            id = l.Id,
+            tenantName = tenantNames.GetValueOrDefault(l.TenantId, string.Empty),
+            propertyId = l.PropertyId,
+            propertyTitle = propertyTitles.GetValueOrDefault(l.PropertyId, string.Empty),
+            status = MapLeadStatus(l.Status),
+            stageEnteredAt = new DateTimeOffset(DateTime.SpecifyKind(l.UpdatedAt, DateTimeKind.Utc)).ToUnixTimeMilliseconds(),
+            dealValue = l.DealValue?.ToString(),
+            notes = l.Notes
+        });
+
+        return Ok(result);
+    }
+
+    // ── Inquiries assigned to me ────────────────────────────────────────────────
+
+    [HttpGet("inquiries")]
+    public async Task<IActionResult> GetInquiries(CancellationToken ct)
+    {
+        var properties = await sender.Send(new GetPropertiesByBrokerQuery(UserId), ct);
+        var inquiries = await sender.Send(new GetInquiriesByPropertiesQuery(properties.Select(p => p.Id).ToList()), ct);
+        if (inquiries.Count == 0) return Ok(Array.Empty<object>());
+
+        var tenantNames = await userRepo.GetFullNamesByIdsAsync(
+            inquiries.Select(i => i.TenantId).Distinct(), ct);
+        var propertyTitles = properties.ToDictionary(p => p.Id, p => p.Title);
+
+        var result = new List<object>(inquiries.Count);
+        foreach (var i in inquiries)
+        {
+            var tenant = await userRepo.GetByIdAsync(i.TenantId, ct);
+            result.Add(new
+            {
+                id = i.Id,
+                propertyId = i.PropertyId,
+                propertyTitle = propertyTitles.GetValueOrDefault(i.PropertyId, string.Empty),
+                tenantId = i.TenantId,
+                tenantName = tenantNames.GetValueOrDefault(i.TenantId, string.Empty),
+                tenantEmail = tenant?.Email ?? string.Empty,
+                message = i.Message,
+                status = MapInquiryStatus(i.Status),
+                createdAt = i.CreatedAt
+            });
+        }
+
+        return Ok(result);
+    }
+
+    // ── Ratings ─────────────────────────────────────────────────────────────────
+    // Ratings target leases/properties, not brokers, so there is no per-broker
+    // review feed yet. The aggregate (RatingAvg/TotalRatings) is in the profile.
+    [HttpGet("ratings")]
+    public IActionResult GetRatings() => Ok(Array.Empty<object>());
+
+    // ── Activity (from notifications) ────────────────────────────────────────────
+
+    [HttpGet("activity")]
+    public async Task<IActionResult> GetActivity(CancellationToken ct)
+    {
+        var result = await sender.Send(
+            new GetNotificationsQuery(UserId, UnreadOnly: false, Page: 1, PageSize: 10), ct);
+
+        var activity = result.Items.Select(n => new
+        {
+            id = n.Id,
+            text = n.Title,
+            timeAgo = TimeAgo(n.CreatedAt)
+        });
+
+        return Ok(activity);
+    }
+
+    // ── Tasks (derived from real workload) ───────────────────────────────────────
+
+    [HttpGet("tasks")]
+    public async Task<IActionResult> GetTasks(CancellationToken ct)
+    {
+        var properties = await sender.Send(new GetPropertiesByBrokerQuery(UserId), ct);
+        var propertyIds = properties.Select(p => p.Id).ToList();
+        var inquiries = await sender.Send(new GetInquiriesByPropertiesQuery(propertyIds), ct);
+        var leads = await sender.Send(new GetLeadsByPropertiesQuery(propertyIds), ct);
+
+        var tasks = new List<object>();
+        var newInquiries = inquiries.Count(i => i.Status == "Pending");
+        if (newInquiries > 0)
+            tasks.Add(new { id = "new-inquiries", text = $"Respond to {newInquiries} new inquir{(newInquiries == 1 ? "y" : "ies")}", done = false });
+
+        var negotiating = leads.Count(l => l.Status == "Negotiating");
+        if (negotiating > 0)
+            tasks.Add(new { id = "negotiating", text = $"Follow up on {negotiating} lead{(negotiating == 1 ? "" : "s")} in negotiation", done = false });
+
+        return Ok(tasks);
+    }
+
+    // ── Helpers ──────────────────────────────────────────────────────────────────
+
+    /// <summary>Rank within the broker's company by closed deals; (1,1) for independents.</summary>
+    private async Task<(int rank, int total)> GetRankAsync(Guid? companyId, Guid brokerUserId, CancellationToken ct)
+    {
+        if (companyId is not Guid cid) return (1, 1);
+
+        var peers = await brokerRepo.GetByCompanyIdAsync(cid, ct);
+        if (peers.Count == 0) return (1, 1);
+
+        var ordered = peers
+            .OrderByDescending(b => b.ClosedDealsCount)
+            .ThenByDescending(b => b.RatingAvg)
+            .ToList();
+        var idx = ordered.FindIndex(b => b.UserId == brokerUserId);
+        return (idx < 0 ? ordered.Count : idx + 1, ordered.Count);
+    }
+
+    private static string MapLeadStatus(string status) => status switch
+    {
+        "New" => "new",
+        "Contacted" => "contacted",
+        "Negotiating" => "negotiating",
+        "ClosedWon" => "closed_won",
+        "ClosedLost" => "closed_lost",
+        _ => "new"
+    };
+
+    private static string MapInquiryStatus(string status) => status switch
+    {
+        "Pending" => "new",
+        "Accepted" => "replied",
+        "Closed" => "converted",
+        _ => "new"
+    };
+
+    private static string TimeAgo(DateTime utc)
+    {
+        var span = DateTime.UtcNow - DateTime.SpecifyKind(utc, DateTimeKind.Utc);
+        if (span.TotalMinutes < 1) return "just now";
+        if (span.TotalMinutes < 60) return $"{(int)span.TotalMinutes}m ago";
+        if (span.TotalHours < 24) return $"{(int)span.TotalHours}h ago";
+        return $"{(int)span.TotalDays}d ago";
+    }
+}

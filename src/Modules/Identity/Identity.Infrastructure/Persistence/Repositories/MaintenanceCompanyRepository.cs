@@ -25,4 +25,11 @@ public class MaintenanceCompanyRepository : IMaintenanceCompanyRepository
 
     public async Task SaveChangesAsync(CancellationToken ct = default) =>
         await _context.SaveChangesAsync(ct);
+
+    public Task<IEnumerable<MaintenanceCompany>> GetByServiceTypeAsync(string serviceType, CancellationToken ct = default)
+    {
+        return Task.FromResult(_context.MaintenanceCompanies
+            .Where(c => c.GetServiceTypes().Contains(serviceType, StringComparer.OrdinalIgnoreCase))
+            .AsEnumerable());
+    }
 }

@@ -9,4 +9,5 @@ public interface IMaintenanceCompanyRepository
     Task<bool> ExistsByEmailAsync(string email, CancellationToken ct = default);
     Task AddAsync(MaintenanceCompany company, CancellationToken ct = default);
     Task SaveChangesAsync(CancellationToken ct = default);
+    Task<IEnumerable<MaintenanceCompany>> GetByServiceTypeAsync(string serviceType, CancellationToken ct = default);
 }
