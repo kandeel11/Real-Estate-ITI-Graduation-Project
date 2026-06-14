@@ -1,6 +1,7 @@
-import { Component, signal } from '@angular/core';
+import { Component, signal, inject, OnInit, OnDestroy } from '@angular/core';
 import { RouterOutlet, RouterLink, RouterLinkActive } from '@angular/router';
 import { CommonModule } from '@angular/common';
+import { BrokerNotificationService } from './services/broker-notification.service';
 
 interface NavItem {
   label: string;
@@ -194,6 +195,19 @@ interface NavItem {
         border-radius: 50%;
         border: 2px solid #fff;
       }
+      .conn-dot {
+        width: 8px;
+        height: 8px;
+        border-radius: 50%;
+        display: inline-block;
+        margin-right: 4px;
+      }
+      .conn-dot.online {
+        background: #10b981;
+      }
+      .conn-dot.offline {
+        background: #aaa;
+      }
       .content {
         flex: 1;
         overflow-y: auto;
@@ -249,8 +263,8 @@ interface NavItem {
             <a class="nav-item" [routerLink]="item.route" routerLinkActive="active">
               <span class="nav-icon">{{ item.icon }}</span>
               <span class="nav-label">{{ item.label }}</span>
-              @if (item.label === 'Inquiries') {
-                <span class="badge">3</span>
+              @if (item.label === 'Inquiries' && notifications.inquiryCount() > 0) {
+                <span class="badge">{{ notifications.inquiryCount() }}</span>
               }
             </a>
           }
@@ -260,7 +274,14 @@ interface NavItem {
             <div class="avatar">👤</div>
             <div class="user-details">
               <div class="user-name">Sara Hassan</div>
-              <div class="user-role">Broker</div>
+              <div class="user-role">
+                <span
+                  class="conn-dot"
+                  [class.online]="notifications.connected()"
+                  [class.offline]="!notifications.connected()"
+                ></span>
+                Broker
+              </div>
             </div>
           </div>
         </div>
@@ -271,7 +292,9 @@ interface NavItem {
           <div class="topbar-actions">
             <button class="notif-btn">
               🔔
-              <span class="notif-dot"></span>
+              @if (notifications.inquiryCount() > 0) {
+                <span class="notif-dot"></span>
+              }
             </button>
           </div>
         </header>
@@ -282,7 +305,8 @@ interface NavItem {
     </div>
   `,
 })
-export class BrokerDashboardComponent {
+export class BrokerDashboardComponent implements OnInit, OnDestroy {
+  notifications = inject(BrokerNotificationService);
   collapsed = signal(false);
 
   navItems: NavItem[] = [
@@ -293,6 +317,14 @@ export class BrokerDashboardComponent {
     { label: 'Performance', icon: '📈', route: 'performance' },
     { label: 'Profile', icon: '👤', route: 'profile' },
   ];
+
+  ngOnInit() {
+    this.notifications.connect();
+  }
+
+  ngOnDestroy() {
+    this.notifications.disconnect();
+  }
 
   toggleSidebar() {
     this.collapsed.update((v) => !v);
