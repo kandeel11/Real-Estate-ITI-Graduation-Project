@@ -1,6 +1,7 @@
 import { Component, signal, ChangeDetectionStrategy } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
+import { TranslatePipe } from '@ngx-translate/core';
 
 type SettingsTab = 'profile' | 'platform' | 'notifications' | 'security' | 'appearance';
 type Toast = { type: 'success' | 'error'; text: string } | null;
@@ -8,7 +9,7 @@ type Toast = { type: 'success' | 'error'; text: string } | null;
 @Component({
   selector: 'app-settings',
   standalone: true,
-  imports: [CommonModule, FormsModule],
+  imports: [CommonModule, FormsModule, TranslatePipe],
   templateUrl: './settings.component.html',
   styleUrls: ['./settings.component.scss'],
   changeDetection: ChangeDetectionStrategy.OnPush,
@@ -75,12 +76,12 @@ export class SettingsComponent {
     logoUrl: '',
   });
 
-  tabs: { key: SettingsTab; label: string; icon: string }[] = [
-    { key: 'profile', label: 'Profile', icon: 'fa-user-circle' },
-    { key: 'platform', label: 'Platform', icon: 'fa-sliders' },
-    { key: 'notifications', label: 'Notifications', icon: 'fa-bell' },
-    { key: 'security', label: 'Security', icon: 'fa-shield-halved' },
-    { key: 'appearance', label: 'Appearance', icon: 'fa-palette' },
+  tabs: { key: SettingsTab; labelKey: string; icon: string }[] = [
+    { key: 'profile', labelKey: 'ADMIN.SETTINGS.TAB_PROFILE', icon: 'fa-user-circle' },
+    { key: 'platform', labelKey: 'ADMIN.SETTINGS.TAB_PLATFORM', icon: 'fa-sliders' },
+    { key: 'notifications', labelKey: 'ADMIN.SETTINGS.TAB_NOTIFICATIONS', icon: 'fa-bell' },
+    { key: 'security', labelKey: 'ADMIN.SETTINGS.TAB_SECURITY', icon: 'fa-shield-halved' },
+    { key: 'appearance', labelKey: 'ADMIN.SETTINGS.TAB_APPEARANCE', icon: 'fa-palette' },
   ];
 
   timezones = ['Africa/Cairo', 'UTC', 'Europe/London', 'America/New_York', 'Asia/Dubai'];

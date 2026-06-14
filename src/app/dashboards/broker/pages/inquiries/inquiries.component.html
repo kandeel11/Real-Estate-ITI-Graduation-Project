@@ -1,0 +1,96 @@
+<div class="page">
+  <div class="page-header">
+    <div>
+      <h1 class="page-title">{{ 'BROKER.INQUIRIES.TITLE' | translate }}</h1>
+      <p class="page-subtitle">{{ 'BROKER.INQUIRIES.SUBTITLE' | translate }}</p>
+    </div>
+  </div>
+
+  <div class="toolbar">
+    <div class="filter-tabs">
+      <button class="filter-tab" [class.active]="filter() === 'all'" (click)="filter.set('all')">
+        {{ 'BROKER.INQUIRIES.FILTER_ALL' | translate }}
+      </button>
+      <button class="filter-tab" [class.active]="filter() === 'new'" (click)="filter.set('new')">
+        {{ 'BROKER.INQUIRIES.FILTER_NEW' | translate }}
+      </button>
+      <button class="filter-tab" [class.active]="filter() === 'replied'" (click)="filter.set('replied')">
+        {{ 'BROKER.INQUIRIES.FILTER_REPLIED' | translate }}
+      </button>
+    </div>
+    <div class="search-wrap">
+      <i class="fa-solid fa-magnifying-glass search-icon"></i>
+      <input class="search-input" [ngModel]="search()" (ngModelChange)="search.set($event)"
+        [placeholder]="'BROKER.INQUIRIES.SEARCH_PLACEHOLDER' | translate" />
+    </div>
+  </div>
+
+  @if (loading()) {
+    <div class="inbox">
+      @for (i of [1,2,3]; track i) {
+        <div class="skeleton-card">
+          <div class="skeleton avatar"></div>
+          <div style="flex:1">
+            <div class="skeleton" style="height:14px;width:40%;margin-bottom:8px"></div>
+            <div class="skeleton" style="height:13px;width:70%;margin-bottom:8px"></div>
+            <div class="skeleton" style="height:13px;width:55%"></div>
+          </div>
+        </div>
+      }
+    </div>
+  } @else if (filtered().length === 0) {
+    <div class="empty">
+      <i class="fa-regular fa-envelope empty-icon"></i>
+      <p>{{ 'BROKER.INQUIRIES.EMPTY' | translate }}</p>
+    </div>
+  } @else {
+    <div class="inbox">
+      @for (inq of filtered(); track inq.id) {
+        <div class="inquiry-card" [class.is-new]="inq.status === 'new'">
+          <div class="inq-avatar">{{ inq.from.charAt(0).toUpperCase() }}</div>
+          <div class="inq-body">
+            <div class="inq-meta">
+              <span class="inq-from">{{ inq.from }}</span>
+              <span class="inq-property">{{ inq.property }}</span>
+              <span class="inq-time">{{ inq.timeAgo }}</span>
+              @if (inq.status === 'new') {
+                <span class="badge-new">{{ 'BROKER.INQUIRIES.NEW_BADGE' | translate }}</span>
+              } @else {
+                <span class="badge-replied">{{ 'BROKER.INQUIRIES.REPLIED_BADGE' | translate }}</span>
+              }
+            </div>
+            <p class="inq-message">{{ inq.message }}</p>
+
+            @if (inq.reply) {
+              <div class="inq-reply-preview">
+                <i class="fa-solid fa-reply"></i> {{ inq.reply }}
+              </div>
+            }
+
+            <div class="inq-actions">
+              <div class="reply-row">
+                <input class="reply-input" [(ngModel)]="replyText[inq.id]"
+                  [placeholder]="'BROKER.INQUIRIES.REPLY_PLACEHOLDER' | translate"
+                  (keydown.enter)="sendReply(inq)" />
+                <button class="btn btn-primary" (click)="sendReply(inq)"
+                  [disabled]="sendingId() === inq.id || !replyText[inq.id]?.trim()">
+                  @if (sendingId() === inq.id) {
+                    {{ 'BROKER.INQUIRIES.SENDING' | translate }}
+                  } @else {
+                    <i class="fa-solid fa-paper-plane"></i>
+                    {{ 'BROKER.INQUIRIES.SEND' | translate }}
+                  }
+                </button>
+              </div>
+              <button class="btn btn-outline" (click)="convertToLead(inq)"
+                [disabled]="convertingId() === inq.id">
+                <i class="fa-solid fa-filter"></i>
+                {{ 'BROKER.INQUIRIES.CONVERT_LEAD' | translate }}
+              </button>
+            </div>
+          </div>
+        </div>
+      }
+    </div>
+  }
+</div>

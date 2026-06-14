@@ -47,6 +47,7 @@ export interface Property {
   city: string;
   district: string;
   status: PropertyStatusString;
+  verificationStatus?: verificationStatusString;
   isFeatured: boolean;
   primaryImageUrl: string | null;
   viewsCount: number;
@@ -58,7 +59,7 @@ export interface Property {
 export const LOCKED_STATUSES: PropertyStatusString[] = ['Rented', 'Draft'];
 
 export interface PendingProperty extends Property {
-  verificationStatus: verificationStatus;
+  verificationStatus: verificationStatusString;
   rejectionReason: string | null;
   aiDuplicateConfidence: number;
   ownershipGate: 'Pending' | 'Passed' | 'Failed';
@@ -83,7 +84,7 @@ export interface PropertyDetail extends Property {
   listingSource?: string;
   featuredUntil?: string | null;
   aiDuplicateConfidence?: number | null;
-  verificationStatus?: string;
+  verificationStatus?: verificationStatusString;
   rejectionReason?: string | null;
   ownershipGate?: string;
   duplicateGate?: string;

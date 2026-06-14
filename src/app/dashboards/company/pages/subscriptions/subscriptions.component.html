@@ -1,104 +1,293 @@
-<h2 class="mb-4">{{ 'SUBSCRIPTIONS.TITLE' | translate }}</h2>
+<div class="plans-page">
 
-@if (planSuccess()) {
-  <div class="alert alert-success">
-    <i class="fa-solid fa-circle-check me-2"></i>{{ planSuccess() }}
+  <!-- ── HEADER ──────────────────────────────────────── -->
+  <div class="plans-header">
+    <h1 class="plans-title"><i class="fa-solid fa-crown me-2"></i>{{ 'SUBSCRIPTIONS.TITLE' | translate }}</h1>
+    <p class="plans-subtitle">Choose the plan that fits your company</p>
   </div>
-}
-@if (planError() && !showPlanModal()) {
-  <div class="alert alert-danger">{{ planError() }}</div>
-}
 
-@if (loading()) {
-  <div class="d-flex justify-content-center py-5">
-    <div class="spinner-border text-secondary" role="status">
-      <span class="visually-hidden">Loading…</span>
+  <!-- ── SUCCESS / ERROR BANNERS ──────────────────────── -->
+  @if (planSuccess()) {
+    <div class="alert-success-bar">
+      <i class="fa-solid fa-circle-check"></i>{{ planSuccess() }}
     </div>
-  </div>
-} @else if (!subscription()) {
-  <div class="alert alert-warning d-flex justify-content-between align-items-center">
-    <span>
-      <i class="fa-solid fa-triangle-exclamation me-2"></i>
-      {{ 'SUBSCRIPTIONS.NO_SUBSCRIPTION' | translate }}
-    </span>
-    <button class="btn btn-dark btn-sm" (click)="openPlanModal()">{{ 'SUBSCRIPTIONS.CHOOSE_PLAN' | translate }}</button>
-  </div>
-} @else {
-  @if (subscription(); as sub) {
-    <!-- Plan card -->
-    <div class="card p-4 mb-4 plan-card text-white">
-      <div class="d-flex justify-content-between align-items-start">
-        <div>
-          <div class="text-uppercase fw-bold fs-5">
-            {{ sub.planName }}
-            <span class="badge bg-light text-dark ms-2 align-middle">{{ sub.status }}</span>
-          </div>
-          <div class="opacity-75">
-            {{ sub.priceMonthly | currency: 'USD' : 'symbol' : '1.0-0' }}{{ 'SUBSCRIPTIONS.PER_MONTH' | translate }}
-            · {{ 'SUBSCRIPTIONS.RENEWS' | translate }} {{ sub.endDate | date: 'MMM d, y' }}
-            @if (sub.isAutoRenew) {
-              <span class="badge bg-light text-dark ms-2">{{ 'SUBSCRIPTIONS.AUTO_RENEW' | translate }}</span>
+  }
+  @if (planError() && !showPlanModal()) {
+    <div class="alert-error-bar">
+      <i class="fa-solid fa-triangle-exclamation"></i>{{ planError() }}
+    </div>
+  }
+
+  <!-- ── LOADING ───────────────────────────────────────── -->
+  @if (loading()) {
+    <div class="skeleton billing-skeleton mb-5"></div>
+    <div class="row g-4">
+      @for (n of [1, 2]; track $index) {
+        <div class="col-12 col-md-6">
+          <div class="skeleton-card">
+            <div class="skeleton mb-3" style="width:90px;height:22px;border-radius:99px;"></div>
+            <div class="skeleton mb-2" style="width:110px;height:30px;"></div>
+            <div class="skeleton mb-1" style="width:140px;height:52px;"></div>
+            <div class="skeleton mb-4" style="width:100px;height:16px;"></div>
+            @for (r of [1,2,3,4,5,6]; track $index) {
+              <div class="skeleton mb-2" style="height:17px;" [style.width]="(60 + ($index * 8) % 35) + '%'"></div>
             }
+            <div class="skeleton mt-4" style="height:44px;border-radius:10px;"></div>
           </div>
         </div>
-        <div class="d-flex gap-2">
-          <button class="btn btn-light" (click)="openPlanModal()">
-            <i class="fa-solid fa-crown me-1"></i>{{ 'SUBSCRIPTIONS.UPGRADE_PLAN' | translate }}
-          </button>
-          @if (isPremium()) {
-            <button class="btn btn-outline-light" (click)="showCancelConfirm.set(true)">{{ 'SUBSCRIPTIONS.CANCEL' | translate }}</button>
-          }
-        </div>
+      }
+    </div>
+  }
+
+  <!-- ── CONTENT ───────────────────────────────────────── -->
+  @if (!loading()) {
+
+    <!-- Billing Toggle -->
+    <div class="billing-toggle-wrap mb-5">
+      <div class="billing-toggle">
+        <button class="billing-pill" [class.billing-pill-active]="billingCycle() === 'monthly'"
+                (click)="setBilling('monthly')">Monthly</button>
+        <button class="billing-pill" [class.billing-pill-active]="billingCycle() === 'annual'"
+                (click)="setBilling('annual')">
+          Annual &nbsp;<span class="save-tag">Save 16%</span>
+        </button>
       </div>
     </div>
 
-    <!-- Usage meters -->
-    @if (usage(); as u) {
-      <h5 class="mb-3">{{ 'SUBSCRIPTIONS.USAGE_TITLE' | translate }}</h5>
-      <div class="row g-3 mb-4">
-        <div class="col-md-3">
-          <app-usage-meter [label]="'SUBSCRIPTIONS.USAGE_PROPERTIES' | translate" [used]="u.propertiesUsed" [max]="sub.maxProperties" />
-        </div>
-        <div class="col-md-3">
-          <app-usage-meter [label]="'SUBSCRIPTIONS.USAGE_BROKERS' | translate" [used]="u.brokersUsed" [max]="sub.maxBrokers" />
-        </div>
-        <div class="col-md-3">
-          <app-usage-meter [label]="'SUBSCRIPTIONS.USAGE_AI' | translate" [used]="u.aiRequestsUsed" [max]="sub.maxAiRequestsPerMonth" />
-        </div>
-        <div class="col-md-3">
-          <app-usage-meter [label]="'SUBSCRIPTIONS.USAGE_STORAGE' | translate" [used]="u.storageUsedGb" [max]="sub.maxStorageGb" />
-        </div>
-      </div>
-    }
+    <!-- Plan Cards -->
+    <div class="row g-4 mb-5">
 
-    <div class="row g-3">
-      <!-- Plan features -->
-      <div class="col-lg-6">
-        <div class="card p-3 h-100">
-          <h5 class="mb-3">{{ 'SUBSCRIPTIONS.FEATURES_TITLE' | translate }}</h5>
-          <div class="row">
-            @for (feature of features(); track feature.labelKey) {
-              <div class="col-6 mb-2" [class.text-muted]="!feature.on">
-                @if (feature.on) {
-                  <i class="fa-solid fa-circle-check text-success me-2"></i>
-                } @else {
-                  <i class="fa-solid fa-circle-xmark text-secondary me-2"></i>
+      <!-- Free Company Plan -->
+      @if (freePlan(); as free) {
+        <div class="col-12 col-md-6">
+          <div class="plan-card" [class.plan-card--active]="isCurrent(free)">
+            @if (isCurrent(free)) {
+              <span class="plan-badge badge-current">
+                <i class="fa-solid fa-circle-check me-1"></i>Current Plan
+              </span>
+            } @else {
+              <span class="plan-badge badge-free">Free</span>
+            }
+            <h2 class="plan-name">{{ free.name }}</h2>
+            <div class="price-area" [style.opacity]="priceOpacity()">
+              <p class="plan-price">Free</p>
+              <p class="price-sub">No credit card required</p>
+            </div>
+            <ul class="feature-list">
+              <li class="feature-item">
+                <i class="fa-solid fa-check feature-icon-yes"></i>
+                <span>{{ formatValue(free.maxProperties) }} properties</span>
+              </li>
+              <li class="feature-item">
+                <i class="fa-solid fa-check feature-icon-yes"></i>
+                <span>{{ formatValue(free.maxBrokers) }} broker seats</span>
+              </li>
+              <li class="feature-item">
+                <i class="fa-solid fa-check feature-icon-yes"></i>
+                <span>{{ formatValue(free.maxAiRequestsPerMonth) }} AI requests / month</span>
+              </li>
+              <li class="feature-item">
+                <i class="fa-solid fa-xmark feature-icon-no"></i>
+                <span class="feature-text-muted">Advanced analytics</span>
+              </li>
+              <li class="feature-item">
+                <i class="fa-solid fa-xmark feature-icon-no"></i>
+                <span class="feature-text-muted">Featured listings</span>
+              </li>
+              <li class="feature-item">
+                <i class="fa-solid fa-xmark feature-icon-no"></i>
+                <span class="feature-text-muted">AI lead prioritization</span>
+              </li>
+            </ul>
+            <button class="btn plan-btn plan-btn-current" [disabled]="true">
+              <i class="fa-solid fa-circle-check me-1"></i>
+              {{ isCurrent(free) ? 'Current Plan' : 'Free Plan' }}
+            </button>
+          </div>
+        </div>
+      }
+
+      <!-- Premium Company Plan -->
+      @if (premiumPlan(); as premium) {
+        <div class="col-12 col-md-6">
+          <div class="plan-card plan-card--premium" [class.plan-card--active]="isCurrent(premium)">
+            @if (isCurrent(premium)) {
+              <span class="plan-badge badge-current">
+                <i class="fa-solid fa-circle-check me-1"></i>Current Plan
+              </span>
+            } @else {
+              <span class="plan-badge badge-popular">
+                <i class="fa-solid fa-star me-1"></i>Most Popular
+              </span>
+            }
+            <h2 class="plan-name">{{ premium.name }}</h2>
+            <div class="price-area" [style.opacity]="priceOpacity()">
+              @if (billingCycle() === 'monthly') {
+                <p class="plan-price">EGP {{ premium.priceMonthly }}</p>
+                <p class="price-sub">per month</p>
+              } @else {
+                <p class="plan-price">EGP {{ premium.priceAnnual }}</p>
+                <p class="price-sub">per year &nbsp;·&nbsp; EGP {{ annualMonthly(premium) }} / month</p>
+              }
+            </div>
+            <ul class="feature-list">
+              <li class="feature-item">
+                <i class="fa-solid fa-check feature-icon-yes"></i>
+                <span>{{ formatValue(premium.maxProperties) }} properties</span>
+              </li>
+              <li class="feature-item">
+                <i class="fa-solid fa-check feature-icon-yes"></i>
+                <span>{{ formatValue(premium.maxBrokers) }} broker seats</span>
+              </li>
+              <li class="feature-item">
+                <i class="fa-solid fa-check feature-icon-yes"></i>
+                <span>{{ formatValue(premium.maxAiRequestsPerMonth) }} AI requests / month</span>
+              </li>
+              <li class="feature-item">
+                <i class="fa-solid fa-check feature-icon-yes"></i>
+                <span>Advanced analytics</span>
+              </li>
+              <li class="feature-item">
+                <i class="fa-solid fa-check feature-icon-yes"></i>
+                <span>Featured listings</span>
+              </li>
+              <li class="feature-item">
+                <i class="fa-solid fa-check feature-icon-yes"></i>
+                <span>AI lead prioritization</span>
+              </li>
+            </ul>
+            @if (isCurrent(premium)) {
+              <div class="current-plan-actions">
+                <button class="btn plan-btn plan-btn-current" [disabled]="true">
+                  <i class="fa-solid fa-circle-check me-1"></i>Current Plan
+                </button>
+                @if (isPremium()) {
+                  <button class="btn plan-btn-cancel" (click)="showCancelConfirm.set(true)">
+                    Cancel subscription
+                  </button>
                 }
-                {{ feature.labelKey | translate }}
               </div>
+            } @else {
+              <button class="btn plan-btn plan-btn-upgrade" (click)="openPlanModal()">
+                <i class="fa-solid fa-crown me-1"></i>Upgrade to Premium
+              </button>
             }
           </div>
         </div>
-      </div>
+      }
 
-      <!-- Payment history -->
-      <div class="col-lg-6">
-        <div class="card p-3 h-100">
-          <h5 class="mb-3">{{ 'SUBSCRIPTIONS.INVOICES_TITLE' | translate }}</h5>
-          @if (invoices().length === 0) {
-            <p class="text-muted mb-0">{{ 'SUBSCRIPTIONS.NO_INVOICES' | translate }}</p>
-          } @else {
-            <table class="table table-sm mb-0">
+      <!-- No plans yet (fallback) -->
+      @if (!freePlan() && !premiumPlan() && !loading()) {
+        <div class="col-12">
+          <div class="no-plans-card">
+            <i class="fa-solid fa-triangle-exclamation text-warning"></i>
+            <p>No subscription plans available. <button class="retry-btn" (click)="openPlanModal()">Choose a plan</button></p>
+          </div>
+        </div>
+      }
+    </div>
+
+    <!-- ── USAGE METERS ──────────────────────────────── -->
+    @if (subscription(); as sub) {
+      @if (usage(); as u) {
+        <div class="section-card mb-4">
+          <h2 class="section-title mb-4">
+            <i class="fa-solid fa-chart-pie me-2"></i>{{ 'SUBSCRIPTIONS.USAGE_TITLE' | translate }}
+          </h2>
+          <div class="row g-3">
+            <div class="col-6 col-md-3">
+              <app-usage-meter [label]="'SUBSCRIPTIONS.USAGE_PROPERTIES' | translate"
+                               [used]="u.propertiesUsed" [max]="sub.maxProperties" />
+            </div>
+            <div class="col-6 col-md-3">
+              <app-usage-meter [label]="'SUBSCRIPTIONS.USAGE_BROKERS' | translate"
+                               [used]="u.brokersUsed" [max]="sub.maxBrokers" />
+            </div>
+            <div class="col-6 col-md-3">
+              <app-usage-meter [label]="'SUBSCRIPTIONS.USAGE_AI' | translate"
+                               [used]="u.aiRequestsUsed" [max]="sub.maxAiRequestsPerMonth" />
+            </div>
+            <div class="col-6 col-md-3">
+              <app-usage-meter [label]="'SUBSCRIPTIONS.USAGE_STORAGE' | translate"
+                               [used]="u.storageUsedGb" [max]="sub.maxStorageGb" />
+            </div>
+          </div>
+        </div>
+      }
+
+      <!-- ── COMPARISON TABLE ──────────────────────────── -->
+      @if (freePlan(); as free) {
+        @if (premiumPlan(); as premium) {
+          <div class="section-card mb-4">
+            <h2 class="section-title mb-4">
+              <i class="fa-solid fa-table-list me-2"></i>Full Feature Comparison
+            </h2>
+            <div class="table-responsive">
+              <table class="comparison-table">
+                <thead>
+                  <tr>
+                    <th class="col-feature">Feature</th>
+                    <th class="col-plan text-center">Free</th>
+                    <th class="col-plan col-plan-premium text-center">
+                      <i class="fa-solid fa-crown me-1"></i>Premium
+                    </th>
+                  </tr>
+                </thead>
+                <tbody>
+                  <tr>
+                    <td>Properties</td>
+                    <td class="text-center">{{ formatValue(free.maxProperties) }}</td>
+                    <td class="text-center col-plan-premium-cell">{{ formatValue(premium.maxProperties) }}</td>
+                  </tr>
+                  <tr>
+                    <td>Broker Seats</td>
+                    <td class="text-center">{{ formatValue(free.maxBrokers) }}</td>
+                    <td class="text-center col-plan-premium-cell">{{ formatValue(premium.maxBrokers) }}</td>
+                  </tr>
+                  <tr>
+                    <td>AI Requests / month</td>
+                    <td class="text-center">{{ formatValue(free.maxAiRequestsPerMonth) }}</td>
+                    <td class="text-center col-plan-premium-cell">{{ formatValue(premium.maxAiRequestsPerMonth) }}</td>
+                  </tr>
+                  <tr>
+                    <td>Advanced Analytics</td>
+                    <td class="text-center"><i class="fa-solid fa-xmark check-no"></i></td>
+                    <td class="text-center col-plan-premium-cell"><i class="fa-solid fa-check check-yes"></i></td>
+                  </tr>
+                  <tr>
+                    <td>Featured Listings</td>
+                    <td class="text-center"><i class="fa-solid fa-xmark check-no"></i></td>
+                    <td class="text-center col-plan-premium-cell"><i class="fa-solid fa-check check-yes"></i></td>
+                  </tr>
+                  <tr>
+                    <td>AI Lead Prioritization</td>
+                    <td class="text-center"><i class="fa-solid fa-xmark check-no"></i></td>
+                    <td class="text-center col-plan-premium-cell"><i class="fa-solid fa-check check-yes"></i></td>
+                  </tr>
+                </tbody>
+              </table>
+            </div>
+          </div>
+        }
+      }
+
+      <!-- ── PAYMENT HISTORY ────────────────────────────── -->
+      <div class="section-card">
+        <h2 class="section-title mb-4">
+          <i class="fa-solid fa-receipt me-2"></i>{{ 'SUBSCRIPTIONS.INVOICES_TITLE' | translate }}
+        </h2>
+        @if (invoices().length === 0) {
+          <p class="empty-invoices">{{ 'SUBSCRIPTIONS.NO_INVOICES' | translate }}</p>
+        } @else {
+          <div class="table-responsive">
+            <table class="comparison-table">
+              <thead>
+                <tr>
+                  <th class="col-feature">Date</th>
+                  <th>Amount</th>
+                  <th class="text-end">Status</th>
+                </tr>
+              </thead>
               <tbody>
                 @for (inv of invoices(); track inv.id) {
                   <tr>
@@ -109,64 +298,64 @@
                 }
               </tbody>
             </table>
-          }
-        </div>
+          </div>
+        }
       </div>
-    </div>
+    }
+
   }
-}
+</div>
 
-<!-- Manage Plan modal -->
+<!-- ── MANAGE PLAN MODAL ────────────────────────────── -->
 @if (showPlanModal()) {
-  <div class="modal d-block" tabindex="-1" role="dialog">
-    <div class="modal-dialog modal-dialog-centered">
-      <div class="modal-content">
-        <div class="modal-header">
-          <h5 class="modal-title">{{ 'SUBSCRIPTIONS.MODAL_TITLE' | translate }}</h5>
-          <button type="button" class="btn-close" (click)="showPlanModal.set(false)"></button>
-        </div>
-        <div class="modal-body">
-          <p class="text-muted small">{{ 'SUBSCRIPTIONS.MODAL_HINT' | translate }}</p>
+  <div class="modal-overlay" (click)="showPlanModal.set(false)">
+    <div class="modal-box" (click)="$event.stopPropagation()">
+      <div class="modal-icon-wrap">
+        <i class="fa-solid fa-crown"></i>
+      </div>
+      <h3 class="modal-title">{{ 'SUBSCRIPTIONS.MODAL_TITLE' | translate }}</h3>
+      <p class="modal-desc">{{ 'SUBSCRIPTIONS.MODAL_HINT' | translate }}</p>
 
-          @if (planError()) {
-            <div class="alert alert-danger py-2">{{ planError() }}</div>
-          }
+      @if (planError()) {
+        <div class="alert-error-bar mb-3">
+          <i class="fa-solid fa-triangle-exclamation"></i>{{ planError() }}
+        </div>
+      }
 
-          @if (companyPlans().length === 0) {
-            <div class="d-flex justify-content-center py-3">
-              <div class="spinner-border spinner-border-sm text-secondary"></div>
-            </div>
-          } @else {
-            <label class="form-label">{{ 'SUBSCRIPTIONS.MODAL_PLAN_LABEL' | translate }}</label>
-            <select class="form-select" [value]="selectedPlanId()" (change)="onPlanSelected($event)">
-              <option value="" disabled>{{ 'SUBSCRIPTIONS.MODAL_PLAN_SELECT' | translate }}</option>
-              @for (plan of companyPlans(); track plan.id) {
-                <option [value]="plan.id" [disabled]="plan.name === subscription()?.planName">
-                  {{ plan.name }} — ${{ plan.priceMonthly }}/mo ·
-                  {{ plan.maxProperties }} properties · {{ plan.maxBrokers }} brokers
-                </option>
-              }
-            </select>
+      @if (companyPlans().length === 0) {
+        <div class="d-flex justify-content-center py-3">
+          <div class="spinner-border spinner-border-sm text-secondary"></div>
+        </div>
+      } @else {
+        <label class="form-label text-start d-block" style="font-size:13px;font-weight:500;">
+          {{ 'SUBSCRIPTIONS.MODAL_PLAN_LABEL' | translate }}
+        </label>
+        <select class="form-select mb-4" [value]="selectedPlanId()" (change)="onPlanSelected($event)">
+          <option value="" disabled>{{ 'SUBSCRIPTIONS.MODAL_PLAN_SELECT' | translate }}</option>
+          @for (plan of companyPlans(); track plan.id) {
+            <option [value]="plan.id" [disabled]="plan.name === subscription()?.planName">
+              {{ plan.name }} — ${{ plan.priceMonthly }}/mo · {{ plan.maxProperties }} properties · {{ plan.maxBrokers }} brokers
+            </option>
           }
-        </div>
-        <div class="modal-footer">
-          <button type="button" class="btn btn-outline-secondary" (click)="showPlanModal.set(false)">{{ 'SUBSCRIPTIONS.MODAL_CLOSE' | translate }}</button>
-          <button type="button" class="btn btn-dark"
-                  (click)="confirmUpgrade()"
-                  [disabled]="planActionBusy() || !selectedPlanId()">
-            @if (planActionBusy()) {
-              <span class="spinner-border spinner-border-sm me-2"></span>
-            }
-            {{ 'SUBSCRIPTIONS.MODAL_UPGRADE' | translate }}
-          </button>
-        </div>
+        </select>
+      }
+
+      <div class="modal-actions">
+        <button class="btn plan-btn plan-btn-upgrade"
+                (click)="confirmUpgrade()"
+                [disabled]="planActionBusy() || !selectedPlanId()">
+          @if (planActionBusy()) { <span class="spinner-border spinner-border-sm me-2"></span> }
+          {{ 'SUBSCRIPTIONS.MODAL_UPGRADE' | translate }}
+        </button>
+        <button class="btn btn-outline-secondary" (click)="showPlanModal.set(false)">
+          {{ 'SUBSCRIPTIONS.MODAL_CLOSE' | translate }}
+        </button>
       </div>
     </div>
   </div>
-  <div class="modal-backdrop show"></div>
 }
 
-<!-- Cancel confirmation -->
+<!-- ── CANCEL CONFIRMATION ───────────────────────────── -->
 <app-confirm-modal
   [show]="showCancelConfirm()"
   [title]="'SUBSCRIPTIONS.CANCEL_TITLE' | translate"

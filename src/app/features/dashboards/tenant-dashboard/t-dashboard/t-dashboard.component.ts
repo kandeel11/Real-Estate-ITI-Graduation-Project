@@ -5,7 +5,6 @@ import { filter, Subscription } from 'rxjs';
 import { TranslatePipe } from '@ngx-translate/core';
 import { NotificationService } from '../services/notification.service';
 import { AuthService } from '../../../../core/services/auth.service';
-import { ToastComponent } from '../../../../shared/components/toast/toast.component';
 import { NavbarComponent } from '../../../../layout/navbar/navbar.component';
 
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
@@ -28,7 +27,7 @@ interface NavItem {
 
 @Component({
   selector: 'app-t-dashboard',
-  imports: [RouterOutlet, RouterLink, RouterLinkActive, ToastComponent, NavbarComponent, TranslatePipe],
+  imports: [RouterOutlet, RouterLink, RouterLinkActive, NavbarComponent, TranslatePipe],
   templateUrl: './t-dashboard.component.html',
   styleUrl: './t-dashboard.component.css',
   animations: [routeAnimations],
@@ -45,7 +44,8 @@ export class TDashboardComponent implements OnInit, OnDestroy {
     { id: 'overview',      label: 'TENANT_NAV.OVERVIEW',      icon: 'fa-solid fa-gauge-high',         route: '/dashboard',               exact: true },
     { id: 'property',      label: 'TENANT_NAV.MY_PROPERTY',   icon: 'fa-solid fa-building',           route: '/dashboard/property' },
     { id: 'lease',         label: 'TENANT_NAV.MY_LEASE',      icon: 'fa-solid fa-file-contract',      route: '/dashboard/lease' },
-    { id: 'maintenance',   label: 'TENANT_NAV.MAINTENANCE',   icon: 'fa-solid fa-screwdriver-wrench', route: '/dashboard/maintenance' },
+    { id: 'maintenance',   label: 'TENANT_NAV.MAINTENANCE',   icon: 'fa-solid fa-screwdriver-wrench', route: '/dashboard/maintenance-requests' },
+    { id: 'messages',      label: 'TENANT_NAV.MESSAGES',      icon: 'fa-regular fa-comments',         route: '/dashboard/messages' },
     { id: 'notifications', label: 'TENANT_NAV.NOTIFICATIONS', icon: 'fa-regular fa-bell',             route: '/dashboard/notifications' },
     { id: 'subscription',  label: 'TENANT_NAV.SUBSCRIPTION',  icon: 'fa-solid fa-crown',              route: '/dashboard/subscription' },
     { id: 'ratings',       label: 'TENANT_NAV.RATINGS',       icon: 'fa-regular fa-star',             route: '/dashboard/ratings' },

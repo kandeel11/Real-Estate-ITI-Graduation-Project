@@ -41,6 +41,11 @@ export const dashboardRoutes: Routes = [
           import('./pages/maintenance/ticket-detail/ticket-detail.component').then(m => m.TicketDetailComponent),
       },
       {
+        path: 'messages',
+        loadComponent: () =>
+          import('./pages/messages/messages.component').then(m => m.TenantMessagesComponent),
+      },
+      {
         path: 'notifications',
         loadComponent: () =>
           import('./pages/notifications/notifications.component').then(m => m.NotificationsComponent),

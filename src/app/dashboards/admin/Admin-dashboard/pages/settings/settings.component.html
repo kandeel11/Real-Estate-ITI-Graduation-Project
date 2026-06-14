@@ -3,12 +3,7 @@
     <!-- Toast -->
     @if (toast(); as t) {
     <div class="stg-toast" [class.success]="t.type==='success'" [class.error]="t.type==='error'">
-
-        <i class="fa-solid" [class]="t.type==='success'
-       ? 'fa-circle-check'
-       : 'fa-circle-xmark'">
-        </i>
-
+        <i class="fa-solid" [class]="t.type==='success' ? 'fa-circle-check' : 'fa-circle-xmark'"></i>
         {{ t.text }}
     </div>
     }
@@ -17,8 +12,8 @@
     <div class="stg-header">
         <div class="stg-header-icon"><i class="fa-solid fa-gears"></i></div>
         <div>
-            <h1>Settings</h1>
-            <p>Platform configuration & preferences</p>
+            <h1>{{ 'ADMIN.SETTINGS.PAGE_TITLE' | translate }}</h1>
+            <p>{{ 'ADMIN.SETTINGS.PAGE_SUBTITLE' | translate }}</p>
         </div>
     </div>
 
@@ -29,7 +24,7 @@
             @for (tab of tabs; track tab.key) {
             <button class="stg-tab" [class.active]="activeTab() === tab.key" (click)="setTab(tab.key)">
                 <div class="stg-tab-icon"><i class="fa-solid" [class]="tab.icon"></i></div>
-                <span>{{ tab.label }}</span>
+                <span>{{ tab.labelKey | translate }}</span>
                 @if (activeTab() === tab.key) { <i class="fa-solid fa-chevron-right stg-tab-arrow"></i> }
             </button>
             }
@@ -42,15 +37,15 @@
             @if (activeTab() === 'profile') {
             <div class="stg-section">
                 <div class="stg-section-head">
-                    <h2>Profile Information</h2>
-                    <p>Update your personal details and admin profile</p>
+                    <h2>{{ 'ADMIN.SETTINGS.PROFILE_TITLE' | translate }}</h2>
+                    <p>{{ 'ADMIN.SETTINGS.PROFILE_SUBTITLE' | translate }}</p>
                 </div>
                 <div class="stg-profile-top">
                     <div class="stg-avatar-area">
-                        <div class="stg-avatar">
-                            {{ getInitials() }}
-                        </div>
-                        <button class="stg-avatar-btn"><i class="fa-solid fa-camera"></i> Change Photo</button>
+                        <div class="stg-avatar">{{ getInitials() }}</div>
+                        <button class="stg-avatar-btn">
+                            <i class="fa-solid fa-camera"></i> {{ 'ADMIN.SETTINGS.CHANGE_PHOTO' | translate }}
+                        </button>
                     </div>
                     <div class="stg-profile-badge">
                         <i class="fa-solid fa-shield-halved"></i>
@@ -59,26 +54,26 @@
                 </div>
                 <div class="stg-form-grid">
                     <div class="stg-field">
-                        <label>Full Name</label>
+                        <label>{{ 'ADMIN.SETTINGS.FULL_NAME' | translate }}</label>
                         <input type="text" [value]="profile().fullName"
                             (input)="updateProfile('fullName', $any($event.target).value)" />
                     </div>
                     <div class="stg-field">
-                        <label>Email Address</label>
+                        <label>{{ 'ADMIN.SETTINGS.EMAIL' | translate }}</label>
                         <input type="email" [value]="profile().email"
                             (input)="updateProfile('email', $any($event.target).value)" />
                     </div>
                     <div class="stg-field">
-                        <label>Phone Number</label>
+                        <label>{{ 'ADMIN.SETTINGS.PHONE' | translate }}</label>
                         <input type="tel" [value]="profile().phone"
                             (input)="updateProfile('phone', $any($event.target).value)" />
                     </div>
                     <div class="stg-field">
-                        <label>Role</label>
+                        <label>{{ 'ADMIN.SETTINGS.ROLE' | translate }}</label>
                         <input type="text" [value]="profile().role" disabled class="stg-disabled" />
                     </div>
                     <div class="stg-field stg-field--full">
-                        <label>Bio</label>
+                        <label>{{ 'ADMIN.SETTINGS.BIO' | translate }}</label>
                         <textarea rows="3" [value]="profile().bio"
                             (input)="updateProfile('bio', $any($event.target).value)"></textarea>
                     </div>
@@ -90,53 +85,52 @@
             @if (activeTab() === 'platform') {
             <div class="stg-section">
                 <div class="stg-section-head">
-                    <h2>Platform Configuration</h2>
-                    <p>Global settings that affect the entire platform</p>
+                    <h2>{{ 'ADMIN.SETTINGS.PLATFORM_TITLE' | translate }}</h2>
+                    <p>{{ 'ADMIN.SETTINGS.PLATFORM_SUBTITLE' | translate }}</p>
                 </div>
                 <div class="stg-form-grid">
                     <div class="stg-field">
-                        <label>Platform Name</label>
+                        <label>{{ 'ADMIN.SETTINGS.PLATFORM_NAME' | translate }}</label>
                         <input type="text" [value]="platform().platformName"
                             (input)="updatePlatform('platformName',$any($event.target).value)" />
                     </div>
                     <div class="stg-field">
-                        <label>Support Email</label>
+                        <label>{{ 'ADMIN.SETTINGS.SUPPORT_EMAIL' | translate }}</label>
                         <input type="email" [value]="platform().supportEmail"
                             (input)="updatePlatform('supportEmail',$any($event.target).value)" />
                     </div>
                     <div class="stg-field">
-                        <label>Timezone</label>
+                        <label>{{ 'ADMIN.SETTINGS.TIMEZONE' | translate }}</label>
                         <select [value]="platform().timezone"
                             (change)="updatePlatform('timezone',$any($event.target).value)">
                             @for (tz of timezones; track tz) { <option [value]="tz">{{ tz }}</option> }
                         </select>
                     </div>
                     <div class="stg-field">
-                        <label>Currency</label>
+                        <label>{{ 'ADMIN.SETTINGS.CURRENCY' | translate }}</label>
                         <select [value]="platform().currency"
                             (change)="updatePlatform('currency',$any($event.target).value)">
                             @for (c of currencies; track c) { <option [value]="c">{{ c }}</option> }
                         </select>
                     </div>
                     <div class="stg-field">
-                        <label>Language</label>
+                        <label>{{ 'ADMIN.SETTINGS.LANGUAGE' | translate }}</label>
                         <select [value]="platform().language"
                             (change)="updatePlatform('language',$any($event.target).value)">
                             @for (l of languages; track l.k) { <option [value]="l.k">{{ l.l }}</option> }
                         </select>
                     </div>
                     <div class="stg-field">
-                        <label>Max Listings / User</label>
+                        <label>{{ 'ADMIN.SETTINGS.MAX_LISTINGS' | translate }}</label>
                         <input type="number" [value]="platform().maxListingsPerUser"
-                            (input)="updatePlatform('maxListingsPerUser',+$any($event.target).value)" min="1"
-                            max="100" />
+                            (input)="updatePlatform('maxListingsPerUser',+$any($event.target).value)" min="1" max="100" />
                     </div>
                 </div>
                 <div class="stg-toggles">
                     <div class="stg-toggle-row" [class.danger]="platform().maintenanceMode">
                         <div>
-                            <strong>Maintenance Mode</strong>
-                            <span>Temporarily disable the platform for all users</span>
+                            <strong>{{ 'ADMIN.SETTINGS.MAINTENANCE_MODE' | translate }}</strong>
+                            <span>{{ 'ADMIN.SETTINGS.MAINTENANCE_MODE_DESC' | translate }}</span>
                         </div>
                         <button class="stg-toggle" [class.on]="platform().maintenanceMode"
                             (click)="updatePlatform('maintenanceMode', !platform().maintenanceMode)">
@@ -145,24 +139,24 @@
                     </div>
                     <div class="stg-toggle-row">
                         <div>
-                            <strong>Auto-approve Listings</strong>
-                            <span>Skip manual review for new property listings</span>
+                            <strong>{{ 'ADMIN.SETTINGS.AUTO_APPROVE' | translate }}</strong>
+                            <span>{{ 'ADMIN.SETTINGS.AUTO_APPROVE_DESC' | translate }}</span>
                         </div>
                         <button class="stg-toggle" [class.on]="platform().autoApproveListings"
                             (click)="updatePlatform('autoApproveListings', !platform().autoApproveListings)"><span></span></button>
                     </div>
                     <div class="stg-toggle-row">
                         <div>
-                            <strong>Require Email Verification</strong>
-                            <span>Users must verify email before listing properties</span>
+                            <strong>{{ 'ADMIN.SETTINGS.REQUIRE_EMAIL' | translate }}</strong>
+                            <span>{{ 'ADMIN.SETTINGS.REQUIRE_EMAIL_DESC' | translate }}</span>
                         </div>
                         <button class="stg-toggle" [class.on]="platform().requireEmailVerify"
                             (click)="updatePlatform('requireEmailVerify', !platform().requireEmailVerify)"><span></span></button>
                     </div>
                     <div class="stg-toggle-row">
                         <div>
-                            <strong>Allow Guest Search</strong>
-                            <span>Non-authenticated users can browse listings</span>
+                            <strong>{{ 'ADMIN.SETTINGS.GUEST_SEARCH' | translate }}</strong>
+                            <span>{{ 'ADMIN.SETTINGS.GUEST_SEARCH_DESC' | translate }}</span>
                         </div>
                         <button class="stg-toggle" [class.on]="platform().allowGuestSearch"
                             (click)="updatePlatform('allowGuestSearch', !platform().allowGuestSearch)"><span></span></button>
@@ -175,56 +169,78 @@
             @if (activeTab() === 'notifications') {
             <div class="stg-section">
                 <div class="stg-section-head">
-                    <h2>Notification Preferences</h2>
-                    <p>Choose what events trigger notifications for you</p>
+                    <h2>{{ 'ADMIN.SETTINGS.NOTIF_TITLE' | translate }}</h2>
+                    <p>{{ 'ADMIN.SETTINGS.NOTIF_SUBTITLE' | translate }}</p>
                 </div>
                 <div class="stg-notif-group">
-                    <h4><i class="fa-solid fa-envelope"></i> Email Notifications</h4>
+                    <h4><i class="fa-solid fa-envelope"></i> {{ 'ADMIN.SETTINGS.EMAIL_NOTIFS' | translate }}</h4>
                     <div class="stg-toggle-row">
-                        <div><strong>New Listing Submitted</strong><span>Email when a new property is listed</span>
+                        <div>
+                            <strong>{{ 'ADMIN.SETTINGS.EMAIL_NEW_LISTING' | translate }}</strong>
+                            <span>{{ 'ADMIN.SETTINGS.EMAIL_NEW_LISTING_DESC' | translate }}</span>
                         </div>
                         <button class="stg-toggle" [class.on]="notifications().emailNewListing"
                             (click)="updateNotif('emailNewListing',!notifications().emailNewListing)"><span></span></button>
                     </div>
                     <div class="stg-toggle-row">
-                        <div><strong>New User Registered</strong><span>Email on each new registration</span></div>
+                        <div>
+                            <strong>{{ 'ADMIN.SETTINGS.EMAIL_NEW_USER' | translate }}</strong>
+                            <span>{{ 'ADMIN.SETTINGS.EMAIL_NEW_USER_DESC' | translate }}</span>
+                        </div>
                         <button class="stg-toggle" [class.on]="notifications().emailNewUser"
                             (click)="updateNotif('emailNewUser',!notifications().emailNewUser)"><span></span></button>
                     </div>
                     <div class="stg-toggle-row">
-                        <div><strong>Report Filed</strong><span>Email when a user files a report</span></div>
+                        <div>
+                            <strong>{{ 'ADMIN.SETTINGS.EMAIL_REPORT' | translate }}</strong>
+                            <span>{{ 'ADMIN.SETTINGS.EMAIL_REPORT_DESC' | translate }}</span>
+                        </div>
                         <button class="stg-toggle" [class.on]="notifications().emailNewReport"
                             (click)="updateNotif('emailNewReport',!notifications().emailNewReport)"><span></span></button>
                     </div>
                     <div class="stg-toggle-row">
-                        <div><strong>Weekly Digest</strong><span>Summary email every Monday</span></div>
+                        <div>
+                            <strong>{{ 'ADMIN.SETTINGS.EMAIL_WEEKLY' | translate }}</strong>
+                            <span>{{ 'ADMIN.SETTINGS.EMAIL_WEEKLY_DESC' | translate }}</span>
+                        </div>
                         <button class="stg-toggle" [class.on]="notifications().emailWeeklyDigest"
                             (click)="updateNotif('emailWeeklyDigest',!notifications().emailWeeklyDigest)"><span></span></button>
                     </div>
                 </div>
                 <div class="stg-notif-group">
-                    <h4><i class="fa-solid fa-bell"></i> Push Notifications</h4>
+                    <h4><i class="fa-solid fa-bell"></i> {{ 'ADMIN.SETTINGS.PUSH_NOTIFS' | translate }}</h4>
                     <div class="stg-toggle-row">
-                        <div><strong>New Inquiry</strong><span>Push when someone inquires about a listing</span></div>
+                        <div>
+                            <strong>{{ 'ADMIN.SETTINGS.PUSH_INQUIRY' | translate }}</strong>
+                            <span>{{ 'ADMIN.SETTINGS.PUSH_INQUIRY_DESC' | translate }}</span>
+                        </div>
                         <button class="stg-toggle" [class.on]="notifications().pushNewInquiry"
                             (click)="updateNotif('pushNewInquiry',!notifications().pushNewInquiry)"><span></span></button>
                     </div>
                     <div class="stg-toggle-row">
-                        <div><strong>Verification Complete</strong><span>Push when property verification finishes</span>
+                        <div>
+                            <strong>{{ 'ADMIN.SETTINGS.PUSH_VERIFICATION' | translate }}</strong>
+                            <span>{{ 'ADMIN.SETTINGS.PUSH_VERIFICATION_DESC' | translate }}</span>
                         </div>
                         <button class="stg-toggle" [class.on]="notifications().pushVerificationDone"
                             (click)="updateNotif('pushVerificationDone',!notifications().pushVerificationDone)"><span></span></button>
                     </div>
                     <div class="stg-toggle-row">
-                        <div><strong>System Alerts</strong><span>Critical platform health alerts</span></div>
+                        <div>
+                            <strong>{{ 'ADMIN.SETTINGS.PUSH_ALERTS' | translate }}</strong>
+                            <span>{{ 'ADMIN.SETTINGS.PUSH_ALERTS_DESC' | translate }}</span>
+                        </div>
                         <button class="stg-toggle" [class.on]="notifications().pushSystemAlerts"
                             (click)="updateNotif('pushSystemAlerts',!notifications().pushSystemAlerts)"><span></span></button>
                     </div>
                 </div>
                 <div class="stg-notif-group">
-                    <h4><i class="fa-solid fa-mobile-screen"></i> SMS</h4>
+                    <h4><i class="fa-solid fa-mobile-screen"></i> {{ 'ADMIN.SETTINGS.SMS_NOTIFS' | translate }}</h4>
                     <div class="stg-toggle-row">
-                        <div><strong>OTP Messages</strong><span>SMS for two-factor authentication codes</span></div>
+                        <div>
+                            <strong>{{ 'ADMIN.SETTINGS.SMS_OTP' | translate }}</strong>
+                            <span>{{ 'ADMIN.SETTINGS.SMS_OTP_DESC' | translate }}</span>
+                        </div>
                         <button class="stg-toggle" [class.on]="notifications().smsOTP"
                             (click)="updateNotif('smsOTP',!notifications().smsOTP)"><span></span></button>
                     </div>
@@ -236,46 +252,48 @@
             @if (activeTab() === 'security') {
             <div class="stg-section">
                 <div class="stg-section-head">
-                    <h2>Security Settings</h2>
-                    <p>Manage your password, 2FA, and session preferences</p>
+                    <h2>{{ 'ADMIN.SETTINGS.SECURITY_TITLE' | translate }}</h2>
+                    <p>{{ 'ADMIN.SETTINGS.SECURITY_SUBTITLE' | translate }}</p>
                 </div>
                 <div class="stg-security-card">
-                    <h4><i class="fa-solid fa-lock"></i> Change Password</h4>
+                    <h4><i class="fa-solid fa-lock"></i> {{ 'ADMIN.SETTINGS.CHANGE_PASSWORD' | translate }}</h4>
                     <div class="stg-form-grid">
                         <div class="stg-field stg-field--full">
-                            <label>Current Password</label>
+                            <label>{{ 'ADMIN.SETTINGS.CURRENT_PASSWORD' | translate }}</label>
                             <input type="password" [value]="security().currentPassword"
                                 (input)="updateSecurity('currentPassword',$any($event.target).value)"
                                 placeholder="••••••••" />
                         </div>
                         <div class="stg-field">
-                            <label>New Password</label>
+                            <label>{{ 'ADMIN.SETTINGS.NEW_PASSWORD' | translate }}</label>
                             <input type="password" [value]="security().newPassword"
                                 (input)="updateSecurity('newPassword',$any($event.target).value)"
-                                placeholder="Min. 8 characters" />
+                                [placeholder]="'ADMIN.SETTINGS.NEW_PASSWORD_HINT' | translate" />
                         </div>
                         <div class="stg-field">
-                            <label>Confirm New Password</label>
+                            <label>{{ 'ADMIN.SETTINGS.CONFIRM_PASSWORD' | translate }}</label>
                             <input type="password" [value]="security().confirmPassword"
                                 (input)="updateSecurity('confirmPassword',$any($event.target).value)"
-                                placeholder="Repeat password" />
+                                [placeholder]="'ADMIN.SETTINGS.CONFIRM_PASSWORD_HINT' | translate" />
                             @if (security().confirmPassword && security().newPassword !== security().confirmPassword) {
-                            <small class="stg-field-err"><i class="fa-solid fa-triangle-exclamation"></i> Passwords
-                                don't match</small>
+                            <small class="stg-field-err">
+                                <i class="fa-solid fa-triangle-exclamation"></i>
+                                {{ 'ADMIN.SETTINGS.PASSWORDS_NO_MATCH' | translate }}
+                            </small>
                             }
                         </div>
                     </div>
                     <button class="stg-btn-password" [disabled]="!passwordsMatch()"
                         (click)="showToast('success','Password updated!')">
-                        <i class="fa-solid fa-key"></i> Update Password
+                        <i class="fa-solid fa-key"></i> {{ 'ADMIN.SETTINGS.UPDATE_PASSWORD' | translate }}
                     </button>
                 </div>
 
                 <div class="stg-toggles">
                     <div class="stg-toggle-row">
                         <div>
-                            <strong>Two-Factor Authentication</strong>
-                            <span>Add extra security via authenticator app or SMS</span>
+                            <strong>{{ 'ADMIN.SETTINGS.TWO_FA' | translate }}</strong>
+                            <span>{{ 'ADMIN.SETTINGS.TWO_FA_DESC' | translate }}</span>
                         </div>
                         <button class="stg-toggle" [class.on]="security().twoFAEnabled"
                             (click)="updateSecurity('twoFAEnabled',!security().twoFAEnabled)"><span></span></button>
@@ -283,28 +301,32 @@
                 </div>
 
                 <div class="stg-field" style="max-width:300px">
-                    <label>Session Timeout (minutes)</label>
+                    <label>{{ 'ADMIN.SETTINGS.SESSION_TIMEOUT' | translate }}</label>
                     <select [value]="security().sessionTimeout"
                         (change)="updateSecurity('sessionTimeout',+$any($event.target).value)">
-                        @for (t of sessionTimeouts; track t) { <option [value]="t">76 min</option> }
+                        @for (t of sessionTimeouts; track t) { <option [value]="t">{{ t }} min</option> }
                     </select>
                 </div>
 
                 <div class="stg-field">
-                    <label>IP Whitelist <span class="stg-field-hint">(comma-separated, leave blank for
-                            all)</span></label>
+                    <label>{{ 'ADMIN.SETTINGS.IP_WHITELIST' | translate }}
+                        <span class="stg-field-hint">({{ 'ADMIN.SETTINGS.IP_WHITELIST_HINT' | translate }})</span>
+                    </label>
                     <input type="text" [value]="security().ipWhitelist"
                         (input)="updateSecurity('ipWhitelist',$any($event.target).value)"
                         placeholder="192.168.1.1, 10.0.0.0/24" />
                 </div>
 
                 <div class="stg-danger-zone">
-                    <h4><i class="fa-solid fa-triangle-exclamation"></i> Danger Zone</h4>
+                    <h4><i class="fa-solid fa-triangle-exclamation"></i> {{ 'ADMIN.SETTINGS.DANGER_ZONE' | translate }}</h4>
                     <div class="stg-danger-row">
-                        <div><strong>Sign out all devices</strong><span>Revokes all active sessions across all
-                                devices</span></div>
-                        <button class="stg-btn-danger" (click)="showToast('success','All sessions revoked')">Sign Out
-                            All</button>
+                        <div>
+                            <strong>{{ 'ADMIN.SETTINGS.SIGN_OUT_ALL' | translate }}</strong>
+                            <span>{{ 'ADMIN.SETTINGS.SIGN_OUT_ALL_DESC' | translate }}</span>
+                        </div>
+                        <button class="stg-btn-danger" (click)="showToast('success','All sessions revoked')">
+                            {{ 'ADMIN.SETTINGS.SIGN_OUT_BTN' | translate }}
+                        </button>
                     </div>
                 </div>
             </div>
@@ -314,60 +336,68 @@
             @if (activeTab() === 'appearance') {
             <div class="stg-section">
                 <div class="stg-section-head">
-                    <h2>Appearance</h2>
-                    <p>Customize how the admin panel looks and feels</p>
+                    <h2>{{ 'ADMIN.SETTINGS.APPEARANCE_TITLE' | translate }}</h2>
+                    <p>{{ 'ADMIN.SETTINGS.APPEARANCE_SUBTITLE' | translate }}</p>
                 </div>
                 <div class="stg-colors-row">
                     <div class="stg-color-field">
-                        <label>Primary Color</label>
+                        <label>{{ 'ADMIN.SETTINGS.PRIMARY_COLOR' | translate }}</label>
                         <div class="stg-color-input">
                             <input type="color" [value]="appearance().primaryColor"
                                 (input)="updateAppearance('primaryColor',$any($event.target).value)" />
-                            <span>77</span>
+                            <span>{{ appearance().primaryColor }}</span>
                         </div>
                     </div>
                     <div class="stg-color-field">
-                        <label>Accent Color</label>
+                        <label>{{ 'ADMIN.SETTINGS.ACCENT_COLOR' | translate }}</label>
                         <div class="stg-color-input">
                             <input type="color" [value]="appearance().accentColor"
                                 (input)="updateAppearance('accentColor',$any($event.target).value)" />
-                            <span>78</span>
+                            <span>{{ appearance().accentColor }}</span>
                         </div>
                     </div>
                 </div>
                 <div class="stg-field" style="max-width:320px">
-                    <label>Sidebar Style</label>
+                    <label>{{ 'ADMIN.SETTINGS.SIDEBAR_STYLE' | translate }}</label>
                     <div class="stg-sidebar-toggle">
                         @for (s of [['dark','Dark'],['light','Light'],['glass','Glass']]; track s[0]) {
                         <button [class.active]="appearance().sidebarStyle === s[0]"
                             (click)="updateAppearance('sidebarStyle', s[0])">
                             <i class="fa-solid"
                                 [class]="s[0]==='dark' ? 'fa-moon' : s[0]==='light' ? 'fa-sun' : 'fa-droplet'"></i>
-                            79
+                            {{ s[1] }}
                         </button>
                         }
                     </div>
                 </div>
                 <div class="stg-field">
-                    <label>Logo URL</label>
+                    <label>{{ 'ADMIN.SETTINGS.LOGO_URL' | translate }}</label>
                     <input type="url" [value]="appearance().logoUrl"
                         (input)="updateAppearance('logoUrl',$any($event.target).value)"
                         placeholder="https://cdn.example.com/logo.svg" />
                 </div>
                 <div class="stg-toggles">
                     <div class="stg-toggle-row">
-                        <div><strong>Compact Mode</strong><span>Reduce spacing for denser information display</span>
+                        <div>
+                            <strong>{{ 'ADMIN.SETTINGS.COMPACT_MODE' | translate }}</strong>
+                            <span>{{ 'ADMIN.SETTINGS.COMPACT_MODE_DESC' | translate }}</span>
                         </div>
                         <button class="stg-toggle" [class.on]="appearance().compactMode"
                             (click)="updateAppearance('compactMode',!appearance().compactMode)"><span></span></button>
                     </div>
                     <div class="stg-toggle-row">
-                        <div><strong>Show Breadcrumbs</strong><span>Display page path in the top navigation</span></div>
+                        <div>
+                            <strong>{{ 'ADMIN.SETTINGS.BREADCRUMBS' | translate }}</strong>
+                            <span>{{ 'ADMIN.SETTINGS.BREADCRUMBS_DESC' | translate }}</span>
+                        </div>
                         <button class="stg-toggle" [class.on]="appearance().showBreadcrumbs"
                             (click)="updateAppearance('showBreadcrumbs',!appearance().showBreadcrumbs)"><span></span></button>
                     </div>
                     <div class="stg-toggle-row">
-                        <div><strong>Animations</strong><span>Enable transitions and micro-animations</span></div>
+                        <div>
+                            <strong>{{ 'ADMIN.SETTINGS.ANIMATIONS' | translate }}</strong>
+                            <span>{{ 'ADMIN.SETTINGS.ANIMATIONS_DESC' | translate }}</span>
+                        </div>
                         <button class="stg-toggle" [class.on]="appearance().animationsOn"
                             (click)="updateAppearance('animationsOn',!appearance().animationsOn)"><span></span></button>
                     </div>
@@ -379,12 +409,12 @@
             <div class="stg-save-bar">
                 <button class="stg-btn-save" (click)="save()" [disabled]="saving()">
                     @if (saving()) {
-                    <i class="fa-solid fa-spinner fa-spin"></i> Saving…
+                    <i class="fa-solid fa-spinner fa-spin"></i> {{ 'ADMIN.SETTINGS.SAVING' | translate }}
                     } @else {
-                    <i class="fa-solid fa-floppy-disk"></i> Save Changes
+                    <i class="fa-solid fa-floppy-disk"></i> {{ 'ADMIN.SETTINGS.SAVE' | translate }}
                     }
                 </button>
-                <span class="stg-save-hint">Changes are saved to local state (connect to API to persist)</span>
+                <span class="stg-save-hint">{{ 'ADMIN.SETTINGS.SAVE_HINT' | translate }}</span>
             </div>
 
         </main>

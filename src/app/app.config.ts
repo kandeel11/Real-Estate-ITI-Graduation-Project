@@ -17,7 +17,7 @@ export const appConfig: ApplicationConfig = {
     provideRouter(
       routes,
       withPreloading(PreloadAllModules),
-      withInMemoryScrolling({ scrollPositionRestoration: 'top' })
+      withInMemoryScrolling({ scrollPositionRestoration: 'top' }),
     ),
     provideHttpClient(withInterceptors([authInterceptor])),
     provideAnimations(),

@@ -22,6 +22,13 @@
     overflow-x: auto;
 }
 
+/* RTL: sidebar flips to right side automatically via dir="rtl" on <html> */
+:root[dir="rtl"] {
+    .admin-shell {
+        direction: rtl;
+    }
+}
+
 @media (max-width: 768px) {
     .admin-shell {
         grid-template-columns: 78px 1fr;

@@ -30,7 +30,7 @@ export class SidebarComponent {
   navItems: NavItem[] = [
     { labelKey: 'ADMIN_NAV.DASHBOARD', icon: 'fa-solid fa-table-cells-large', route: 'overview' },
     { labelKey: 'ADMIN_NAV.PORTFOLIO', icon: 'fa-solid fa-building', route: 'portfolio' },
-    { labelKey: 'ADMIN_NAV.MARKET_TRENDS', icon: 'fa-solid fa-chart-line', route: 'analytics' },
+    { labelKey: 'ADMIN_NAV.MARKET_TRENDS', icon: 'fa-solid fa-chart-line', route: 'market-trends' },
     { labelKey: 'ADMIN_NAV.TENANTS', icon: 'fa-solid fa-users', route: 'users' },
     { labelKey: 'ADMIN_NAV.COMPANIES', icon: 'fa-solid fa-briefcase', route: 'companies' },
     {

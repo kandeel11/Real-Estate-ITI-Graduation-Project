@@ -1138,35 +1138,7 @@
   }
 }
 
-@media (max-width: 540px) {
-  .page-head {
-    h1 { font-size: 22px; }
-  }
-
-  .results-header {
-    flex-direction: column;
-    align-items: flex-start;
-  }
-
-  .pagination {
-    gap: 5px;
-  }
-
-  .page-btn.num {
-    width: 34px;
-    height: 34px;
-    font-size: 12px;
-  }
-
-  .modal { margin: 0 10px; }
-
-  .toast {
-    left: 16px;
-    right: 16px;
-    bottom: 16px;
-    max-width: unset;
-  }
-  /* ============ MENU LOCKED BANNER ============ */
+/* ============ MENU LOCKED BANNER ============ */
   .menu-locked {
       display: flex;
       align-items: flex-start;
@@ -3129,5 +3101,43 @@
           opacity: 1;
           transform: translateY(0);
       }
+  }
+
+@media (max-width: 540px) {
+  .page-head {
+    h1 { font-size: 22px; }
+  }
+
+  .results-header {
+    flex-direction: column;
+    align-items: flex-start;
+  }
+
+  .pagination {
+    gap: 5px;
+  }
+
+  .page-btn.num {
+    width: 34px;
+    height: 34px;
+    font-size: 12px;
+  }
+
+  .modal { margin: 0 10px; }
+
+  .toast {
+    left: 16px;
+    right: 16px;
+    bottom: 16px;
+    max-width: unset;
+  }
+
+  .dm-grid {
+    grid-template-columns: 1fr;
+  }
+
+  .details-modal {
+    border-radius: 16px;
+    margin: 0;
   }
 }

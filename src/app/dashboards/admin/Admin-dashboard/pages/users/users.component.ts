@@ -9,6 +9,7 @@ import {
 } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
+import { TranslatePipe } from '@ngx-translate/core';
 import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
 import { Subject } from 'rxjs';
 import { debounceTime, distinctUntilChanged } from 'rxjs/operators';
@@ -20,7 +21,7 @@ type Toast = { type: 'success' | 'error'; text: string } | null;
 @Component({
   selector: 'app-users',
   standalone: true,
-  imports: [CommonModule, FormsModule],
+  imports: [CommonModule, FormsModule, TranslatePipe],
   templateUrl: './users.component.html',
   styleUrls: ['./users.component.scss'],
   changeDetection: ChangeDetectionStrategy.OnPush,
@@ -51,10 +52,10 @@ export class UsersComponent implements OnInit {
 
   // ===== Constants =====
   readonly ROLE_OPTIONS = ROLE_OPTIONS;
-  readonly STATUS_OPTIONS: { key: UserStatus; label: string; icon: string }[] = [
-    { key: 'all', label: 'All Users', icon: 'fa-users' },
-    { key: 'active', label: 'Active', icon: 'fa-circle-check' },
-    { key: 'banned', label: 'Banned', icon: 'fa-ban' },
+  readonly STATUS_OPTIONS: { key: UserStatus; labelKey: string; icon: string }[] = [
+    { key: 'all', labelKey: 'ADMIN.USERS.ALL_USERS', icon: 'fa-users' },
+    { key: 'active', labelKey: 'ADMIN.USERS.ACTIVE', icon: 'fa-circle-check' },
+    { key: 'banned', labelKey: 'ADMIN.USERS.BANNED', icon: 'fa-ban' },
   ];
 
   // ===== Computed =====

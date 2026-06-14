@@ -38,7 +38,7 @@
                 <div class="stat__icon"><i class="fa-solid fa-house"></i></div>
             </div>
             <h2 class="stat__value">{{ totalActiveCount() }}</h2>
-            <span class="stat__trend neutral">Across {{ regionsCount() }} regions</span>
+            <span class="stat__trend neutral">{{ 'ADMIN.DASHBOARD.ACROSS_REGIONS' | translate: { n: regionsCount() } }}</span>
         </div>
 
         <div class="stat">
@@ -147,8 +147,8 @@
         <!-- User Demographics -->
         <div class="chart-card-container">
             <div class="card-header">
-                <h3>User Demographics</h3>
-                <p>Registered users by role</p>
+                <h3>{{ 'ADMIN.DASHBOARD.USER_DEMOGRAPHICS' | translate }}</h3>
+                <p>{{ 'ADMIN.DASHBOARD.USERS_BY_ROLE' | translate }}</p>
             </div>
 
             <div class="chart-body">
@@ -158,7 +158,7 @@
                     [tooltip]="usersChart.tooltip" [dataLabels]="usersChart.dataLabels" [legend]="usersChart.legend">
                 </apx-chart>
                 } @else {
-                <div class="loading-chart"><i class="fa-solid fa-spinner fa-spin"></i> Loading...</div>
+                <div class="loading-chart"><i class="fa-solid fa-spinner fa-spin"></i> {{ 'ADMIN.DASHBOARD.LOADING' | translate }}</div>
                 }
             </div>
 

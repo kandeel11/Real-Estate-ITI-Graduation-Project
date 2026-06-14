@@ -4,7 +4,7 @@ import { FormsModule } from '@angular/forms';
 import { TranslatePipe } from '@ngx-translate/core';
 import { forkJoin } from 'rxjs';
 import { finalize } from 'rxjs';
-import { LeaseService, ApiLease } from '../../services/lease.service';
+import { LeaseService, ApiLease, LeaseOffer } from '../../services/lease.service';
 import { AiService } from '../../services/ai.service';
 
 interface LeaseView {
@@ -44,12 +44,16 @@ export class MyLeaseComponent implements OnInit {
   protected leaseHistory = signal<LeaseView[]>([]);
   protected expandedLeaseId = signal<string | null>(null);
 
+  protected pendingOffer = signal<LeaseOffer | null>(null);
+  protected offerActionInProgress = signal(false);
+
   protected chatMessages = signal<ChatEntry[]>([]);
   protected chatInput = '';
   protected chatLoading = signal(false);
 
   ngOnInit(): void {
     this.loadData();
+    this.leaseService.getPendingOffer().subscribe(offer => this.pendingOffer.set(offer));
   }
 
   loadData(): void {
@@ -109,6 +113,24 @@ export class MyLeaseComponent implements OnInit {
     if (n === 2) return 'nd';
     if (n === 3) return 'rd';
     return 'th';
+  }
+
+  acceptOffer(): void {
+    const offer = this.pendingOffer();
+    if (!offer || this.offerActionInProgress()) return;
+    this.offerActionInProgress.set(true);
+    this.leaseService.acceptOffer(offer.id)
+      .pipe(finalize(() => this.offerActionInProgress.set(false)))
+      .subscribe({ next: () => { this.pendingOffer.set(null); this.loadData(); } });
+  }
+
+  declineOffer(): void {
+    const offer = this.pendingOffer();
+    if (!offer || this.offerActionInProgress()) return;
+    this.offerActionInProgress.set(true);
+    this.leaseService.declineOffer(offer.id)
+      .pipe(finalize(() => this.offerActionInProgress.set(false)))
+      .subscribe({ next: () => this.pendingOffer.set(null) });
   }
 
   downloadContract(lease: LeaseView): void {

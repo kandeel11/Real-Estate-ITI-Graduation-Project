@@ -45,13 +45,14 @@ export const adminRoutes: Routes = [
           import('./pages/ai-chat/ai-chat.component').then((m) => m.AiChatComponent),
       },
 
+      {
+        path: 'companies',
+        loadComponent: () =>
+          import('./pages/companies/companies.component').then((m) => m.CompaniesComponent),
+      },
       // Placeholder redirects until pages are built
-      { path: 'analytics', redirectTo: 'overview', pathMatch: 'full' },
-      { path: 'users', redirectTo: 'overview', pathMatch: 'full' },
-      { path: 'companies', redirectTo: 'overview', pathMatch: 'full' },
       { path: 'approvals', redirectTo: 'overview', pathMatch: 'full' },
       { path: 'reports', redirectTo: 'overview', pathMatch: 'full' },
-      { path: 'settings', redirectTo: 'overview', pathMatch: 'full' },
     ],
   },
 ];

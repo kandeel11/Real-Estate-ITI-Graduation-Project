@@ -67,6 +67,17 @@ export class SubscriptionsComponent implements OnInit {
     this.plans().filter((p) => p.maxBrokers > 0 && p.isActive)
   );
 
+  readonly freePlan = computed(() =>
+    this.companyPlans().find(p => p.priceMonthly === 0) ?? null
+  );
+
+  readonly premiumPlan = computed(() =>
+    this.companyPlans().find(p => p.priceMonthly > 0) ?? null
+  );
+
+  billingCycle = signal<'monthly' | 'annual'>('monthly');
+  priceOpacity = signal(1);
+
   // ── Cancel confirmation ─────────────────────────────────────────
   showCancelConfirm = signal(false);
   cancelling = signal(false);
@@ -79,6 +90,25 @@ export class SubscriptionsComponent implements OnInit {
     this.subSvc.getActive().subscribe((sub) => this.subscription.set(sub));
     this.subSvc.getUsage().subscribe((usage) => this.usage.set(usage));
     this.subSvc.getPayments().subscribe((payments) => this.invoices.set(payments));
+    this.subSvc.getPlans().subscribe((plans) => this.plans.set(plans));
+  }
+
+  setBilling(cycle: 'monthly' | 'annual'): void {
+    if (this.billingCycle() === cycle) return;
+    this.priceOpacity.set(0);
+    setTimeout(() => { this.billingCycle.set(cycle); this.priceOpacity.set(1); }, 150);
+  }
+
+  formatValue(value: number): string {
+    return value >= 999999 ? 'Unlimited' : value.toLocaleString();
+  }
+
+  annualMonthly(plan: SubscriptionPlan): string {
+    return (plan.priceAnnual / 12).toFixed(2);
+  }
+
+  isCurrent(plan: SubscriptionPlan): boolean {
+    return (this.subscription()?.planName ?? '') === plan.name;
   }
 
   invoiceBadge(status: string): string {

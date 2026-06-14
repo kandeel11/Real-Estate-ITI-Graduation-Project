@@ -110,44 +110,6 @@ export const routes: Routes = [
         loadChildren: () =>
           import('../app/dashboards/admin/Admin-dashboard/admin.routes').then((m) => m.adminRoutes),
       },
-      //   children: [
-      //     {
-      //       path: 'overview',
-      //       loadComponent: () =>
-      //         import('./dashboards/admin/pages/overview/overview.component').then(
-      //           (m) => m.OverviewComponent,
-      //         ),
-      //     },
-      //     {
-      //       path: 'users',
-      //       loadComponent: () =>
-      //         import('./dashboards/admin/pages/users-management/users-management.component').then(
-      //           (m) => m.UsersManagementComponent,
-      //         ),
-      //     },
-      //     {
-      //       path: 'companies',
-      //       loadComponent: () =>
-      //         import('./dashboards/admin/pages/companies-management/companies-management.component').then(
-      //           (m) => m.CompaniesManagementComponent,
-      //         ),
-      //     },
-      //     {
-      //       path: 'moderation',
-      //       loadComponent: () =>
-      //         import('./dashboards/admin/pages/moderation/moderation.component').then(
-      //           (m) => m.ModerationComponent,
-      //         ),
-      //     },
-      //     {
-      //       path: 'reports',
-      //       loadComponent: () =>
-      //         import('./dashboards/admin/pages/reports/reports.component').then(
-      //           (m) => m.ReportsComponent,
-      //         ),
-      //     },
-      //   ],
-      // },
 
       // ============ COMPANY DASHBOARD ============
       {
@@ -238,6 +200,7 @@ export const routes: Routes = [
             (m) => m.BrokerDashboardComponent,
           ),
         children: [
+          { path: '', redirectTo: 'overview', pathMatch: 'full' },
           {
             path: 'overview',
             loadComponent: () =>
@@ -246,11 +209,24 @@ export const routes: Routes = [
               ),
           },
           {
-            path: 'listings',
-            // Shared listings/draft-management page (same as /my-listings)
+            path: 'properties',
             loadComponent: () =>
-              import('./features/properties/pages/my-listings/my-listings.component').then(
-                (m) => m.MyListingsComponent,
+              import('./dashboards/broker/pages/properties/properties.component').then(
+                (m) => m.PropertiesComponent,
+              ),
+          },
+          {
+            path: 'leads',
+            loadComponent: () =>
+              import('./dashboards/broker/pages/leads/leads.component').then(
+                (m) => m.LeadsComponent,
+              ),
+          },
+          {
+            path: 'inquiries',
+            loadComponent: () =>
+              import('./dashboards/broker/pages/inquiries/inquiries.component').then(
+                (m) => m.InquiriesComponent,
               ),
           },
           {
@@ -261,10 +237,31 @@ export const routes: Routes = [
               ),
           },
           {
-            path: 'commissions',
+            path: 'leases',
             loadComponent: () =>
-              import('./dashboards/broker/pages/commissions/commissions.component').then(
-                (m) => m.CommissionsComponent,
+              import('./dashboards/broker/pages/leases/leases.component').then(
+                (m) => m.LeasesComponent,
+              ),
+          },
+          {
+            path: 'notifications',
+            loadComponent: () =>
+              import('./dashboards/broker/pages/notifications/notifications.component').then(
+                (m) => m.BrokerNotificationsComponent,
+              ),
+          },
+          {
+            path: 'subscription',
+            loadComponent: () =>
+              import('./dashboards/broker/pages/subscription/subscription.component').then(
+                (m) => m.BrokerSubscriptionComponent,
+              ),
+          },
+          {
+            path: 'profile',
+            loadComponent: () =>
+              import('./dashboards/broker/pages/profile/profile.component').then(
+                (m) => m.ProfileComponent,
               ),
           },
         ],

@@ -3,11 +3,11 @@ import { FormsModule } from '@angular/forms';
 import { CommonModule } from '@angular/common';
 import { PropertyService } from '../..//Services/property.service';
 import { Property, PropertyStatusString, PropertyDetail, LOCKED_STATUSES } from '../../Models';
+import { LanguageService } from '../../../../../core/services/language.service';
 
 type Toast = { type: 'success' | 'error'; text: string } | null;
 
-// 🆕 Verification filter — مرتبط بحالة المراجعة
-type VerificationFilter = 'All' | 'PendingReview' | 'Rejected';
+type VerificationFilter = 'All' | 'Pending' | 'AiVerified' | 'ManuallyVerified' | 'RequiresManualReview' | 'Rejected';
 
 // 🆕 Lifecycle filter — مرتبط بحالة العقار الفعلية
 type LifecycleFilter = 'All' | 'Draft' | 'Active' | 'Rented' | 'Inactive';
@@ -21,6 +21,7 @@ type LifecycleFilter = 'All' | 'Draft' | 'Active' | 'Rented' | 'Inactive';
 })
 export class PortfolioComponent {
   private service = inject(PropertyService);
+  readonly lang = inject(LanguageService);
 
   // ===== Data state =====
   properties = signal<Property[]>([]);
@@ -118,7 +119,10 @@ export class PortfolioComponent {
   // ===== Filter options =====
   verificationOptions: Array<{ key: VerificationFilter; label: string; icon: string }> = [
     { key: 'All', label: 'All', icon: 'fa-list' },
-    { key: 'PendingReview', label: 'Pending Review', icon: 'fa-clock' },
+    { key: 'Pending', label: 'Pending', icon: 'fa-clock' },
+    { key: 'AiVerified', label: 'AI Verified', icon: 'fa-robot' },
+    { key: 'ManuallyVerified', label: 'Verified', icon: 'fa-shield-halved' },
+    { key: 'RequiresManualReview', label: 'Needs Review', icon: 'fa-triangle-exclamation' },
     { key: 'Rejected', label: 'Rejected', icon: 'fa-circle-xmark' },
   ];
 
@@ -138,6 +142,16 @@ export class PortfolioComponent {
     return counts;
   });
 
+  verificationCounts = computed(() => {
+    const all = this.properties();
+    const counts: Record<string, number> = { All: all.length };
+    for (const p of all) {
+      const vs = p.verificationStatus ?? 'Pending';
+      counts[vs] = (counts[vs] || 0) + 1;
+    }
+    return counts;
+  });
+
   // ===== Filtered (before pagination) =====
   filteredProperties = computed(() => {
     let list = this.properties();
@@ -145,9 +159,9 @@ export class PortfolioComponent {
     const vFilter = this.verificationFilter();
     const lFilter = this.lifecycleFilter();
 
-    // Verification filter (PendingReview / Rejected)
+    // Verification filter — filters by verificationStatus field
     if (vFilter !== 'All') {
-      list = list.filter((p) => p.status === vFilter);
+      list = list.filter((p) => (p.verificationStatus ?? 'Pending') === vFilter);
     }
 
     // Lifecycle filter (Draft / Active / Rented / Inactive)
@@ -155,7 +169,7 @@ export class PortfolioComponent {
       list = list.filter((p) => p.status === lFilter);
     }
 
-    // Search
+    // Search — matches both title and titleAr so Arabic/English queries work regardless of UI language
     if (q) {
       list = list.filter(
         (p) =>

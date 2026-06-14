@@ -1,0 +1,122 @@
+<div class="page">
+  <h1 class="page-title">{{ 'BROKER.PROFILE.TITLE' | translate }}</h1>
+
+  @if (loading()) {
+    <div class="card">
+      <div class="skeleton" style="height:80px;width:80px;border-radius:50%;margin-bottom:1rem"></div>
+      <div class="skeleton" style="height:16px;width:200px;margin-bottom:8px"></div>
+      <div class="skeleton" style="height:14px;width:150px"></div>
+    </div>
+  } @else if (profile) {
+    <div class="card">
+      <!-- Avatar -->
+      <div class="avatar-section">
+        <div class="avatar">{{ profile.name.charAt(0).toUpperCase() }}</div>
+        <div>
+          <p class="avatar-name">{{ profile.name }}</p>
+          <p class="avatar-email">{{ profile.email }}</p>
+          @if (isCompanyBroker) {
+            <span class="company-badge">
+              <i class="fa-solid fa-building"></i> {{ profile.companyName }}
+            </span>
+          } @else {
+            <span class="independent-badge">
+              <i class="fa-solid fa-user-tie"></i> {{ 'BROKER.PROFILE.INDEPENDENT' | translate }}
+            </span>
+          }
+        </div>
+      </div>
+
+      <!-- Personal info -->
+      <div class="section-title">{{ 'BROKER.PROFILE.PERSONAL_SECTION' | translate }}</div>
+      <div class="form-grid">
+        <div class="form-group">
+          <label>{{ 'BROKER.PROFILE.FULL_NAME' | translate }}</label>
+          <input class="form-control" [(ngModel)]="profile.name" />
+        </div>
+        <div class="form-group">
+          <label>{{ 'BROKER.PROFILE.EMAIL' | translate }}</label>
+          <input class="form-control" [(ngModel)]="profile.email" type="email" />
+        </div>
+        <div class="form-group">
+          <label>{{ 'BROKER.PROFILE.PHONE' | translate }}</label>
+          <input class="form-control" [(ngModel)]="profile.phone" />
+        </div>
+        <div class="form-group">
+          <label>{{ 'BROKER.PROFILE.LICENSE' | translate }}</label>
+          <input class="form-control" [(ngModel)]="profile.license" />
+        </div>
+      </div>
+
+      <div class="form-group full-width">
+        <label>{{ 'BROKER.PROFILE.BIO' | translate }}</label>
+        <textarea class="form-control" [(ngModel)]="profile.bio" rows="3"></textarea>
+      </div>
+
+      <!-- Languages -->
+      <div class="tags-section">
+        <label>{{ 'BROKER.PROFILE.LANGUAGES' | translate }}</label>
+        <div class="tags">
+          @for (lang of profile.languages; track lang) {
+            <span class="tag">{{ lang }}<button class="tag-remove" (click)="removeLanguage(lang)"><i class="fa-solid fa-xmark"></i></button></span>
+          }
+          <div class="tag-input-wrap">
+            <input class="tag-input" [(ngModel)]="newLang" (keydown.enter)="addLanguage(newLang); newLang = ''" placeholder="+ add" />
+          </div>
+        </div>
+      </div>
+
+      <!-- Specializations -->
+      <div class="tags-section">
+        <label>{{ 'BROKER.PROFILE.SPECIALIZATIONS' | translate }}</label>
+        <div class="tags">
+          @for (spec of profile.specializations; track spec) {
+            <span class="tag tag-purple">{{ spec }}<button class="tag-remove" (click)="removeSpec(spec)"><i class="fa-solid fa-xmark"></i></button></span>
+          }
+          <div class="tag-input-wrap">
+            <input class="tag-input" [(ngModel)]="newSpec" (keydown.enter)="addSpec(newSpec); newSpec = ''" placeholder="+ add" />
+          </div>
+        </div>
+      </div>
+
+      <!-- Save -->
+      <div class="save-bar">
+        @if (saved()) {
+          <span class="saved-msg"><i class="fa-solid fa-circle-check"></i> {{ 'BROKER.PROFILE.SAVED' | translate }}</span>
+        }
+        <button class="btn btn-primary" (click)="save()" [disabled]="saving()">
+          @if (saving()) { {{ 'BROKER.PROFILE.SAVING' | translate }} }
+          @else { {{ 'BROKER.PROFILE.SAVE' | translate }} }
+        </button>
+      </div>
+    </div>
+
+    <!-- Change password -->
+    <div class="card">
+      <div class="section-title">{{ 'BROKER.PROFILE.SECURITY_SECTION' | translate }}</div>
+      @if (passwordError(); as err) {
+        <div class="pw-error"><i class="fa-solid fa-triangle-exclamation"></i> {{ err }}</div>
+      }
+      <div class="form-grid">
+        <div class="form-group full-width">
+          <label>{{ 'BROKER.PROFILE.CURRENT_PASSWORD' | translate }}</label>
+          <input class="form-control" type="password" [(ngModel)]="currentPassword" autocomplete="current-password" />
+        </div>
+        <div class="form-group">
+          <label>{{ 'BROKER.PROFILE.NEW_PASSWORD' | translate }}</label>
+          <input class="form-control" type="password" [(ngModel)]="newPassword" autocomplete="new-password" />
+        </div>
+        <div class="form-group">
+          <label>{{ 'BROKER.PROFILE.CONFIRM_PASSWORD' | translate }}</label>
+          <input class="form-control" type="password" [(ngModel)]="confirmPassword" autocomplete="new-password" />
+        </div>
+      </div>
+      <div class="save-bar">
+        <button class="btn btn-primary" (click)="changePassword()" [disabled]="changingPassword()">
+          @if (changingPassword()) { {{ 'BROKER.PROFILE.CHANGING' | translate }} }
+          @else { {{ 'BROKER.PROFILE.CHANGE_PASSWORD' | translate }} }
+        </button>
+      </div>
+    </div>
+  }
+</div>

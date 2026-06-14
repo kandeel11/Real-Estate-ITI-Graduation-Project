@@ -1,9 +1,14 @@
-<div class="dashboard-layout">
+<div class="dashboard-layout" [dir]="lang.isRtl() ? 'rtl' : 'ltr'">
     <!-- ── SIDEBAR (desktop) ───────────────────────── -->
     <aside class="sidebar">
         <div class="sidebar-brand">
             <i class="fa-solid fa-building brand-icon"></i>
             <span class="brand-name">{{ 'COMPANY_NAV.BRAND' | translate }}</span>
+            <button class="lang-toggle" (click)="lang.toggle()"
+                    [title]="lang.isRtl() ? 'Switch to English' : 'التبديل إلى العربية'">
+                <i class="fa-solid fa-globe"></i>
+                <span>{{ lang.isRtl() ? 'EN' : 'ع' }}</span>
+            </button>
         </div>
 
         <nav class="sidebar-nav" aria-label="Dashboard navigation">

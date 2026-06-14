@@ -35,7 +35,7 @@
                     <i class="fa-solid" [class]="s.icon"></i>
                     <span>{{ s.label }}</span>
                     @if (s.key !== 'All') {
-                    <span class="tab-count">{{ statusCounts()[s.key] || 0 }}</span>
+                    <span class="tab-count">{{ verificationCounts()[s.key] || 0 }}</span>
                     }
                 </button>
                 }
@@ -187,7 +187,7 @@
 
             <div class="prop-body">
                 <div class="prop-top">
-                    <h3>{{ p.title }}</h3>
+                    <h3>{{ (lang.isRtl() && p.titleAr) ? p.titleAr : p.title }}</h3>
                     <strong class="prop-price">{{ formatPrice(p.price) }}</strong>
                 </div>
                 <span class="prop-location">
@@ -326,8 +326,8 @@
                         {{ p.propertyType }}
                     </div>
                     <div>
-                        <h2>{{ p.title }}</h2>
-                        @if (p.titleAr) {
+                        <h2>{{ (lang.isRtl() && p.titleAr) ? p.titleAr : p.title }}</h2>
+                        @if (p.titleAr && !lang.isRtl()) {
                         <span class="dm-title-ar">{{ p.titleAr }}</span>
                         }
                     </div>
@@ -369,6 +369,10 @@
                         }
                     </div>
                     }
+                    } @else if (p.primaryImageUrl) {
+                    <div class="gallery-main">
+                        <img [src]="p.primaryImageUrl" [alt]="p.title" />
+                    </div>
                     } @else {
                     <div class="gallery-placeholder">
                         <i class="fa-solid fa-house"></i>

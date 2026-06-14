@@ -1,4 +1,4 @@
-<div class="admin-shell" [class.collapsed]="sidebarCollapsed()">
+<div class="admin-shell" [class.collapsed]="sidebarCollapsed()" [dir]="lang.isRtl() ? 'rtl' : 'ltr'">
     <app-sidebar [collapsed]="sidebarCollapsed()" />
 
     <div class="admin-main">

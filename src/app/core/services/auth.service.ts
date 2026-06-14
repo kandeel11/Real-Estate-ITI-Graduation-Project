@@ -216,6 +216,14 @@ export class AuthService {
       );
   }
 
+  /** Change the signed-in user's password. */
+  changePassword(currentPassword: string, newPassword: string): Observable<void> {
+    return this.http.post<void>(
+      `${environment.apiUrl}${API_ENDPOINTS.AUTH.CHANGE_PASSWORD}`,
+      { currentPassword, newPassword }
+    );
+  }
+
   /** Map the backend's user to the frontend AuthUser (role name mapped). */
   toAuthUser(u: LoginResponse['user']): AuthUser {
     return {

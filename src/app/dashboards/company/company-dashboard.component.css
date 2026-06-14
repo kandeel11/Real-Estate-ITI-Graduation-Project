@@ -1,5 +1,5 @@
-/* Same design system as the tenant dashboard shell — without the site
-   navbar, so the sidebar runs the full viewport height (top: 0). */
+/* Same design system as the tenant dashboard shell. The sidebar runs the full
+   viewport height; the language toggle lives in the sidebar brand row. */
 
 /* ── LAYOUT SHELL ──────────────────────────────── */
 .dashboard-layout {
@@ -170,6 +170,24 @@
   min-height: 100vh;
   overflow-x: hidden;
 }
+
+/* ── LANGUAGE TOGGLE (sidebar) ─────────────────── */
+.lang-toggle {
+  margin-left: auto;
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+  background: var(--color-surface-container);
+  border: 1px solid var(--color-outline-variant);
+  border-radius: var(--radius-full);
+  padding: 4px 10px;
+  font-size: 12px;
+  font-weight: 700;
+  color: var(--color-primary);
+  cursor: pointer;
+  transition: background 0.15s;
+}
+.lang-toggle:hover { background: var(--color-surface-container-high); }
 
 .route-container {
   position: relative;

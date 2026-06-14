@@ -1,9 +1,8 @@
 /**
  * Company Dashboard Shell
- * Same design system as the tenant dashboard (fixed sidebar with active-route
- * indicator, user footer, route animations, mobile bottom tab bar) — but
- * without the public site navbar: company managers land here directly after
- * login, so the shell owns the full viewport.
+ * Self-contained dashboard shell: fixed sidebar with active-route indicator,
+ * user footer, route animations, and mobile bottom tab bar. A compact language
+ * switcher lives in the sidebar brand row.
  */
 
 import { Component, inject } from '@angular/core';
@@ -11,6 +10,7 @@ import { RouterOutlet, RouterLink, RouterLinkActive, Router } from '@angular/rou
 import { trigger, transition, query, style, animate } from '@angular/animations';
 import { TranslatePipe } from '@ngx-translate/core';
 import { AuthService } from '../../core/services/auth.service';
+import { LanguageService } from '../../core/services/language.service';
 
 const routeAnimations = trigger('routeAnimations', [
   transition('* <=> *', [
@@ -39,6 +39,7 @@ interface NavItem {
 })
 export class CompanyDashboardComponent {
   protected readonly auth = inject(AuthService);
+  protected readonly lang = inject(LanguageService);
   private readonly router = inject(Router);
 
   readonly navItems: NavItem[] = [
