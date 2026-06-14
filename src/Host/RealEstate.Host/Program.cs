@@ -211,14 +211,14 @@ public class Program
             var paymentDb = scope.ServiceProvider.GetRequiredService<PaymentDbContext>();
             await paymentDb.Database.MigrateAsync();
 
-            var documentDb = scope.ServiceProvider.GetRequiredService<DocumentDbContext>();
-            await documentDb.Database.MigrateAsync();
+            //var documentDb = scope.ServiceProvider.GetRequiredService<DocumentDbContext>();
+            //await documentDb.Database.MigrateAsync();
 
             var maintenanceCompaniesDb = scope.ServiceProvider.GetRequiredService<MaintenanceModuleDbContext>();
             await maintenanceCompaniesDb.Database.MigrateAsync();
 
-            var maintenanceDb = scope.ServiceProvider.GetRequiredService<MaintenanceDbContext>();
-            await maintenanceDb.Database.MigrateAsync();
+            //var maintenanceDb = scope.ServiceProvider.GetRequiredService<MaintenanceDbContext>();
+            //await maintenanceDb.Database.MigrateAsync();
         }
         //stripe
         app.Use(async (context, next) =>
