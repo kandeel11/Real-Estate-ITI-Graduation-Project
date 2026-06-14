@@ -2,6 +2,7 @@ using Identity.Application.Commands.AddBroker;
 using Identity.Application.Commands.DeactivateBroker;
 using Identity.Application.Commands.DeleteBroker;
 using Identity.Application.Commands.ReactivateBroker;
+using Identity.Application.Commands.UpdateBrokerScore;
 using Identity.Application.Interfaces;
 using MediatR;
 using Microsoft.AspNetCore.Authorization;
