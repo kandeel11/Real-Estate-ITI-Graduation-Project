@@ -1,4 +1,4 @@
-﻿using Identity.Application.Interfaces;
+﻿using MaintenanceCompanies.Application.Interfaces;
 using Maintenance.Application.Features.Commands.AcceptAssignment;
 using Maintenance.Application.Features.Commands.AddComment;
 using Maintenance.Application.Features.Commands.AssignVendor;
@@ -13,6 +13,7 @@ using Maintenance.Application.Features.Commands.DeleteTicket;
 using Maintenance.Application.Features.Commands.MakeDecision;
 using Maintenance.Application.Features.Commands.RejectAssignment;
 using Maintenance.Application.Features.Queries.GetVendorTickets;
+using Maintenance.Application.Features.Queries.GetVendorDashboard;
 using Maintenance.Application.Features.Commands.StartWork;
 using Maintenance.Application.Features.Commands.SubmitTicket;
 using Maintenance.Application.Features.Commands.UpdateTicket;
@@ -25,6 +26,7 @@ using Maintenance.Domain.Enums;
 using MediatR;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
+using Identity.Application.Interfaces;
 
 namespace RealEstate.Host.Controllers;
 
@@ -123,15 +125,39 @@ public class TicketsController(ISender sender, ICurrentUserService currentUser) 
     [Authorize(Roles = "owner,tenant")]
     public async Task<IActionResult> MakeDecision(Guid id, [FromBody] MakeDecisionRequest req)
     {
-        await sender.Send(new MakeDecisionCommand(id, req.ResolutionMethod));
+        await sender.Send(new MakeDecisionCommand(id, req.ResolutionMethod, CurrentUserId));
         return Ok(new { message = $"Decision recorded: {req.ResolutionMethod}" });
     }
 
     // ── Vendor Assignment ──────────────────────────────────────────
-    [HttpGet("vendor/{vendorId:guid}")]
-    public async Task<IActionResult> GetVendorTickets(Guid vendorId)
+    [HttpGet("my-assignments")]
+    [Authorize(Roles = "maintenance_company")]
+    public async Task<IActionResult> GetMyAssignments(
+        [FromServices] IMaintenanceCompanyService companySvc, CancellationToken ct)
     {
-        var result = await sender.Send(new GetVendorTicketsQuery(vendorId));
+        // VendorId in maintenance_ticket_vendor_assignments stores maintenanceComp.MaintenanceCompanies.Id,
+        // because callers discover vendor IDs from the company profile/creation API (maintenanceComp schema).
+        // We must look up that same Id by translating: JWT UserId → maintenanceComp.UserId (string) → company.Id.
+        var company = await companySvc.GetByUserIdAsync(CurrentUserId.ToString())
+            ?? throw new KeyNotFoundException($"Maintenance company profile not found for UserId={CurrentUserId}.");
+
+        // TEMP DEBUG — remove after confirming VendorId match in the DB
+        Console.Error.WriteLine(
+            $"[DEBUG] GetMyAssignments: JWT CurrentUserId={CurrentUserId}  =>  maintenanceComp.Id (query key)={company.Id}");
+
+        var result = await sender.Send(new GetVendorTicketsQuery(company.Id));
+        return Ok(result);
+    }
+
+    [HttpGet("vendor-dashboard")]
+    [Authorize(Roles = "maintenance_company")]
+    public async Task<IActionResult> GetVendorDashboard(
+        [FromServices] IMaintenanceCompanyService companySvc, CancellationToken ct)
+    {
+        var company = await companySvc.GetByUserIdAsync(CurrentUserId.ToString())
+            ?? throw new KeyNotFoundException($"Maintenance company profile not found for UserId={CurrentUserId}.");
+
+        var result = await sender.Send(new GetVendorDashboardQuery(company.Id));
         return Ok(result);
     }
 
@@ -270,6 +296,7 @@ public class TicketsController(ISender sender, ICurrentUserService currentUser) 
 
 
     [HttpPost("{id:guid}/start-work")]
+    [Authorize(Roles = "maintenance_company")]
     public async Task<IActionResult> StartWork(Guid id)
     {
         await sender.Send(new StartWorkCommand(id));

@@ -55,6 +55,26 @@ public class MaintenanceTicketRepository(MaintenanceDbContext db) : IMaintenance
             .ToListAsync(ct);
     }
 
+    public async Task<List<MaintenanceTicket>> GetAllByVendorIdAsync(Guid vendorId, CancellationToken ct = default)
+    {
+        var ticketIds = await db.VendorAssignments
+            .Where(a => a.VendorId == vendorId)
+            .Select(a => a.TicketId)
+            .Distinct()
+            .ToListAsync(ct);
+
+        return await db.MaintenanceTickets
+            .AsSplitQuery()                      
+            .Include(t => t.Attachments)
+            .Include(t => t.Comments)
+            .Include(t => t.CurrentVendorAssignment)
+            .Include(t => t.StatusHistory)
+            .Include(t => t.Payment)
+            .Where(t => ticketIds.Contains(t.Id))
+            .OrderByDescending(t => t.CreatedAt)
+            .ToListAsync(ct);
+    }
+
     public Task<List<MaintenanceTicket>> GetPendingAiEvaluationAsync(CancellationToken ct = default)
         => db.MaintenanceTickets.Where(t => t.Status == TicketStatus.Submitted).ToListAsync(ct);
 

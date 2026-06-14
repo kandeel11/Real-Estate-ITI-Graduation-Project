@@ -9,7 +9,6 @@ using Microsoft.Extensions.Logging;
 using Microsoft.SemanticKernel;
 using Microsoft.SemanticKernel.ChatCompletion;
 using Microsoft.SemanticKernel.Connectors.OpenAI;   // ✅ lives in Infrastructure
-using Microsoft.SemanticKernel.Connectors.OpenAI;
 namespace AI.Infrastructure.Features.Chat;
 
 public sealed class SendMessageCommandHandler

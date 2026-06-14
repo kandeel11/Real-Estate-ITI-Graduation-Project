@@ -34,6 +34,7 @@ public static class MaintenanceModuleExtensions
         services.AddScoped<IFileStorageService, AzureBlobFileStorageService>();
 
         // Other services
+        services.AddScoped<IAutoVendorAssignmentService, AutoVendorAssignmentService>();
         services.AddScoped<ITicketNumberGenerator, TicketNumberGenerator>();
         services.AddHttpClient("AiEvaluation");
         services.AddScoped<IAiEvaluationService, AiEvaluationService>();

@@ -23,6 +23,7 @@ using System.IdentityModel.Tokens.Jwt;
 using System.Text;
 using MaintenanceCompanies.Infrastructure;
 using MaintenanceCompanies.Application;
+using MaintenanceCompanies.Infrastructure.Persistence;
 
 namespace RealEstate.Host;
 
@@ -184,6 +185,9 @@ public class Program
             await identityDb.Database.MigrateAsync();
             var hasher = scope.ServiceProvider.GetRequiredService<Identity.Application.Interfaces.IPasswordHasher>();
             await AdminSeed.SeedAsync(identityDb, hasher);
+
+            var maintenanceCompaniesDb = scope.ServiceProvider.GetRequiredService<MaintenanceModuleDbContext>();
+            await maintenanceCompaniesDb.Database.MigrateAsync();
         }
 
         if (app.Environment.IsDevelopment())
