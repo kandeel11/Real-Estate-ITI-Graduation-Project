@@ -4,6 +4,7 @@ using Identity.Application.Commands.UpdateCompany;
 using Identity.Application.Commands.UpdateCompanyLogo;
 using Identity.Application.Commands.VerifyCompany;
 using Identity.Application.Interfaces;
+using Identity.Application.Queries.GetAllCompanies;
 using Identity.Application.Queries.GetBrokersByCompany;
 using Identity.Application.Queries.GetCompanyById;
 using Identity.Application.Queries.GetCompanyBrokersDetails;
@@ -27,6 +28,17 @@ public class CompaniesController(
     PropertyEnrichmentService enrichment,
     IMediaStorageService mediaStorage) : ControllerBase
 {
+    /// <summary>
+    /// Lists all registered companies. Admin only.
+    /// </summary>
+    [HttpGet]
+    [Authorize(Policy = "AdminOnly")]
+    public async Task<IActionResult> GetAll(CancellationToken ct)
+    {
+        var companies = await mediator.Send(new GetAllCompaniesQuery(), ct);
+        return Ok(companies);
+    }
+
     /// <summary>
     /// Uploads the company logo and persists its URL on the company profile.
     /// Returns the stored URL so the client can update its preview.

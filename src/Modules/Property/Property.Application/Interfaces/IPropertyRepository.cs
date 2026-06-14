@@ -11,6 +11,7 @@ public interface IPropertyRepository
     Task<List<PropertySummaryDto>> GetAllAsync(CancellationToken ct = default);
     Task<List<MyPropertySummaryDto>> GetByOwnerAsync(Guid ownerId, CancellationToken ct = default);
     Task<List<PropertySummaryDto>> GetByCompanyAsync(Guid companyId, CancellationToken ct = default);
+    Task<List<PropertySummaryDto>> GetByBrokerAsync(Guid brokerUserId, CancellationToken ct = default);
     Task<List<MyPropertySummaryDto>> GetPendingVerificationAsync(CancellationToken ct = default);
     Task<List<PropertySummaryDto>> GetFeaturedAsync(CancellationToken ct = default);
     Task<Domain.Entities.Property?> GetCurrentlyFeaturedByOwnerAsync(Guid ownerId, Guid? companyId, CancellationToken ct = default);
