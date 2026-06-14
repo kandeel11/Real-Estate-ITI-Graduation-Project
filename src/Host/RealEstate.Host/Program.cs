@@ -44,6 +44,7 @@ public class Program
         var builder = WebApplication.CreateBuilder(args);
 
         builder.Services.AddControllers();
+        builder.Services.AddHttpContextAccessor();
 
         // Allow the Angular dev server to call the API from the browser
         builder.Services.AddCors(options =>
@@ -236,6 +237,7 @@ public class Program
             app.UseSwaggerUI(c =>
                 c.SwaggerEndpoint("/swagger/v1/swagger.json", "Real Estate API v1"));
         }
+        app.UseStaticFiles();
         app.UseCors("AllowAngular");
         app.UseAuthentication();
         app.UseAuthorization();
