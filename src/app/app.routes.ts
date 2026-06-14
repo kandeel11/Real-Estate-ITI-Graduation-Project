@@ -21,6 +21,19 @@ export const routes: Routes = [
         loadComponent: () => import('./features/home/home').then((m) => m.HomeComponent),
       },
       {
+        path: 'services',
+        loadComponent: () =>
+        import('./features/services/services').then(
+        (m) => m.Services
+      ),
+      },      {
+        path: 'contact-us',
+        loadComponent: () =>
+        import('./features/contact-us/contact-us').then(
+        (m) => m.ContactUs
+      ),
+      },
+      {
         // Listing creation — owners and brokers only (companies monitor;
         // their brokers create)
         path: 'properties/new',
