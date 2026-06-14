@@ -1,4 +1,5 @@
-﻿using MaintenanceCompanies.Application.Interfaces;
+﻿using Identity.Application.Interfaces;
+using MaintenanceCompanies.Application.Interfaces;
 using Maintenance.Application.Features.Commands.AcceptAssignment;
 using Maintenance.Application.Features.Commands.AddComment;
 using Maintenance.Application.Features.Commands.AssignVendor;
@@ -14,6 +15,7 @@ using Maintenance.Application.Features.Commands.MakeDecision;
 using Maintenance.Application.Features.Commands.RejectAssignment;
 using Maintenance.Application.Features.Queries.GetVendorTickets;
 using Maintenance.Application.Features.Queries.GetVendorDashboard;
+using Maintenance.Application.Features.Queries.GetAdminTickets;
 using Maintenance.Application.Features.Commands.StartWork;
 using Maintenance.Application.Features.Commands.SubmitTicket;
 using Maintenance.Application.Features.Commands.UpdateTicket;
@@ -38,6 +40,44 @@ public class TicketsController(ISender sender, ICurrentUserService currentUser) 
     // ── helpers ────────────────────────────────────────────────────
     private Guid CurrentUserId => currentUser.UserId
         ?? throw new UnauthorizedAccessException("User ID not found in token.");
+
+    // ── Admin ──────────────────────────────────────────────────────
+
+    [HttpGet("admin")]
+    [Authorize(Policy = "AdminOnly")]
+    public async Task<IActionResult> GetAllForAdmin(
+        [FromServices] IUserRepository userRepo,
+        [FromServices] IMaintenanceCompanyService companySvc,
+        [FromQuery] TicketStatus? status,
+        [FromQuery] int page = 1,
+        [FromQuery] int pageSize = 20,
+        CancellationToken ct = default)
+    {
+        var result = await sender.Send(new GetAdminTicketsQuery(status, page, pageSize), ct);
+
+        // Batch-fetch tenant and owner names in a single DB round-trip
+        var userIds = result.Items
+            .SelectMany(t => new[] { t.TenantId, t.OwnerId })
+            .Distinct();
+        var nameMap = await userRepo.GetFullNamesByIdsAsync(userIds, ct);
+
+        // Batch-fetch all company names (one call, then filter in-memory)
+        var allCompanies = await companySvc.GetAllAsync(null, null, null);
+        var companyNameMap = allCompanies.ToDictionary(c => c.Id, c => c.CompanyName);
+
+        var enriched = result.Items
+            .Select(t => t with
+            {
+                TenantName = nameMap.GetValueOrDefault(t.TenantId),
+                OwnerName  = nameMap.GetValueOrDefault(t.OwnerId),
+                VendorCompanyName = t.VendorAssignment is not null
+                    ? companyNameMap.GetValueOrDefault(t.VendorAssignment.VendorId)
+                    : null
+            })
+            .ToList();
+
+        return Ok(result with { Items = enriched });
+    }
 
     // ── Ticket CRUD ────────────────────────────────────────────────
 
