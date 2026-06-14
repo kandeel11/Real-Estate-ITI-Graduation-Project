@@ -1,6 +1,7 @@
 using Document.Application.Commands.Lease.ConfirmLease;
 using Document.Application.Commands.Lease.TerminateLease;
 using Document.Application.Commands.Lease.UploadLeaseContract;
+using Document.Application.Queries.Lease;
 using Document.Application.Queries.Lease.GetLeaseById;
 using MediatR;
 using Microsoft.AspNetCore.Mvc;
@@ -55,6 +56,13 @@ public class LeasesController : ControllerBase
     {
         var result = await _mediator.Send(new RejectLeaseCommand(id, req.TenantId, req.Reason));
         return Ok(result);
+    }
+    [HttpGet("{id}/download")]
+    public async Task<IActionResult> Download(Guid id)
+    {
+        var lease = await _mediator.Send(new GetLeaseByIdQuery(id));
+        if (lease == null) return NotFound();
+        return Ok(new { contractFileUrl = lease.ContractFileUrl });
     }
 }
 
