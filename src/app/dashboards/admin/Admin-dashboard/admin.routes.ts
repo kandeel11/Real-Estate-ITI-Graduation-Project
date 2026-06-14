@@ -39,6 +39,11 @@ export const adminRoutes: Routes = [
         loadComponent: () =>
           import('./pages/settings/settings.component').then((m) => m.SettingsComponent),
       },
+      {
+        path: 'ai',
+        loadComponent: () =>
+          import('./pages/ai-chat/ai-chat.component').then((m) => m.AiChatComponent),
+      },
 
       // Placeholder redirects until pages are built
       { path: 'analytics', redirectTo: 'overview', pathMatch: 'full' },
