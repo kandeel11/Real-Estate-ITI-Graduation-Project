@@ -160,6 +160,17 @@ public class SubscriptionLimitChecker : ISubscriptionLimitChecker
             : (false, "The AI description generator is a premium feature. Upgrade your plan or write the description manually.");
     }
 
+    public async Task<(bool Allowed, string Reason)> CheckFeaturedListingsAccessAsync(Guid userId, Guid? companyId, CancellationToken ct = default)
+    {
+        var (subscription, plan, _) = await ResolveAsync(userId, companyId, ct);
+        if (subscription is null || plan is null)
+            return (true, string.Empty);
+
+        return plan.HasFeaturedListings
+            ? (true, string.Empty)
+            : (false, "Featured listings are a Premium plan benefit. Upgrade your plan to boost your listing's visibility.");
+    }
+
     // ── helpers ──────────────────────────────────────────────────────────────
 
     private async Task<(Domain.Entities.Subscription? Subscription, SubscriptionPlan? Plan, SubscriptionUsage Usage)>

@@ -3,6 +3,7 @@ using AI.Infrastructure;
 using AI.Infrastructure.Persistence.Contexts;
 using Document.Infrastructure;
 using Document.Infrastructure.Hubs;
+using Document.Infrastructure.Persistence;
 using Hangfire;
 using Hangfire.SqlServer;
 using Identity.Infrastructure;
@@ -10,6 +11,8 @@ using Identity.Infrastructure.Persistence;
 using Identity.Infrastructure.Seed;
 using Identity.Infrastructure.Services;
 using Maintenance.Infrastructure;
+using Maintenance.Infrastructure.Persistence.Contexts;
+using MaintenanceCompanies.Infrastructure;
 using Microsoft.AspNetCore.Authentication.JwtBearer;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.IdentityModel.Tokens;
@@ -41,6 +44,7 @@ public class Program
         var builder = WebApplication.CreateBuilder(args);
 
         builder.Services.AddControllers();
+        builder.Services.AddHttpContextAccessor();
 
         // Allow the Angular dev server to call the API from the browser
         builder.Services.AddCors(options =>
@@ -144,7 +148,7 @@ public class Program
         builder.Services.AddMaintenanceCompaniesModule(builder.Configuration);
 
         // ── SignalR ───────────────────────────────────────────
-        builder.Services.AddSignalR();   
+        builder.Services.AddSignalR();
 
         // ── Hangfire ──────────────────────────────────────────
         builder.Services.AddHangfire(config => config
@@ -190,7 +194,10 @@ public class Program
             var subscriptionDb = scope.ServiceProvider.GetRequiredService<SubscriptionDbContext>();
             var aiDb = scope.ServiceProvider.GetRequiredService<AiDbContext>();
             var propertyDb = scope.ServiceProvider.GetRequiredService<PropertyDbContext>();
-
+            var maintenanceDb = scope.ServiceProvider.GetRequiredService<MaintenanceDbContext>();
+            var documentDb = scope.ServiceProvider.GetRequiredService<DocumentDbContext>();
+            await documentDb.Database.MigrateAsync();
+            await maintenanceDb.Database.MigrateAsync();
             await propertyDb.Database.MigrateAsync();
             await aiDb.Database.MigrateAsync();
             await subscriptionDb.Database.MigrateAsync();
@@ -205,21 +212,21 @@ public class Program
             var paymentDb = scope.ServiceProvider.GetRequiredService<PaymentDbContext>();
             await paymentDb.Database.MigrateAsync();
 
-            var documentDb = scope.ServiceProvider.GetRequiredService<DocumentDbContext>();
-            await documentDb.Database.MigrateAsync();
+            //var documentDb = scope.ServiceProvider.GetRequiredService<DocumentDbContext>();
+            //await documentDb.Database.MigrateAsync();
 
             var maintenanceCompaniesDb = scope.ServiceProvider.GetRequiredService<MaintenanceModuleDbContext>();
             await maintenanceCompaniesDb.Database.MigrateAsync();
 
-            var maintenanceDb = scope.ServiceProvider.GetRequiredService<MaintenanceDbContext>();
-            await maintenanceDb.Database.MigrateAsync();
+            //var maintenanceDb = scope.ServiceProvider.GetRequiredService<MaintenanceDbContext>();
+            //await maintenanceDb.Database.MigrateAsync();
         }
         //stripe
         app.Use(async (context, next) =>
         {
             if (context.Request.Path.StartsWithSegments("/api/stripe/webhook"))
             {
-                context.Request.EnableBuffering(); 
+                context.Request.EnableBuffering();
             }
             await next();
         });
@@ -230,6 +237,7 @@ public class Program
             app.UseSwaggerUI(c =>
                 c.SwaggerEndpoint("/swagger/v1/swagger.json", "Real Estate API v1"));
         }
+        app.UseStaticFiles();
         app.UseCors("AllowAngular");
         app.UseAuthentication();
         app.UseAuthorization();

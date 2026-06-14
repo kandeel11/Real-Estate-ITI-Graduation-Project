@@ -33,4 +33,5 @@ public interface ISubscriptionLimitChecker
     /// <summary>Plan FEATURE gates (separate from the request quota).</summary>
     Task<(bool Allowed, string Reason)> CheckAiChatbotAccessAsync(Guid userId, Guid? companyId, CancellationToken ct = default);
     Task<(bool Allowed, string Reason)> CheckAiDescriptionAccessAsync(Guid userId, Guid? companyId, CancellationToken ct = default);
+    Task<(bool Allowed, string Reason)> CheckFeaturedListingsAccessAsync(Guid userId, Guid? companyId, CancellationToken ct = default);
 }

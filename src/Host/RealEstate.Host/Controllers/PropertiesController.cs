@@ -106,6 +106,7 @@ public class PropertiesController : ControllerBase
     }
 
     [HttpGet("pending-verification")]
+
     [Authorize(Policy = "AdminOnly")]
     public async Task<IActionResult> GetPendingVerification(CancellationToken ct = default)
     {
@@ -370,14 +371,21 @@ public class PropertiesController : ControllerBase
     }
 
     [HttpPost("{id:guid}/feature")]
-    [Authorize(Policy = "AdminOnly")]
+    [Authorize]
     public async Task<IActionResult> SetFeatured(Guid id, [FromBody] SetFeaturedRequest request, CancellationToken ct = default)
     {
         var userId = _currentUser.UserId;
         if (userId is null) return Unauthorized(new { error = "User not authenticated." });
 
-        await _mediator.Send(new SetFeaturedCommand(id, userId.Value, request.IsFeatured, request.FeaturedUntil), ct);
-        return NoContent();
+        try
+        {
+            await _mediator.Send(
+                new SetFeaturedCommand(id, userId.Value, _currentUser.CompanyId, request.IsFeatured, request.FeaturedUntil), ct);
+            return NoContent();
+        }
+        catch (KeyNotFoundException ex) { return NotFound(new { error = ex.Message }); }
+        catch (UnauthorizedAccessException ex) { return Forbid(); }
+        catch (InvalidOperationException ex) { return BadRequest(new { error = ex.Message }); }
     }
 
     [HttpPut("{id:guid}/ai-duplicate-score")]
