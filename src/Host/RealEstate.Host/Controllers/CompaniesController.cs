@@ -1,0 +1,403 @@
+using Document.Application.Queries.Inquiry;
+using Document.Application.Queries.Rating;
+using Identity.Application.Commands.UpdateCompany;
+using Identity.Application.Commands.UpdateCompanyLogo;
+using Identity.Application.Commands.VerifyCompany;
+using Identity.Application.Interfaces;
+using Identity.Application.Queries.GetBrokersByCompany;
+using Identity.Application.Queries.GetCompanyById;
+using Identity.Application.Queries.GetCompanyBrokersDetails;
+using Identity.Application.Queries.GetCompanyDetails;
+using Identity.Application.Queries.GetUserNames;
+using MediatR;
+using Microsoft.AspNetCore.Authorization;
+using Microsoft.AspNetCore.Mvc;
+using Property.Application.Features.Queries.GetPropertiesByCompany;
+using Property.Application.Interfaces;
+using RealEstate.Host.Services;
+using static Property.Application.Interfaces.IMediaStorageService;
+
+namespace RealEstate.Host.Controllers;
+
+[ApiController]
+[Route("api/companies")]
+public class CompaniesController(
+    IMediator mediator,
+    ICurrentUserService currentUser,
+    PropertyEnrichmentService enrichment,
+    IMediaStorageService mediaStorage) : ControllerBase
+{
+    /// <summary>
+    /// Uploads the company logo and persists its URL on the company profile.
+    /// Returns the stored URL so the client can update its preview.
+    /// </summary>
+    [HttpPost("mine/logo")]
+    [Authorize(Policy = "CompanyManager")]
+    [Consumes("multipart/form-data")]
+    [RequestSizeLimit(5 * 1024 * 1024)] // 5 MB cap for logos
+    public async Task<IActionResult> UploadLogo([FromForm] UploadLogoRequest request, CancellationToken ct)
+    {
+        var companyId = currentUser.CompanyId;
+        if (companyId is null)
+            return BadRequest(new { error = "No company is associated with your account." });
+
+        if (request.File is null || request.File.Length == 0)
+            return BadRequest(new { error = "No file provided." });
+
+        var allowedTypes = new[] { "image/jpeg", "image/png", "image/webp", "image/svg+xml" };
+        if (!allowedTypes.Contains(request.File.ContentType))
+            return BadRequest(new { error = "Logo must be a JPEG, PNG, WebP, or SVG image." });
+
+        await using var stream = request.File.OpenReadStream();
+        var logoUrl = await mediaStorage.UploadAsync(
+            OwnerId: currentUser.UserId,
+            fileStream: stream,
+            fileName: request.File.FileName,
+            contentType: request.File.ContentType,
+            category: MediaCategory.Photo,
+            ct: ct);
+
+        await mediator.Send(new UpdateCompanyLogoCommand(companyId.Value, logoUrl), ct);
+
+        return Ok(new { logoUrl });
+    }
+
+    /// <summary>
+    /// Returns the company belonging to the logged-in company manager (reads CompanyId from JWT).
+    /// Uses CompanyDetailsDto so branding fields (logo/website/description) round-trip.
+    /// </summary>
+    [HttpGet("mine")]
+    [Authorize(Policy = "CompanyManager")]
+    public async Task<IActionResult> GetMine(CancellationToken ct)
+    {
+        var companyId = currentUser.CompanyId;
+        if (companyId is null)
+            return BadRequest(new { error = "No company is associated with your account." });
+
+        var company = await mediator.Send(new GetCompanyDetailsQuery(companyId.Value), ct);
+        return company is null ? NotFound() : Ok(company);
+    }
+
+    /// <summary>
+    /// Returns a company by ID. Accessible to admins or the company's own manager.
+    /// </summary>
+    [HttpGet("{id:guid}")]
+    [Authorize]
+    public async Task<IActionResult> GetById(Guid id, CancellationToken ct)
+    {
+        var company = await mediator.Send(new GetCompanyByIdQuery(id), ct);
+        return company is null ? NotFound() : Ok(company);
+    }
+
+    /// <summary>
+    /// Updates the logged-in manager's OWN company profile (companyId from JWT).
+    /// </summary>
+    [HttpPut("mine")]
+    [Authorize(Policy = "CompanyManager")]
+    public async Task<IActionResult> UpdateMine([FromBody] UpdateCompanyRequest request, CancellationToken ct)
+    {
+        var userId = currentUser.UserId;
+        if (userId is null) return Unauthorized(new { error = "User not authenticated." });
+
+        var companyId = currentUser.CompanyId;
+        if (companyId is null) return BadRequest(new { error = "No company is associated with your account." });
+
+        try
+        {
+            await mediator.Send(new UpdateCompanyCommand(
+                CompanyId: companyId.Value,
+                RequestingUserId: userId.Value,
+                Name: request.Name,
+                City: request.City,
+                Address: request.Address,
+                Phone: request.Phone,
+                Website: request.Website,
+                Description: request.Description,
+                LogoUrl: request.LogoUrl), ct);
+
+            return NoContent();
+        }
+        catch (InvalidOperationException ex) { return BadRequest(new { error = ex.Message }); }
+        catch (UnauthorizedAccessException) { return Forbid(); }
+    }
+
+    /// <summary>
+    /// Updates company profile. Only the company's manager or an admin can call this.
+    /// </summary>
+    [HttpPut("{id:guid}")]
+    [Authorize(Policy = "CompanyManager")]
+    public async Task<IActionResult> Update(Guid id, [FromBody] UpdateCompanyRequest request, CancellationToken ct)
+    {
+        var userId = currentUser.UserId;
+        if (userId is null) return Unauthorized(new { error = "User not authenticated." });
+
+        // Verify caller manages this company (unless admin)
+        if (!currentUser.IsInRole("admin") && currentUser.CompanyId != id)
+            return Forbid();
+
+        try
+        {
+            await mediator.Send(new UpdateCompanyCommand(
+                CompanyId: id,
+                RequestingUserId: userId.Value,
+                Name: request.Name,
+                City: request.City,
+                Address: request.Address,
+                Phone: request.Phone,
+                Website: request.Website,
+                Description: request.Description,
+                LogoUrl: request.LogoUrl), ct);
+
+            return NoContent();
+        }
+        catch (InvalidOperationException ex)
+        {
+            return BadRequest(new { error = ex.Message });
+        }
+        catch (UnauthorizedAccessException)
+        {
+            return Forbid();
+        }
+    }
+
+    /// <summary>
+    /// Marks a company as verified. Admin only.
+    /// </summary>
+    [HttpPut("{id:guid}/verify")]
+    [Authorize(Policy = "AdminOnly")]
+    public async Task<IActionResult> Verify(Guid id, CancellationToken ct)
+    {
+        try
+        {
+            await mediator.Send(new VerifyCompanyCommand(id), ct);
+            return NoContent();
+        }
+        catch (InvalidOperationException ex)
+        {
+            return BadRequest(new { error = ex.Message });
+        }
+    }
+
+    /// <summary>
+    /// Lists all properties belonging to the logged-in manager's OWN company (companyId from JWT).
+    /// </summary>
+    [HttpGet("mine/properties")]
+    [Authorize(Policy = "CompanyManager")]
+    public async Task<IActionResult> GetMyProperties(CancellationToken ct)
+    {
+        var companyId = currentUser.CompanyId;
+        if (companyId is null)
+            return BadRequest(new { error = "No company is associated with your account." });
+
+        var properties = await mediator.Send(new GetPropertiesByCompanyQuery(companyId.Value), ct);
+        await enrichment.EnrichAsync(properties, ct);
+        return Ok(properties);
+    }
+
+    /// <summary>
+    /// Lists all brokers belonging to the logged-in manager's OWN company (companyId from JWT).
+    /// Uses BrokerDetailsDto: includes the broker's name/contact and performance counters.
+    /// </summary>
+    [HttpGet("mine/brokers")]
+    [Authorize(Policy = "CompanyManager")]
+    public async Task<IActionResult> GetMyBrokers(CancellationToken ct)
+    {
+        var companyId = currentUser.CompanyId;
+        if (companyId is null)
+            return BadRequest(new { error = "No company is associated with your account." });
+
+        var brokers = await mediator.Send(new GetCompanyBrokersDetailsQuery(companyId.Value), ct);
+        return Ok(brokers);
+    }
+
+    /// <summary>
+    /// Dashboard stat counters for the manager's own company, composed from the
+    /// Property, Identity, and Document modules (no cross-module references —
+    /// composition happens here in the Host, like PropertyEnrichmentService).
+    /// </summary>
+    [HttpGet("mine/stats")]
+    [Authorize(Policy = "CompanyManager")]
+    public async Task<IActionResult> GetMyStats(CancellationToken ct)
+    {
+        var companyId = currentUser.CompanyId;
+        if (companyId is null)
+            return BadRequest(new { error = "No company is associated with your account." });
+
+        var properties = await mediator.Send(new GetPropertiesByCompanyQuery(companyId.Value), ct);
+        var brokers = await mediator.Send(new GetCompanyBrokersDetailsQuery(companyId.Value), ct);
+        var inquiries = await mediator.Send(new GetCompanyInquiryStatsQuery(companyId.Value, 0), ct);
+
+        return Ok(new CompanyStatsResponse(
+            TotalProperties: properties.Count,
+            ActiveProperties: properties.Count(p => p.Status == "Active"),
+            PendingProperties: properties.Count(p => p.Status == "PendingReview"),
+            RentedProperties: properties.Count(p => p.Status == "Rented"),
+            TotalBrokers: brokers.Count(b => b.IsActive),
+            TotalViews: properties.Sum(p => p.ViewsCount),
+            TotalInquiries: inquiries.TotalInquiries,
+            MonthlyInquiries: inquiries.MonthlyInquiries,
+            DealsClosed: brokers.Sum(b => b.ClosedDealsCount)));
+    }
+
+    /// <summary>
+    /// Star-rating distribution across the company's ratings (by CompanyId or
+    /// any of its properties). Feeds the Performance page's ratings card.
+    /// </summary>
+    [HttpGet("mine/ratings-summary")]
+    [Authorize(Policy = "CompanyManager")]
+    public async Task<IActionResult> GetMyRatingsSummary(CancellationToken ct)
+    {
+        var companyId = currentUser.CompanyId;
+        if (companyId is null)
+            return BadRequest(new { error = "No company is associated with your account." });
+
+        var properties = await mediator.Send(new GetPropertiesByCompanyQuery(companyId.Value), ct);
+        var summary = await mediator.Send(new GetCompanyRatingSummaryQuery(
+            companyId.Value, properties.Select(p => p.Id).ToList()), ct);
+
+        return Ok(summary);
+    }
+
+    /// <summary>
+    /// Full inquiry history for the manager's own company, enriched with the
+    /// tenant (user) name, the broker who handled it, and the property title.
+    /// </summary>
+    [HttpGet("mine/inquiries")]
+    [Authorize(Policy = "CompanyManager")]
+    public async Task<IActionResult> GetMyInquiries(CancellationToken ct)
+    {
+        var companyId = currentUser.CompanyId;
+        if (companyId is null)
+            return BadRequest(new { error = "No company is associated with your account." });
+
+        var inquiries = await mediator.Send(new GetCompanyInquiryHistoryQuery(companyId.Value), ct);
+        var properties = await mediator.Send(new GetPropertiesByCompanyQuery(companyId.Value), ct);
+        var titlesById = properties.ToDictionary(p => p.Id, p => p.Title);
+
+        var userIds = inquiries.Select(i => i.TenantId)
+            .Concat(inquiries.Where(i => i.AcceptedById is not null).Select(i => i.AcceptedById!.Value))
+            .Distinct()
+            .ToList();
+        var names = await mediator.Send(new GetUserNamesQuery(userIds), ct);
+
+        var result = inquiries.Select(i => new CompanyInquiryResponse(
+            i.Id,
+            i.PropertyId,
+            titlesById.TryGetValue(i.PropertyId, out var title) ? title : "—",
+            i.TenantId,
+            names.TryGetValue(i.TenantId, out var tenant) ? tenant : "Unknown user",
+            i.AcceptedById,
+            i.AcceptedById is not null && names.TryGetValue(i.AcceptedById.Value, out var broker) ? broker : null,
+            i.Status,
+            i.Message,
+            i.CreatedAt,
+            i.AcceptedAt,
+            i.ClosedAt));
+
+        return Ok(result);
+    }
+
+    /// <summary>
+    /// Recent activity feed for the manager's own company, synthesized from
+    /// real events: listings created, brokers joining, inquiries received.
+    /// </summary>
+    [HttpGet("mine/activity")]
+    [Authorize(Policy = "CompanyManager")]
+    public async Task<IActionResult> GetMyActivity([FromQuery] int take = 10, CancellationToken ct = default)
+    {
+        var companyId = currentUser.CompanyId;
+        if (companyId is null)
+            return BadRequest(new { error = "No company is associated with your account." });
+
+        var properties = await mediator.Send(new GetPropertiesByCompanyQuery(companyId.Value), ct);
+        var brokers = await mediator.Send(new GetCompanyBrokersDetailsQuery(companyId.Value), ct);
+        var inquiries = await mediator.Send(new GetCompanyInquiryStatsQuery(companyId.Value, take), ct);
+
+        var titlesById = properties.ToDictionary(p => p.Id, p => p.Title);
+
+        var items = new List<CompanyActivityItem>();
+
+        items.AddRange(properties.Select(p => new CompanyActivityItem(
+            "listing_created", $"Listing \"{p.Title}\" created", p.CreatedAt)));
+
+        items.AddRange(brokers.Select(b => new CompanyActivityItem(
+            "broker_joined", $"Broker {(string.IsNullOrEmpty(b.FullName) ? b.LicenseNumber : b.FullName)} joined the team", b.CreatedAt)));
+
+        items.AddRange(inquiries.Recent.Select(i => new CompanyActivityItem(
+            "inquiry_received",
+            titlesById.TryGetValue(i.PropertyId, out var title)
+                ? $"New inquiry received on \"{title}\""
+                : "New inquiry received",
+            i.CreatedAt)));
+
+        return Ok(items.OrderByDescending(i => i.Timestamp).Take(take).ToList());
+    }
+
+    /// <summary>
+    /// Lists all properties belonging to a company (created by any of its brokers or the manager).
+    /// </summary>
+    [HttpGet("{id:guid}/properties")]
+    [AllowAnonymous]
+    public async Task<IActionResult> GetProperties(Guid id, CancellationToken ct)
+    {
+        var properties = await mediator.Send(new GetPropertiesByCompanyQuery(id), ct);
+        await enrichment.EnrichAsync(properties, ct);
+        return Ok(properties);
+    }
+
+    /// <summary>
+    /// Lists all brokers belonging to a company.
+    /// </summary>
+    [HttpGet("{id:guid}/brokers")]
+    [Authorize(Policy = "CompanyManager")]
+    public async Task<IActionResult> GetBrokers(Guid id, CancellationToken ct)
+    {
+        // Company manager can only see their own company's brokers
+        if (!currentUser.IsInRole("admin") && currentUser.CompanyId != id)
+            return Forbid();
+
+        var brokers = await mediator.Send(new GetBrokersByCompanyQuery(id), ct);
+        return Ok(brokers);
+    }
+}
+
+public record UpdateCompanyRequest(
+    string Name,
+    string City,
+    string Address,
+    string Phone,
+    string? Website,
+    string? Description,
+    string? LogoUrl);
+
+public record CompanyStatsResponse(
+    int TotalProperties,
+    int ActiveProperties,
+    int PendingProperties,
+    int RentedProperties,
+    int TotalBrokers,
+    int TotalViews,
+    int TotalInquiries,
+    int MonthlyInquiries,
+    int DealsClosed);
+
+public record CompanyActivityItem(string Type, string Text, DateTime Timestamp);
+
+public record CompanyInquiryResponse(
+    Guid Id,
+    Guid PropertyId,
+    string PropertyTitle,
+    Guid TenantId,
+    string TenantName,
+    Guid? BrokerId,
+    string? BrokerName,
+    string Status,
+    string Message,
+    DateTime CreatedAt,
+    DateTime? AcceptedAt,
+    DateTime? ClosedAt);
+
+public class UploadLogoRequest
+{
+    public IFormFile? File { get; init; }
+}

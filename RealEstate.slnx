@@ -5,6 +5,7 @@
   </Folder>
   <Folder Name="/src/Modules/" />
   <Folder Name="/src/Modules/AI/">
+    <File Path="../../../../Downloads/OwnershipVerification_Module_AzureDI.md" />
     <Project Path="src/Modules/AI/AI.Application/AI.Application.csproj" />
     <Project Path="src/Modules/AI/AI.Domain/AI.Domain.csproj" />
     <Project Path="src/Modules/AI/AI.Infrastructure/AI.Infrastructure.csproj" />
@@ -24,6 +25,11 @@
     <Project Path="src/Modules/Maintenance/Maintenance.Domain/Maintenance.Domain.csproj" />
     <Project Path="src/Modules/Maintenance/Maintenance.Infrastructure/Maintenance.Infrastructure.csproj" />
   </Folder>
+  <Folder Name="/src/Modules/MaintenanceCompanies/">
+    <Project Path="src/Modules/MaintenanceCompanies/MaintenanceCompanies.Application/MaintenanceCompanies.Application.csproj" />
+    <Project Path="src/Modules/MaintenanceCompanies/MaintenanceCompanies.Domain/MaintenanceCompanies.Domain.csproj" />
+    <Project Path="src/Modules/MaintenanceCompanies/MaintenanceCompanies.Infrastructure/MaintenanceCompanies.Infrastructure.csproj" />
+  </Folder>
   <Folder Name="/src/Modules/Payment/">
     <Project Path="src/Modules/Payment/Payment.Application/Payment.Application.csproj" />
     <Project Path="src/Modules/Payment/Payment.Domain/Payment.Domain.csproj" />
@@ -34,7 +40,13 @@
     <Project Path="src/Modules/Property/Property.Domain/Property.Domain.csproj" />
     <Project Path="src/Modules/Property/Property.Infrastructure/Property.Infrastructure.csproj" />
   </Folder>
+  <Folder Name="/src/Modules/Subscription/">
+    <Project Path="src/Modules/Subscription/Subscription.Application/Subscription.Application.csproj" />
+    <Project Path="src/Modules/Subscription/Subscription.Domain/Subscription.Domain.csproj" />
+    <Project Path="src/Modules/Subscription/Subscription.Infrastructure/Subscription.Infrastructure.csproj" />
+  </Folder>
   <Folder Name="/src/Shared/">
+    <Project Path="Domain/Domain.csproj" Id="d4d81e4b-128d-450d-b03c-8e482744951c" />
     <Project Path="src/Shared/RealEstate.Shared.Kernel/RealEstate.Shared.Kernel.csproj" />
   </Folder>
 </Solution>
