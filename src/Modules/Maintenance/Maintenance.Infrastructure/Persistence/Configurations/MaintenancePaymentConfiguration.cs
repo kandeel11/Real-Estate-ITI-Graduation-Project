@@ -13,6 +13,9 @@ public class MaintenancePaymentConfiguration : IEntityTypeConfiguration<Maintena
         b.HasKey(x => x.Id);
         b.Property(x => x.Id).ValueGeneratedNever();
         b.Property(x => x.TicketId).IsRequired();
+        // Match the parent ticket's soft-delete filter so this required dependent
+        // is filtered out together with its ticket.
+        b.HasQueryFilter(x => x.Ticket.DeletedAt == null);
         b.HasIndex(x => x.TicketId).IsUnique();
         b.Property(x => x.PayerId).IsRequired();
         b.Property(x => x.VendorId).IsRequired();

@@ -23,6 +23,10 @@ public class PropertySummaryDto
     public int ViewsCount { get; init; }
     public DateTime CreatedAt { get; init; }
 
+    // Amenity ids for browse-page filtering (the summary stays light — names
+    // are resolved client-side against the /amenities catalog).
+    public List<Guid> AmenityIds { get; init; } = [];
+
     // Enriched after query — populated by PropertyEnrichmentService in Host
     public string? ListingDisplayName { get; set; }
     public string? ListingBrokerName { get; set; }

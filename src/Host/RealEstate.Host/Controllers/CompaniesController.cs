@@ -8,6 +8,7 @@ using Identity.Application.Queries.GetBrokersByCompany;
 using Identity.Application.Queries.GetCompanyById;
 using Identity.Application.Queries.GetCompanyBrokersDetails;
 using Identity.Application.Queries.GetCompanyDetails;
+using Identity.Application.Queries.GetUserNames;
 using MediatR;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
@@ -258,6 +259,45 @@ public class CompaniesController(
     }
 
     /// <summary>
+    /// Full inquiry history for the manager's own company, enriched with the
+    /// tenant (user) name, the broker who handled it, and the property title.
+    /// </summary>
+    [HttpGet("mine/inquiries")]
+    [Authorize(Policy = "CompanyManager")]
+    public async Task<IActionResult> GetMyInquiries(CancellationToken ct)
+    {
+        var companyId = currentUser.CompanyId;
+        if (companyId is null)
+            return BadRequest(new { error = "No company is associated with your account." });
+
+        var inquiries = await mediator.Send(new GetCompanyInquiryHistoryQuery(companyId.Value), ct);
+        var properties = await mediator.Send(new GetPropertiesByCompanyQuery(companyId.Value), ct);
+        var titlesById = properties.ToDictionary(p => p.Id, p => p.Title);
+
+        var userIds = inquiries.Select(i => i.TenantId)
+            .Concat(inquiries.Where(i => i.AcceptedById is not null).Select(i => i.AcceptedById!.Value))
+            .Distinct()
+            .ToList();
+        var names = await mediator.Send(new GetUserNamesQuery(userIds), ct);
+
+        var result = inquiries.Select(i => new CompanyInquiryResponse(
+            i.Id,
+            i.PropertyId,
+            titlesById.TryGetValue(i.PropertyId, out var title) ? title : "—",
+            i.TenantId,
+            names.TryGetValue(i.TenantId, out var tenant) ? tenant : "Unknown user",
+            i.AcceptedById,
+            i.AcceptedById is not null && names.TryGetValue(i.AcceptedById.Value, out var broker) ? broker : null,
+            i.Status,
+            i.Message,
+            i.CreatedAt,
+            i.AcceptedAt,
+            i.ClosedAt));
+
+        return Ok(result);
+    }
+
+    /// <summary>
     /// Recent activity feed for the manager's own company, synthesized from
     /// real events: listings created, brokers joining, inquiries received.
     /// </summary>
@@ -342,6 +382,20 @@ public record CompanyStatsResponse(
     int DealsClosed);
 
 public record CompanyActivityItem(string Type, string Text, DateTime Timestamp);
+
+public record CompanyInquiryResponse(
+    Guid Id,
+    Guid PropertyId,
+    string PropertyTitle,
+    Guid TenantId,
+    string TenantName,
+    Guid? BrokerId,
+    string? BrokerName,
+    string Status,
+    string Message,
+    DateTime CreatedAt,
+    DateTime? AcceptedAt,
+    DateTime? ClosedAt);
 
 public class UploadLogoRequest
 {

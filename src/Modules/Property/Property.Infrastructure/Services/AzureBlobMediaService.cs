@@ -236,9 +236,10 @@ public class AzureBlobMediaService : IMediaStorageService
             .Replace(" ", "-")
             .ToLowerInvariant();
 
-        // Strip unsafe chars — keep alphanumeric, dash, underscore
+        // Strip unsafe chars — keep ASCII alphanumeric, dash, underscore only
+        // (non-ASCII letters like Arabic would break HTTP headers)
         stem = new string(stem.Where(c =>
-            char.IsLetterOrDigit(c) || c == '-' || c == '_').ToArray());
+            char.IsAsciiLetterOrDigit(c) || c == '-' || c == '_').ToArray());
 
         if (string.IsNullOrWhiteSpace(stem)) stem = "file";
 
@@ -271,9 +272,9 @@ public class AzureBlobMediaService : IMediaStorageService
     {
         ValidateFile(fileName, contentType, category);
 
-        await _container.CreateIfNotExistsAsync(
-            PublicAccessType.None,                   // ✅ private container
-            cancellationToken: ct);
+        await _container.CreateIfNotExistsAsync(PublicAccessType.Blob, cancellationToken: ct);
+        // Ensure existing containers are also set to public (idempotent)
+        await _container.SetAccessPolicyAsync(PublicAccessType.Blob, cancellationToken: ct);
 
         var folder = CategoryFolder(category);
         var safeName = SanitizeFileName(fileName);
@@ -307,7 +308,7 @@ public class AzureBlobMediaService : IMediaStorageService
             "Uploaded {Category} blob: {BlobPath} | PropertyId={PropertyId}",
             category, blobPath, OwnerId);
 
-        return blobPath;
+        return blobClient.Uri.ToString();
     }
 
     //public Task<string> UploadAsync(Guid? OwnerId, Stream fileStream, string fileName, string contentType, MediaCategory category, CancellationToken ct = default)

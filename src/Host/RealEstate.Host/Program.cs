@@ -26,6 +26,11 @@ using Subscription.Infrastructure.Persistence;
 using Subscription.Infrastructure.Seed;
 using System.IdentityModel.Tokens.Jwt;
 using System.Text;
+using MaintenanceCompanies.Infrastructure;
+using MaintenanceCompanies.Application;
+using Document.Infrastructure.Persistence;
+using MaintenanceCompanies.Infrastructure.Persistence;
+using Maintenance.Infrastructure.Persistence.Contexts;
 
 namespace RealEstate.Host;
 
@@ -205,6 +210,15 @@ public class Program
 
             var paymentDb = scope.ServiceProvider.GetRequiredService<PaymentDbContext>();
             await paymentDb.Database.MigrateAsync();
+
+            var documentDb = scope.ServiceProvider.GetRequiredService<DocumentDbContext>();
+            await documentDb.Database.MigrateAsync();
+
+            var maintenanceCompaniesDb = scope.ServiceProvider.GetRequiredService<MaintenanceModuleDbContext>();
+            await maintenanceCompaniesDb.Database.MigrateAsync();
+
+            var maintenanceDb = scope.ServiceProvider.GetRequiredService<MaintenanceDbContext>();
+            await maintenanceDb.Database.MigrateAsync();
         }
         //stripe
         app.Use(async (context, next) =>

@@ -23,4 +23,10 @@ public class InquiryStatsRepository : IInquiryStatsRepository
             .OrderByDescending(x => x.CreatedAt)
             .Take(take)
             .ToListAsync(ct);
+
+    public async Task<List<Inquiry>> GetAllByCompanyAsync(Guid companyId, CancellationToken ct = default)
+        => await _db.Inquiries
+            .Where(x => x.CompanyId == companyId)
+            .OrderByDescending(x => x.CreatedAt)
+            .ToListAsync(ct);
 }

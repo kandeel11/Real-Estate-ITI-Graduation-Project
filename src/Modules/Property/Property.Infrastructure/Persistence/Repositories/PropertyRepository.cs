@@ -128,7 +128,11 @@ public class PropertyRepository : IPropertyRepository
                     .Select(m => m.MediaUrl)
                     .FirstOrDefault(),
                 ViewsCount = p.ViewsCount,
-                CreatedAt = p.CreatedAt
+                CreatedAt = p.CreatedAt,
+                AmenityIds = _context.PropertyAmenities
+                    .Where(pa => pa.PropertyId == p.Id)
+                    .Select(pa => pa.AmenityId)
+                    .ToList()
             })
             .ToListAsync(ct);
 
@@ -268,6 +272,14 @@ public class PropertyRepository : IPropertyRepository
                 CreatedAt = p.CreatedAt
             })
             .ToListAsync(ct);
+
+    public async Task<Domain.Entities.Property?> GetCurrentlyFeaturedByOwnerAsync(
+        Guid ownerId, Guid? companyId, CancellationToken ct = default)
+        => await _context.Properties
+            .Where(p => p.IsFeatured &&
+                        (companyId.HasValue ? p.CompanyId == companyId : p.OwnerId == ownerId) &&
+                        p.DeletedAt == null)
+            .FirstOrDefaultAsync(ct);
 
     public async Task<bool> ExistsByOwnerAndTitleAsync(Guid ownerId, string title, CancellationToken ct = default)
     {
