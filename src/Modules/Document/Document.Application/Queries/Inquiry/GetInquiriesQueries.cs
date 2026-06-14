@@ -15,7 +15,7 @@ public class GetInquiriesByPropertyHandler : IRequestHandler<GetInquiriesByPrope
     public async Task<List<InquiryResponse>> Handle(GetInquiriesByPropertyQuery query, CancellationToken ct)
     {
         var list = await _inquiries.GetByPropertyIdAsync(query.PropertyId, ct);
-        return list.Select(CreateInquiryCommandHandler.MapToResponse).ToList();
+        return list.Select(i => CreateInquiryCommandHandler.MapToResponse(i)).ToList();
     }
 }
 
@@ -29,7 +29,7 @@ public class GetMyInquiriesHandler : IRequestHandler<GetMyInquiriesQuery, List<I
     public async Task<List<InquiryResponse>> Handle(GetMyInquiriesQuery query, CancellationToken ct)
     {
         var list = await _inquiries.GetByTenantIdAsync(query.TenantId, ct);
-        return list.Select(CreateInquiryCommandHandler.MapToResponse).ToList();
+        return list.Select(i => CreateInquiryCommandHandler.MapToResponse(i)).ToList();
     }
 }
 

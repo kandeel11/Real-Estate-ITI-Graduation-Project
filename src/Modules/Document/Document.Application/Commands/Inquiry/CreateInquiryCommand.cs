@@ -66,8 +66,11 @@ public class CreateInquiryCommandHandler : IRequestHandler<CreateInquiryCommand,
         return MapToResponse(inquiry);
     }
 
-    public static InquiryResponse MapToResponse(Domain.Entities.Inquiry i) => new(
+    public static InquiryResponse MapToResponse(Domain.Entities.Inquiry i, Guid? leadId = null) => new(
         i.Id, i.PropertyId, i.TenantId, i.OwnerId, i.CompanyId,
         i.Message, i.Status.ToString(), i.AcceptedById,
-        i.AcceptedAt, i.ClosedAt, i.CreatedAt);
+        i.AcceptedAt, i.ClosedAt, i.CreatedAt)
+    {
+        LeadId = leadId
+    };
 }

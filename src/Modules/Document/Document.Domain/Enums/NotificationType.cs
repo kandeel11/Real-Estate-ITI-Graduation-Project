@@ -5,7 +5,7 @@ using System.Text;
 using System.Threading.Tasks;
 
 namespace Document.Domain.Enums
-{ 
+{
     public enum NotificationType
     {
         NewInquiry,
@@ -16,7 +16,7 @@ namespace Document.Domain.Enums
         AiReviewResult,
         ContractSigned,
         PaymentReceived,
-        DuplicateDetected
-
+        DuplicateDetected,
+        LeaseRejected
     }
 }
