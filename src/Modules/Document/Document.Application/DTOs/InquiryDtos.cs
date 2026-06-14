@@ -24,7 +24,10 @@ public record InquiryResponse(
     DateTime? AcceptedAt,
     DateTime? ClosedAt,
     DateTime CreatedAt
-);
+)
+{
+    public Guid? LeadId { get; init; }
+};
 
 public record NotificationResponse(
     Guid Id,

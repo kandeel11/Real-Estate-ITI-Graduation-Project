@@ -106,6 +106,7 @@ public class PropertiesController : ControllerBase
     }
 
     [HttpGet("pending-verification")]
+
     [Authorize(Policy = "AdminOnly")]
     public async Task<IActionResult> GetPendingVerification(CancellationToken ct = default)
     {
