@@ -300,6 +300,7 @@ type FilterType = 'all' | 'new' | 'replied';
                   <button class="btn btn-outline" (click)="convertToLead(inq)">
                     Convert to Lead
                   </button>
+                  <button class="btn btn-secondary" (click)="forward(inq)">Forward</button>
                 </div>
               }
             </div>
@@ -383,5 +384,9 @@ export class InquiriesComponent implements OnInit {
       .subscribe(() => {
         alert(`${inq.from} has been converted to a lead.`);
       });
+  }
+
+  forward(inq: Inquiry) {
+    alert(`Forwarding inquiry from ${inq.from} to another broker.`);
   }
 }
