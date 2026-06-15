@@ -154,8 +154,9 @@
   font-weight: 600;
 }
 
-.badge-active { background: var(--badge-active-bg); color: var(--badge-active-text); }
-.badge-ended  { background: var(--badge-ended-bg);  color: var(--badge-ended-text); }
+.badge-active  { background: var(--badge-active-bg); color: var(--badge-active-text); }
+.badge-ended   { background: var(--badge-ended-bg);  color: var(--badge-ended-text); }
+.badge-pending { background: #fef3c7; color: #92400e; }
 
 /* ── LEASE CARD ────────────────────────────────── */
 .lease-card {

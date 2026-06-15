@@ -82,6 +82,10 @@
                   }
                 </button>
               </div>
+              <button class="btn btn-outline" (click)="openChat(inq)">
+                <i class="fa-solid fa-comments"></i>
+                {{ 'BROKER.INQUIRIES.CHAT' | translate }}
+              </button>
               <button class="btn btn-outline" (click)="convertToLead(inq)"
                 [disabled]="convertingId() === inq.id">
                 <i class="fa-solid fa-filter"></i>
@@ -92,5 +96,12 @@
         </div>
       }
     </div>
+  }
+
+  @if (chatInquiry()) {
+    <app-chat-modal
+      [inquiry]="chatInquiry()!"
+      (closed)="closeChat()"
+      (leadConverted)="onChatLeadConverted()" />
   }
 </div>

@@ -1,5 +1,5 @@
 <div class="modal-backdrop" (click)="closed.emit()">
-  <div class="modal" (click)="$event.stopPropagation()">
+  <div class="lease-dialog" (click)="$event.stopPropagation()">
 
     <!-- Step indicator -->
     <div class="steps">
@@ -25,9 +25,13 @@
 
         <div class="form-group">
           <label>{{ 'BROKER.LEASE_UPLOAD.TENANT_EMAIL' | translate }}</label>
-          <input class="form-control" type="email"
-            [value]="tenantEmail()" (input)="tenantEmail.set($any($event.target).value)"
-            [placeholder]="lead.tenantEmail ?? 'tenant@email.com'" />
+          <input class="form-control" type="email" readonly
+            [value]="tenantEmail()"
+            [placeholder]="'BROKER.LEASE_UPLOAD.TENANT_EMAIL' | translate" />
+          <small class="field-hint">
+            <i class="fa-solid fa-circle-info"></i>
+            {{ 'BROKER.LEASE_UPLOAD.TENANT_EMAIL_HINT' | translate: { name: lead.tenantName } }}
+          </small>
         </div>
 
         <label class="drop-zone" [class.has-file]="!!fileName()">

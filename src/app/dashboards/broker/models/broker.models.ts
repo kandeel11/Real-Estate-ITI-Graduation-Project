@@ -54,7 +54,7 @@ export interface ChatMessage {
   id: string;
   senderId: string;
   senderName: string;
-  senderRole: 'broker' | 'tenant';
+  senderRole: 'broker' | 'tenant' | 'owner';
   text: string;
   sentAt: string;
 }

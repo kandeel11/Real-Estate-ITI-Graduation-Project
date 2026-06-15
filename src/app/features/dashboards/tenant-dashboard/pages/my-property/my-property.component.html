@@ -135,8 +135,8 @@
           <div class="gallery-label">{{ 'MY_PROPERTY.PHOTOS' | translate }}</div>
           <div class="photo-gallery">
             @for (m of prop.media; track m.id) {
-              <button class="gallery-thumb" (click)="openLightbox(m.url)">
-                <img [src]="m.url" [alt]="prop.title" />
+              <button class="gallery-thumb" (click)="openLightbox(m.mediaUrl)">
+                <img [src]="m.mediaUrl" [alt]="prop.title" />
               </button>
             }
           </div>

@@ -7,11 +7,9 @@
       </span>
     }
   </div>
-  @if (!isCompanyBroker()) {
-    <button class="btn btn-primary" (click)="addProperty()">
-      <i class="fa-solid fa-plus me-1"></i>{{ 'BROKER.PROPERTIES.ADD_BTN' | translate }}
-    </button>
-  }
+  <button class="btn btn-primary" (click)="addProperty()">
+    <i class="fa-solid fa-plus me-1"></i>{{ 'BROKER.PROPERTIES.ADD_BTN' | translate }}
+  </button>
 </div>
 
 <div class="d-flex flex-wrap justify-content-between align-items-center gap-2 mb-3">
@@ -43,7 +41,7 @@
   <div class="card p-5 text-center text-muted">
     <i class="fa-solid fa-house fs-1 mb-3"></i>
     <p class="mb-2">{{ (search() ? 'BROKER.PROPERTIES.EMPTY_SEARCH' : 'BROKER.PROPERTIES.EMPTY') | translate }}</p>
-    @if (!isCompanyBroker() && !search()) {
+    @if (!search()) {
       <div>
         <button class="btn btn-primary" (click)="addProperty()">
           <i class="fa-solid fa-plus me-1"></i>{{ 'BROKER.PROPERTIES.ADD_BTN' | translate }}
@@ -90,19 +88,46 @@
               <td>{{ prop.viewsCount | number }}</td>
               <td class="text-end text-nowrap">
                 @if (prop.status === 'Draft') {
-                  <button class="btn btn-sm btn-outline-secondary me-1" (click)="resumeProperty(prop)"
-                          [title]="'BROKER.PROPERTIES.BTN_RESUME' | translate">
-                    <i class="fa-solid fa-pen-to-square"></i>
+                  <button class="btn btn-sm btn-dark me-1" (click)="resumeProperty(prop)">
+                    <i class="fa-solid fa-pen-to-square me-1"></i>{{ 'BROKER.PROPERTIES.BTN_RESUME' | translate }}
+                  </button>
+                  <button class="btn btn-sm btn-outline-success me-1" (click)="submitDraft(prop)"
+                          [disabled]="busyId() === prop.id">
+                    @if (busyId() === prop.id) { <span class="spinner-border spinner-border-sm"></span> }
+                    @else { {{ 'BROKER.PROPERTIES.BTN_SUBMIT' | translate }} }
                   </button>
                 }
+
+                @if (prop.status === 'Active') {
+                  <button class="btn btn-sm me-1" [class]="prop.isFeatured ? 'btn-warning' : 'btn-outline-warning'"
+                          (click)="toggleFeatured(prop)" [disabled]="busyId() === prop.id"
+                          [title]="(prop.isFeatured ? 'BROKER.PROPERTIES.BTN_UNFEATURE' : 'BROKER.PROPERTIES.BTN_FEATURE') | translate">
+                    @if (busyId() === prop.id) { <span class="spinner-border spinner-border-sm"></span> }
+                    @else if (prop.isFeatured) { <i class="fa-solid fa-star me-1"></i>{{ 'BROKER.PROPERTIES.BTN_FEATURED' | translate }} }
+                    @else { <i class="fa-regular fa-star me-1"></i>{{ 'BROKER.PROPERTIES.BTN_FEATURE' | translate }} }
+                  </button>
+                }
+
+                <button class="btn btn-sm btn-outline-secondary me-1" (click)="openImages(prop)"
+                        [title]="'BROKER.PROPERTIES.BTN_IMAGES' | translate">
+                  <i class="fa-regular fa-images"></i>
+                </button>
+
                 <button class="btn btn-sm btn-outline-secondary me-1" (click)="openInquiries(prop)"
                         [title]="'BROKER.PROPERTIES.BTN_INQUIRIES' | translate">
                   <i class="fa-regular fa-envelope"></i>
                 </button>
-                <button class="btn btn-sm btn-outline-secondary" (click)="openView(prop)"
+                <button class="btn btn-sm btn-outline-secondary me-1" (click)="openView(prop)"
                         [title]="'BROKER.PROPERTIES.BTN_VIEW' | translate">
                   <i class="fa-regular fa-eye"></i>
                 </button>
+
+                @if (prop.status === 'Draft' || prop.status === 'Rejected') {
+                  <button class="btn btn-sm btn-outline-danger" (click)="propertyToDelete.set(prop)"
+                          [title]="'COMMON.DELETE' | translate">
+                    <i class="fa-solid fa-trash"></i>
+                  </button>
+                }
               </td>
             </tr>
           }
@@ -219,3 +244,25 @@
     (leadConverted)="onLeadConverted()"
   />
 }
+
+<!-- Manage images modal -->
+@if (imagesProperty(); as p) {
+  <app-manage-images-modal
+    [propertyId]="p.id"
+    [propertyTitle]="p.title"
+    (closed)="closeImages()"
+    (changed)="onImagesChanged()"
+  />
+}
+
+<!-- Delete confirmation -->
+<app-confirm-modal
+  [show]="propertyToDelete() !== null"
+  [title]="'BROKER.PROPERTIES.DELETE_TITLE' | translate"
+  [message]="deleteMessage()"
+  [confirmLabel]="'COMMON.DELETE' | translate"
+  confirmClass="btn-danger"
+  [loading]="deleting()"
+  (confirmed)="confirmDelete()"
+  (cancelled)="propertyToDelete.set(null)"
+/>

@@ -1,4 +1,4 @@
-import { Component, Input, Output, EventEmitter, OnDestroy, inject, signal } from '@angular/core';
+import { Component, Input, Output, EventEmitter, OnInit, OnDestroy, inject, signal } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
 import { TranslatePipe } from '@ngx-translate/core';
@@ -14,7 +14,7 @@ type Step = 1 | 2 | 3;
   templateUrl: './lease-upload-modal.component.html',
   styleUrl: './lease-upload-modal.component.css',
 })
-export class LeaseUploadModalComponent implements OnDestroy {
+export class LeaseUploadModalComponent implements OnInit, OnDestroy {
   @Input({ required: true }) lead!: Lead;
   @Output() closed = new EventEmitter<void>();
   @Output() leaseCreated = new EventEmitter<void>();
@@ -34,6 +34,12 @@ export class LeaseUploadModalComponent implements OnDestroy {
   sending = signal(false);
 
   leaseId = signal<string | null>(null);
+
+  ngOnInit(): void {
+    // The tenant's email comes from their account (resolved via the lead's TenantId),
+    // so the broker never types it.
+    this.tenantEmail.set(this.lead.tenantEmail ?? '');
+  }
 
   ngOnDestroy(): void {
     this.stopPolling();
@@ -60,9 +66,8 @@ export class LeaseUploadModalComponent implements OnDestroy {
 
     this.uploading.set(true);
     this.uploadError.set(null);
-    const propId = this.lead.propertyId ?? '';
 
-    this.svc.uploadLeasePdf(propId, email, this.file).subscribe({
+    this.svc.uploadLeasePdf(this.lead.id, email, this.file).subscribe({
       next: ({ leaseId }) => {
         this.leaseId.set(leaseId);
         const doCheck = () => {

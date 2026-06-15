@@ -26,7 +26,7 @@ export interface ApiLease {
 
 export interface ApiPropertyMedia {
   id: string;
-  url: string;
+  mediaUrl: string;
   mediaType: string;
   isPrimary?: boolean;
 }

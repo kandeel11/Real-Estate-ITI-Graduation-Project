@@ -84,6 +84,12 @@ export class BrokerDataService {
     );
   }
 
+  /** Full inquiry detail list (used by the chat modal, which needs the richer shape). */
+  getInquiryDetails(): Observable<InquiryDetail[]> {
+    return this.http.get<InquiryDetail[]>(`${this.me}/inquiries`)
+      .pipe(timeout(10000), catchError(() => of([])));
+  }
+
   getInquiriesByProperty(propertyId: string): Observable<InquiryDetail[]> {
     return this.http.get<InquiryDetail[]>(`${this.me}/inquiries`).pipe(
       timeout(10000),
@@ -130,31 +136,21 @@ export class BrokerDataService {
   }
 
   updateLeadStatus(leadId: string, status: string): Observable<void> {
-    return this.http.put<void>(`${this.api}/leads/${leadId}/status`, { newStatus: this.toLeadEnum(status) });
+    // Backend validates lowercase snake-case status names; send the raw kanban status.
+    return this.http.put<void>(`${this.api}/leads/${leadId}/status`, { newStatus: status });
   }
 
   closeLead(leadId: string, outcome: 'won' | 'lost'): Observable<void> {
-    const newStatus = outcome === 'won' ? 'ClosedWon' : 'ClosedLost';
+    const newStatus = outcome === 'won' ? 'closed_won' : 'closed_lost';
     return this.http.put<void>(`${this.api}/leads/${leadId}/status`, { newStatus });
-  }
-
-  /** Frontend kanban status → backend LeadStatus enum name. */
-  private toLeadEnum(status: string): string {
-    switch (status) {
-      case 'new': return 'New';
-      case 'contacted': return 'Contacted';
-      case 'negotiating': return 'Negotiating';
-      case 'closed_won': return 'ClosedWon';
-      case 'closed_lost': return 'ClosedLost';
-      default: return 'New';
-    }
   }
 
   // ── Lease Upload / AI Flow ───────────────────────────────────────────────────
 
-  uploadLeasePdf(propertyId: string, tenantEmail: string, file: File): Observable<{ leaseId: string }> {
+  uploadLeasePdf(leadId: string, tenantEmail: string, file: File): Observable<{ leaseId: string }> {
+    // Backend LeasesController.Upload binds a `leadId` form field and derives the owner from the lead.
     const fd = new FormData();
-    fd.append('propertyId', propertyId);
+    fd.append('leadId', leadId);
     fd.append('tenantEmail', tenantEmail);
     fd.append('file', file);
     return this.http.post<{ leaseId: string }>(`${this.api}/leases/upload`, fd);

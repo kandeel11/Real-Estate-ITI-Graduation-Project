@@ -26,7 +26,7 @@
         <div class="empty-wrap">{{ 'BROKER.CHAT.EMPTY' | translate }}</div>
       } @else {
         @for (msg of messages(); track msg.id) {
-          <div class="msg-wrap" [class.broker]="msg.senderRole === 'broker'" [class.tenant]="msg.senderRole === 'tenant'">
+          <div class="msg-wrap" [class.broker]="msg.senderRole !== 'tenant'" [class.tenant]="msg.senderRole === 'tenant'">
             @if (msg.senderRole === 'tenant') {
               <div class="msg-avatar">{{ msg.senderName.charAt(0).toUpperCase() }}</div>
             }

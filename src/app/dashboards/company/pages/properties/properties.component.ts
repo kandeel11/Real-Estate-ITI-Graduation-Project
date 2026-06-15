@@ -9,7 +9,7 @@ import { DecimalPipe } from '@angular/common';
 import { TranslatePipe } from '@ngx-translate/core';
 import { toSignal } from '@angular/core/rxjs-interop';
 import { PropertyService } from '../../../../features/properties/services/property.service';
-import { Property } from '../../../../features/properties/models/property.model';
+import { Property, PropertyDetail } from '../../../../features/properties/models/property.model';
 import { CompanyService } from '../../services/company.service';
 import { CompanySubscriptionService } from '../../services/company-subscription.service';
 import { Broker } from '../../../../shared/models/company.model';
@@ -61,6 +61,11 @@ export class PropertiesComponent implements OnInit {
   selectedBrokerId = signal<string>('');
   assigning = signal(false);
   assignError = signal<string | null>(null);
+
+  // ── View details ────────────────────────────────────────────────
+  viewProperty = signal<Property | null>(null);
+  viewDetail = signal<PropertyDetail | null>(null);
+  viewLoading = signal(false);
 
   statusFilter = signal<StatusFilter>('all');
   search = signal('');
@@ -123,6 +128,22 @@ export class PropertiesComponent implements OnInit {
 
   onSearch(event: Event): void {
     this.search.set((event.target as HTMLInputElement).value);
+  }
+
+  openView(p: Property): void {
+    this.viewProperty.set(p);
+    this.viewDetail.set(null);
+    this.viewLoading.set(true);
+    this.propertySvc.getById(p.id).subscribe({
+      next: (d) => { this.viewDetail.set(d); this.viewLoading.set(false); },
+      error: () => this.viewLoading.set(false),
+    });
+  }
+
+  closeView(): void {
+    this.viewProperty.set(null);
+    this.viewDetail.set(null);
+    this.viewLoading.set(false);
   }
 
   openAssign(property: Property): void {
