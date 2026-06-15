@@ -309,47 +309,10 @@ export const routes: Routes = [
         path: 'tenant',
         canActivate: [roleGuard],
         data: { expectedRole: 'tenant' },
-        loadComponent: () =>
-          import('./features/dashboards/tenant/tenant-dashboard.component').then(
-            (m) => m.TenantDashboardComponent,
+        loadChildren: () =>
+          import('./features/dashboards/tenant-dashboard/dashboard.routes').then(
+            (m) => m.dashboardRoutes,
           ),
-        children: [
-          {
-            path: 'overview',
-            loadComponent: () =>
-              import('./features/dashboards/tenant/pages/overview/overview.component').then(
-                (m) => m.OverviewComponent,
-              ),
-          },
-          {
-            path: 'my-property',
-            loadComponent: () =>
-              import('./features/dashboards/tenant/pages/my-property/my-property.component').then(
-                (m) => m.MyPropertyComponent,
-              ),
-          },
-          {
-            path: 'lease',
-            loadComponent: () =>
-              import('./features/dashboards/tenant/pages/lease/lease.component').then(
-                (m) => m.LeaseComponent,
-              ),
-          },
-          {
-            path: 'maintenance-requests',
-            loadComponent: () =>
-              import('./features/dashboards/tenant/pages/maintenance-requests/maintenance-requests.component').then(
-                (m) => m.MaintenanceRequestsComponent,
-              ),
-          },
-          {
-            path: 'payments',
-            loadComponent: () =>
-              import('./features/dashboards/tenant/pages/payments/payments.component').then(
-                (m) => m.PaymentsComponent,
-              ),
-          },
-        ],
       },
 
       // ============ MAINTENANCE COMPANY DASHBOARD ============
