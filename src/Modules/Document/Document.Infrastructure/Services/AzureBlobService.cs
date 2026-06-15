@@ -30,7 +30,9 @@ public class AzureBlobService : IAzureBlobService
     {
         var container = _client.GetBlobContainerClient(_containerName);
         await container.CreateIfNotExistsAsync();
-        var blobName = $"leases/{Guid.NewGuid()}_{fileName}";
+        // Strip directory parts and spaces — keeps blob names clean and avoids encoding issues.
+        var safeName = Path.GetFileName(fileName).Replace(" ", "_");
+        var blobName = $"leases/{Guid.NewGuid()}_{safeName}";
         var blob = container.GetBlobClient(blobName);
         await blob.UploadAsync(fileStream, overwrite: true);
         return blobName; // بنحفظ الـ path مش الـ full URL

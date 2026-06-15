@@ -18,27 +18,17 @@ public class UpdateLeadStatusHandler : IRequestHandler<UpdateLeadStatusCommand>
     public async Task Handle(UpdateLeadStatusCommand cmd, CancellationToken ct)
     {
         var lead = await _db.Leads.FindAsync(new object[] { cmd.LeadId }, ct)
-            ?? throw new Exception("Lead not found");
+            ?? throw new KeyNotFoundException($"Lead {cmd.LeadId} not found");
 
-        // Validate الـ transition
-        var validStatuses = new[] { "new", "contacted", "negotiating", "closed_won", "closed_lost" };
-        if (!validStatuses.Contains(cmd.NewStatus))
-            throw new Exception($"Invalid status: {cmd.NewStatus}");
-
-        lead.Status = cmd.NewStatus switch
-        {
-            "new" => LeadStatus.New,
-            "contacted" => LeadStatus.Contacted,
-            "negotiating" => LeadStatus.Negotiating,
-            "closed_won" => LeadStatus.ClosedWon,
-            "closed_lost" => LeadStatus.ClosedLost,
-            _ => throw new Exception("Invalid status")
-        };
+        // Accept both lowercase snake-case ("closed_won") and PascalCase ("ClosedWon"),
+        // case-insensitively. Invalid values throw ArgumentException → controller maps to 400.
+        var status = ParseStatus(cmd.NewStatus);
+        lead.Status = status;
 
         if (cmd.Notes != null)
             lead.Notes = cmd.Notes;
 
-        if (cmd.NewStatus == "closed_won" || cmd.NewStatus == "closed_lost")
+        if (status == LeadStatus.ClosedWon || status == LeadStatus.ClosedLost)
         {
             lead.ClosedAt = DateTime.UtcNow;
             if (cmd.DealValue.HasValue)
@@ -74,5 +64,24 @@ public class UpdateLeadStatusHandler : IRequestHandler<UpdateLeadStatusCommand>
                     assignedBrokerUserId.Value, lead.Id, lead.DealValue), ct);
             }
         }
+    }
+
+    /// <summary>
+    /// Maps an incoming status string to <see cref="LeadStatus"/>. Accepts both
+    /// snake_case ("closed_won") and PascalCase ("ClosedWon"), case-insensitively.
+    /// Throws <see cref="ArgumentException"/> for unknown values.
+    /// </summary>
+    private static LeadStatus ParseStatus(string? raw)
+    {
+        var normalized = (raw ?? string.Empty).Replace("_", string.Empty).Trim().ToLowerInvariant();
+        return normalized switch
+        {
+            "new" => LeadStatus.New,
+            "contacted" => LeadStatus.Contacted,
+            "negotiating" => LeadStatus.Negotiating,
+            "closedwon" => LeadStatus.ClosedWon,
+            "closedlost" => LeadStatus.ClosedLost,
+            _ => throw new ArgumentException($"Invalid lead status: '{raw}'")
+        };
     }
 }
