@@ -1,5 +1,7 @@
 import { Component, inject, signal, computed } from '@angular/core';
 import { FormBuilder, ReactiveFormsModule, Validators, FormGroup } from '@angular/forms';
+import { toSignal } from '@angular/core/rxjs-interop'; // استدعاء مهم جداً لربط الفورم بالسيجنال
+import { map } from 'rxjs'; // استدعاء للتعامل مع تغيرات الفورم
 import { MaintenanceService } from '../../Services/maintenance';
 import { MaintenanceCategory, MaintenanceCompany } from '../../Models';
 import { DecimalPipe } from '@angular/common';
@@ -49,7 +51,8 @@ export class MaintenanceCompaniesComponent {
   savingCategory = signal(false);
   savingCompany = signal(false);
 
-  iconOptions = [
+  // خليناها Signal
+  iconOptions = signal([
     'fa-screwdriver-wrench',
     'fa-plug',
     'fa-faucet',
@@ -66,7 +69,7 @@ export class MaintenanceCompaniesComponent {
     'fa-temperature-half',
     'fa-fan',
     'fa-trash-can',
-  ];
+  ]);
 
   // ===== Forms =====
   categoryForm: FormGroup = this.fb.group({
@@ -87,8 +90,18 @@ export class MaintenanceCompaniesComponent {
     description: ['', [Validators.required, Validators.minLength(10)]],
   });
 
+  // ===== ربط حالة الفورم بالـ Signals (التعديل الأهم) =====
+
+  // 1. هنعمل Signal بيراقب الفورم كل ما اليوزر يكتب حرف، وبيشوف الفورم Valid ولا لأ
+  isCompanyFormValid = toSignal(
+    this.companyForm.statusChanges.pipe(map(() => this.companyForm.valid)),
+    { initialValue: this.companyForm.valid },
+  );
+
   selectedCount = computed(() => this.selectedCategoryIds().length);
-  canSubmitCompany = computed(() => this.companyForm.valid && this.selectedCount() > 0);
+
+  // 2. الـ computed دلوقتي جواه 2 Signals فهيحس بأي تغيير في الفورم أو في اختيار الـ Categories
+  canSubmitCompany = computed(() => this.isCompanyFormValid() && this.selectedCount() > 0);
 
   constructor() {
     this.loadCompanies();
@@ -140,6 +153,7 @@ export class MaintenanceCompaniesComponent {
     if (!this.showAddCategory()) this.categoryForm.reset({ icon: 'fa-screwdriver-wrench' });
   }
 
+  // التعديل هنا بسيط عشان iconOptions بقت Signal
   pickIcon(icon: string) {
     this.categoryForm.patchValue({ icon });
   }
@@ -157,6 +171,7 @@ export class MaintenanceCompaniesComponent {
         this.showAddCategory.set(false);
         this.savingCategory.set(false);
         this.showToast('success', 'Category added successfully ✨');
+        this.loadCategories(); // إعادة تحميل الشركات لعرض التصنيف الجديد في قائمة كل شركة (حتى لو ما عنده شركات حالياً)
       },
       error: () => {
         this.savingCategory.set(false);
@@ -212,6 +227,7 @@ export class MaintenanceCompaniesComponent {
         this.view.set('list');
         window.scrollTo({ top: 0, behavior: 'smooth' });
         this.showToast('success', `Company "${created.companyName}" created successfully 🎉`);
+        this.loadCompanies(); // إعادة تحميل الشركات لعرض الشركة الجديدة في القائمة مع بياناتها الكاملة (مثل التصنيفات)
       },
       error: () => {
         this.savingCompany.set(false);

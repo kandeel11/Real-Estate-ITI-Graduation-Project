@@ -233,7 +233,7 @@ export class AuthService {
       case 'tenant':
         return '/dashboard';
       case 'maintenance-company':
-        return '/dashboard/maintenance-company/overview';
+        return '/dashboard/maintenance/overview';
       case 'owner':
         return '/dashboard/landlord/overview';
       default:

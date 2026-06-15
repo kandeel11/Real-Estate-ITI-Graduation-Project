@@ -45,6 +45,11 @@ export class SidebarComponent {
       icon: 'fa-solid fa-screwdriver-wrench',
       route: 'maintenance-companies',
     },
+    {
+      labelKey: 'ADMIN_NAV.TICKETS',
+      icon: 'fa-solid fa-ticket',
+      route: 'tickets',
+    },
     { labelKey: 'ADMIN_NAV.SETTINGS', icon: 'fa-solid fa-gear', route: 'settings' },
   ];
 }

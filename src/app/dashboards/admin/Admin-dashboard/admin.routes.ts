@@ -50,6 +50,11 @@ export const adminRoutes: Routes = [
         loadComponent: () =>
           import('./pages/companies/companies.component').then((m) => m.CompaniesComponent),
       },
+      {
+        path: 'tickets',
+        loadComponent: () =>
+          import('./pages/tickets/tickets.component').then((m) => m.AdminTicketsComponent),
+      },
       // Placeholder redirects until pages are built
       { path: 'approvals', redirectTo: 'overview', pathMatch: 'full' },
       { path: 'reports', redirectTo: 'overview', pathMatch: 'full' },

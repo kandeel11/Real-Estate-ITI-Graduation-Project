@@ -1,49 +1,39 @@
 <aside class="sidebar" [class.collapsed]="collapsed()">
-    <div class="sidebar__brand">
-        <div class="brand-logo">
-            <i class="fa-solid fa-screwdriver-wrench"></i>
-        </div>
-        @if (!collapsed()) {
-        <div class="brand-text">
-            <h2>{{ companyName() }}</h2>
-            <span>Service Provider</span>
-        </div>
-        }
-    </div>
 
-    <nav class="sidebar__nav">
-        @for (item of navItems; track item.route) {
-        <a [routerLink]="item.route" routerLinkActive="active" class="nav-item" [title]="item.label">
-            <i [class]="item.icon"></i>
-            @if (!collapsed()) {
-            <span class="nav-label">{{ item.label }}</span>
-            @if (item.badge) {
-            <span class="nav-badge" [class.urgent]="item.badgeType === 'urgent'">
-                {{ item.badge }}
-            </span>
-            }
-            }
-        </a>
-        }
-    </nav>
-
-    <div class="sidebar__footer">
-        <div class="company-status">
-            <div class="status-dot"></div>
-            @if (!collapsed()) {
-            <div>
-                <strong>Online</strong>
-                <span>Accepting orders</span>
-            </div>
-            }
-        </div>
-        <a class="nav-item" routerLink="/support">
-            <i class="fa-regular fa-circle-question"></i>
-            @if (!collapsed()) { <span class="nav-label">Help</span> }
-        </a>
-        <a class="nav-item logout" routerLink="/login">
-            <i class="fa-solid fa-right-from-bracket"></i>
-            @if (!collapsed()) { <span class="nav-label">Log Out</span> }
-        </a>
+  <!-- Brand -->
+  <div class="sidebar__brand">
+    <div class="brand-logo">
+      <i class="fa-solid fa-screwdriver-wrench"></i>
     </div>
+    @if (!collapsed()) {
+    <div class="brand-text">
+      <h2>{{ companyName() }}</h2>
+      <span>Service Provider</span>
+    </div>
+    }
+  </div>
+
+  <!-- Nav -->
+  <nav class="sidebar__nav">
+    @for (item of navItems; track item.route) {
+    <a [routerLink]="item.route" routerLinkActive="active" class="nav-item" [title]="item.label">
+      <i [class]="item.icon"></i>
+      @if (!collapsed()) {
+      <span class="nav-label">{{ item.label }}</span>
+      @if (item.badge) {
+      <span class="nav-badge" [class.urgent]="item.badgeType === 'urgent'">{{ item.badge }}</span>
+      }
+      }
+    </a>
+    }
+  </nav>
+
+  <!-- Footer -->
+  <div class="sidebar__footer">
+    <button class="nav-item logout" (click)="logout()" title="Log Out">
+      <i class="fa-solid fa-right-from-bracket"></i>
+      @if (!collapsed()) { <span class="nav-label">Log Out</span> }
+    </button>
+  </div>
+
 </aside>

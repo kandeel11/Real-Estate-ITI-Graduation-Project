@@ -65,7 +65,7 @@
         <div class="search-bar">
             <i class="fa-solid fa-magnifying-glass"></i>
             <input type="text" [placeholder]="'ADMIN.MAINTENANCE_COMPANIES.SEARCH_PLACEHOLDER' | translate"
-                   [value]="searchQuery()" (input)="onSearchInput($event)" />
+                [value]="searchQuery()" (input)="onSearchInput($event)" />
             @if (searchQuery()) {
             <button class="clear-btn" (click)="searchQuery.set('')" [title]="'COMMON.CANCEL' | translate">
                 <i class="fa-solid fa-xmark"></i>
@@ -97,7 +97,8 @@
             <!-- Status pill -->
             <span class="status-pill" [class.active]="c.isActive" [class.inactive]="!c.isActive">
                 <span class="status-dot"></span>
-                {{ (c.isActive ? 'ADMIN.MAINTENANCE_COMPANIES.STATUS_ACTIVE' : 'ADMIN.MAINTENANCE_COMPANIES.STATUS_INACTIVE') | translate }}
+                {{ (c.isActive ? 'ADMIN.MAINTENANCE_COMPANIES.STATUS_ACTIVE' :
+                'ADMIN.MAINTENANCE_COMPANIES.STATUS_INACTIVE') | translate }}
             </span>
 
             <!-- Header: Logo + Name -->
@@ -202,7 +203,8 @@
             </div>
             <button class="btn-primary-sm" type="button" (click)="toggleAddCategory()">
                 <i class="fa-solid" [class.fa-plus]="!showAddCategory()" [class.fa-xmark]="showAddCategory()"></i>
-                {{ (showAddCategory() ? 'ADMIN.MAINTENANCE_COMPANIES.CANCEL_ADD_CAT' : 'ADMIN.MAINTENANCE_COMPANIES.ADD_CATEGORY') | translate }}
+                {{ (showAddCategory() ? 'ADMIN.MAINTENANCE_COMPANIES.CANCEL_ADD_CAT' :
+                'ADMIN.MAINTENANCE_COMPANIES.ADD_CATEGORY') | translate }}
             </button>
         </div>
 
@@ -228,7 +230,7 @@
             <div class="form-field">
                 <label>{{ 'ADMIN.MAINTENANCE_COMPANIES.CAT_ICON_LABEL' | translate }}</label>
                 <div class="icon-picker">
-                    @for (icon of iconOptions; track icon) {
+                    @for (icon of iconOptions(); track icon) {
                     <button type="button" class="icon-tile" [class.active]="categoryForm.value.icon === icon"
                         (click)="pickIcon(icon)">
                         <i class="fa-solid" [class]="icon"></i>
@@ -238,10 +240,12 @@
             </div>
 
             <div class="form-actions">
-                <button type="button" class="btn-outline-sm" (click)="toggleAddCategory()">{{ 'ADMIN.MAINTENANCE_COMPANIES.CANCEL_ADD_CAT' | translate }}</button>
+                <button type="button" class="btn-outline-sm" (click)="toggleAddCategory()">{{
+                    'ADMIN.MAINTENANCE_COMPANIES.CANCEL_ADD_CAT' | translate }}</button>
                 <button type="submit" class="btn-primary-sm" [disabled]="savingCategory() || categoryForm.invalid">
                     @if (savingCategory()) {
-                    <i class="fa-solid fa-spinner fa-spin"></i> {{ 'ADMIN.MAINTENANCE_COMPANIES.SAVING_CAT' | translate }}
+                    <i class="fa-solid fa-spinner fa-spin"></i> {{ 'ADMIN.MAINTENANCE_COMPANIES.SAVING_CAT' | translate
+                    }}
                     } @else {
                     <i class="fa-solid fa-check"></i> {{ 'ADMIN.MAINTENANCE_COMPANIES.SAVE_CATEGORY' | translate }}
                     }
@@ -261,7 +265,8 @@
         <div class="categories-grid">
             @for (c of categories(); track c.id) {
             <div class="category-card">
-                <button class="cat-delete" type="button" (click)="removeCategory(c)" [title]="'COMMON.DELETE' | translate">
+                <button class="cat-delete" type="button" (click)="removeCategory(c)"
+                    [title]="'COMMON.DELETE' | translate">
                     <i class="fa-solid fa-trash"></i>
                 </button>
                 <div class="cat-icon">
@@ -292,7 +297,8 @@
                 <label>
                     {{ 'ADMIN.MAINTENANCE_COMPANIES.CATS_LABEL' | translate }}
                     @if (selectedCount() > 0) {
-                    <span class="counter">{{ 'ADMIN.MAINTENANCE_COMPANIES.SELECTED' | translate: { n: selectedCount() } }}</span>
+                    <span class="counter">{{ 'ADMIN.MAINTENANCE_COMPANIES.SELECTED' | translate: { n: selectedCount() }
+                        }}</span>
                     }
                 </label>
                 @if (categories().length === 0) {
@@ -404,7 +410,8 @@
                     <label>
                         {{ 'ADMIN.MAINTENANCE_COMPANIES.TEMP_PASSWORD' | translate }}
                         <button type="button" class="link-btn" (click)="generatePassword()">
-                            <i class="fa-solid fa-wand-magic-sparkles"></i> {{ 'ADMIN.MAINTENANCE_COMPANIES.GENERATE' | translate }}
+                            <i class="fa-solid fa-wand-magic-sparkles"></i> {{ 'ADMIN.MAINTENANCE_COMPANIES.GENERATE' |
+                            translate }}
                         </button>
                     </label>
                     <input type="text" formControlName="tempPassword" placeholder="At least 8 characters" />
@@ -423,7 +430,8 @@
             </div>
 
             <div class="form-actions end">
-                <button type="button" class="btn-outline-sm" (click)="backToList()">{{ 'ADMIN.MAINTENANCE_COMPANIES.CANCEL' | translate }}</button>
+                <button type="button" class="btn-outline-sm" (click)="backToList()">{{
+                    'ADMIN.MAINTENANCE_COMPANIES.CANCEL' | translate }}</button>
                 <button type="submit" class="btn-primary" [disabled]="!canSubmitCompany() || savingCompany()">
                     @if (savingCompany()) {
                     <i class="fa-solid fa-spinner fa-spin"></i> {{ 'ADMIN.MAINTENANCE_COMPANIES.CREATING' | translate }}

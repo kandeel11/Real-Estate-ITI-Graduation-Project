@@ -11,7 +11,12 @@ export const maintenanceRoutes: Routes = [
         path: 'overview',
         loadComponent: () => import('./pages/overview.component').then((m) => m.OverviewComponent),
       },
-      // مكان للصفحات الجاية: tickets, schedule, customers, categories, earnings...
+      {
+        path: 'tickets',
+        loadComponent: () =>
+          import('./pages/tickets/tickets.component').then((m) => m.MaintenanceTicketsComponent),
+      },
+      // مكان للصفحات الجاية: schedule, customers, categories, earnings...
     ],
   },
 ];

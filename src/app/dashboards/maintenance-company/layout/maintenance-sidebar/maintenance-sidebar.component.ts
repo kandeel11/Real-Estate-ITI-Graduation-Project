@@ -1,5 +1,6 @@
-import { Component, input } from '@angular/core';
-import { RouterLink, RouterLinkActive } from '@angular/router';
+import { Component, inject, input } from '@angular/core';
+import { Router, RouterLink, RouterLinkActive } from '@angular/router';
+import { AuthService } from '../../../../../../src/app/core/services/auth.service';
 
 interface NavItem {
   label: string;
@@ -18,22 +19,22 @@ interface NavItem {
 })
 export class MaintenanceSidebarComponent {
   collapsed = input<boolean>(false);
-  companyName = input<string>('Acme Maintenance');
+  companyName = input<string>('Maintenance Co.');
+
+  private auth = inject(AuthService);
+  private router = inject(Router);
 
   navItems: NavItem[] = [
-    { label: 'Overview', icon: 'fa-solid fa-table-cells-large', route: '/maintenance/overview' },
     {
-      label: 'Tickets',
-      icon: 'fa-solid fa-ticket',
-      route: '/maintenance/tickets',
-      badge: 17,
-      badgeType: 'urgent',
+      label: 'Overview',
+      icon: 'fa-solid fa-table-cells-large',
+      route: '/dashboard/maintenance/overview',
     },
-    { label: 'Schedule', icon: 'fa-regular fa-calendar', route: '/maintenance/schedule' },
-    { label: 'Customers', icon: 'fa-solid fa-users', route: '/maintenance/customers' },
-    { label: 'Categories', icon: 'fa-solid fa-tags', route: '/maintenance/categories' },
-    { label: 'Earnings', icon: 'fa-solid fa-sack-dollar', route: '/maintenance/earnings' },
-    { label: 'Reports', icon: 'fa-solid fa-chart-column', route: '/maintenance/reports' },
-    { label: 'Settings', icon: 'fa-solid fa-gear', route: '/maintenance/settings' },
+    { label: 'Tickets', icon: 'fa-solid fa-ticket', route: '/dashboard/maintenance/tickets' },
   ];
+
+  logout(): void {
+    this.auth.logout();
+    this.router.navigate(['/auth/login']);
+  }
 }

@@ -6,3 +6,4 @@ export * from './rent-payment.model';
 export * from './maintenance-category.model';
 export * from './maintenance-company.model';
 export * from './property.model';
+export * from './admin-ticket.model';

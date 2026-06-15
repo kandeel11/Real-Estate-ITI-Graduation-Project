@@ -1194,7 +1194,8 @@
     "APPROVALS": "Approvals",
     "ANALYTICS": "Analytics",
     "SETTINGS": "Settings",
-    "MAINTENANCE": "Maintenance"
+    "MAINTENANCE": "Maintenance",
+    "TICKETS": "Tickets"
   },
   "ADMIN": {
     "SIDEBAR": {

@@ -354,7 +354,7 @@ export const routes: Routes = [
       {
         path: 'maintenance',
         canActivate: [roleGuard],
-        data: { expectedRole: 'maintenance_company' },
+        data: { expectedRole: 'maintenance-company' },
         loadChildren: () =>
           import('./dashboards/maintenance-company/maintenance.routes').then(
             (m) => m.maintenanceRoutes,

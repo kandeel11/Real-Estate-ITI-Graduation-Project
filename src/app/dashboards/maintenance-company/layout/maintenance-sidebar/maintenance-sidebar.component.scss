@@ -70,6 +70,10 @@
 .nav-item {
     display: flex;
     align-items: center;
+    border: none;
+    background: transparent;
+    width: 100%;
+    text-align: left;
     gap: 13px;
     padding: 11px 14px;
     border-radius: 10px;

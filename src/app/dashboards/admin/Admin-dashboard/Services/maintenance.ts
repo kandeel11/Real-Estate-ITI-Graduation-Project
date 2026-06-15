@@ -1,9 +1,10 @@
 import { HttpClient } from '@angular/common/http';
 import { Injectable, inject } from '@angular/core';
 import { Observable, BehaviorSubject } from 'rxjs';
-import { tap } from 'rxjs/operators';
+import { tap, timeout } from 'rxjs/operators';
 import { environment } from '../../../../../environments/environment';
 import {
+  AdminTicket,
   CreateMaintenanceCategoryRequest,
   CreateMaintenanceCompanyRequest,
   MaintenanceCategory,
@@ -57,5 +58,10 @@ export class MaintenanceService {
         this.companiesSubject.next([...this.companiesSubject.value, created]);
       }),
     );
+  }
+
+  // ===== TICKETS =====
+  getAllTickets(): Observable<AdminTicket[]> {
+    return this.http.get<AdminTicket[]>(`${this.base}/maintenance/tickets/admin`).pipe(timeout(15000));
   }
 }
