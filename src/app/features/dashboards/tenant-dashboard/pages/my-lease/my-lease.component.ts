@@ -17,6 +17,8 @@ interface LeaseView {
   endDate: string;
   paymentDayOfMonth: number;
   isActive: boolean;
+  /** 'active' = signed & running, 'pending' = awaiting tenant acceptance, 'ended' = expired/declined. */
+  status: 'active' | 'pending' | 'ended';
   contractFileUrl: string;
   daysUntilExpiry: number;
 }
@@ -87,6 +89,14 @@ export class MyLeaseComponent implements OnInit {
     const end = new Date(lease.endDate).getTime();
     const daysUntilExpiry = Math.max(0, Math.ceil((end - Date.now()) / 86_400_000));
 
+    // A lease the broker sent but the tenant hasn't accepted yet is "extracted" & not active —
+    // that's pending review, not ended.
+    const status: 'active' | 'pending' | 'ended' = lease.isActive
+      ? 'active'
+      : lease.extractionStatus === 'extracted'
+        ? 'pending'
+        : 'ended';
+
     return {
       id: lease.id,
       propertyId: lease.propertyId,
@@ -97,6 +107,7 @@ export class MyLeaseComponent implements OnInit {
       endDate: lease.endDate,
       paymentDayOfMonth: lease.paymentDayOfMonth,
       isActive: lease.isActive,
+      status,
       contractFileUrl: lease.contractFileUrl,
       daysUntilExpiry,
     };

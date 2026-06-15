@@ -79,7 +79,7 @@ export class MyPropertyComponent implements OnInit {
       area: p.areaSqm,
       isFurnished: p.isFurnished,
       petsAllowed: p.petsAllowed,
-      mainImage: primaryMedia?.url ?? '',
+      mainImage: primaryMedia?.mediaUrl ?? '',
       monthlyRent: item.monthlyRent,
       isActive: item.isActive,
       startDate: item.startDate,

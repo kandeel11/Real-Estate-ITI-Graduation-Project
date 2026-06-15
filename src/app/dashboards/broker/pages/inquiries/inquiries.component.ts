@@ -3,19 +3,25 @@ import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
 import { TranslatePipe } from '@ngx-translate/core';
 import { BrokerDataService } from '../../services/broker-data.service';
-import { Inquiry } from '../../models/broker.models';
+import { Inquiry, InquiryDetail } from '../../models/broker.models';
+import { ToastService } from '../../../../shared/components/toast/toast.service';
+import { ChatModalComponent } from '../../components/chat-modal/chat-modal.component';
 
 @Component({
   selector: 'app-broker-inquiries',
   standalone: true,
-  imports: [CommonModule, FormsModule, TranslatePipe],
+  imports: [CommonModule, FormsModule, TranslatePipe, ChatModalComponent],
   templateUrl: './inquiries.component.html',
   styleUrl: './inquiries.component.css',
 })
 export class InquiriesComponent implements OnInit {
   private readonly dataService = inject(BrokerDataService);
+  private readonly toast = inject(ToastService);
 
   readonly inquiries = signal<Inquiry[]>([]);
+  /** Full details kept alongside the compact list so the chat modal has the rich shape. */
+  private readonly details = signal<InquiryDetail[]>([]);
+  readonly chatInquiry = signal<InquiryDetail | null>(null);
   readonly loading = signal(true);
   readonly filter = signal<'all' | 'new' | 'replied'>('all');
   readonly search = signal('');
@@ -36,10 +42,39 @@ export class InquiriesComponent implements OnInit {
   });
 
   ngOnInit(): void {
-    this.dataService.getInquiries().subscribe({
-      next: list => { this.inquiries.set(list); this.loading.set(false); },
+    this.dataService.getInquiryDetails().subscribe({
+      next: list => {
+        this.details.set(list);
+        this.inquiries.set(list.map(i => ({
+          id: i.id,
+          from: i.tenantName,
+          property: i.propertyTitle,
+          message: i.message,
+          status: i.status === 'new' ? 'new' as const : 'replied' as const,
+          timeAgo: i.createdAt,
+        })));
+        this.loading.set(false);
+      },
       error: () => this.loading.set(false),
     });
+  }
+
+  openChat(inquiry: Inquiry): void {
+    const detail = this.details().find(d => d.id === inquiry.id);
+    if (detail) this.chatInquiry.set(detail);
+  }
+
+  closeChat(): void {
+    this.chatInquiry.set(null);
+  }
+
+  onChatLeadConverted(): void {
+    const id = this.chatInquiry()?.id;
+    this.chatInquiry.set(null);
+    if (id) {
+      this.inquiries.update(list => list.filter(i => i.id !== id));
+      this.toast.success('Converted to lead.');
+    }
   }
 
   sendReply(inquiry: Inquiry): void {
@@ -63,8 +98,12 @@ export class InquiriesComponent implements OnInit {
       next: () => {
         this.inquiries.update(list => list.filter(i => i.id !== inquiry.id));
         this.convertingId.set(null);
+        this.toast.success('Converted to lead.');
       },
-      error: () => this.convertingId.set(null),
+      error: (err) => {
+        this.convertingId.set(null);
+        this.toast.error(err?.error?.error || 'Could not convert this inquiry to a lead.');
+      },
     });
   }
 }

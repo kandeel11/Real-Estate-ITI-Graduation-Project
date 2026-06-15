@@ -10,6 +10,9 @@ import { PropertyService } from '../../../../features/properties/services/proper
 import { InquiryDetail } from '../../models/broker.models';
 import { InquiriesModalComponent } from '../../components/inquiries-modal/inquiries-modal.component';
 import { ChatModalComponent } from '../../components/chat-modal/chat-modal.component';
+import { ManageImagesModalComponent } from '../../components/manage-images-modal/manage-images-modal.component';
+import { ConfirmModalComponent } from '../../../../shared/components/modal/confirm-modal.component';
+import { ToastService } from '../../../../shared/components/toast/toast.service';
 
 @Component({
   selector: 'app-broker-properties',
@@ -17,6 +20,7 @@ import { ChatModalComponent } from '../../components/chat-modal/chat-modal.compo
   imports: [
     CommonModule, FormsModule, TranslatePipe,
     InquiriesModalComponent, ChatModalComponent,
+    ManageImagesModalComponent, ConfirmModalComponent,
   ],
   templateUrl: './properties.component.html',
   styleUrl: './properties.component.css',
@@ -26,6 +30,7 @@ export class PropertiesComponent implements OnInit {
   private readonly svc      = inject(BrokerDataService);
   private readonly propSvc  = inject(PropertyService);
   private readonly router   = inject(Router);
+  private readonly toast    = inject(ToastService);
 
   readonly isCompanyBroker = computed(() => !!this.auth.user()?.companyId);
 
@@ -41,6 +46,12 @@ export class PropertiesComponent implements OnInit {
   viewLoading       = signal(false);
   /** Incremented whenever we want InquiriesModal to re-fetch. */
   inquiryRefresh    = signal(0);
+
+  imagesProperty    = signal<Property | null>(null);
+  propertyToDelete  = signal<Property | null>(null);
+  deleting          = signal(false);
+  /** Id of the property whose row action (submit / feature) is in flight. */
+  busyId            = signal<string | null>(null);
 
   readonly statusOptions: { value: PropertyStatus | 'All'; label: string }[] = [
     { value: 'All',           label: 'BROKER.PROPERTIES.FILTER_ALL' },
@@ -64,6 +75,10 @@ export class PropertiesComponent implements OnInit {
   });
 
   ngOnInit(): void {
+    this.reload();
+  }
+
+  private reload(): void {
     this.svc.getProperties().subscribe({
       next: props => { this.properties.set(props); this.loading.set(false); },
       error: () => this.loading.set(false),
@@ -73,6 +88,54 @@ export class PropertiesComponent implements OnInit {
   addProperty():    void { this.router.navigate(['/properties/new']); }
   resumeProperty(p: Property): void {
     this.router.navigate(['/properties/new'], { queryParams: { propertyId: p.id } });
+  }
+
+  // ── Manage images ────────────────────────────────────────────────────────────
+  openImages(p: Property): void  { this.imagesProperty.set(p); }
+  closeImages(): void            { this.imagesProperty.set(null); }
+  onImagesChanged(): void        { this.reload(); }
+
+  // ── Submit a draft for review ────────────────────────────────────────────────
+  submitDraft(p: Property): void {
+    if (this.busyId()) return;
+    this.busyId.set(p.id);
+    this.propSvc.submitForReview(p.id).subscribe({
+      next: () => { this.busyId.set(null); this.toast.success('Submitted for review.'); this.reload(); },
+      error: (err) => { this.busyId.set(null); this.toast.error(err?.error?.error || 'Failed to submit the listing.'); },
+    });
+  }
+
+  // ── Make / remove featured (backend enforces the plan limit) ──────────────────
+  toggleFeatured(p: Property): void {
+    if (this.busyId()) return;
+    this.busyId.set(p.id);
+    const next = !p.isFeatured;
+    this.propSvc.setFeatured(p.id, next).subscribe({
+      next: () => {
+        this.busyId.set(null);
+        this.toast.success(next ? 'Listing featured.' : 'Listing unfeatured.');
+        this.reload();
+      },
+      error: (err) => { this.busyId.set(null); this.toast.error(err?.error?.error || 'Could not update featured status.'); },
+    });
+  }
+
+  // ── Delete (confirm modal) ────────────────────────────────────────────────────
+  readonly deleteMessage = computed(() => {
+    const p = this.propertyToDelete();
+    return p
+      ? `Delete "${p.title}"? Its photos are removed and the plan slot is freed. This cannot be undone.`
+      : '';
+  });
+
+  confirmDelete(): void {
+    const p = this.propertyToDelete();
+    if (!p || this.deleting()) return;
+    this.deleting.set(true);
+    this.propSvc.delete(p.id).subscribe({
+      next: () => { this.deleting.set(false); this.propertyToDelete.set(null); this.toast.success('Listing deleted.'); this.reload(); },
+      error: (err) => { this.deleting.set(false); this.propertyToDelete.set(null); this.toast.error(err?.error?.error || 'Failed to delete the listing.'); },
+    });
   }
 
   openView(p: Property): void {
