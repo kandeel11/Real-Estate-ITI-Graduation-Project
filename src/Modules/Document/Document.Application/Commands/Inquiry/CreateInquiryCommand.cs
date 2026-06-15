@@ -68,8 +68,11 @@ public class CreateInquiryCommandHandler : IRequestHandler<CreateInquiryCommand,
         );
 
         // If the property has a listing broker, route the inquiry to them so it
-        // shows in their dashboard, and notify them directly.
-        if (cmd.ListingBrokerId is Guid brokerId && brokerId != cmd.OwnerId)
+        // shows in their dashboard AND so closed-won leads credit their deals count.
+        // Always create the assignment when there's a listing broker — even when the
+        // broker is also the owner (independent / company brokers list their own
+        // properties), otherwise their won leads would never be counted.
+        if (cmd.ListingBrokerId is Guid brokerId)
         {
             _db.InquiryAssignments.Add(new Domain.Entities.InquiryAssignment
             {
@@ -82,15 +85,20 @@ public class CreateInquiryCommandHandler : IRequestHandler<CreateInquiryCommand,
             });
             await _db.SaveChangesAsync(ct);
 
-            await _notifications.CreateInAppAsync(
-                userId: brokerId,
-                title: "New Inquiry Received",
-                body: "A tenant has submitted an inquiry on one of your listings.",
-                type: NotificationType.NewInquiry,
-                relatedEntityType: "inquiry",
-                relatedEntityId: inquiry.Id,
-                ct: ct
-            );
+            // Only send the separate broker notification when the broker isn't already
+            // the owner we notified above (avoids a duplicate notification).
+            if (brokerId != cmd.OwnerId)
+            {
+                await _notifications.CreateInAppAsync(
+                    userId: brokerId,
+                    title: "New Inquiry Received",
+                    body: "A tenant has submitted an inquiry on one of your listings.",
+                    type: NotificationType.NewInquiry,
+                    relatedEntityType: "inquiry",
+                    relatedEntityId: inquiry.Id,
+                    ct: ct
+                );
+            }
         }
 
         return MapToResponse(inquiry);
