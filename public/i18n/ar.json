@@ -762,6 +762,7 @@
     "TICKETS_FOUND": "{{ count }} طلب",
     "SUBMITTED": "مقدم",
     "IN_PROGRESS": "قيد التنفيذ",
+    "AWAITING_PAYMENT": "في انتظار الدفع",
     "COMPLETED": "مكتمل",
     "CANCELLED": "ملغى"
   },

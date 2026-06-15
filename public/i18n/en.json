@@ -762,6 +762,7 @@
     "TICKETS_FOUND": "{{ count }} tickets found",
     "SUBMITTED": "Submitted",
     "IN_PROGRESS": "In Progress",
+    "AWAITING_PAYMENT": "Awaiting Payment",
     "COMPLETED": "Completed",
     "CANCELLED": "Cancelled"
   },
