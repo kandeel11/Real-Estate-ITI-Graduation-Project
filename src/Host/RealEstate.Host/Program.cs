@@ -20,6 +20,7 @@ using Payment.Infrastructure;
 using Payment.Infrastructure.Persistence;
 using Property.Infrastructure;
 using Property.Infrastructure.Persistence.Contexts;
+using RealEstate.Host.Jobs;
 using RealEstate.Host.Services;
 using Subscription.Infrastructure;
 using Subscription.Infrastructure.Persistence;
@@ -142,6 +143,7 @@ public class Program
         });
 
         builder.Services.AddScoped<PropertyEnrichmentService>();
+        builder.Services.AddScoped<LeaseExpiryJob>();
         builder.Services.AddAiApplication(builder.Configuration);
         builder.Services.AddAiInfrastructure(builder.Configuration);
         builder.Services.AddDocumentModule(builder.Configuration);
@@ -187,6 +189,12 @@ public class Program
         {
             Authorization = new[] { new HangfireDashboardAuthFilter() }
         });
+
+        // Daily sweep: end leases past their EndDate and return properties to market.
+        RecurringJob.AddOrUpdate<LeaseExpiryJob>(
+            "expire-due-leases",
+            job => job.RunAsync(),
+            Cron.Daily);
 
         // ── Migrations + Seeding ──────────────────────────────
         using (var scope = app.Services.CreateScope())
