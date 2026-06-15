@@ -98,7 +98,7 @@ export const routes: Routes = [
         canActivate: [roleGuard],
         data: { expectedRole: 'admin' },
         loadChildren: () =>
-          import('../app/dashboards/admin/Admin-dashboard/admin.routes').then((m) => m.adminRoutes),
+          import('../app/features/admin/Admin-dashboard/admin.routes').then((m) => m.adminRoutes),
       },
 
       // ============ LANDLORD DASHBOARD ============
@@ -107,7 +107,7 @@ export const routes: Routes = [
         canActivate: [roleGuard],
         data: { expectedRole: 'owner' },
         loadComponent: () =>
-          import('./dashboards/landlord/landlord-shell.component').then(
+          import('./features/dashboards/landlord/landlord-shell.component').then(
             (m) => m.LandlordShellComponent,
           ),
         children: [
@@ -115,35 +115,35 @@ export const routes: Routes = [
           {
             path: 'overview',
             loadComponent: () =>
-              import('./dashboards/landlord/pages/overview/overview.component').then(
+              import('./features/dashboards/landlord/pages/overview/overview.component').then(
                 (m) => m.LandlordOverviewComponent,
               ),
           },
           {
             path: 'properties',
             loadComponent: () =>
-              import('./dashboards/landlord/pages/properties/properties.component').then(
+              import('./features/dashboards/landlord/pages/properties/properties.component').then(
                 (m) => m.LandlordPropertiesComponent,
               ),
           },
           {
             path: 'analytics',
             loadComponent: () =>
-              import('./dashboards/landlord/pages/analytics/analytics.component').then(
+              import('./features/dashboards/landlord/pages/analytics/analytics.component').then(
                 (m) => m.LandlordAnalyticsComponent,
               ),
           },
           {
             path: 'subscription',
             loadComponent: () =>
-              import('./dashboards/landlord/pages/subscription/subscription.component').then(
+              import('./features/dashboards/landlord/pages/subscription/subscription.component').then(
                 (m) => m.LandlordSubscriptionComponent,
               ),
           },
           {
             path: 'profile',
             loadComponent: () =>
-              import('./dashboards/landlord/pages/profile/profile.component').then(
+              import('./features/dashboards/landlord/pages/profile/profile.component').then(
                 (m) => m.LandlordProfileComponent,
               ),
           },
@@ -156,7 +156,7 @@ export const routes: Routes = [
         canActivate: [roleGuard],
         data: { expectedRole: 'company' },
         loadComponent: () =>
-          import('./dashboards/company/company-dashboard.component').then(
+          import('./features/dashboards/company/company-dashboard.component').then(
             (m) => m.CompanyDashboardComponent,
           ),
         children: [
@@ -164,61 +164,63 @@ export const routes: Routes = [
           {
             path: 'overview',
             loadComponent: () =>
-              import('./dashboards/company/pages/overview/overview.component').then(
+              import('./features/dashboards/company/pages/overview/overview.component').then(
                 (m) => m.OverviewComponent,
               ),
           },
           {
             path: 'properties',
             loadComponent: () =>
-              import('./dashboards/company/pages/properties/properties.component').then(
+              import('./features/dashboards/company/pages/properties/properties.component').then(
                 (m) => m.PropertiesComponent,
               ),
           },
           {
             path: 'brokers',
             loadComponent: () =>
-              import('./dashboards/company/pages/brokers/brokers.component').then(
+              import('./features/dashboards/company/pages/brokers/brokers.component').then(
                 (m) => m.BrokersComponent,
               ),
           },
           {
             path: 'performance',
             loadComponent: () =>
-              import('./dashboards/company/pages/performance/performance.component').then(
+              import('./features/dashboards/company/pages/performance/performance.component').then(
                 (m) => m.PerformanceComponent,
               ),
           },
           {
             path: 'inquiries',
             loadComponent: () =>
-              import('./dashboards/company/pages/inquiries/inquiries.component').then(
+              import('./features/dashboards/company/pages/inquiries/inquiries.component').then(
                 (m) => m.InquiriesComponent,
               ),
           },
           {
             path: 'ai',
             loadComponent: () =>
-              import('./dashboards/company/pages/ai/ai.component').then((m) => m.AiComponent),
+              import('./features/dashboards/company/pages/ai/ai.component').then(
+                (m) => m.AiComponent,
+              ),
           },
           {
             path: 'leases',
             loadComponent: () =>
-              import('./dashboards/company/pages/leases/leases.component').then(
+              import('./features/dashboards/company/pages/leases/leases.component').then(
                 (m) => m.LeasesComponent,
               ),
           },
           {
             path: 'subscriptions',
             loadComponent: () =>
-              import('./dashboards/company/pages/subscriptions/subscriptions.component').then(
+              import('./features/dashboards/company/pages/subscriptions/subscriptions.component').then(
                 (m) => m.SubscriptionsComponent,
               ),
           },
           {
             path: 'settings',
             loadComponent: () =>
-              import('./dashboards/company/pages/settings/settings.component').then(
+              import('./features/dashboards/company/pages/settings/settings.component').then(
                 (m) => m.SettingsComponent,
               ),
           },
@@ -231,7 +233,7 @@ export const routes: Routes = [
         canActivate: [roleGuard],
         data: { expectedRole: 'broker' },
         loadComponent: () =>
-          import('./dashboards/broker/broker-dashboard.component').then(
+          import('./features/dashboards/broker/broker-dashboard.component').then(
             (m) => m.BrokerDashboardComponent,
           ),
         children: [
@@ -239,63 +241,63 @@ export const routes: Routes = [
           {
             path: 'overview',
             loadComponent: () =>
-              import('./dashboards/broker/pages/overview/overview.component').then(
+              import('./features/dashboards/broker/pages/overview/overview.component').then(
                 (m) => m.OverviewComponent,
               ),
           },
           {
             path: 'properties',
             loadComponent: () =>
-              import('./dashboards/broker/pages/properties/properties.component').then(
+              import('./features/dashboards/broker/pages/properties/properties.component').then(
                 (m) => m.PropertiesComponent,
               ),
           },
           {
             path: 'leads',
             loadComponent: () =>
-              import('./dashboards/broker/pages/leads/leads.component').then(
+              import('./features/dashboards/broker/pages/leads/leads.component').then(
                 (m) => m.LeadsComponent,
               ),
           },
           {
             path: 'inquiries',
             loadComponent: () =>
-              import('./dashboards/broker/pages/inquiries/inquiries.component').then(
+              import('./features/dashboards/broker/pages/inquiries/inquiries.component').then(
                 (m) => m.InquiriesComponent,
               ),
           },
           {
             path: 'performance',
             loadComponent: () =>
-              import('./dashboards/broker/pages/performance/performance.component').then(
+              import('./features/dashboards/broker/pages/performance/performance.component').then(
                 (m) => m.PerformanceComponent,
               ),
           },
           {
             path: 'leases',
             loadComponent: () =>
-              import('./dashboards/broker/pages/leases/leases.component').then(
+              import('./features/dashboards/broker/pages/leases/leases.component').then(
                 (m) => m.LeasesComponent,
               ),
           },
           {
             path: 'notifications',
             loadComponent: () =>
-              import('./dashboards/broker/pages/notifications/notifications.component').then(
+              import('./features/dashboards/broker/pages/notifications/notifications.component').then(
                 (m) => m.BrokerNotificationsComponent,
               ),
           },
           {
             path: 'subscription',
             loadComponent: () =>
-              import('./dashboards/broker/pages/subscription/subscription.component').then(
+              import('./features/dashboards/broker/pages/subscription/subscription.component').then(
                 (m) => m.BrokerSubscriptionComponent,
               ),
           },
           {
             path: 'profile',
             loadComponent: () =>
-              import('./dashboards/broker/pages/profile/profile.component').then(
+              import('./features/dashboards/broker/pages/profile/profile.component').then(
                 (m) => m.ProfileComponent,
               ),
           },
@@ -308,42 +310,42 @@ export const routes: Routes = [
         canActivate: [roleGuard],
         data: { expectedRole: 'tenant' },
         loadComponent: () =>
-          import('./dashboards/tenant/tenant-dashboard.component').then(
+          import('./features/dashboards/tenant/tenant-dashboard.component').then(
             (m) => m.TenantDashboardComponent,
           ),
         children: [
           {
             path: 'overview',
             loadComponent: () =>
-              import('./dashboards/tenant/pages/overview/overview.component').then(
+              import('./features/dashboards/tenant/pages/overview/overview.component').then(
                 (m) => m.OverviewComponent,
               ),
           },
           {
             path: 'my-property',
             loadComponent: () =>
-              import('./dashboards/tenant/pages/my-property/my-property.component').then(
+              import('./features/dashboards/tenant/pages/my-property/my-property.component').then(
                 (m) => m.MyPropertyComponent,
               ),
           },
           {
             path: 'lease',
             loadComponent: () =>
-              import('./dashboards/tenant/pages/lease/lease.component').then(
+              import('./features/dashboards/tenant/pages/lease/lease.component').then(
                 (m) => m.LeaseComponent,
               ),
           },
           {
             path: 'maintenance-requests',
             loadComponent: () =>
-              import('./dashboards/tenant/pages/maintenance-requests/maintenance-requests.component').then(
+              import('./features/dashboards/tenant/pages/maintenance-requests/maintenance-requests.component').then(
                 (m) => m.MaintenanceRequestsComponent,
               ),
           },
           {
             path: 'payments',
             loadComponent: () =>
-              import('./dashboards/tenant/pages/payments/payments.component').then(
+              import('./features/dashboards/tenant/pages/payments/payments.component').then(
                 (m) => m.PaymentsComponent,
               ),
           },
@@ -356,7 +358,7 @@ export const routes: Routes = [
         canActivate: [roleGuard],
         data: { expectedRole: 'maintenance-company' },
         loadChildren: () =>
-          import('./dashboards/maintenance-company/maintenance.routes').then(
+          import('./features/dashboards/vendor-dashboard/maintenance.routes').then(
             (m) => m.maintenanceRoutes,
           ),
       },

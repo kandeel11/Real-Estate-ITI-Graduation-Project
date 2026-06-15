@@ -1,0 +1,156 @@
+<div class="ai-page" [class.sidebar-collapsed]="!sidebarOpen()">
+
+  <!-- ══════════ SESSIONS SIDEBAR ══════════ -->
+  <aside class="ai-sidebar">
+
+    <div class="ai-sidebar-header">
+      <div class="ai-brand">
+        <div class="ai-brand-icon"><i class="fa-solid fa-wand-magic-sparkles"></i></div>
+        <div>
+          <p class="ai-brand-name">AI Insights</p>
+          <p class="ai-brand-sub">Admin Assistant</p>
+        </div>
+      </div>
+      <button class="ai-new-chat" (click)="newChat()" title="New chat">
+        <i class="fa-solid fa-pen-to-square"></i>
+      </button>
+    </div>
+
+    <div class="ai-sessions-wrap">
+      <p class="ai-sessions-label">Recent conversations</p>
+      <div class="ai-sessions">
+        @for (s of sessions(); track s.id) {
+        <button class="ai-session" [class.active]="sessionId() === s.id" (click)="openSession(s)">
+          <div class="ai-session-icon"><i class="fa-regular fa-message"></i></div>
+          <div class="ai-session-body">
+            <strong [textContent]="s.title"></strong>
+            <span [textContent]="s.lastMessage"></span>
+          </div>
+          <span class="ai-session-time" [textContent]="relativeTime(s.updatedAt)"></span>
+        </button>
+        } @empty {
+        <div class="ai-sessions-empty">
+          <i class="fa-regular fa-comment-dots"></i>
+          <p>No conversations yet</p>
+        </div>
+        }
+      </div>
+    </div>
+
+    <div class="ai-sidebar-footer">
+      <div class="ai-model-pill">
+        <span class="model-dot"></span>
+        <span>AI Assistant · Online</span>
+      </div>
+    </div>
+  </aside>
+
+  <!-- ══════════ MAIN CHAT ══════════ -->
+  <main class="ai-main">
+
+    <!-- Topbar -->
+    <header class="ai-topbar">
+      <button class="ai-toggle-btn" (click)="toggleSidebar()" title="Toggle sidebar">
+        <i class="fa-solid fa-bars"></i>
+      </button>
+
+      <div class="ai-topbar-center">
+        <span class="ai-topbar-title">AI Insights</span>
+        <span class="ai-topbar-dot"></span>
+        <span class="ai-topbar-status">Online</span>
+      </div>
+
+      <div class="ai-topbar-actions">
+        <button class="ai-icon-btn" (click)="newChat()" title="New chat">
+          <i class="fa-solid fa-pen-to-square"></i>
+        </button>
+      </div>
+    </header>
+
+    <!-- Scroll Area -->
+    <div class="ai-scroll" #scrollArea>
+
+      <!-- ── Welcome / Empty State ── -->
+      @if (!hasMessages()) {
+      <div class="ai-welcome">
+        <div class="ai-welcome-glow"></div>
+        <div class="ai-welcome-orb">
+          <i class="fa-solid fa-wand-magic-sparkles"></i>
+        </div>
+        <h2>How can I help you today?</h2>
+        <p>Ask me about market trends, users, properties, or revenue insights.</p>
+
+        <div class="ai-suggestions">
+          @for (sug of suggestions; track sug.title) {
+          <button class="ai-suggestion" [attr.data-color]="sug.color" (click)="usePrompt(sug.prompt)">
+            <div class="ai-suggestion-icon"><i class="fa-solid {{ sug.icon }}"></i></div>
+            <div class="ai-suggestion-body">
+              <strong>{{ sug.title }}</strong>
+              <span>{{ sug.prompt }}</span>
+            </div>
+            <i class="fa-solid fa-chevron-right ai-suggestion-arrow"></i>
+          </button>
+          }
+        </div>
+      </div>
+      }
+
+      <!-- ── Messages ── -->
+      @if (hasMessages()) {
+      <div class="ai-messages">
+        @for (msg of messages(); track msg.id) {
+        <div class="ai-msg" [class.user]="msg.role === 'user'" [class.assistant]="msg.role === 'assistant'">
+
+          <div class="ai-msg-avatar" [class.user-avatar]="msg.role === 'user'">
+            @if (msg.role === 'user') {
+            <i class="fa-solid fa-user"></i>
+            } @else {
+            <i class="fa-solid fa-wand-magic-sparkles"></i>
+            }
+          </div>
+
+          <div class="ai-msg-bubble" [class.error]="msg.error">
+            @if (msg.pending) {
+            <div class="ai-typing">
+              <span></span><span></span><span></span>
+            </div>
+            } @else {
+            <div class="ai-msg-content" [innerHTML]="renderMarkdown(msg.content)"></div>
+            <span class="ai-msg-time">{{ formatTime(msg.createdAt) }}</span>
+            }
+          </div>
+
+        </div>
+        }
+      </div>
+      }
+
+    </div>
+
+    <!-- Composer -->
+    <footer class="ai-composer">
+      <div class="ai-composer-box">
+        <textarea
+          rows="1"
+          [value]="draft()"
+          (input)="draft.set($any($event.target).value)"
+          (keydown)="onKeydown($event)"
+          placeholder="Ask anything about your platform…"
+          [disabled]="sending()">
+        </textarea>
+        <button class="ai-send-btn" [disabled]="!canSend()" (click)="send()" title="Send">
+          @if (sending()) {
+          <i class="fa-solid fa-spinner fa-spin"></i>
+          } @else {
+          <i class="fa-solid fa-arrow-up"></i>
+          }
+        </button>
+      </div>
+      <p class="ai-composer-hint">
+        <i class="fa-solid fa-shield-halved"></i>
+        AI can make mistakes — verify important info &nbsp;·&nbsp; <kbd>Enter</kbd> to send
+      </p>
+    </footer>
+
+  </main>
+</div>
