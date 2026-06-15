@@ -1,18 +1,19 @@
-﻿<Project Sdk="Microsoft.NET.Sdk">
+<Project Sdk="Microsoft.NET.Sdk">
 
   <ItemGroup>
+    <ProjectReference Include="..\..\MaintenanceCompanies\MaintenanceCompanies.Application\MaintenanceCompanies.Application.csproj" />
     <ProjectReference Include="..\Maintenance.Application\Maintenance.Application.csproj" />
   </ItemGroup>
 
   <PropertyGroup>
-    <TargetFramework>net9.0</TargetFramework>
+    <TargetFramework>net10.0</TargetFramework>
     <ImplicitUsings>enable</ImplicitUsings>
     <Nullable>enable</Nullable>
   </PropertyGroup>
 
 	<ItemGroup>
 		<PackageReference Include="Azure.Storage.Blobs" Version="12.22.2" />
-		<PackageReference Include="Microsoft.EntityFrameworkCore" Version="9.0.5" />
+		<PackageReference Include="Microsoft.EntityFrameworkCore" Version="9.0.16" />
 		<PackageReference Include="Microsoft.EntityFrameworkCore.SqlServer" Version="9.0.5" />
 		<PackageReference Include="Microsoft.EntityFrameworkCore.Tools" Version="9.0.5">
 			<PrivateAssets>all</PrivateAssets>

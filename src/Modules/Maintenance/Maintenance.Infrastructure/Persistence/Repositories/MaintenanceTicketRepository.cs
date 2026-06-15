@@ -55,6 +55,59 @@ public class MaintenanceTicketRepository(MaintenanceDbContext db) : IMaintenance
             .ToListAsync(ct);
     }
 
+    public async Task<List<MaintenanceTicket>> GetAllByVendorIdAsync(Guid vendorId, CancellationToken ct = default)
+    {
+        var ticketIds = await db.VendorAssignments
+            .Where(a => a.VendorId == vendorId)
+            .Select(a => a.TicketId)
+            .Distinct()
+            .ToListAsync(ct);
+
+        return await db.MaintenanceTickets
+            .AsSplitQuery()                      
+            .Include(t => t.Attachments)
+            .Include(t => t.Comments)
+            .Include(t => t.CurrentVendorAssignment)
+            .Include(t => t.StatusHistory)
+            .Include(t => t.Payment)
+            .Where(t => ticketIds.Contains(t.Id))
+            .OrderByDescending(t => t.CreatedAt)
+            .ToListAsync(ct);
+    }
+
+    public async Task<(List<MaintenanceTicket> Items, int Total)> GetAllForAdminAsync(
+        TicketStatus? status, int page, int pageSize, CancellationToken ct = default)
+    {
+        var q = db.MaintenanceTickets
+            .IgnoreQueryFilters()
+            .Include(t => t.Attachments)
+            .Include(t => t.Comments)
+            .Include(t => t.AiEvaluation)
+            .Include(t => t.CurrentVendorAssignment)
+            .Include(t => t.StatusHistory)
+            .Include(t => t.Payment)
+            .AsQueryable();
+
+        if (status.HasValue)
+            q = q.Where(t => t.Status == status.Value);
+
+        var total = await q.CountAsync(ct);
+        var items = await q
+            .OrderByDescending(t => t.CreatedAt)
+            .Skip((page - 1) * pageSize)
+            .Take(pageSize)
+            .ToListAsync(ct);
+
+        return (items, total);
+    }
+
+    public async Task<Dictionary<TicketStatus, int>> GetStatusCountsAsync(CancellationToken ct = default)
+        => await db.MaintenanceTickets
+            .IgnoreQueryFilters()
+            .GroupBy(t => t.Status)
+            .Select(g => new { Status = g.Key, Count = g.Count() })
+            .ToDictionaryAsync(x => x.Status, x => x.Count, ct);
+
     public Task<List<MaintenanceTicket>> GetPendingAiEvaluationAsync(CancellationToken ct = default)
         => db.MaintenanceTickets.Where(t => t.Status == TicketStatus.Submitted).ToListAsync(ct);
 
