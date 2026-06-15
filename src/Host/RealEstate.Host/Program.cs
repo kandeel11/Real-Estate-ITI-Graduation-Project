@@ -245,6 +245,7 @@ public class Program
             app.UseSwaggerUI(c =>
                 c.SwaggerEndpoint("/swagger/v1/swagger.json", "Real Estate API v1"));
         }
+        app.UseHttpsRedirection();
         app.UseStaticFiles();
         app.UseCors("AllowAngular");
         app.UseAuthentication();

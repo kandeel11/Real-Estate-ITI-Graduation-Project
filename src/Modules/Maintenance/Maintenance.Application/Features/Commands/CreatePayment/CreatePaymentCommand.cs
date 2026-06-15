@@ -21,8 +21,9 @@ public class CreatePaymentHandler(
         var ticket = await ticketRepo.GetByIdAsync(cmd.TicketId, ct)
             ?? throw new KeyNotFoundException($"Ticket {cmd.TicketId} not found.");
 
-        if (ticket.Status != TicketStatus.AwaitingPayment)
-            throw new InvalidOperationException("Ticket is not awaiting payment.");
+        // Vendor sets the price while work is in progress
+        if (ticket.Status != TicketStatus.InProgress)
+            throw new InvalidOperationException("Ticket must be In Progress to set a price.");
 
         var existing = await paymentRepo.GetByTicketIdAsync(cmd.TicketId, ct);
         if (existing is not null)
@@ -37,7 +38,14 @@ public class CreatePaymentHandler(
             cmd.Amount, cmd.Currency);
 
         await paymentRepo.AddAsync(payment, ct);
+
+        // Setting the price marks the work as done and moves the ticket
+        // to AwaitingPayment — the tenant/owner can now see the price and pay
+        ticket.CompleteWork();
+
         await paymentRepo.SaveChangesAsync(ct);
+        await ticketRepo.SaveChangesAsync(ct);
+
         return payment.Id;
     }
 }

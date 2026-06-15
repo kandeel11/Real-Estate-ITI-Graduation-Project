@@ -2,6 +2,7 @@ using FluentValidation;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
+using RealEstate.Shared.Kernel.Analytics;
 using RealEstate.Shared.Kernel.Shared.Contracts;
 using Subscription.Application.Commands.CreatePlan;
 using Subscription.Application.EventHandlers;
@@ -42,6 +43,7 @@ public static class SubscriptionModuleExtensions
         services.AddScoped<ISubscriptionUsageRepository, SubscriptionUsageRepository>();
 
         services.AddScoped<ISubscriptionLimitChecker, SubscriptionLimitChecker>();
+        services.AddScoped<ISubscriptionAnalyticsService, SubscriptionAnalyticsService>();
 
         services.AddValidatorsFromAssembly(typeof(CreatePlanCommand).Assembly);
 

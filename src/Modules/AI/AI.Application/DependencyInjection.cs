@@ -1,4 +1,5 @@
 ﻿using AI.Application.Common.Behaviors;   // ← ValidationBehavior
+using AI.Application.Features.AdminAnalytics.Plugins;
 using AI.Application.Features.Chat.Commands;
 using FluentValidation;
 using MediatR;
@@ -18,11 +19,16 @@ public static class DependencyInjection
         services.AddMediatR(cfg =>
             cfg.RegisterServicesFromAssembly(assembly));
 
-        services.AddValidatorsFromAssembly(assembly);   // ✅ needs FluentValidation.DependencyInjectionExtensions
+        services.AddValidatorsFromAssembly(assembly);
 
         services.AddTransient(
             typeof(IPipelineBehavior<,>),
-            typeof(ValidationBehavior<,>));              // ✅ needs AI.Application.Common.Behaviors
+            typeof(ValidationBehavior<,>));
+
+        // AdminAnalyticsPlugin depends only on Shared analytics interfaces.
+        // The four IXxxAnalyticsService implementations are registered by their
+        // respective modules (Property, Payment, Subscription, Identity).
+        services.AddScoped<AdminAnalyticsPlugin>();
 
         return services;
     }
