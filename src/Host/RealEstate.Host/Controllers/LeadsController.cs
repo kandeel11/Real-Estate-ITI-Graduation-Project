@@ -24,9 +24,14 @@ public class LeadsController : ControllerBase
     [HttpPut("{id}/status")]
     public async Task<IActionResult> UpdateStatus(Guid id, [FromBody] UpdateLeadStatusRequest req)
     {
-        await _mediator.Send(new UpdateLeadStatusCommand(
-            id, req.NewStatus, req.DealValue, req.Notes));
-        return NoContent();
+        try
+        {
+            await _mediator.Send(new UpdateLeadStatusCommand(
+                id, req.NewStatus, req.DealValue, req.Notes));
+            return NoContent();
+        }
+        catch (KeyNotFoundException ex) { return NotFound(new { error = ex.Message }); }
+        catch (ArgumentException ex) { return BadRequest(new { error = ex.Message }); }
     }
 
     [HttpGet("broker/{brokerId}")]
