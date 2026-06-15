@@ -5,7 +5,6 @@ using Identity.Application.Commands.UpdateCompanyLogo;
 using Identity.Application.Commands.VerifyCompany;
 using Identity.Application.Interfaces;
 using Identity.Application.Queries.GetAllCompanies;
-using Identity.Application.Queries.GetBrokersByCompany;
 using Identity.Application.Queries.GetCompanyById;
 using Identity.Application.Queries.GetCompanyBrokersDetails;
 using Identity.Application.Queries.GetCompanyDetails;
@@ -368,7 +367,9 @@ public class CompaniesController(
         if (!currentUser.IsInRole("admin") && currentUser.CompanyId != id)
             return Forbid();
 
-        var brokers = await mediator.Send(new GetBrokersByCompanyQuery(id), ct);
+        // Use the enriched details query so callers get FullName/Email/ClosedDealsCount
+        // (the bare BrokerDto has none of those → admin UI showed "Unknown" / no deals).
+        var brokers = await mediator.Send(new GetCompanyBrokersDetailsQuery(id), ct);
         return Ok(brokers);
     }
 }
