@@ -14,10 +14,11 @@ namespace RealEstate.Host.Controllers;
 
 [ApiController]
 [Route("api/maintenance-companies")]
-[Authorize(Policy = "AdminOnly")]
 public class MaintenanceCompaniesController(IMediator mediator) : ControllerBase
 {
     [HttpPost]
+    [Authorize(Policy = "AdminOnly")]
+
     public async Task<IActionResult> Create(
         [FromBody] CreateMaintenanceCompanyRequest request,
         CancellationToken ct)
