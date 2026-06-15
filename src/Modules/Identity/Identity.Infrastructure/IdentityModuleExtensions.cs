@@ -10,6 +10,7 @@ using Identity.Infrastructure.Services;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
+using RealEstate.Shared.Kernel.Analytics;
 
 namespace Identity.Infrastructure;
 
@@ -35,6 +36,7 @@ public static class IdentityModuleExtensions
             cfg.RegisterServicesFromAssembly(typeof(AssemblyMarker).Assembly);
             cfg.RegisterServicesFromAssembly(typeof(SendOtpHandler).Assembly);
     });
+        services.AddScoped<IUserAnalyticsService, UserAnalyticsService>();
         services.AddScoped<IUnitOfWork, UnitOfWork>();
         services.AddScoped<IUserRepository, UserRepository>();
         services.AddScoped<ICompanyRepository, CompanyRepository>();

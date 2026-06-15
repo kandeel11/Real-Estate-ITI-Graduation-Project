@@ -10,6 +10,7 @@ using Property.Infrastructure.Persistence.Contexts;
 using Property.Infrastructure.Persistence.Interceptors;
 using Property.Infrastructure.Persistence.Repositories;
 using Property.Infrastructure.Services;
+using RealEstate.Shared.Kernel.Analytics;
 
 namespace Property.Infrastructure;
 
@@ -35,6 +36,7 @@ public static class PropertyModuleExtensions
 
         services.AddScoped<IPropertyRepository, PropertyRepository>();
         services.AddScoped<IPropertyAnalyticsRepository, PropertyAnalyticsRepository>();
+        services.AddScoped<IPropertyAnalyticsService, PropertyAnalyticsService>();
 
         var azureBlobConnectionString = configuration.GetConnectionString("AzureBlobStorage");
         if (!string.IsNullOrEmpty(azureBlobConnectionString))
