@@ -1,6 +1,9 @@
 ﻿using Document.Application.Commands.Inquiry;
 using Document.Application.DTOs;
 using Document.Application.Queries.Inquiry;
+using Document.Application.Queries.Lead.GetLeadByInquiry;
+using Document.Application.Queries.Message.GetMessagesByConversation;
+using Document.Application.Queries.Message.GetMessagesByInquiry;
 using Identity.Application.Interfaces;
 using MediatR;
 using Microsoft.AspNetCore.Authorization;
@@ -12,7 +15,10 @@ namespace RealEstate.Host.Controllers;
 [ApiController]
 [Route("api/inquiries")]
 [Authorize]
-public class InquiriesController(IMediator mediator, ICurrentUserService currentUser) : ControllerBase
+public class InquiriesController(
+    IMediator mediator,
+    ICurrentUserService currentUser,
+    IUserRepository userRepo) : ControllerBase
 {
     private Guid UserId => currentUser.UserId ?? throw new UnauthorizedAccessException();
 
@@ -76,7 +82,14 @@ public class InquiriesController(IMediator mediator, ICurrentUserService current
             return Ok(new { leadId = result.LeadId });
         }
         catch (KeyNotFoundException ex) { return NotFound(new { error = ex.Message }); }
-        catch (InvalidOperationException ex) { return BadRequest(new { error = ex.Message }); }
+        catch (InvalidOperationException ex)
+        {
+            // Idempotent: an already-accepted inquiry already has a lead — return it instead of 400.
+            var existingLeadId = await mediator.Send(new GetLeadByInquiryQuery(id), ct);
+            if (existingLeadId is not null)
+                return Ok(new { leadId = existingLeadId });
+            return BadRequest(new { error = ex.Message });
+        }
     }
 
     /// <summary>Broker/owner replies to an inquiry (creates a conversation message + notifies tenant).</summary>
@@ -98,6 +111,58 @@ public class InquiriesController(IMediator mediator, ICurrentUserService current
     {
         try { await mediator.Send(new CloseInquiryCommand(id), ct); return NoContent(); }
         catch (KeyNotFoundException ex) { return NotFound(ex.Message); }
+    }
+
+    // ── Chat thread (inquiry-scoped messages) ────────────────────────────────────
+
+    /// <summary>Returns the conversation thread for an inquiry, enriched for the chat UI.</summary>
+    [HttpGet("{id:guid}/messages")]
+    [Authorize(Roles = "tenant,owner,broker,company_manager")]
+    public async Task<IActionResult> GetMessages(Guid id, CancellationToken ct)
+    {
+        var inquiry = await mediator.Send(new GetInquiryByIdQuery(id), ct);
+        if (inquiry is null) return NotFound(new { error = $"Inquiry {id} not found." });
+
+        var messages = await mediator.Send(new GetMessagesByInquiryQuery(id), ct);
+        return Ok(await ToChatMessages(messages, inquiry, ct));
+    }
+
+    /// <summary>Post a chat message on an inquiry thread (either tenant or broker/owner).</summary>
+    [HttpPost("{id:guid}/messages")]
+    [Authorize(Roles = "tenant,owner,broker,company_manager")]
+    public async Task<IActionResult> PostMessage(Guid id, [FromBody] ReplyInquiryBodyRequest req, CancellationToken ct)
+    {
+        try
+        {
+            var saved = await mediator.Send(new PostInquiryMessageCommand(id, UserId, req.Text), ct);
+            var inquiry = await mediator.Send(new GetInquiryByIdQuery(id), ct);
+            var mapped = (await ToChatMessages([saved], inquiry!, ct)).Single();
+            return Ok(mapped);
+        }
+        catch (KeyNotFoundException ex) { return NotFound(new { error = ex.Message }); }
+        catch (InvalidOperationException ex) { return BadRequest(new { error = ex.Message }); }
+    }
+
+    /// <summary>Maps raw message DTOs to the frontend ChatMessage shape with sender names/roles.</summary>
+    private async Task<List<object>> ToChatMessages(
+        IReadOnlyCollection<MessageDto> messages, InquiryResponse inquiry, CancellationToken ct)
+    {
+        if (messages.Count == 0) return new List<object>();
+
+        var names = await userRepo.GetFullNamesByIdsAsync(
+            messages.Select(m => m.SenderId).Distinct(), ct);
+
+        return messages.Select(m => (object)new
+        {
+            id = m.Id,
+            senderId = m.SenderId,
+            senderName = names.GetValueOrDefault(m.SenderId, string.Empty),
+            senderRole = m.SenderId == inquiry.TenantId ? "tenant"
+                       : m.SenderId == inquiry.OwnerId ? "owner"
+                       : "broker",
+            text = m.Content,
+            sentAt = m.CreatedAt
+        }).ToList();
     }
 }
 

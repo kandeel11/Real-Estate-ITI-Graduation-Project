@@ -148,14 +148,26 @@ public class BrokerDashboardController(
         var leads = await sender.Send(new GetLeadsByPropertiesQuery(properties.Select(p => p.Id).ToList()), ct);
         if (leads.Count == 0) return Ok(Array.Empty<object>());
 
-        var tenantNames = await userRepo.GetFullNamesByIdsAsync(
-            leads.Select(l => l.TenantId).Distinct(), ct);
+        var tenantIds = leads.Select(l => l.TenantId).Distinct().ToList();
+        var tenantNames = await userRepo.GetFullNamesByIdsAsync(tenantIds, ct);
         var propertyTitles = properties.ToDictionary(p => p.Id, p => p.Title);
+
+        // Resolve tenant contact details so the broker never has to re-type them
+        // (e.g. the lease-upload modal prefills the email from the tenant's account).
+        var tenantContacts = new Dictionary<Guid, (string Email, string Phone)>();
+        foreach (var tid in tenantIds)
+        {
+            var u = await userRepo.GetByIdAsync(tid, ct);
+            if (u is not null) tenantContacts[tid] = (u.Email, u.Phone);
+        }
 
         var result = leads.Select(l => new
         {
             id = l.Id,
+            tenantId = l.TenantId,
             tenantName = tenantNames.GetValueOrDefault(l.TenantId, string.Empty),
+            tenantEmail = tenantContacts.GetValueOrDefault(l.TenantId).Email ?? string.Empty,
+            tenantPhone = tenantContacts.GetValueOrDefault(l.TenantId).Phone ?? string.Empty,
             propertyId = l.PropertyId,
             propertyTitle = propertyTitles.GetValueOrDefault(l.PropertyId, string.Empty),
             status = MapLeadStatus(l.Status),
