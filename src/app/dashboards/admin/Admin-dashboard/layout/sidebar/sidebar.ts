@@ -33,13 +33,7 @@ export class SidebarComponent {
     { labelKey: 'ADMIN_NAV.MARKET_TRENDS', icon: 'fa-solid fa-chart-line', route: 'market-trends' },
     { labelKey: 'ADMIN_NAV.TENANTS', icon: 'fa-solid fa-users', route: 'users' },
     { labelKey: 'ADMIN_NAV.COMPANIES', icon: 'fa-solid fa-briefcase', route: 'companies' },
-    {
-      labelKey: 'ADMIN_NAV.APPROVALS',
-      icon: 'fa-solid fa-clipboard-check',
-      route: 'approvals',
-      badge: 17,
-    },
-    { labelKey: 'ADMIN_NAV.ANALYTICS', icon: 'fa-solid fa-chart-column', route: 'reports' },
+
     {
       labelKey: 'ADMIN_NAV.MAINTENANCE',
       icon: 'fa-solid fa-screwdriver-wrench',
