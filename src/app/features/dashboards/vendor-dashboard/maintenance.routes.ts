@@ -9,12 +9,20 @@ export const maintenanceRoutes: Routes = [
       { path: '', redirectTo: 'overview', pathMatch: 'full' },
       {
         path: 'overview',
-        loadComponent: () => import('./pages/overview.component').then((m) => m.OverviewComponent),
+        loadComponent: () =>
+          import('./pages/overview.component').then((m) => m.OverviewComponent),
       },
       {
         path: 'tickets',
         loadComponent: () =>
           import('./pages/tickets/tickets.component').then((m) => m.MaintenanceTicketsComponent),
+      },
+      {
+        path: 'tickets/:id',
+        loadComponent: () =>
+          import('./pages/tickets/ticket-detail/ticket-detail.component').then(
+            (m) => m.TicketDetailComponent,
+          ),
       },
       {
         path: 'profile',

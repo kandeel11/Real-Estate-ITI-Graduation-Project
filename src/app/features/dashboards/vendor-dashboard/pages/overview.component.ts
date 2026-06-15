@@ -1,174 +1,295 @@
+import { Component, inject, signal, computed, OnInit, ChangeDetectionStrategy } from '@angular/core';
+import { Router } from '@angular/router';
 import {
-  Component,
-  inject,
-  signal,
-  AfterViewInit,
-  OnDestroy,
-  ViewChild,
-  ElementRef,
-} from '@angular/core';
-import ApexCharts from 'apexcharts';
-import { MaintenancePortalService } from '../services/maintenance-portal.service';
-import { CategoryEarnings, Ticket, TicketStats, TicketStatus, PaymentStatus } from '../models';
-import { DecimalPipe } from '@angular/common';
+  MaintenanceCompanyProfile,
+  MaintenanceProfileService,
+} from '../services/maintenance-profile.service';
+import { TicketsService } from '../services/tickets.service';
+import { TicketDetailDto } from '../models';
+
+type Toast = { type: 'success' | 'error'; text: string } | null;
 
 @Component({
   selector: 'app-maintenance-overview',
   standalone: true,
-  imports: [DecimalPipe],
+  changeDetection: ChangeDetectionStrategy.OnPush,
+  imports: [],
   templateUrl: './overview.component.html',
   styleUrls: ['./overview.component.scss'],
 })
-export class OverviewComponent implements AfterViewInit, OnDestroy {
-  private service = inject(MaintenancePortalService);
+export class OverviewComponent implements OnInit {
+  private readonly profileService = inject(MaintenanceProfileService);
+  private readonly ticketsService = inject(TicketsService);
+  private readonly router = inject(Router);
 
-  @ViewChild('earningsChartEl') earningsChartEl!: ElementRef<HTMLElement>;
-  @ViewChild('statusChartEl') statusChartEl!: ElementRef<HTMLElement>;
+  profileLoading = signal(true);
+  ticketsLoading = signal(true);
+  profile = signal<MaintenanceCompanyProfile | null>(null);
+  tickets = signal<TicketDetailDto[]>([]);
 
-  stats = signal<TicketStats | null>(null);
-  categories = signal<CategoryEarnings[]>([]);
-  recentTickets = signal<Ticket[]>([]);
+  toast = signal<Toast>(null);
+  busyId = signal<string | null>(null);
 
-  private earningsChart: ApexCharts | null = null;
-  private statusChart: ApexCharts | null = null;
+  // Reject modal
+  showRejectModal = signal(false);
+  rejectingTicket = signal<TicketDetailDto | null>(null);
+  rejectReason = signal('');
 
-  ngAfterViewInit() {
-    this.loadAll();
+  // Set Price modal
+  showPriceModal = signal(false);
+  pricingTicket = signal<TicketDetailDto | null>(null);
+  priceAmount = signal(0);
+  priceCurrency = signal('EGP');
+
+  /** Tickets that need the vendor to take action */
+  pendingTickets = computed(() =>
+    this.tickets().filter((t) =>
+      ['AssignedToVendor', 'VendorAccepted', 'InProgress', 'AwaitingPayment'].includes(t.status),
+    ),
+  );
+
+  ngOnInit(): void {
+    this.loadProfile();
+    this.loadTickets();
   }
 
-  ngOnDestroy() {
-    this.earningsChart?.destroy();
-    this.statusChart?.destroy();
+  loadAll(): void {
+    this.loadProfile();
+    this.loadTickets();
   }
 
-  loadAll() {
-    this.service.getStats().subscribe((s) => {
-      this.stats.set(s);
-
-      this.statusChart?.destroy();
-      this.statusChart = new ApexCharts(this.statusChartEl.nativeElement, {
-        series: [s.openTickets, s.inProgressTickets, s.completedTickets, s.cancelledTickets],
-        chart: { type: 'donut', height: 280, fontFamily: 'inherit' },
-        labels: ['Open', 'In Progress', 'Completed', 'Cancelled'],
-        colors: ['#3b82f6', '#f59e0b', '#10b981', '#94a3b8'],
-        stroke: { width: 0 },
-        legend: { position: 'bottom', fontSize: '12px', markers: { size: 6 } },
-        dataLabels: { enabled: false },
-        plotOptions: {
-          pie: {
-            donut: {
-              size: '72%',
-              labels: {
-                show: true,
-                name: { show: false },
-                value: {
-                  show: true,
-                  fontSize: '28px',
-                  fontWeight: 800,
-                  color: '#0f172a',
-                  offsetY: -6,
-                },
-                total: {
-                  show: true,
-                  label: 'Total Tickets',
-                  fontSize: '11px',
-                  color: '#94a3b8',
-                  formatter: () => `${s.totalTickets}`,
-                },
-              },
-            },
-          },
-        },
-      });
-      this.statusChart.render();
+  private loadProfile(): void {
+    this.profileLoading.set(true);
+    this.profileService.getProfile().subscribe({
+      next: (p) => {
+        this.profile.set(p);
+        this.profileLoading.set(false);
+      },
+      error: () => this.profileLoading.set(false),
     });
+  }
 
-    this.service.getMonthlyEarnings().subscribe((data) => {
-      this.earningsChart?.destroy();
-      this.earningsChart = new ApexCharts(this.earningsChartEl.nativeElement, {
-        series: [{ name: 'Earnings', data: data.map((d) => d.earnings) }],
-        chart: {
-          type: 'area',
-          height: 320,
-          toolbar: { show: false },
-          fontFamily: 'inherit',
-        },
-        colors: ['#f59e0b'],
-        stroke: { curve: 'smooth', width: 3 },
-        fill: {
-          type: 'gradient',
-          gradient: {
-            shadeIntensity: 1,
-            opacityFrom: 0.4,
-            opacityTo: 0.05,
-            colorStops: [
-              { offset: 0, color: '#f59e0b', opacity: 0.4 },
-              { offset: 100, color: '#fff7ed', opacity: 0.0 },
-            ],
-          },
-        },
-        dataLabels: { enabled: false },
-        markers: { size: 5, colors: ['#fff'], strokeColors: '#f59e0b', strokeWidth: 3 },
-        xaxis: {
-          categories: data.map((d) => d.month),
-          labels: { style: { colors: '#94a3b8', fontSize: '12px' } },
-          axisBorder: { show: false },
-          axisTicks: { show: false },
-        },
-        yaxis: {
-          labels: {
-            style: { colors: '#94a3b8', fontSize: '12px' },
-            formatter: (val: number) => '$' + (val / 1000).toFixed(0) + 'K',
-          },
-        },
-        grid: {
-          borderColor: '#eef0f5',
-          strokeDashArray: 5,
-          xaxis: { lines: { show: false } },
-        },
-        tooltip: {
-          theme: 'light',
-          y: { formatter: (val: number) => '$' + val.toLocaleString() },
-        },
-      });
-      this.earningsChart.render();
+  private loadTickets(): void {
+    this.ticketsLoading.set(true);
+    this.ticketsService.getMyAssignments().subscribe({
+      next: (list) => {
+        this.tickets.set(list);
+        this.ticketsLoading.set(false);
+      },
+      error: () => {
+        this.ticketsLoading.set(false);
+        this.showToast('error', 'Failed to load tickets');
+      },
     });
-
-    this.service.getCategoryEarnings().subscribe((c) => this.categories.set(c));
-    this.service.getRecentTickets().subscribe((t) => this.recentTickets.set(t));
   }
 
-  formatMoney(n: number): string {
-    return '$' + n.toLocaleString('en-US');
+  // ── ACCEPT ─────────────────────────────────────────────────────────────────
+  accept(ticket: TicketDetailDto): void {
+    const assignmentId = ticket.vendorAssignment?.id;
+    if (!assignmentId) return;
+    this.busyId.set(assignmentId);
+    this.ticketsService.acceptAssignment(assignmentId).subscribe({
+      next: () => {
+        this.updateStatus(ticket.id, 'VendorAccepted');
+        this.busyId.set(null);
+        this.showToast('success', 'Ticket accepted — ready to start work');
+      },
+      error: () => {
+        this.busyId.set(null);
+        this.showToast('error', 'Failed to accept ticket');
+      },
+    });
   }
 
-  statusLabel(s: TicketStatus): string {
-    return {
-      open: 'Open',
-      in_progress: 'In Progress',
-      completed: 'Completed',
-      cancelled: 'Cancelled',
-    }[s];
+  // ── REJECT ─────────────────────────────────────────────────────────────────
+  openRejectModal(ticket: TicketDetailDto): void {
+    this.rejectingTicket.set(ticket);
+    this.rejectReason.set('');
+    this.showRejectModal.set(true);
   }
 
-  paymentLabel(p: PaymentStatus): string {
-    return { pending: 'Pending', paid: 'Paid', overdue: 'Overdue' }[p];
+  closeRejectModal(): void {
+    this.showRejectModal.set(false);
+    this.rejectingTicket.set(null);
   }
 
-  timeAgo(date: string): string {
-    const diff = (Date.now() - new Date(date).getTime()) / 1000;
-    if (diff < 60) return 'Just now';
-    if (diff < 3600) return `${Math.floor(diff / 60)} min ago`;
-    if (diff < 86400) return `${Math.floor(diff / 3600)} hr ago`;
-    return `${Math.floor(diff / 86400)} day(s) ago`;
+  confirmReject(): void {
+    const ticket = this.rejectingTicket();
+    const assignmentId = ticket?.vendorAssignment?.id;
+    if (!ticket || !assignmentId || !this.rejectReason().trim()) return;
+    this.busyId.set(assignmentId);
+    this.ticketsService.rejectAssignment(assignmentId, this.rejectReason()).subscribe({
+      next: () => {
+        this.tickets.update((list) => list.filter((t) => t.id !== ticket.id));
+        this.busyId.set(null);
+        this.closeRejectModal();
+        this.showToast('success', 'Ticket rejected');
+      },
+      error: () => {
+        this.busyId.set(null);
+        this.showToast('error', 'Failed to reject ticket');
+      },
+    });
   }
 
-  totalCategoryEarnings(): number {
-    return this.categories().reduce((sum, c) => sum + c.totalEarnings, 0);
+  // ── START WORK ─────────────────────────────────────────────────────────────
+  startWork(ticket: TicketDetailDto): void {
+    this.busyId.set(ticket.id);
+    this.ticketsService.startWork(ticket.id).subscribe({
+      next: () => {
+        this.updateStatus(ticket.id, 'InProgress');
+        this.busyId.set(null);
+        this.showToast('success', 'Work started — status is now In Progress');
+      },
+      error: () => {
+        this.busyId.set(null);
+        this.showToast('error', 'Failed to start work');
+      },
+    });
   }
 
-  categoryPercent(c: CategoryEarnings): number {
-    const total = this.totalCategoryEarnings();
-    return total > 0 ? (c.totalEarnings / total) * 100 : 0;
+  // ── SET PRICE ──────────────────────────────────────────────────────────────
+  openPriceModal(ticket: TicketDetailDto): void {
+    this.pricingTicket.set(ticket);
+    this.priceAmount.set(ticket.payment?.amount ?? 0);
+    this.priceCurrency.set(ticket.payment?.currency ?? 'EGP');
+    this.showPriceModal.set(true);
   }
+
+  closePriceModal(): void {
+    this.showPriceModal.set(false);
+    this.pricingTicket.set(null);
+  }
+
+  confirmPrice(): void {
+    const ticket = this.pricingTicket();
+    if (!ticket || this.priceAmount() <= 0) return;
+    this.busyId.set(ticket.id);
+    this.ticketsService.setPrice(ticket.id, this.priceAmount(), this.priceCurrency()).subscribe({
+      next: (updated) => {
+        this.tickets.update((list) => list.map((t) => (t.id === ticket.id ? updated : t)));
+        this.busyId.set(null);
+        this.closePriceModal();
+        this.showToast('success', 'Price set successfully');
+      },
+      error: () => {
+        this.busyId.set(null);
+        this.showToast('error', 'Failed to set price');
+      },
+    });
+  }
+
+  // ── COMPLETE WORK ──────────────────────────────────────────────────────────
+  completeWork(ticket: TicketDetailDto): void {
+    this.busyId.set(ticket.id);
+    this.ticketsService.completeWork(ticket.id).subscribe({
+      next: () => {
+        this.updateStatus(ticket.id, 'AwaitingPayment');
+        this.busyId.set(null);
+        this.showToast('success', 'Work completed — awaiting payment');
+      },
+      error: () => {
+        this.busyId.set(null);
+        this.showToast('error', 'Failed to complete work');
+      },
+    });
+  }
+
+  // ── CONFIRM PAYMENT ────────────────────────────────────────────────────────
+  confirmPayment(ticket: TicketDetailDto): void {
+    const payment = ticket.payment;
+    if (!payment?.transactionId) return;
+    this.busyId.set(ticket.id);
+    this.ticketsService.confirmPayment(payment.id, payment.transactionId).subscribe({
+      next: () => {
+        this.tickets.update((list) => list.filter((t) => t.id !== ticket.id));
+        this.busyId.set(null);
+        this.showToast('success', 'Payment confirmed — ticket completed!');
+      },
+      error: () => {
+        this.busyId.set(null);
+        this.showToast('error', 'Failed to confirm payment');
+      },
+    });
+  }
+
+  // ── Helpers ────────────────────────────────────────────────────────────────
+  private updateStatus(ticketId: string, status: string): void {
+    this.tickets.update((list) =>
+      list.map((t) => (t.id === ticketId ? { ...t, status } : t)),
+    );
+  }
+
+  showToast(type: 'success' | 'error', text: string): void {
+    this.toast.set({ type, text });
+    setTimeout(() => this.toast.set(null), 3500);
+  }
+
+  isBusy(id: string | undefined): boolean {
+    if (!id) return false;
+    return this.busyId() === id;
+  }
+
+  formatNum(n: number, decimals = 0): string {
+    return n.toLocaleString('en-US', {
+      minimumFractionDigits: decimals,
+      maximumFractionDigits: decimals,
+    });
+  }
+
+  formatDate(iso: string): string {
+    return new Date(iso).toLocaleDateString('en-US', {
+      year: 'numeric',
+      month: 'short',
+      day: 'numeric',
+    });
+  }
+
+  priorityClass(p: string): string {
+    return (
+      { Emergency: 'priority--emergency', Medium: 'priority--medium', Low: 'priority--low' }[p] ??
+      'priority--low'
+    );
+  }
+
+  priorityLabel(p: string): string {
+    return p;
+  }
+
+  statusLabel(s: string): string {
+    return (
+      {
+        AssignedToVendor: 'Assigned',
+        VendorAccepted: 'Accepted',
+        InProgress: 'In Progress',
+        AwaitingPayment: 'Awaiting Payment',
+        Completed: 'Completed',
+        Rejected: 'Rejected',
+      }[s] ?? s
+    );
+  }
+
+  statusClass(s: string): string {
+    return (
+      {
+        AssignedToVendor: 'status--pending',
+        VendorAccepted: 'status--accepted',
+        InProgress: 'status--inprogress',
+        AwaitingPayment: 'status--awaiting',
+        Completed: 'status--completed',
+        Rejected: 'status--rejected',
+      }[s] ?? ''
+    );
+  }
+
+  viewTickets(): void {
+    this.router.navigate(['/dashboard/maintenance/tickets']);
+  }
+
+  viewDetail(id: string): void {
+    this.router.navigate(['/dashboard/maintenance/tickets', id]);
+  }
+
+  readonly starsArray = [1, 2, 3, 4, 5];
+  readonly skeletonArray = [1, 2, 3, 4];
 }

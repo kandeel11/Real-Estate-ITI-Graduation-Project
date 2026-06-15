@@ -19,7 +19,7 @@
         .brand-logo {
             width: 42px;
             height: 42px;
-            background: linear-gradient(135deg, #f59e0b 0%, #f97316 100%);
+            background: linear-gradient(135deg, #3525cd 0%, #4f46e5 100%);
             border-radius: 12px;
             display: flex;
             align-items: center;
@@ -27,7 +27,7 @@
             color: #fff;
             font-size: 17px;
             flex-shrink: 0;
-            box-shadow: 0 6px 16px rgba(245, 158, 11, 0.3);
+            box-shadow: 0 6px 16px rgba(79, 70, 229, 0.3);
         }
 
         .brand-text {
@@ -109,14 +109,14 @@
     }
 
     &:hover {
-        background: #fff7ed;
-        color: #f59e0b;
+        background: #eef2ff;
+        color: #4f46e5;
     }
 
     &.active {
-        background: linear-gradient(135deg, #f59e0b 0%, #f97316 100%);
+        background: linear-gradient(135deg, #3525cd 0%, #4f46e5 100%);
         color: #fff;
-        box-shadow: 0 8px 20px rgba(245, 158, 11, 0.3);
+        box-shadow: 0 8px 20px rgba(79, 70, 229, 0.3);
 
         .nav-badge {
             background: rgba(255, 255, 255, 0.25);

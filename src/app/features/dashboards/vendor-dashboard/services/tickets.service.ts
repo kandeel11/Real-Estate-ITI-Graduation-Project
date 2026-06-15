@@ -3,16 +3,31 @@ import { Injectable, inject } from '@angular/core';
 import { Observable } from 'rxjs';
 import { timeout } from 'rxjs/operators';
 import { environment } from '../../../../../environments/environment';
-import { AssignedTicket, TicketPayment } from '../models';
+import { TicketDetailDto } from '../models';
 
 @Injectable({ providedIn: 'root' })
 export class TicketsService {
   private http = inject(HttpClient);
   private base = environment.apiUrl;
 
-  getMyAssignments(): Observable<AssignedTicket[]> {
+  /** Active tickets only — pending + accepted, not rejected (used by Overview) */
+  getMyAssignments(): Observable<TicketDetailDto[]> {
     return this.http
-      .get<AssignedTicket[]>(`${this.base}/maintenance/tickets/my-assignments`)
+      .get<TicketDetailDto[]>(`${this.base}/maintenance/tickets/my-assignments`)
+      .pipe(timeout(15000));
+  }
+
+  /** All tickets ever assigned, including history/completed/rejected (used by Tickets page) */
+  getVendorDashboard(): Observable<TicketDetailDto[]> {
+    return this.http
+      .get<TicketDetailDto[]>(`${this.base}/maintenance/tickets/vendor-dashboard`)
+      .pipe(timeout(15000));
+  }
+
+  /** Single ticket detail */
+  getTicketById(id: string): Observable<TicketDetailDto> {
+    return this.http
+      .get<TicketDetailDto>(`${this.base}/maintenance/tickets/${id}`)
       .pipe(timeout(15000));
   }
 
@@ -34,25 +49,25 @@ export class TicketsService {
     return this.http.post<void>(`${this.base}/maintenance/tickets/${ticketId}/start-work`, {});
   }
 
-  setPrice(ticketId: string, amount: number, currency: string): Observable<TicketPayment> {
-    return this.http.post<TicketPayment>(`${this.base}/maintenance/tickets/${ticketId}/payments`, {
-      amount,
-      currency,
-    });
+  setPrice(ticketId: string, amount: number, currency: string): Observable<TicketDetailDto> {
+    return this.http.post<TicketDetailDto>(
+      `${this.base}/maintenance/tickets/${ticketId}/payments`,
+      { amount, currency },
+    );
   }
 
   completeWork(ticketId: string): Observable<void> {
     return this.http.post<void>(`${this.base}/maintenance/tickets/${ticketId}/complete-work`, {});
   }
 
-  getPayments(ticketId: string): Observable<TicketPayment[]> {
-    return this.http.get<TicketPayment[]>(`${this.base}/maintenance/tickets/${ticketId}/payments`);
-  }
-
-  confirmPayment(paymentId: string): Observable<void> {
+  /**
+   * Confirm payment received.
+   * Only call when payment.transactionId is already set (payer submitted payment).
+   */
+  confirmPayment(paymentId: string, transactionId: string): Observable<void> {
     return this.http.post<void>(
       `${this.base}/maintenance/tickets/payments/${paymentId}/confirm`,
-      {},
+      { transactionId },
     );
   }
 }
