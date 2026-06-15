@@ -309,6 +309,21 @@ public class Property : BaseEntity
         AddDomainEvent(new PropertyRentedEvent(Id, OwnerId, CompanyId));
     }
 
+    /// <summary>
+    /// Returns a rented property to the market when its lease ends. Idempotent —
+    /// a no-op unless the property is currently Rented, so the daily expiry sweep
+    /// can run safely without double-restoring the usage slot.
+    /// </summary>
+    public void MarkAsAvailable()
+    {
+        if (Status != PropertyStatus.Rented)
+            return;
+
+        Status = PropertyStatus.Active;
+        UpdatedAt = DateTime.UtcNow;
+        AddDomainEvent(new PropertyBecameAvailableEvent(Id, OwnerId, CompanyId));
+    }
+
     public void MarkAsInactive()
     {
         Status = PropertyStatus.Inactive;
