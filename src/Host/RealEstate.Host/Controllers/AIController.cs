@@ -1,4 +1,5 @@
 ﻿using AI.Application.DTOs;
+using AI.Application.Features.AdminAnalytics;
 using AI.Application.Features.Chatbot.Commands.SendMessage;
 using AI.Application.Features.Chatbot.Queries.GetSessionHistory;
 using AI.Application.Features.Chatbot.Queries.GetUserSessions;
@@ -109,6 +110,35 @@ namespace RealEstate.Host.Controllers
             catch (UnauthorizedAccessException ex)
             {
                 return Unauthorized(new { message = ex.Message });
+            }
+        }
+
+        #endregion
+
+        #region Admin Analytics Chatbot
+
+        /// <summary>
+        /// Sends a natural language question to the Admin Analytics chatbot.
+        /// Returns a data-grounded answer drawn from live system metrics across
+        /// properties, payments, subscriptions, and users.
+        /// Restricted to administrators only.
+        /// </summary>
+        [HttpPost("admin/analytics/chat")]
+        [Authorize(Policy = "AdminOnly")]
+        [ProducesResponseType(typeof(AdminAnalyticsResponse), StatusCodes.Status200OK)]
+        [ProducesResponseType(StatusCodes.Status403Forbidden)]
+        public async Task<IActionResult> AdminAnalyticsChat(
+            [FromBody] AdminAnalyticsQuery query,
+            CancellationToken cancellationToken)
+        {
+            try
+            {
+                var response = await _sender.Send(query, cancellationToken);
+                return Ok(response);
+            }
+            catch (InvalidOperationException ex)
+            {
+                return Conflict(new { error = ex.Message });
             }
         }
 

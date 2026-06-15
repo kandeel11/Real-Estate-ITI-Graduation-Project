@@ -8,6 +8,7 @@ using Payment.Infrastructure.Persistence.Repositories;
 using Payment.Infrastructure.Services;
 using Payment.Infrastructure.Services.Stripe;
 using Payment.Infrastructure.Settings;
+using RealEstate.Shared.Kernel.Analytics;
 
 namespace Payment.Infrastructure;
 
@@ -28,6 +29,7 @@ public static class PaymentModuleExtensions
             sp.GetRequiredService<PaymentDbContext>());
 
         services.AddScoped<IRentPaymentRepository, RentPaymentRepository>();
+        services.AddScoped<IPaymentAnalyticsService, PaymentAnalyticsService>();
 
         services.Configure<StripeSettings>(
             configuration.GetSection(StripeSettings.SectionName));
