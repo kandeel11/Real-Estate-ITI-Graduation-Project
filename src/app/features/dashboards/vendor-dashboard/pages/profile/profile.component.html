@@ -1,0 +1,210 @@
+<div class="profile-page">
+
+  <!-- Toast -->
+  @if (toast()) {
+  <div class="p-toast" [class.p-toast--error]="toast()!.type === 'error'">
+    <i class="fa-solid" [class]="toast()!.type === 'success' ? 'fa-circle-check' : 'fa-circle-xmark'"></i>
+    {{ toast()!.msg }}
+  </div>
+  }
+
+  <!-- Loading Skeleton -->
+  @if (loading()) {
+  <div class="p-skeleton-wrap">
+    <div class="p-skeleton-hero"></div>
+    <div class="p-skeleton-body">
+      <div class="p-sk-line"></div>
+      <div class="p-sk-line short"></div>
+      <div class="p-sk-line"></div>
+    </div>
+  </div>
+  }
+
+  @if (!loading() && profile()) {
+
+  <!-- Hero Header -->
+  <div class="p-hero">
+    <div class="p-hero__avatar">
+      @if (profile()!.logoUrl) {
+        <img [src]="profile()!.logoUrl" [alt]="profile()!.companyName" />
+      } @else {
+        <span>{{ initials }}</span>
+      }
+    </div>
+
+    <div class="p-hero__info">
+      <h1>{{ profile()!.companyName }}</h1>
+      <p class="p-hero__sub">
+        <i class="fa-solid fa-envelope"></i>&nbsp;{{ profile()!.email }}
+        &nbsp;·&nbsp;
+        <i class="fa-solid fa-location-dot"></i>&nbsp;{{ profile()!.city }}
+        &nbsp;·&nbsp;
+        <i class="fa-solid fa-road"></i>&nbsp;{{ profile()!.serviceRadiusKm }} km radius
+      </p>
+      <div class="p-hero__badges">
+        <span class="p-badge" [class.p-badge--green]="profile()!.isActive" [class.p-badge--red]="!profile()!.isActive">
+          <i class="fa-solid fa-circle"></i>
+          {{ profile()!.isActive ? 'Active' : 'Inactive' }}
+        </span>
+        <span class="p-badge p-badge--amber">
+          <i class="fa-solid fa-star"></i>
+          {{ profile()!.averageRating | number: '1.1-1' }} Rating
+        </span>
+        <span class="p-badge p-badge--indigo">
+          <i class="fa-solid fa-calendar-days"></i>
+          Member since {{ formatDate(profile()!.createdAt) }}
+        </span>
+      </div>
+    </div>
+
+    <div class="p-hero__actions">
+      @if (!editMode()) {
+      <button class="p-btn p-btn--primary" (click)="startEdit()">
+        <i class="fa-solid fa-pen"></i> Edit Profile
+      </button>
+      }
+    </div>
+  </div>
+
+  <!-- Stats Row -->
+  <div class="p-stats">
+    <div class="p-stat">
+      <div class="p-stat__icon p-stat__icon--green"><i class="fa-solid fa-circle-check"></i></div>
+      <div>
+        <strong>{{ profile()!.completedTicketsCount }}</strong>
+        <span>Completed</span>
+      </div>
+    </div>
+    <div class="p-stat">
+      <div class="p-stat__icon p-stat__icon--blue"><i class="fa-solid fa-spinner"></i></div>
+      <div>
+        <strong>{{ profile()!.activeTicketsCount }}</strong>
+        <span>Active</span>
+      </div>
+    </div>
+    <div class="p-stat">
+      <div class="p-stat__icon p-stat__icon--amber"><i class="fa-solid fa-star"></i></div>
+      <div>
+        <strong>{{ profile()!.averageRating | number: '1.1-1' }}</strong>
+        <span>Avg Rating</span>
+      </div>
+    </div>
+    <div class="p-stat">
+      <div class="p-stat__icon p-stat__icon--purple"><i class="fa-solid fa-tags"></i></div>
+      <div>
+        <strong>{{ profile()!.categories.length }}</strong>
+        <span>Categories</span>
+      </div>
+    </div>
+  </div>
+
+  <!-- View Mode -->
+  @if (!editMode()) {
+  <div class="p-body">
+
+    <div class="p-card">
+      <h2 class="p-card__title"><i class="fa-solid fa-circle-info"></i> Company Details</h2>
+      <div class="p-grid">
+        <div class="p-field">
+          <label>Company Name</label>
+          <p>{{ profile()!.companyName }}</p>
+        </div>
+        <div class="p-field">
+          <label>Phone</label>
+          <p>{{ profile()!.phone }}</p>
+        </div>
+        <div class="p-field">
+          <label>City</label>
+          <p>{{ profile()!.city }}</p>
+        </div>
+        <div class="p-field">
+          <label>Service Radius</label>
+          <p>{{ profile()!.serviceRadiusKm }} km</p>
+        </div>
+        @if (profile()!.description) {
+        <div class="p-field p-field--full">
+          <label>Description</label>
+          <p>{{ profile()!.description }}</p>
+        </div>
+        }
+        @if (profile()!.logoUrl) {
+        <div class="p-field p-field--full">
+          <label>Logo URL</label>
+          <p class="p-url">{{ profile()!.logoUrl }}</p>
+        </div>
+        }
+      </div>
+    </div>
+
+    <div class="p-card">
+      <h2 class="p-card__title"><i class="fa-solid fa-tags"></i> Service Categories</h2>
+      <div class="p-categories">
+        @for (cat of profile()!.categories; track cat.id) {
+        <div class="p-category-tag">
+          <i class="fa-solid fa-wrench"></i>
+          <span>{{ cat.name }}</span>
+        </div>
+        } @empty {
+        <p class="p-empty">No categories assigned.</p>
+        }
+      </div>
+    </div>
+
+  </div>
+  }
+
+  <!-- Edit Mode -->
+  @if (editMode()) {
+  <div class="p-edit-wrap">
+    <div class="p-card">
+      <h2 class="p-card__title"><i class="fa-solid fa-pen-to-square"></i> Edit Profile</h2>
+
+      <div class="p-form-grid">
+        <div class="p-form-group">
+          <label>Company Name</label>
+          <input type="text" [(ngModel)]="form.companyName" placeholder="Company name" />
+        </div>
+        <div class="p-form-group">
+          <label>Phone</label>
+          <input type="tel" [(ngModel)]="form.phone" placeholder="Phone number" />
+        </div>
+        <div class="p-form-group">
+          <label>City</label>
+          <input type="text" [(ngModel)]="form.city" placeholder="City" />
+        </div>
+        <div class="p-form-group">
+          <label>Service Radius (km)</label>
+          <input type="number" [(ngModel)]="form.serviceRadiusKm" min="1" max="500" />
+        </div>
+        <div class="p-form-group p-form-group--full">
+          <label>Description</label>
+          <textarea rows="4" [(ngModel)]="form.description" placeholder="Describe your company and services..."></textarea>
+        </div>
+        <div class="p-form-group p-form-group--full">
+          <label>Logo URL</label>
+          <input type="url" [(ngModel)]="form.logoUrl" placeholder="https://example.com/logo.png" />
+        </div>
+      </div>
+
+      <div class="p-categories-note">
+        <i class="fa-solid fa-circle-info"></i>
+        Your current service categories will be preserved when saving. Contact support to manage category assignments.
+      </div>
+
+      <div class="p-form-actions">
+        <button class="p-btn p-btn--ghost" (click)="cancelEdit()">Cancel</button>
+        <button class="p-btn p-btn--primary" [disabled]="saving()" (click)="saveProfile()">
+          @if (saving()) {
+          <i class="fa-solid fa-spinner fa-spin"></i> Saving…
+          } @else {
+          <i class="fa-solid fa-floppy-disk"></i> Save Changes
+          }
+        </button>
+      </div>
+    </div>
+  </div>
+  }
+
+  }
+
+</div>

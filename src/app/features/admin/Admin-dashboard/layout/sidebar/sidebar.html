@@ -1,0 +1,54 @@
+<aside class="sidebar" [class.collapsed]="collapsed()">
+
+  <!-- Brand -->
+  <div class="sidebar__brand">
+    <div class="brand-logo">
+      <i class="fa-solid fa-building-shield"></i>
+    </div>
+    @if (!collapsed()) {
+    <div class="brand-text">
+      <h2>Estatein</h2>
+      <span>{{ 'ADMIN.SIDEBAR.ADMIN_ACCESS' | translate }}</span>
+    </div>
+    }
+  </div>
+
+  <!-- Nav -->
+  <nav class="sidebar__nav">
+    @for (item of navItems; track item.route) {
+    <a [routerLink]="item.route" routerLinkActive="active" class="nav-item"
+      [title]="item.labelKey | translate">
+      <span class="nav-icon"><i [class]="item.icon"></i></span>
+      @if (!collapsed()) {
+      <span class="nav-label">{{ item.labelKey | translate }}</span>
+      @if (item.badge) {
+      <span class="nav-badge">{{ item.badge }}</span>
+      }
+      }
+    </a>
+    }
+  </nav>
+
+  <!-- Footer -->
+  <div class="sidebar__footer">
+    <div class="footer-divider"></div>
+
+    <button class="ai-btn" routerLink="/dashboard/admin/ai"
+      routerLinkActive="active" [title]="'ADMIN.SIDEBAR.AI_INSIGHTS' | translate">
+      <span class="nav-icon"><i class="fa-solid fa-wand-magic-sparkles"></i></span>
+      @if (!collapsed()) { <span class="nav-label">{{ 'ADMIN.SIDEBAR.AI_INSIGHTS' | translate }}</span> }
+    </button>
+
+    <a class="nav-item" routerLink="/support" routerLinkActive="active"
+      [title]="'ADMIN.SIDEBAR.SUPPORT' | translate">
+      <span class="nav-icon"><i class="fa-regular fa-circle-question"></i></span>
+      @if (!collapsed()) { <span class="nav-label">{{ 'ADMIN.SIDEBAR.SUPPORT' | translate }}</span> }
+    </a>
+
+    <button class="nav-item logout" (click)="logout()" [title]="'ADMIN.SIDEBAR.LOGOUT' | translate">
+      <span class="nav-icon"><i class="fa-solid fa-right-from-bracket"></i></span>
+      @if (!collapsed()) { <span class="nav-label">{{ 'ADMIN.SIDEBAR.LOGOUT' | translate }}</span> }
+    </button>
+  </div>
+
+</aside>

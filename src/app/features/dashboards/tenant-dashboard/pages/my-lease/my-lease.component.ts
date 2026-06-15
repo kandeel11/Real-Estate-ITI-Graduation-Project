@@ -4,7 +4,7 @@ import { FormsModule } from '@angular/forms';
 import { TranslatePipe } from '@ngx-translate/core';
 import { forkJoin } from 'rxjs';
 import { finalize } from 'rxjs';
-import { LeaseService, ApiLease } from '../../services/lease.service';
+import { LeaseService, ApiLease, LeaseOffer } from '../../services/lease.service';
 import { AiService } from '../../services/ai.service';
 
 interface LeaseView {
@@ -17,6 +17,8 @@ interface LeaseView {
   endDate: string;
   paymentDayOfMonth: number;
   isActive: boolean;
+  /** 'active' = signed & running, 'pending' = awaiting tenant acceptance, 'ended' = expired/declined. */
+  status: 'active' | 'pending' | 'ended';
   contractFileUrl: string;
   daysUntilExpiry: number;
 }
@@ -44,12 +46,16 @@ export class MyLeaseComponent implements OnInit {
   protected leaseHistory = signal<LeaseView[]>([]);
   protected expandedLeaseId = signal<string | null>(null);
 
+  protected pendingOffer = signal<LeaseOffer | null>(null);
+  protected offerActionInProgress = signal(false);
+
   protected chatMessages = signal<ChatEntry[]>([]);
   protected chatInput = '';
   protected chatLoading = signal(false);
 
   ngOnInit(): void {
     this.loadData();
+    this.leaseService.getPendingOffer().subscribe(offer => this.pendingOffer.set(offer));
   }
 
   loadData(): void {
@@ -83,6 +89,14 @@ export class MyLeaseComponent implements OnInit {
     const end = new Date(lease.endDate).getTime();
     const daysUntilExpiry = Math.max(0, Math.ceil((end - Date.now()) / 86_400_000));
 
+    // A lease the broker sent but the tenant hasn't accepted yet is "extracted" & not active —
+    // that's pending review, not ended.
+    const status: 'active' | 'pending' | 'ended' = lease.isActive
+      ? 'active'
+      : lease.extractionStatus === 'extracted'
+        ? 'pending'
+        : 'ended';
+
     return {
       id: lease.id,
       propertyId: lease.propertyId,
@@ -93,6 +107,7 @@ export class MyLeaseComponent implements OnInit {
       endDate: lease.endDate,
       paymentDayOfMonth: lease.paymentDayOfMonth,
       isActive: lease.isActive,
+      status,
       contractFileUrl: lease.contractFileUrl,
       daysUntilExpiry,
     };
@@ -109,6 +124,24 @@ export class MyLeaseComponent implements OnInit {
     if (n === 2) return 'nd';
     if (n === 3) return 'rd';
     return 'th';
+  }
+
+  acceptOffer(): void {
+    const offer = this.pendingOffer();
+    if (!offer || this.offerActionInProgress()) return;
+    this.offerActionInProgress.set(true);
+    this.leaseService.acceptOffer(offer.id)
+      .pipe(finalize(() => this.offerActionInProgress.set(false)))
+      .subscribe({ next: () => { this.pendingOffer.set(null); this.loadData(); } });
+  }
+
+  declineOffer(): void {
+    const offer = this.pendingOffer();
+    if (!offer || this.offerActionInProgress()) return;
+    this.offerActionInProgress.set(true);
+    this.leaseService.declineOffer(offer.id)
+      .pipe(finalize(() => this.offerActionInProgress.set(false)))
+      .subscribe({ next: () => this.pendingOffer.set(null) });
   }
 
   downloadContract(lease: LeaseView): void {

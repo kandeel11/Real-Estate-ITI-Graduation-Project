@@ -51,6 +51,67 @@
   font-weight: 600;
 }
 
+/* ── PENDING OFFER ─────────────────────────────── */
+.pending-offer-card {
+  background: linear-gradient(135deg, #fffbeb 0%, #fef3c7 100%);
+  border: 1.5px solid #fbbf24;
+  border-radius: 16px;
+  padding: 20px 24px;
+  margin-bottom: 24px;
+}
+
+.offer-header {
+  display: flex;
+  align-items: center;
+  gap: 14px;
+  margin-bottom: 16px;
+}
+
+.offer-icon {
+  font-size: 28px;
+  color: #d97706;
+  flex-shrink: 0;
+}
+
+.offer-title {
+  font-size: 15px;
+  font-weight: 700;
+  color: #92400e;
+  margin: 0 0 2px;
+}
+
+.offer-property {
+  font-size: 13px;
+  color: #78350f;
+  margin: 0;
+}
+
+.offer-terms {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(160px, 1fr));
+  gap: 10px 20px;
+  margin-bottom: 18px;
+}
+
+.offer-term { display: flex; flex-direction: column; gap: 2px; }
+.term-label { font-size: 11px; font-weight: 500; color: #92400e; text-transform: uppercase; letter-spacing: .04em; }
+.term-value { font-size: 14px; font-weight: 600; color: #1c1917; }
+.term-value.rent { color: #15803d; font-size: 15px; }
+
+.offer-actions {
+  display: flex;
+  gap: 10px;
+  justify-content: flex-end;
+  flex-wrap: wrap;
+}
+
+.btn { display: inline-flex; align-items: center; gap: 6px; padding: 9px 20px; border-radius: var(--radius-md); font-size: 14px; font-weight: 600; cursor: pointer; border: 1.5px solid transparent; transition: all .15s; }
+.btn-success { background: #dcfce7; color: #15803d; border-color: #86efac; }
+.btn-success:hover { background: #16a34a; color: #fff; border-color: #16a34a; }
+.btn-outline-secondary { background: transparent; color: #6b7280; border-color: #d1d5db; }
+.btn-outline-secondary:hover { background: #f3f4f6; }
+.btn:disabled { opacity: .55; cursor: not-allowed; }
+
 /* ── LOADING / EMPTY ───────────────────────────── */
 .loading-state {
   display: flex;
@@ -93,8 +154,9 @@
   font-weight: 600;
 }
 
-.badge-active { background: var(--badge-active-bg); color: var(--badge-active-text); }
-.badge-ended  { background: var(--badge-ended-bg);  color: var(--badge-ended-text); }
+.badge-active  { background: var(--badge-active-bg); color: var(--badge-active-text); }
+.badge-ended   { background: var(--badge-ended-bg);  color: var(--badge-ended-text); }
+.badge-pending { background: #fef3c7; color: #92400e; }
 
 /* ── LEASE CARD ────────────────────────────────── */
 .lease-card {

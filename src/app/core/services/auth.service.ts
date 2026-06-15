@@ -1,17 +1,3 @@
-/**
- * Authentication Service
- * Manages user authentication state via Angular Signals
- * Provides reactive role-based access control
- *
- * Real backend: POST /api/auth/login → { accessToken, refreshToken, expiresAt,
- * user: { id, email, fullName, role, companyId, isEmailVerified } }.
- * Backend role names differ from frontend routes (company_manager → company).
- *
- * `useMock` keeps login usable while the backend is down: any password works
- * and the role is derived from the email's local part — use admin@…,
- * company@…, broker@…, owner@…, anything else signs in as tenant.
- */
-
 import { Injectable, signal, computed, inject } from '@angular/core';
 import { HttpClient } from '@angular/common/http';
 import { Router } from '@angular/router';
@@ -36,7 +22,6 @@ export interface AuthUser {
   isEmailVerified?: boolean;
 }
 
-/** Raw backend login response (role is the backend's name, e.g. company_manager). */
 export interface LoginResponse {
   accessToken: string;
   refreshToken: string;
@@ -73,7 +58,7 @@ const BACKEND_ROLE_MAP: Record<string, UserRole> = {
 export class AuthService {
   private readonly http = inject(HttpClient);
   private readonly router = inject(Router);
-  private useMock = false; // ← flip to true for offline demos (no backend)
+  private useMock = false; // real backend auth
 
   private logoutTimer: ReturnType<typeof setTimeout> | null = null;
 
@@ -88,11 +73,6 @@ export class AuthService {
     this.initializeAuth();
   }
 
-  /**
-   * Initialize authentication from stored session.
-   * A session restored with an already-expired token is discarded so guards
-   * send the user straight to login.
-   */
   private initializeAuth(): void {
     const storedUser = localStorage.getItem('auth_user');
     if (!storedUser) return;
@@ -113,10 +93,6 @@ export class AuthService {
     }
   }
 
-  // ── JWT expiry handling ─────────────────────────────────────────
-
-  /** Epoch ms of the token's `exp` claim, or null if it can't be decoded
-   *  (mock tokens / malformed tokens never expire client-side). */
   private getTokenExpiry(token: string): number | null {
     try {
       const payload = JSON.parse(
@@ -135,10 +111,6 @@ export class AuthService {
     return expiresAt !== null && Date.now() >= expiresAt;
   }
 
-  /**
-   * Clear the session and send the user to login with a "session expired"
-   * notice, remembering where they were so login can return them there.
-   */
   sessionExpired(): void {
     const returnUrl = this.router.url;
     this.clearAuth();
@@ -152,20 +124,14 @@ export class AuthService {
     });
   }
 
-  /** Logs out automatically the moment the token expires, even when idle. */
   private scheduleAutoLogout(token: string): void {
     if (this.logoutTimer) clearTimeout(this.logoutTimer);
     const expiresAt = this.getTokenExpiry(token);
     if (expiresAt === null) return;
-    const delay = Math.min(Math.max(expiresAt - Date.now(), 0), 0x7fffffff);
-    this.logoutTimer = setTimeout(() => this.sessionExpired(), delay);
+    const ms = Math.min(Math.max(expiresAt - Date.now(), 0), 0x7fffffff);
+    this.logoutTimer = setTimeout(() => this.sessionExpired(), ms);
   }
 
-  /**
-   * Authenticate user with credentials.
-   * Emits the signed-in user (with the backend role already mapped to the
-   * frontend role); auth state and tokens are stored as a side effect.
-   */
   login(email: string, password: string): Observable<AuthUser> {
     if (this.useMock) {
       const user = this.mockUserFor(email);
@@ -216,6 +182,14 @@ export class AuthService {
       );
   }
 
+  /** Change the signed-in user's password. */
+  changePassword(currentPassword: string, newPassword: string): Observable<void> {
+    return this.http.post<void>(
+      `${environment.apiUrl}${API_ENDPOINTS.AUTH.CHANGE_PASSWORD}`,
+      { currentPassword, newPassword }
+    );
+  }
+
   /** Map the backend's user to the frontend AuthUser (role name mapped). */
   toAuthUser(u: LoginResponse['user']): AuthUser {
     return {
@@ -228,7 +202,6 @@ export class AuthService {
     };
   }
 
-  /** Demo user — role derived from the email's local part. */
   private mockUserFor(email: string): AuthUser {
     const local = email.split('@')[0].toLowerCase();
     const role: UserRole = local.includes('admin')
@@ -249,7 +222,6 @@ export class AuthService {
     };
   }
 
-  /** Landing route for a role after sign-in. */
   dashboardRouteFor(role: UserRole | null): string {
     switch (role) {
       case 'admin':
@@ -259,11 +231,13 @@ export class AuthService {
       case 'broker':
         return '/dashboard/broker/overview';
       case 'tenant':
-        return '/dashboard'; // new tenant dashboard mounts at /dashboard root
+        return '/dashboard';
       case 'maintenance-company':
-        return '/dashboard/maintenance-company/overview';
+        return '/dashboard/maintenance/overview';
+      case 'owner':
+        return '/dashboard/landlord/overview';
       default:
-        return '/'; // owner has no dashboard yet
+        return '/';
     }
   }
 
@@ -292,7 +266,7 @@ export class AuthService {
     localStorage.removeItem('auth_user');
     localStorage.removeItem('auth_token');
     localStorage.removeItem('auth_refresh_token');
-    localStorage.removeItem('refresh_token'); // legacy key
+    localStorage.removeItem('refresh_token');
   }
 
   getToken(): string | null {
