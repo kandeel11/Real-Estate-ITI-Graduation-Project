@@ -36,6 +36,28 @@ export interface LoginResponse {
   };
 }
 
+export interface RegisterRequest {
+  fullName: string;
+  email: string;
+  phone: string;
+  nationalIdNumber: string;
+  role: 'owner' | 'broker' | 'tenant';
+  password: string;
+}
+
+export interface RegisterCompanyRequest {
+  adminFullName: string;
+  adminEmail: string;
+  adminPhone: string;
+  password: string;
+  companyName: string;
+  commercialRegister: string;
+  city: string;
+  address: string;
+  companyPhone: string;
+  companyEmail: string;
+}
+
 export interface RefreshResponse {
   accessToken: string;
   refreshToken: string;
@@ -180,6 +202,20 @@ export class AuthService {
           return throwError(() => err);
         })
       );
+  }
+
+  register(data: RegisterRequest): Observable<void> {
+    return this.http.post<void>(
+      `${environment.apiUrl}${API_ENDPOINTS.AUTH.REGISTER}`,
+      data
+    );
+  }
+
+  registerCompany(data: RegisterCompanyRequest): Observable<void> {
+    return this.http.post<void>(
+      `${environment.apiUrl}${API_ENDPOINTS.AUTH.REGISTER_COMPANY}`,
+      data
+    );
   }
 
   /** Change the signed-in user's password. */

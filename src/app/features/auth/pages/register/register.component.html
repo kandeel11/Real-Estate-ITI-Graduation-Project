@@ -1,169 +1,449 @@
-<div class="login-page">
+<div class="reg-page">
 
-  <!-- Brand panel -->
-  <div class="login-brand d-none d-lg-flex">
-    <div class="login-brand__overlay"></div>
-    <div class="login-brand__content">
-      <a routerLink="/" class="login-brand__logo">
+  <!-- ═══════════════════════════════════════════
+       LEFT — Brand panel
+  ═══════════════════════════════════════════ -->
+  <aside class="reg-brand">
+    <div class="reg-brand__dots"></div>
+    <div class="reg-brand__content" inView>
+
+      <a routerLink="/" class="reg-brand__logo">
         <i class="fa-solid fa-house-chimney"></i>
         <span>Estatein</span>
       </a>
-      <div class="login-brand__body">
-        <h2 class="login-brand__title">{{ 'AUTH.REGISTER.BRAND_TITLE' | translate }}</h2>
-        <p class="login-brand__subtitle">{{ 'AUTH.REGISTER.BRAND_SUBTITLE' | translate }}</p>
+
+      <div class="reg-brand__middle">
+        <div class="reg-brand__tag">
+          <i class="fa-solid fa-shield-halved"></i>
+          Trusted Platform
+        </div>
+
+        <h2 class="reg-brand__title">
+          Your next property<br>journey starts here
+        </h2>
+
+        <p class="reg-brand__sub">
+          Join thousands of owners, tenants, and brokers on Egypt's leading real estate platform.
+        </p>
+
+        <div class="reg-brand__features">
+          <div class="reg-brand__feat">
+            <div class="reg-brand__feat-icon">
+              <i class="fa-solid fa-house-circle-check"></i>
+            </div>
+            <span>10,000+ verified properties across Egypt</span>
+          </div>
+          <div class="reg-brand__feat">
+            <div class="reg-brand__feat-icon">
+              <i class="fa-solid fa-bolt"></i>
+            </div>
+            <span>Fast, secure, legally compliant transactions</span>
+          </div>
+          <div class="reg-brand__feat">
+            <div class="reg-brand__feat-icon">
+              <i class="fa-solid fa-handshake"></i>
+            </div>
+            <span>Connect with owners, brokers & companies</span>
+          </div>
+        </div>
       </div>
-      <div class="login-brand__stats">
-        <div class="login-brand__stat">
-          <span class="login-brand__stat-value">200+</span>
-          <span class="login-brand__stat-label">{{ 'AUTH.BRAND.STATS.CUSTOMERS' | translate }}</span>
+
+      <div class="reg-brand__stats">
+        <div class="reg-brand__stat">
+          <span class="reg-brand__stat-value">200+</span>
+          <span class="reg-brand__stat-label">Happy Customers</span>
         </div>
-        <div class="login-brand__stat">
-          <span class="login-brand__stat-value">10k+</span>
-          <span class="login-brand__stat-label">{{ 'AUTH.BRAND.STATS.PROPERTIES' | translate }}</span>
+        <div class="reg-brand__stat">
+          <span class="reg-brand__stat-value">10k+</span>
+          <span class="reg-brand__stat-label">Properties Listed</span>
         </div>
-        <div class="login-brand__stat">
-          <span class="login-brand__stat-value">16+</span>
-          <span class="login-brand__stat-label">{{ 'AUTH.BRAND.STATS.EXPERIENCE' | translate }}</span>
+        <div class="reg-brand__stat">
+          <span class="reg-brand__stat-value">16+</span>
+          <span class="reg-brand__stat-label">Years Experience</span>
         </div>
       </div>
+
     </div>
-  </div>
+  </aside>
 
-  <!-- Form panel -->
-  <div class="login-form-panel">
+  <!-- ═══════════════════════════════════════════
+       RIGHT — Form panel
+  ═══════════════════════════════════════════ -->
+  <main class="reg-panel">
 
-    <a routerLink="/" class="login-mobile-logo d-flex d-lg-none">
+    <a routerLink="/" class="reg-mobile-logo" inView>
       <i class="fa-solid fa-house-chimney"></i>
       <span>Estatein</span>
     </a>
 
-    <div class="login-card">
+    @switch (step()) {
 
-      <div class="login-card__header">
-        <h1 class="login-card__title">{{ 'AUTH.REGISTER.TITLE' | translate }}</h1>
-        <p class="login-card__subtitle">{{ 'AUTH.REGISTER.SUBTITLE' | translate }}</p>
-      </div>
-
-      <form [formGroup]="form" (ngSubmit)="onSubmit()" novalidate class="login-card__form">
-
-        @if (errorMsg) {
-          <div class="alert alert-danger py-2" role="alert">
-            <i class="fa-solid fa-circle-exclamation me-2"></i>{{ errorMsg }}
+      <!-- ─────────────────────────────────────
+           STEP 1 — Choose your role
+      ───────────────────────────────────── -->
+      @case ('pick-role') {
+        <div class="reg-card" inView [inViewDelay]="60">
+          <div class="reg-card__hd" inView [inViewDelay]="130">
+            <h1 class="reg-card__title">Create your account</h1>
+            <p class="reg-card__sub">How will you use Estatein? Choose what fits you best.</p>
           </div>
-        }
 
-        <!-- Full name -->
-        <div class="lf">
-          <label class="lf__label" for="fullName">{{ 'AUTH.REGISTER.FULL_NAME' | translate }}</label>
-          <div class="lf__wrap" [class.lf__wrap--err]="fullName.touched && fullName.invalid">
-            <i class="fa-regular fa-user lf__icon"></i>
-            <input id="fullName" type="text" formControlName="fullName" class="lf__input"
-              [placeholder]="'AUTH.REGISTER.FULL_NAME_PLACEHOLDER' | translate" autocomplete="name" />
+          <div class="rp-grid" inView [inViewDelay]="210">
+            @for (card of roleCards; track card.value) {
+              <button class="rp-item" type="button" (click)="selectRole(card.value)">
+                <i class="fa-solid fa-chevron-right rp-item__arrow"></i>
+                <div class="rp-item__icon" [style.background]="card.gradient">
+                  <i [class]="card.icon"></i>
+                </div>
+                <div class="rp-item__label">{{ card.label }}</div>
+                <div class="rp-item__desc">{{ card.subtitle }}</div>
+              </button>
+            }
           </div>
-          @if (fullName.touched && fullName.errors) {
-            <p class="lf__error">
-              @if (fullName.errors['required']) { {{ 'AUTH.REGISTER.ERRORS.NAME_REQUIRED' | translate }} }
-              @else { {{ 'AUTH.REGISTER.ERRORS.NAME_MIN' | translate }} }
-            </p>
-          }
+
+          <p class="reg-card__footer" inView [inViewDelay]="330">
+            Already have an account?
+            <a routerLink="/auth/login">Sign in</a>
+          </p>
         </div>
+      }
 
-        <!-- Email -->
-        <div class="lf">
-          <label class="lf__label" for="email">{{ 'AUTH.REGISTER.EMAIL' | translate }}</label>
-          <div class="lf__wrap" [class.lf__wrap--err]="email.touched && email.invalid">
-            <i class="fa-regular fa-envelope lf__icon"></i>
-            <input id="email" type="email" formControlName="email" class="lf__input"
-              [placeholder]="'AUTH.REGISTER.EMAIL_PLACEHOLDER' | translate" autocomplete="email" />
+      <!-- ─────────────────────────────────────
+           STEP 2a — Individual form
+      ───────────────────────────────────── -->
+      @case ('individual') {
+        <div class="reg-card" inView [inViewDelay]="60">
+
+          <div class="reg-card__hd" inView [inViewDelay]="120">
+            <button class="rp-back" type="button" (click)="back()">
+              <i class="fa-solid fa-arrow-left"></i>Back
+            </button>
+
+            @if (selectedCard) {
+              <div class="rp-badge" [style.background]="selectedCard.gradient">
+                <i [class]="selectedCard.icon"></i>{{ selectedCard.label }}
+              </div>
+            }
+
+            <h1 class="reg-card__title">Personal details</h1>
+            <p class="reg-card__sub">Enter your information to create your account</p>
           </div>
-          @if (email.touched && email.errors) {
-            <p class="lf__error">
-              @if (email.errors['required']) { {{ 'AUTH.REGISTER.ERRORS.EMAIL_REQUIRED' | translate }} }
-              @else { {{ 'AUTH.REGISTER.ERRORS.EMAIL_INVALID' | translate }} }
-            </p>
-          }
-        </div>
 
-        <!-- Phone -->
-        <div class="lf">
-          <label class="lf__label" for="phone">{{ 'AUTH.REGISTER.PHONE' | translate }}</label>
-          <div class="lf__wrap" [class.lf__wrap--err]="phone.touched && phone.invalid">
-            <i class="fa-solid fa-phone lf__icon"></i>
-            <input id="phone" type="tel" formControlName="phone" class="lf__input"
-              [placeholder]="'AUTH.REGISTER.PHONE_PLACEHOLDER' | translate" autocomplete="tel" />
-          </div>
-          @if (phone.touched && phone.errors) {
-            <p class="lf__error">{{ 'AUTH.REGISTER.ERRORS.PHONE_INVALID' | translate }}</p>
+          @if (errorMsg()) {
+            <div class="reg-alert">
+              <i class="fa-solid fa-circle-exclamation"></i>{{ errorMsg() }}
+            </div>
           }
-        </div>
 
-        <!-- Role -->
-        <div class="lf">
-          <label class="lf__label" for="role">{{ 'AUTH.REGISTER.ROLE' | translate }}</label>
-          <div class="lf__wrap" [class.lf__wrap--err]="role.touched && role.invalid">
-            <i class="fa-solid fa-id-badge lf__icon"></i>
-            <select id="role" formControlName="role" class="lf__input lf__select">
-              @for (r of roles; track r.value) {
-                <option [value]="r.value">{{ r.label }}</option>
+          <form [formGroup]="iForm" (ngSubmit)="submitIndividual()" novalidate class="lf-form">
+
+            <!-- Full name -->
+            <div class="lf" inView [inViewDelay]="180">
+              <label class="lf__label" for="i-name">Full Name</label>
+              <div class="lf__wrap" [class.lf__wrap--err]="iFullName.touched && iFullName.invalid">
+                <i class="fa-regular fa-user lf__icon"></i>
+                <input id="i-name" type="text" formControlName="fullName"
+                  class="lf__input" placeholder="Your full name" autocomplete="name" />
+              </div>
+              @if (iFullName.touched && iFullName.errors) {
+                <p class="lf__error">
+                  @if (iFullName.errors['required']) { Full name is required }
+                  @else { At least 2 characters required }
+                </p>
               }
-            </select>
-          </div>
-        </div>
+            </div>
 
-        <!-- Password -->
-        <div class="lf">
-          <label class="lf__label" for="password">{{ 'AUTH.REGISTER.PASSWORD' | translate }}</label>
-          <div class="lf__wrap" [class.lf__wrap--err]="password.touched && password.invalid">
-            <i class="fa-solid fa-lock lf__icon"></i>
-            <input id="password" [type]="showPassword ? 'text' : 'password'" formControlName="password"
-              class="lf__input" [placeholder]="'AUTH.REGISTER.PASSWORD_PLACEHOLDER' | translate" autocomplete="new-password" />
-            <button type="button" class="lf__toggle" (click)="showPassword = !showPassword"
-              [attr.aria-label]="showPassword ? 'Hide password' : 'Show password'">
-              <i [class]="'fa-regular ' + (showPassword ? 'fa-eye-slash' : 'fa-eye')"></i>
+            <!-- Email -->
+            <div class="lf" inView [inViewDelay]="240">
+              <label class="lf__label" for="i-email">Email address</label>
+              <div class="lf__wrap" [class.lf__wrap--err]="iEmail.touched && iEmail.invalid">
+                <i class="fa-regular fa-envelope lf__icon"></i>
+                <input id="i-email" type="email" formControlName="email"
+                  class="lf__input" placeholder="you@example.com" autocomplete="email" />
+              </div>
+              @if (iEmail.touched && iEmail.errors) {
+                <p class="lf__error">
+                  @if (iEmail.errors['required']) { Email is required }
+                  @else { Enter a valid email address }
+                </p>
+              }
+            </div>
+
+            <!-- Phone + National ID -->
+            <div class="rp-row" inView [inViewDelay]="300">
+              <div class="lf">
+                <label class="lf__label" for="i-phone">Phone number</label>
+                <div class="lf__wrap" [class.lf__wrap--err]="iPhone.touched && iPhone.invalid">
+                  <i class="fa-solid fa-phone lf__icon"></i>
+                  <input id="i-phone" type="tel" formControlName="phone"
+                    class="lf__input" placeholder="+20 10 0000 0000" autocomplete="tel" />
+                </div>
+                @if (iPhone.touched && iPhone.errors) {
+                  <p class="lf__error">Enter a valid phone</p>
+                }
+              </div>
+              <div class="lf">
+                <label class="lf__label" for="i-natid">National ID</label>
+                <div class="lf__wrap" [class.lf__wrap--err]="iNatId.touched && iNatId.invalid">
+                  <i class="fa-solid fa-id-card lf__icon"></i>
+                  <input id="i-natid" type="text" formControlName="nationalIdNumber"
+                    class="lf__input" placeholder="14-digit ID" autocomplete="off" />
+                </div>
+                @if (iNatId.touched && iNatId.errors) {
+                  <p class="lf__error">National ID is required</p>
+                }
+              </div>
+            </div>
+
+            <!-- Password -->
+            <div class="lf" inView [inViewDelay]="360">
+              <label class="lf__label" for="i-pw">Password</label>
+              <div class="lf__wrap" [class.lf__wrap--err]="iPassword.touched && iPassword.invalid">
+                <i class="fa-solid fa-lock lf__icon"></i>
+                <input id="i-pw" [type]="showPw ? 'text' : 'password'" formControlName="password"
+                  class="lf__input" placeholder="Min. 8 characters" autocomplete="new-password" />
+                <button type="button" class="lf__toggle" (click)="showPw = !showPw">
+                  <i [class]="'fa-regular ' + (showPw ? 'fa-eye-slash' : 'fa-eye')"></i>
+                </button>
+              </div>
+              @if (iPassword.touched && iPassword.errors) {
+                <p class="lf__error">
+                  @if (iPassword.errors['required']) { Password is required }
+                  @else { At least 8 characters }
+                </p>
+              }
+            </div>
+
+            <!-- Confirm password -->
+            <div class="lf" inView [inViewDelay]="420">
+              <label class="lf__label" for="i-confirm">Confirm password</label>
+              <div class="lf__wrap"
+                [class.lf__wrap--err]="iConfirm.touched && (iConfirm.invalid || iForm.errors?.['passwordMismatch'])">
+                <i class="fa-solid fa-lock lf__icon"></i>
+                <input id="i-confirm" [type]="showConfirmPw ? 'text' : 'password'" formControlName="confirm"
+                  class="lf__input" placeholder="Repeat your password" autocomplete="new-password" />
+                <button type="button" class="lf__toggle" (click)="showConfirmPw = !showConfirmPw">
+                  <i [class]="'fa-regular ' + (showConfirmPw ? 'fa-eye-slash' : 'fa-eye')"></i>
+                </button>
+              </div>
+              @if (iConfirm.touched && iForm.errors?.['passwordMismatch']) {
+                <p class="lf__error">Passwords do not match</p>
+              }
+            </div>
+
+            <button type="submit" class="btn-register" [disabled]="loading()" inView [inViewDelay]="480">
+              @if (loading()) {
+                <span class="spinner-border spinner-border-sm" aria-hidden="true"></span>
+                Creating account…
+              } @else {
+                Create account&nbsp;<i class="fa-solid fa-arrow-right"></i>
+              }
             </button>
-          </div>
-          @if (password.touched && password.errors) {
-            <p class="lf__error">
-              @if (password.errors['required']) { {{ 'AUTH.REGISTER.ERRORS.PASSWORD_REQUIRED' | translate }} }
-              @else { {{ 'AUTH.REGISTER.ERRORS.PASSWORD_MIN' | translate }} }
-            </p>
-          }
-        </div>
 
-        <!-- Confirm password -->
-        <div class="lf">
-          <label class="lf__label" for="confirm">{{ 'AUTH.REGISTER.CONFIRM' | translate }}</label>
-          <div class="lf__wrap" [class.lf__wrap--err]="confirm.touched && (confirm.invalid || form.errors?.['passwordMismatch'])">
-            <i class="fa-solid fa-lock lf__icon"></i>
-            <input id="confirm" [type]="showConfirm ? 'text' : 'password'" formControlName="confirm"
-              class="lf__input" [placeholder]="'AUTH.REGISTER.CONFIRM_PLACEHOLDER' | translate" autocomplete="new-password" />
-            <button type="button" class="lf__toggle" (click)="showConfirm = !showConfirm"
-              [attr.aria-label]="showConfirm ? 'Hide' : 'Show'">
-              <i [class]="'fa-regular ' + (showConfirm ? 'fa-eye-slash' : 'fa-eye')"></i>
+          </form>
+
+          <p class="reg-card__footer" inView [inViewDelay]="540">
+            Already have an account? <a routerLink="/auth/login">Sign in</a>
+          </p>
+        </div>
+      }
+
+      <!-- ─────────────────────────────────────
+           STEP 2b — Company form
+      ───────────────────────────────────── -->
+      @case ('company') {
+        <div class="reg-card reg-card--wide" inView [inViewDelay]="60">
+
+          <div class="reg-card__hd" inView [inViewDelay]="120">
+            <button class="rp-back" type="button" (click)="back()">
+              <i class="fa-solid fa-arrow-left"></i>Back
             </button>
+            <div class="rp-badge" style="background:linear-gradient(135deg,#3b82f6,#06b6d4)">
+              <i class="fa-solid fa-building"></i>Real Estate Company
+            </div>
+            <h1 class="reg-card__title">Company registration</h1>
+            <p class="reg-card__sub">Your details and company information</p>
           </div>
-          @if (confirm.touched && form.errors?.['passwordMismatch']) {
-            <p class="lf__error">{{ 'AUTH.REGISTER.ERRORS.PASSWORDS_MISMATCH' | translate }}</p>
+
+          @if (errorMsg()) {
+            <div class="reg-alert">
+              <i class="fa-solid fa-circle-exclamation"></i>{{ errorMsg() }}
+            </div>
           }
+
+          <form [formGroup]="cForm" (ngSubmit)="submitCompany()" novalidate class="lf-form">
+
+            <!-- ── Admin section ── -->
+            <p class="rp-section" inView [inViewDelay]="170"><i class="fa-regular fa-user"></i>Your details</p>
+
+            <div class="lf" inView [inViewDelay]="220">
+              <label class="lf__label" for="c-aname">Full Name</label>
+              <div class="lf__wrap" [class.lf__wrap--err]="cAdminName.touched && cAdminName.invalid">
+                <i class="fa-regular fa-user lf__icon"></i>
+                <input id="c-aname" type="text" formControlName="adminFullName"
+                  class="lf__input" placeholder="Admin full name" autocomplete="name" />
+              </div>
+              @if (cAdminName.touched && cAdminName.errors) {
+                <p class="lf__error">Full name is required</p>
+              }
+            </div>
+
+            <div class="rp-row" inView [inViewDelay]="270">
+              <div class="lf">
+                <label class="lf__label" for="c-aemail">Email address</label>
+                <div class="lf__wrap" [class.lf__wrap--err]="cAdminEmail.touched && cAdminEmail.invalid">
+                  <i class="fa-regular fa-envelope lf__icon"></i>
+                  <input id="c-aemail" type="email" formControlName="adminEmail"
+                    class="lf__input" placeholder="admin@company.com" autocomplete="email" />
+                </div>
+                @if (cAdminEmail.touched && cAdminEmail.errors) {
+                  <p class="lf__error">Enter a valid email</p>
+                }
+              </div>
+              <div class="lf">
+                <label class="lf__label" for="c-aphone">Phone number</label>
+                <div class="lf__wrap" [class.lf__wrap--err]="cAdminPhone.touched && cAdminPhone.invalid">
+                  <i class="fa-solid fa-phone lf__icon"></i>
+                  <input id="c-aphone" type="tel" formControlName="adminPhone"
+                    class="lf__input" placeholder="+20 10 0000 0000" autocomplete="tel" />
+                </div>
+                @if (cAdminPhone.touched && cAdminPhone.errors) {
+                  <p class="lf__error">Enter a valid phone</p>
+                }
+              </div>
+            </div>
+
+            <div class="rp-row" inView [inViewDelay]="320">
+              <div class="lf">
+                <label class="lf__label" for="c-pw">Password</label>
+                <div class="lf__wrap" [class.lf__wrap--err]="cPassword.touched && cPassword.invalid">
+                  <i class="fa-solid fa-lock lf__icon"></i>
+                  <input id="c-pw" [type]="showCoPw ? 'text' : 'password'" formControlName="password"
+                    class="lf__input" placeholder="Min. 8 characters" autocomplete="new-password" />
+                  <button type="button" class="lf__toggle" (click)="showCoPw = !showCoPw">
+                    <i [class]="'fa-regular ' + (showCoPw ? 'fa-eye-slash' : 'fa-eye')"></i>
+                  </button>
+                </div>
+                @if (cPassword.touched && cPassword.errors) {
+                  <p class="lf__error">
+                    @if (cPassword.errors['required']) { Required }
+                    @else { Min 8 characters }
+                  </p>
+                }
+              </div>
+              <div class="lf">
+                <label class="lf__label" for="c-confirm">Confirm password</label>
+                <div class="lf__wrap"
+                  [class.lf__wrap--err]="cConfirm.touched && (cConfirm.invalid || cForm.errors?.['passwordMismatch'])">
+                  <i class="fa-solid fa-lock lf__icon"></i>
+                  <input id="c-confirm" [type]="showCoConfirmPw ? 'text' : 'password'" formControlName="confirm"
+                    class="lf__input" placeholder="Repeat password" autocomplete="new-password" />
+                  <button type="button" class="lf__toggle" (click)="showCoConfirmPw = !showCoConfirmPw">
+                    <i [class]="'fa-regular ' + (showCoConfirmPw ? 'fa-eye-slash' : 'fa-eye')"></i>
+                  </button>
+                </div>
+                @if (cConfirm.touched && cForm.errors?.['passwordMismatch']) {
+                  <p class="lf__error">Passwords do not match</p>
+                }
+              </div>
+            </div>
+
+            <!-- ── Company section ── -->
+            <p class="rp-section" inView [inViewDelay]="370"><i class="fa-solid fa-building"></i>Company details</p>
+
+            <div class="rp-row" inView [inViewDelay]="410">
+              <div class="lf">
+                <label class="lf__label" for="c-cname">Company name</label>
+                <div class="lf__wrap" [class.lf__wrap--err]="cName.touched && cName.invalid">
+                  <i class="fa-solid fa-building lf__icon"></i>
+                  <input id="c-cname" type="text" formControlName="companyName"
+                    class="lf__input" placeholder="Your company name" />
+                </div>
+                @if (cName.touched && cName.errors) {
+                  <p class="lf__error">Company name is required</p>
+                }
+              </div>
+              <div class="lf">
+                <label class="lf__label" for="c-reg">Commercial register</label>
+                <div class="lf__wrap" [class.lf__wrap--err]="cRegister.touched && cRegister.invalid">
+                  <i class="fa-solid fa-file-contract lf__icon"></i>
+                  <input id="c-reg" type="text" formControlName="commercialRegister"
+                    class="lf__input" placeholder="Registration number" />
+                </div>
+                @if (cRegister.touched && cRegister.errors) {
+                  <p class="lf__error">Required</p>
+                }
+              </div>
+            </div>
+
+            <div class="rp-row" inView [inViewDelay]="450">
+              <div class="lf">
+                <label class="lf__label" for="c-city">City</label>
+                <div class="lf__wrap" [class.lf__wrap--err]="cCity.touched && cCity.invalid">
+                  <i class="fa-solid fa-city lf__icon"></i>
+                  <input id="c-city" type="text" formControlName="city"
+                    class="lf__input" placeholder="Cairo" />
+                </div>
+                @if (cCity.touched && cCity.errors) {
+                  <p class="lf__error">City is required</p>
+                }
+              </div>
+              <div class="lf">
+                <label class="lf__label" for="c-addr">Address</label>
+                <div class="lf__wrap" [class.lf__wrap--err]="cAddress.touched && cAddress.invalid">
+                  <i class="fa-solid fa-map-pin lf__icon"></i>
+                  <input id="c-addr" type="text" formControlName="address"
+                    class="lf__input" placeholder="Street & area" />
+                </div>
+                @if (cAddress.touched && cAddress.errors) {
+                  <p class="lf__error">Address is required</p>
+                }
+              </div>
+            </div>
+
+            <div class="rp-row" inView [inViewDelay]="490">
+              <div class="lf">
+                <label class="lf__label" for="c-cphone">Company phone</label>
+                <div class="lf__wrap" [class.lf__wrap--err]="cPhone.touched && cPhone.invalid">
+                  <i class="fa-solid fa-phone lf__icon"></i>
+                  <input id="c-cphone" type="tel" formControlName="companyPhone"
+                    class="lf__input" placeholder="+20 2 0000 0000" />
+                </div>
+                @if (cPhone.touched && cPhone.errors) {
+                  <p class="lf__error">Enter a valid phone</p>
+                }
+              </div>
+              <div class="lf">
+                <label class="lf__label" for="c-cemail">Company email</label>
+                <div class="lf__wrap" [class.lf__wrap--err]="cEmail.touched && cEmail.invalid">
+                  <i class="fa-regular fa-envelope lf__icon"></i>
+                  <input id="c-cemail" type="email" formControlName="companyEmail"
+                    class="lf__input" placeholder="info@company.com" />
+                </div>
+                @if (cEmail.touched && cEmail.errors) {
+                  <p class="lf__error">Enter a valid email</p>
+                }
+              </div>
+            </div>
+
+            <button type="submit" class="btn-register" [disabled]="loading()" inView [inViewDelay]="540">
+              @if (loading()) {
+                <span class="spinner-border spinner-border-sm" aria-hidden="true"></span>
+                Registering company…
+              } @else {
+                Register company&nbsp;<i class="fa-solid fa-arrow-right"></i>
+              }
+            </button>
+
+          </form>
+
+          <p class="reg-card__footer" inView [inViewDelay]="600">
+            Already have an account? <a routerLink="/auth/login">Sign in</a>
+          </p>
         </div>
+      }
 
-        <!-- Submit -->
-        <button type="submit" class="btn btn-primary login-card__submit" [disabled]="loading">
-          @if (loading) {
-            <span class="spinner-border spinner-border-sm me-2" aria-hidden="true"></span>
-            {{ 'AUTH.REGISTER.SUBMITTING' | translate }}
-          } @else {
-            {{ 'AUTH.REGISTER.SUBMIT' | translate }}&nbsp;<i class="fa-solid fa-arrow-right"></i>
-          }
-        </button>
+    }
+  </main>
 
-      </form>
-
-      <p class="login-card__footer">
-        {{ 'AUTH.REGISTER.ALREADY_ACCOUNT' | translate }}
-        <a routerLink="/auth/login" class="login-card__footer-link">{{ 'AUTH.REGISTER.SIGN_IN' | translate }}</a>
-      </p>
-
-    </div>
-  </div>
 </div>
