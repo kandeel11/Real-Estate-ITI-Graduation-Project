@@ -1,0 +1,52 @@
+<div class="modal-backdrop" (click)="closed.emit()">
+  <div class="inq-dialog" (click)="$event.stopPropagation()">
+    <div class="modal-header">
+      <button class="btn-back" (click)="closed.emit()"><i class="fa-solid fa-arrow-left"></i></button>
+      <div class="header-info">
+        <span class="header-name">{{ inquiry.tenantName }}</span>
+        <span class="header-prop">{{ inquiry.propertyTitle }}</span>
+      </div>
+      @if (inquiry.status !== 'converted') {
+        <button class="btn-convert" (click)="convertToLead()" [disabled]="converting()">
+          @if (converting()) { <i class="fa-solid fa-spinner fa-spin"></i> }
+          @else { <i class="fa-solid fa-filter-circle-plus"></i> }
+          {{ (converting() ? 'BROKER.CHAT.CONVERTING' : 'BROKER.CHAT.CONVERT_LEAD') | translate }}
+        </button>
+      } @else {
+        <span class="converted-chip"><i class="fa-solid fa-check"></i> {{ 'BROKER.CHAT.CONVERTED' | translate }}</span>
+      }
+    </div>
+
+    <div class="message-list" #messageList>
+      @if (loading()) {
+        <div class="loading-wrap"><i class="fa-solid fa-spinner fa-spin"></i></div>
+      } @else if (error()) {
+        <div class="error-wrap">{{ error()! | translate }}</div>
+      } @else if (messages().length === 0) {
+        <div class="empty-wrap">{{ 'BROKER.CHAT.EMPTY' | translate }}</div>
+      } @else {
+        @for (msg of messages(); track msg.id) {
+          <div class="msg-wrap" [class.broker]="msg.senderRole !== 'tenant'" [class.tenant]="msg.senderRole === 'tenant'">
+            @if (msg.senderRole === 'tenant') {
+              <div class="msg-avatar">{{ msg.senderName.charAt(0).toUpperCase() }}</div>
+            }
+            <div class="bubble">
+              <p class="bubble-text">{{ msg.text }}</p>
+              <span class="bubble-time">{{ msg.sentAt | date:'shortTime' }}</span>
+            </div>
+          </div>
+        }
+      }
+    </div>
+
+    <div class="compose">
+      <textarea class="compose-input" [(ngModel)]="text" rows="2"
+        [placeholder]="'BROKER.CHAT.SEND_PLACEHOLDER' | translate"
+        (keydown)="onKeydown($event)"></textarea>
+      <button class="btn-send" (click)="send()" [disabled]="sending() || !text.trim()">
+        @if (sending()) { <i class="fa-solid fa-spinner fa-spin"></i> }
+        @else { <i class="fa-solid fa-paper-plane"></i> }
+      </button>
+    </div>
+  </div>
+</div>

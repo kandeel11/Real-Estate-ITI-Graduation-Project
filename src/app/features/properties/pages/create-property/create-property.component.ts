@@ -24,7 +24,7 @@ import { ActivatedRoute, RouterLink } from '@angular/router';
 import { toSignal } from '@angular/core/rxjs-interop';
 import { AuthService } from '../../../../core/services/auth.service';
 import { PropertyService } from '../../services/property.service';
-import { CompanySubscriptionService } from '../../../../dashboards/company/services/company-subscription.service';
+import { CompanySubscriptionService } from '../../../dashboards/company/services/company-subscription.service';
 import { Amenity, DescriptionDraft, Property } from '../../models/property.model';
 import { TranslatePipe } from '@ngx-translate/core';
 
@@ -203,7 +203,7 @@ export class CreatePropertyComponent implements OnInit {
             status: 'done' as const,
             mediaId: m.id,
             isPrimary: m.isPrimary,
-          }))
+          })),
         );
 
         this.loadAmenities();
@@ -288,7 +288,7 @@ export class CreatePropertyComponent implements OnInit {
         error: (err) => {
           this.creating.set(false);
           this.createError.set(
-            err?.error?.error ?? 'Failed to create the listing. Please try again.'
+            err?.error?.error ?? 'Failed to create the listing. Please try again.',
           );
         },
       });
@@ -312,7 +312,7 @@ export class CreatePropertyComponent implements OnInit {
         { ...v, listingSource: this.isOwner() ? 'Owner' : 'Company' },
         this.textEn(),
         this.textAr(),
-        listingBrokerId
+        listingBrokerId,
       )
       .subscribe({
         next: () => {
@@ -369,7 +369,7 @@ export class CreatePropertyComponent implements OnInit {
       this.propertySvc.uploadMedia(id, file, currentCount + i).subscribe({
         next: (res) => {
           this.photos.update((list) =>
-            list.map((p) => (p === upload ? { ...p, status: 'done', mediaId: res.mediaId } : p))
+            list.map((p) => (p === upload ? { ...p, status: 'done', mediaId: res.mediaId } : p)),
           );
           // Auto-set the first ever uploaded photo as primary in the DB
           if (isFirst) {
@@ -387,17 +387,13 @@ export class CreatePropertyComponent implements OnInit {
     if (!id || !target.mediaId || target.isPrimary) return;
     this.propertySvc.setPrimaryMedia(id, target.mediaId).subscribe({
       next: () => {
-        this.photos.update((list) =>
-          list.map((p) => ({ ...p, isPrimary: p === target }))
-        );
+        this.photos.update((list) => list.map((p) => ({ ...p, isPrimary: p === target })));
       },
     });
   }
 
   private setPhotoStatus(upload: PhotoUpload, status: PhotoUpload['status']): void {
-    this.photos.update((list) =>
-      list.map((p) => (p === upload ? { ...p, status } : p))
-    );
+    this.photos.update((list) => list.map((p) => (p === upload ? { ...p, status } : p)));
   }
 
   toggleAmenity(amenity: Amenity): void {
@@ -468,10 +464,8 @@ export class CreatePropertyComponent implements OnInit {
 
   /** True when the typed descriptions don't match their required script. */
   private descriptionScriptError(): string | null {
-    if (this.descEnInvalid())
-      return 'The English description must not contain Arabic text.';
-    if (this.descArInvalid())
-      return 'The Arabic description must not contain English letters.';
+    if (this.descEnInvalid()) return 'The English description must not contain Arabic text.';
+    if (this.descArInvalid()) return 'The Arabic description must not contain English letters.';
     return null;
   }
 
@@ -488,18 +482,16 @@ export class CreatePropertyComponent implements OnInit {
     this.accepting.set(true);
     this.aiError.set(null);
 
-    this.propertySvc
-      .acceptDescription(draft.generationId, this.textEn(), this.textAr())
-      .subscribe({
-        next: () => {
-          this.accepting.set(false);
-          this.accepted.set(true);
-        },
-        error: (err) => {
-          this.accepting.set(false);
-          this.aiError.set(err?.error?.error ?? 'Failed to save the description.');
-        },
-      });
+    this.propertySvc.acceptDescription(draft.generationId, this.textEn(), this.textAr()).subscribe({
+      next: () => {
+        this.accepting.set(false);
+        this.accepted.set(true);
+      },
+      error: (err) => {
+        this.accepting.set(false);
+        this.aiError.set(err?.error?.error ?? 'Failed to save the description.');
+      },
+    });
   }
 
   /**
@@ -530,7 +522,13 @@ export class CreatePropertyComponent implements OnInit {
       this.auth.userRole() === 'broker' ? (this.auth.user()?.id ?? null) : null;
 
     this.propertySvc
-      .update(id, { ...v, listingSource: this.isOwner() ? 'Owner' : 'Company' }, this.textEn(), this.textAr(), listingBrokerId)
+      .update(
+        id,
+        { ...v, listingSource: this.isOwner() ? 'Owner' : 'Company' },
+        this.textEn(),
+        this.textAr(),
+        listingBrokerId,
+      )
       .subscribe({
         next: () => {
           this.accepting.set(false);

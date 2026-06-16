@@ -12,6 +12,48 @@
     </div>
   </div>
 
+  <!-- ── PENDING LEASE OFFER ──────────────────────── -->
+  @if (pendingOffer()) {
+    @let offer = pendingOffer()!;
+    <div class="pending-offer-card">
+      <div class="offer-header">
+        <i class="fa-solid fa-envelope-open-text offer-icon"></i>
+        <div>
+          <h3 class="offer-title">{{ 'MY_LEASE.PENDING_OFFER_TITLE' | translate }}</h3>
+          <p class="offer-property">{{ offer.propertyTitle }}</p>
+        </div>
+      </div>
+      <div class="offer-terms">
+        <div class="offer-term">
+          <span class="term-label">{{ 'MY_LEASE.MONTHLY_RENT' | translate }}</span>
+          <span class="term-value rent">{{ offer.monthlyRent | currency:'EGP':'symbol':'1.0-0' }}/mo</span>
+        </div>
+        <div class="offer-term">
+          <span class="term-label">{{ 'MY_LEASE.SECURITY_DEPOSIT' | translate }}</span>
+          <span class="term-value">{{ offer.deposit | currency:'EGP':'symbol':'1.0-0' }}</span>
+        </div>
+        <div class="offer-term">
+          <span class="term-label">{{ 'MY_LEASE.LEASE_START' | translate }}</span>
+          <span class="term-value">{{ offer.startDate | date:'mediumDate' }}</span>
+        </div>
+        <div class="offer-term">
+          <span class="term-label">{{ 'MY_LEASE.LEASE_END' | translate }}</span>
+          <span class="term-value">{{ offer.endDate | date:'mediumDate' }}</span>
+        </div>
+      </div>
+      <div class="offer-actions">
+        <button class="btn btn-outline-secondary" (click)="declineOffer()" [disabled]="offerActionInProgress()">
+          <i class="fa-solid fa-xmark"></i> {{ 'MY_LEASE.DECLINE_OFFER' | translate }}
+        </button>
+        <button class="btn btn-success" (click)="acceptOffer()" [disabled]="offerActionInProgress()">
+          @if (offerActionInProgress()) { <i class="fa-solid fa-spinner fa-spin"></i> }
+          @else { <i class="fa-solid fa-check"></i> }
+          {{ 'MY_LEASE.ACCEPT_OFFER' | translate }}
+        </button>
+      </div>
+    </div>
+  }
+
   <!-- ── LOADING ──────────────────────────────────── -->
   @if (loading()) {
     <div class="loading-state">
@@ -55,8 +97,11 @@
         <div class="lease-card-header">
           <div>
             <h2 class="lease-property">{{ lease.propertyAddress }}</h2>
-            <span class="status-badge" [class.badge-active]="lease.isActive" [class.badge-ended]="!lease.isActive">
-              {{ lease.isActive ? ('MY_LEASE.ACTIVE' | translate) : ('MY_LEASE.ENDED' | translate) }}
+            <span class="status-badge"
+                  [class.badge-active]="lease.status === 'active'"
+                  [class.badge-pending]="lease.status === 'pending'"
+                  [class.badge-ended]="lease.status === 'ended'">
+              {{ (lease.status === 'active' ? 'MY_LEASE.ACTIVE' : lease.status === 'pending' ? 'MY_LEASE.PENDING' : 'MY_LEASE.ENDED') | translate }}
             </span>
           </div>
           <button class="btn btn-primary btn-sm" (click)="downloadContract(lease)">
@@ -172,8 +217,11 @@
                 </div>
               </div>
               <div class="d-flex align-items-center gap-3">
-                <span class="status-badge" [class.badge-active]="lease.isActive" [class.badge-ended]="!lease.isActive">
-                  {{ lease.isActive ? ('MY_LEASE.ACTIVE' | translate) : ('MY_LEASE.ENDED' | translate) }}
+                <span class="status-badge"
+                      [class.badge-active]="lease.status === 'active'"
+                      [class.badge-pending]="lease.status === 'pending'"
+                      [class.badge-ended]="lease.status === 'ended'">
+                  {{ (lease.status === 'active' ? 'MY_LEASE.ACTIVE' : lease.status === 'pending' ? 'MY_LEASE.PENDING' : 'MY_LEASE.ENDED') | translate }}
                 </span>
                 <span class="rent-tag">{{ lease.rentAmount | currency:'EGP':'symbol':'1.0-0' }}/mo</span>
                 <i class="fa-solid" [class.fa-chevron-down]="expandedLeaseId() !== lease.id"

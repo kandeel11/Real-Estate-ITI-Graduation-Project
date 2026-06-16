@@ -266,7 +266,7 @@
           <p class="text-muted small">{{ 'TICKET_DETAIL.TX_ID' | translate }} {{ pay.transactionId }}</p>
         }
 
-        @if (t.status === 'AwaitingPayment' && pay.status !== 'Paid') {
+        @if (pay.status !== 'Paid') {
           <button class="btn btn-primary mt-3" (click)="showPayModal.set(true)">
             <i class="fa-solid fa-money-bill-wave me-2"></i>{{ 'TICKET_DETAIL.PAY_NOW' | translate }}
           </button>
@@ -275,7 +275,7 @@
     }
 
     <!-- ══ 9. RATE MAINTENANCE COMPANY ══════════════════════════ -->
-    @if (t.status === 'Completed' && t.vendorAssignment?.vendorId) {
+    @if (t.status === 'Completed' && (!t.payment || t.payment.status === 'Paid') && t.vendorAssignment?.vendorId) {
       <div class="detail-card mb-4">
         <h2 class="section-title">
           <i class="fa-regular fa-star me-2"></i>Rate Maintenance Company

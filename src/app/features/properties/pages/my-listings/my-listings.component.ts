@@ -12,7 +12,7 @@ import { RouterLink } from '@angular/router';
 import { PropertyService } from '../../services/property.service';
 import { Property } from '../../models/property.model';
 import { ConfirmModalComponent } from '../../../../shared/components/modal/confirm-modal.component';
-import { CompanySubscriptionService } from '../../../../dashboards/company/services/company-subscription.service';
+import { CompanySubscriptionService } from '../../../dashboards/company/services/company-subscription.service';
 import { TranslatePipe } from '@ngx-translate/core';
 
 const STATUS_BADGES: Record<string, string> = {
@@ -42,9 +42,7 @@ export class MyListingsComponent implements OnInit {
   busyId = signal<string | null>(null);
   subscription = signal<{ hasFeaturedListings?: boolean } | null>(null);
 
-  draftCount = computed(
-    () => this.properties().filter((p) => p.status === 'Draft').length
-  );
+  draftCount = computed(() => this.properties().filter((p) => p.status === 'Draft').length);
 
   canFeature = computed(() => this.subscription()?.hasFeaturedListings === true);
   featuredId = computed(() => this.properties().find((p) => p.isFeatured)?.id ?? null);
@@ -59,9 +57,7 @@ export class MyListingsComponent implements OnInit {
     this.error.set(null);
     this.propertySvc.getMine().subscribe({
       next: (list) => {
-        this.properties.set(
-          [...list].sort((a, b) => b.createdAt.localeCompare(a.createdAt))
-        );
+        this.properties.set([...list].sort((a, b) => b.createdAt.localeCompare(a.createdAt)));
         this.loading.set(false);
       },
       error: () => {

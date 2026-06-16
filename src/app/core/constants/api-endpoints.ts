@@ -9,6 +9,7 @@ export const API_ENDPOINTS = {
   AUTH: {
     LOGIN: '/auth/login',
     REGISTER: '/auth/register',
+    REGISTER_COMPANY: '/auth/register-company',
     VERIFY_EMAIL: '/auth/verify-email',
     SEND_OTP: '/auth/send-otp',
     VERIFY_OTP: '/auth/verify-otp',
@@ -16,6 +17,7 @@ export const API_ENDPOINTS = {
     LOGOUT: '/auth/logout',
     FORGOT_PASSWORD: '/auth/forgot-password',
     RESET_PASSWORD: '/auth/reset-password',
+    CHANGE_PASSWORD: '/auth/change-password',
   },
 
   // ==================== PROPERTIES MODULE ====================
@@ -30,14 +32,13 @@ export const API_ENDPOINTS = {
     DELETE: (id: string) => `/properties/${id}`,
     SUBMIT: (id: string) => `/properties/${id}/submit`,
     ASSIGN_BROKER: (id: string) => `/properties/${id}/assign-broker`,
-    REQUEST_AI_DESCRIPTION: (id: string) =>
-      `/properties/${id}/request-ai-description`,
+    REQUEST_AI_DESCRIPTION: (id: string) => `/properties/${id}/request-ai-description`,
     MEDIA: (id: string) => `/properties/${id}/media`,
-    SET_PRIMARY_MEDIA: (id: string, mediaId: string) => `/properties/${id}/media/${mediaId}/primary`,
+    SET_PRIMARY_MEDIA: (id: string, mediaId: string) =>
+      `/properties/${id}/media/${mediaId}/primary`,
     DELETE_MEDIA: (id: string, mediaId: string) => `/properties/${id}/media/${mediaId}`,
     AMENITIES: (id: string) => `/properties/${id}/amenities`,
-    REMOVE_AMENITY: (id: string, amenityId: string) =>
-      `/properties/${id}/amenities/${amenityId}`,
+    REMOVE_AMENITY: (id: string, amenityId: string) => `/properties/${id}/amenities/${amenityId}`,
     GET_BY_CITY: (city: string) => `/properties/city/${city}`,
     GET_FEATURED: '/properties/featured',
     SEARCH: '/properties/search',
@@ -60,14 +61,12 @@ export const API_ENDPOINTS = {
 
   // ==================== AI MODULE ====================
   AI: {
-    DESCRIPTION_BY_PROPERTY: (propertyId: string) =>
-      `/AI/descriptions/by-property/${propertyId}`,
-    ACCEPT_DESCRIPTION: (generationId: string) =>
-      `/AI/descriptions/${generationId}/accept`,
+    DESCRIPTION_BY_PROPERTY: (propertyId: string) => `/AI/descriptions/by-property/${propertyId}`,
+    ACCEPT_DESCRIPTION: (generationId: string) => `/AI/descriptions/${generationId}/accept`,
     CHATBOT_CHAT: '/AI/chatbot/chat',
     CHATBOT_SESSIONS: '/AI/chatbot/sessions',
-    CHATBOT_HISTORY: (sessionId: string) =>
-      `/AI/chatbot/sessions/${sessionId}/history`,
+    CHATBOT_HISTORY: (sessionId: string) => `/AI/chatbot/sessions/${sessionId}/history`,
+    ADMIN_ANALYTICS_CHAT: '/AI/admin/analytics/chat',
   },
 
   // ==================== COMPANIES MODULE ====================
@@ -94,12 +93,9 @@ export const API_ENDPOINTS = {
   BROKERS: {
     ADD_TO_MINE: '/companies/mine/brokers',
     ADD: (companyId: string) => `/companies/${companyId}/brokers`,
-    DEACTIVATE_MINE: (brokerId: string) =>
-      `/companies/mine/brokers/${brokerId}`,
-    REACTIVATE_MINE: (brokerId: string) =>
-      `/companies/mine/brokers/${brokerId}/reactivate`,
-    DELETE_MINE: (brokerId: string) =>
-      `/companies/mine/brokers/${brokerId}/permanent`,
+    DEACTIVATE_MINE: (brokerId: string) => `/companies/mine/brokers/${brokerId}`,
+    REACTIVATE_MINE: (brokerId: string) => `/companies/mine/brokers/${brokerId}/reactivate`,
+    DELETE_MINE: (brokerId: string) => `/companies/mine/brokers/${brokerId}/permanent`,
   },
 
   // ==================== MAINTENANCE MODULE ====================
@@ -110,16 +106,12 @@ export const API_ENDPOINTS = {
       CREATE: '/maintenance/tickets',
       UPDATE: (id: string) => `/maintenance/tickets/${id}`,
       DELETE: (id: string) => `/maintenance/tickets/${id}`,
-      GET_BY_PROPERTY: (propertyId: string) =>
-        `/maintenance/tickets/property/${propertyId}`,
-      GET_BY_STATUS: (status: string) =>
-        `/maintenance/tickets/status/${status}`,
+      GET_BY_PROPERTY: (propertyId: string) => `/maintenance/tickets/property/${propertyId}`,
+      GET_BY_STATUS: (status: string) => `/maintenance/tickets/status/${status}`,
     },
     STATUS_UPDATES: {
-      GET_HISTORY: (ticketId: string) =>
-        `/maintenance/tickets/${ticketId}/status-history`,
-      UPDATE_STATUS: (ticketId: string) =>
-        `/maintenance/tickets/${ticketId}/status`,
+      GET_HISTORY: (ticketId: string) => `/maintenance/tickets/${ticketId}/status-history`,
+      UPDATE_STATUS: (ticketId: string) => `/maintenance/tickets/${ticketId}/status`,
       ADD_NOTE: (ticketId: string) => `/maintenance/tickets/${ticketId}/notes`,
     },
     REPORTS: {
@@ -137,8 +129,7 @@ export const API_ENDPOINTS = {
     UPDATE: (id: string) => `/leases/${id}`,
     DELETE: (id: string) => `/leases/${id}`,
     GET_BY_TENANT: (tenantId: string) => `/leases/tenant/${tenantId}`,
-    GET_BY_PROPERTY: (propertyId: string) =>
-      `/leases/property/${propertyId}`,
+    GET_BY_PROPERTY: (propertyId: string) => `/leases/property/${propertyId}`,
     RENEW: (id: string) => `/leases/${id}/renew`,
     TERMINATE: (id: string) => `/leases/${id}/terminate`,
     GET_ACTIVE: '/leases/active',
@@ -163,8 +154,7 @@ export const API_ENDPOINTS = {
     CONFIRM_PAYMENT: '/payments/confirm',
     GET_PAYMENT_HISTORY: '/payments/history',
     GET_INVOICE: (invoiceId: string) => `/payments/invoice/${invoiceId}`,
-    DOWNLOAD_INVOICE: (invoiceId: string) =>
-      `/payments/invoice/${invoiceId}/download`,
+    DOWNLOAD_INVOICE: (invoiceId: string) => `/payments/invoice/${invoiceId}/download`,
     PROCESS_REFUND: (paymentId: string) => `/payments/${paymentId}/refund`,
   },
 
@@ -176,19 +166,16 @@ export const API_ENDPOINTS = {
     GET_SUGGESTIONS: '/smart-search/suggestions',
     SAVE_SEARCH: '/smart-search/save-search',
     GET_SAVED_SEARCHES: '/smart-search/saved-searches',
-    DELETE_SAVED_SEARCH: (searchId: string) =>
-      `/smart-search/saved-searches/${searchId}`,
+    DELETE_SAVED_SEARCH: (searchId: string) => `/smart-search/saved-searches/${searchId}`,
   },
 
   // ==================== AI CHAT & RAG MODULE ====================
   CHAT_RAG: {
     SEND_MESSAGE: '/chat-rag/message',
-    GET_CONVERSATION: (conversationId: string) =>
-      `/chat-rag/conversation/${conversationId}`,
+    GET_CONVERSATION: (conversationId: string) => `/chat-rag/conversation/${conversationId}`,
     GET_CONVERSATIONS: '/chat-rag/conversations',
     CREATE_CONVERSATION: '/chat-rag/conversation',
-    DELETE_CONVERSATION: (conversationId: string) =>
-      `/chat-rag/conversation/${conversationId}`,
+    DELETE_CONVERSATION: (conversationId: string) => `/chat-rag/conversation/${conversationId}`,
     SEARCH_DOCUMENTS: '/chat-rag/search-documents',
     UPLOAD_DOCUMENT: '/chat-rag/upload-document',
   },
@@ -208,8 +195,7 @@ export const API_ENDPOINTS = {
   // ==================== ANALYTICS & REPORTING ====================
   ANALYTICS: {
     GET_DASHBOARD_METRICS: '/analytics/dashboard',
-    GET_PROPERTY_ANALYTICS: (propertyId: string) =>
-      `/analytics/property/${propertyId}`,
+    GET_PROPERTY_ANALYTICS: (propertyId: string) => `/analytics/property/${propertyId}`,
     GET_USER_ANALYTICS: '/analytics/user',
     EXPORT_REPORT: '/analytics/export',
   },

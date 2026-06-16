@@ -1,0 +1,567 @@
+.dashboard {
+    display: flex;
+    flex-direction: column;
+    gap: 22px;
+    --card-radius: 18px;
+    --border-color: #eef0f5;
+    --primary: #4f46e5;
+    --primary-light: #6366f1;
+    --text: #0f172a;
+    --muted: #94a3b8;
+    --soft: #f8fafc;
+}
+
+/* ============ HEADER ============ */
+.page-head {
+    h1 {
+        margin: 0;
+        font-size: 28px;
+        font-weight: 800;
+        color: var(--text);
+        letter-spacing: -0.5px;
+    }
+
+    p {
+        margin: 4px 0 0;
+        color: #64748b;
+        font-size: 14px;
+    }
+}
+
+/* ============ STATS ============ */
+.stats-row {
+    display: grid;
+    grid-template-columns: repeat(4, 1fr);
+    gap: 18px;
+
+    @media (max-width: 1100px) {
+        grid-template-columns: repeat(2, 1fr);
+    }
+
+    @media (max-width: 540px) {
+        grid-template-columns: 1fr;
+    }
+}
+
+.stat {
+    background: #fff;
+    border-radius: var(--card-radius);
+    padding: 22px 24px;
+    border: 1px solid var(--border-color);
+    transition: all 0.25s ease;
+
+    &:hover {
+        transform: translateY(-3px);
+        box-shadow: 0 18px 40px -15px rgba(79, 70, 229, 0.18);
+        border-color: #c7d2fe;
+    }
+
+    &.skeleton {
+        height: 130px;
+        background: linear-gradient(90deg, #f5f5fa 25%, #fafafa 50%, #f5f5fa 75%);
+        background-size: 200% 100%;
+        animation: shimmer 1.4s linear infinite;
+    }
+
+    &__head {
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        margin-bottom: 12px;
+    }
+
+    &__label {
+        color: #64748b;
+        font-size: 14px;
+        font-weight: 500;
+    }
+
+    &__icon {
+        width: 36px;
+        height: 36px;
+        border-radius: 10px;
+        background: #eef2ff;
+        color: var(--primary);
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        font-size: 14px;
+    }
+
+    &__value {
+        margin: 0 0 8px;
+        font-size: 30px;
+        font-weight: 800;
+        color: var(--text);
+        letter-spacing: -1px;
+        line-height: 1;
+    }
+
+    &__trend {
+        display: inline-flex;
+        align-items: center;
+        gap: 5px;
+        font-size: 12px;
+        font-weight: 600;
+
+        i {
+            font-size: 11px;
+        }
+
+        &.up {
+            color: #10b981;
+        }
+
+        &.down {
+            color: #ef4444;
+        }
+
+        &.neutral {
+            color: #64748b;
+        }
+    }
+}
+
+@keyframes shimmer {
+    0% {
+        background-position: 200% 0;
+    }
+
+    100% {
+        background-position: -200% 0;
+    }
+}
+
+/* ============ SHARED CARD ============ */
+.card {
+    background: #fff;
+    border: 1px solid var(--border-color);
+    border-radius: var(--card-radius);
+    padding: 22px 24px;
+}
+
+.card__head {
+    display: flex;
+    justify-content: space-between;
+    align-items: flex-start;
+    margin-bottom: 18px;
+    flex-wrap: wrap;
+    gap: 12px;
+
+    h3 {
+        margin: 0;
+        font-size: 17px;
+        font-weight: 700;
+        color: var(--text);
+    }
+
+    .muted {
+        display: block;
+        margin-top: 3px;
+        font-size: 12px;
+        color: var(--muted);
+    }
+
+    .head-right {
+        display: flex;
+        align-items: center;
+        gap: 14px;
+    }
+
+    .link {
+        color: var(--primary);
+        font-size: 13px;
+        font-weight: 600;
+        text-decoration: none;
+        cursor: pointer;
+
+        &:hover {
+            text-decoration: underline;
+        }
+    }
+
+    .badge-count {
+        background: #fde2e7;
+        color: #be185d;
+        font-size: 11px;
+        font-weight: 700;
+        padding: 4px 11px;
+        border-radius: 999px;
+    }
+}
+
+.select-pill {
+    padding: 6px 14px;
+    border-radius: 999px;
+    border: 1px solid var(--border-color);
+    background: #fff;
+    font-size: 12px;
+    color: var(--text);
+    cursor: pointer;
+    font-weight: 600;
+}
+
+.legend {
+    display: flex;
+    gap: 16px;
+    font-size: 12px;
+    color: #64748b;
+    font-weight: 500;
+
+    .legend-item {
+        display: inline-flex;
+        align-items: center;
+        gap: 6px;
+    }
+
+    .dot {
+        width: 10px;
+        height: 10px;
+        border-radius: 50%;
+
+        &.expenses {
+            background: transparent;
+            border: 2px solid #ef4444;
+        }
+
+        &.revenue {
+            background: #6366f1;
+        }
+    }
+}
+
+/* ============ CHARTS ROW ============ */
+.charts-row {
+    display: grid;
+    grid-template-columns: 2fr 1fr;
+    gap: 18px;
+
+    @media (max-width: 1100px) {
+        grid-template-columns: 1fr;
+    }
+}
+
+.chart-card {
+    min-height: 420px;
+}
+
+.occupancy-card {
+    display: flex;
+    flex-direction: column;
+
+    .occupancy-chart {
+        flex: 1;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        margin: 4px 0;
+    }
+}
+
+.occupancy-legend {
+    display: flex;
+    justify-content: space-around;
+    border-top: 1px solid #f1f5f9;
+    padding-top: 14px;
+    margin-top: 6px;
+
+    .leg {
+        display: inline-flex;
+        align-items: center;
+        gap: 8px;
+        font-size: 13px;
+        color: #475569;
+        font-weight: 500;
+
+        .dot {
+            width: 9px;
+            height: 9px;
+            border-radius: 50%;
+        }
+
+        .occupied {
+            background: var(--primary);
+        }
+
+        .vacant {
+            background: #c7d2fe;
+        }
+    }
+}
+
+/* ============ BOTTOM ROW ============ */
+.bottom-row {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 18px;
+
+    @media (max-width: 1100px) {
+        grid-template-columns: 1fr;
+    }
+}
+
+/* ===== Recent Rent Activity ===== */
+.activity-list {
+    display: flex;
+    flex-direction: column;
+    gap: 18px;
+}
+
+.activity-row {
+    display: flex;
+    align-items: center;
+    gap: 14px;
+}
+
+.activity-icon {
+    width: 40px;
+    height: 40px;
+    border-radius: 50%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 15px;
+
+    &.paid {
+        background: #dcfce7;
+        color: #16a34a;
+    }
+
+    &.processed {
+        background: #f1f5f9;
+        color: #64748b;
+    }
+}
+
+.activity-info {
+    flex: 1;
+    display: flex;
+    flex-direction: column;
+
+    strong {
+        font-size: 14px;
+        color: var(--text);
+        font-weight: 600;
+    }
+
+    span {
+        font-size: 12px;
+        color: var(--muted);
+        margin-top: 2px;
+    }
+}
+
+.activity-amount {
+    font-size: 14px;
+    font-weight: 700;
+
+    &.up {
+        color: #16a34a;
+    }
+
+    &.down {
+        color: #64748b;
+    }
+}
+
+/* ===== Needs Attention ===== */
+.attention-list {
+    display: flex;
+    flex-direction: column;
+    gap: 14px;
+}
+
+.attention-item {
+    display: flex;
+    gap: 14px;
+    padding: 14px;
+    border: 1px solid var(--border-color);
+    border-radius: 14px;
+    transition: all 0.2s;
+
+    &:hover {
+        border-color: #c7d2fe;
+        box-shadow: 0 8px 24px -12px rgba(79, 70, 229, 0.15);
+    }
+
+    .attention-img {
+        width: 64px;
+        height: 64px;
+        border-radius: 12px;
+        overflow: hidden;
+        flex-shrink: 0;
+        background: #f1f5f9;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        color: #94a3b8;
+        font-size: 22px;
+
+        img {
+            width: 100%;
+            height: 100%;
+            object-fit: cover;
+        }
+    }
+
+    .attention-body {
+        flex: 1;
+        display: flex;
+        flex-direction: column;
+        gap: 6px;
+        min-width: 0;
+    }
+
+    .attention-top {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        gap: 8px;
+
+        strong {
+            font-size: 14px;
+            color: var(--text);
+            font-weight: 700;
+        }
+    }
+
+    .attention-meta {
+        font-size: 12px;
+        color: var(--muted);
+    }
+
+    .attention-desc {
+        margin: 4px 0 0;
+        font-size: 12px;
+        color: #475569;
+    }
+
+    .attention-actions {
+        display: flex;
+        gap: 8px;
+        margin-top: 6px;
+    }
+}
+
+.attention-badge {
+    padding: 3px 10px;
+    border-radius: 999px;
+    font-size: 10px;
+    font-weight: 700;
+    letter-spacing: 0.3px;
+    text-transform: capitalize;
+    white-space: nowrap;
+
+    &.renewal {
+        background: #fde2e7;
+        color: #be185d;
+    }
+
+    &.urgent {
+        background: #fee2e2;
+        color: #dc2626;
+    }
+}
+
+.btn-primary-sm,
+.btn-outline-sm {
+    padding: 7px 14px;
+    border-radius: 9px;
+    font-size: 12px;
+    font-weight: 600;
+    cursor: pointer;
+    transition: all 0.2s;
+}
+
+.btn-primary-sm {
+    background: var(--primary);
+    color: #fff;
+    border: none;
+
+    &:hover {
+        background: var(--primary-light);
+        box-shadow: 0 6px 14px rgba(79, 70, 229, 0.3);
+    }
+}
+
+.btn-outline-sm {
+    background: #fff;
+    color: var(--text);
+    border: 1px solid var(--border-color);
+
+    &:hover {
+        border-color: var(--primary);
+        color: var(--primary);
+    }
+}
+// ضيف ده في ملف الـ SCSS بتاع الـ Dashboard
+
+.chart-card-container {
+    background-color: #ffffff;
+    border-radius: 16px;
+    padding: 24px;
+    box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.05), 0 2px 4px -2px rgba(0, 0, 0, 0.05);
+    border: 1px solid #f1f5f9;
+    display: flex;
+    flex-direction: column;
+    height: 100%; // عشان يطول مع الكروت اللي جنبه
+
+    .card-header {
+        margin-bottom: 20px;
+
+        h3 {
+            font-size: 18px;
+            font-weight: 700;
+            color: #0f172a;
+            margin: 0 0 4px 0;
+        }
+
+        p {
+            font-size: 13px;
+            color: #94a3b8;
+            margin: 0;
+        }
+    }
+
+    .chart-body {
+        flex-grow: 1;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        min-height: 280px; // نفس ارتفاع الشارت
+
+        .loading-chart {
+            color: #94a3b8;
+            font-size: 14px;
+            display: flex;
+            gap: 8px;
+            align-items: center;
+        }
+    }
+
+    .chart-footer-legend {
+        margin-top: 24px;
+        padding-top: 20px;
+        border-top: 1px solid #f1f5f9;
+        display: flex;
+        flex-wrap: wrap; // مهم عشان لو الأدوار كتير تنزل سطر جديد
+        justify-content: center;
+        gap: 16px 20px; // مسافات بالطول والعرض
+
+        .legend-item {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            font-size: 13px;
+            font-weight: 500;
+            color: #475569;
+
+            .dot {
+                width: 10px;
+                height: 10px;
+                border-radius: 50%;
+                display: inline-block;
+            }
+        }
+    }
+}

@@ -185,20 +185,18 @@ export class DetailComponent implements OnInit {
     this.sending.set(true);
     this.inquiryError.set(null);
 
-    this.propertySvc
-      .createInquiry(p.id, p.ownerId, p.companyId, this.message.trim())
-      .subscribe({
-        next: () => {
-          this.sending.set(false);
-          this.inquirySent.set(true);
-          this.message = '';
-        },
-        error: (err) => {
-          this.sending.set(false);
-          this.inquiryError.set(
-            err?.error?.error ?? 'Could not send your inquiry. Please try again.'
-          );
-        },
-      });
+    this.propertySvc.createInquiry(p.id, p.ownerId, p.companyId, this.message.trim()).subscribe({
+      next: () => {
+        this.sending.set(false);
+        this.inquirySent.set(true);
+        this.message = '';
+      },
+      error: (err) => {
+        this.sending.set(false);
+        this.inquiryError.set(
+          err?.error?.error ?? 'Could not send your inquiry. Please try again.',
+        );
+      },
+    });
   }
 }

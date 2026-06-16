@@ -33,6 +33,7 @@ export class MaintenanceComponent implements OnInit {
     { label: 'COMMON.DRAFT', value: 'Draft' },
     { label: 'MAINTENANCE.SUBMITTED', value: 'Submitted' },
     { label: 'MAINTENANCE.IN_PROGRESS', value: 'InProgress' },
+    { label: 'MAINTENANCE.AWAITING_PAYMENT', value: 'AwaitingPayment' },
     { label: 'MAINTENANCE.COMPLETED', value: 'Completed' },
     { label: 'MAINTENANCE.CANCELLED', value: 'Cancelled' },
   ];

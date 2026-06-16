@@ -1,0 +1,256 @@
+<div class="d-flex justify-content-between align-items-center mb-3">
+  <h2 class="mb-0">{{ 'COMPANY_PROPERTIES.TITLE' | translate }} ({{ counts().all }} / {{ maxPropertiesLabel() }})</h2>
+  <span class="text-muted small">
+    <i class="fa-solid fa-circle-info me-1"></i>{{ 'COMPANY_PROPERTIES.LISTINGS_HINT' | translate }}
+  </span>
+</div>
+
+<app-over-limit-banner [used]="counts().all" [max]="propertyMax()" label="properties" />
+
+<div class="d-flex flex-wrap justify-content-between align-items-center gap-2 mb-3">
+  <ul class="nav nav-pills">
+    @for (tab of tabs; track tab.value) {
+      <li class="nav-item">
+        <button
+          class="nav-link"
+          [class.active]="statusFilter() === tab.value"
+          (click)="statusFilter.set(tab.value)"
+        >
+          {{ tab.label | translate }}
+          <span class="badge bg-light text-dark ms-1">{{ counts()[tab.countKey] }}</span>
+        </button>
+      </li>
+    }
+  </ul>
+  <input
+    type="search"
+    class="form-control search-box"
+    [placeholder]="'COMPANY_PROPERTIES.SEARCH_PLACEHOLDER' | translate"
+    [value]="search()"
+    (input)="onSearch($event)"
+  />
+</div>
+
+@if (loading()) {
+  <div class="d-flex justify-content-center py-5">
+    <div class="spinner-border text-secondary" role="status">
+      <span class="visually-hidden">Loading…</span>
+    </div>
+  </div>
+} @else if (error()) {
+  <div class="alert alert-danger d-flex justify-content-between align-items-center">
+    <span><i class="fa-solid fa-triangle-exclamation me-2"></i>{{ error() }}</span>
+    <button class="btn btn-sm btn-outline-danger" (click)="load()">{{ 'COMMON.RETRY' | translate }}</button>
+  </div>
+} @else if (filtered().length === 0) {
+  <div class="card p-5 text-center text-muted">
+    <i class="fa-solid fa-house fs-1 mb-3"></i>
+    <p class="mb-0">{{ 'COMPANY_PROPERTIES.NO_MATCH' | translate }}</p>
+  </div>
+} @else {
+  <div class="card">
+    <div class="table-responsive">
+      <table class="table table-hover align-middle mb-0">
+        <thead class="table-light">
+          <tr>
+            <th></th>
+            <th>{{ 'COMMON.TITLE' | translate }}</th>
+            <th>{{ 'COMMON.LOCATION' | translate }}</th>
+            <th>{{ 'COMPANY_PROPERTIES.COL_BROKER' | translate }}</th>
+            <th>{{ 'COMMON.PRICE' | translate }}</th>
+            <th>{{ 'COMMON.STATUS' | translate }}</th>
+            <th>{{ 'COMMON.VIEWS' | translate }}</th>
+            <th class="text-end">{{ 'COMMON.ACTIONS' | translate }}</th>
+          </tr>
+        </thead>
+        <tbody>
+          @for (p of filtered(); track p.id) {
+            <tr>
+              <td>
+                @if (p.primaryImageUrl) {
+                  <img [src]="p.primaryImageUrl" alt="" class="thumb rounded" />
+                } @else {
+                  <div class="thumb rounded bg-light d-flex align-items-center justify-content-center">
+                    <i class="fa-solid fa-image text-muted"></i>
+                  </div>
+                }
+              </td>
+              <td class="fw-semibold">
+                {{ p.title }}
+                @if (p.isFeatured) {
+                  <i class="fa-solid fa-star text-warning ms-1" [title]="'COMMON.FEATURED' | translate"></i>
+                }
+              </td>
+              <td>{{ p.district }}, {{ p.city }}</td>
+              <td>{{ p.listingBrokerName ?? '—' }}</td>
+              <td>{{ p.price | number }}/mo</td>
+              <td><span [class]="badgeClass(p.status)">{{ statusLabel(p.status) }}</span></td>
+              <td>{{ p.viewsCount | number }}</td>
+              <td class="text-end">
+                <button class="btn btn-sm btn-outline-secondary me-1" [title]="'COMPANY_BROKERS.ASSIGN_BROKER' | translate"
+                        (click)="openAssign(p)">
+                  <i class="fa-solid fa-user-tag"></i>
+                </button>
+                <button class="btn btn-sm btn-outline-secondary" [title]="'COMPANY_PROPERTIES.VIEW_DETAILS' | translate"
+                        (click)="openView(p)">
+                  <i class="fa-solid fa-eye"></i>
+                </button>
+              </td>
+            </tr>
+          }
+        </tbody>
+      </table>
+    </div>
+  </div>
+}
+
+<!-- Property details modal (company view — adds owning broker) -->
+@if (viewProperty(); as p) {
+  <div class="modal d-block" tabindex="-1" role="dialog">
+    <div class="modal-dialog modal-dialog-centered modal-lg modal-dialog-scrollable">
+      <div class="modal-content">
+        <div class="modal-header align-items-start">
+          <div class="d-flex align-items-center gap-2 flex-wrap">
+            <span class="type-chip"><i class="fa-solid fa-building me-1"></i>{{ (viewDetail()?.propertyType ?? p.propertyType) }}</span>
+            <div>
+              <h5 class="modal-title mb-0">{{ p.title }}</h5>
+              @if (viewDetail()?.titleAr ?? p.titleAr; as ar) { <small class="text-muted">{{ ar }}</small> }
+            </div>
+          </div>
+          <button type="button" class="btn-close" (click)="closeView()"></button>
+        </div>
+
+        <div class="modal-body">
+          @if (viewLoading()) {
+            <div class="text-center py-5"><div class="spinner-border text-secondary" role="status"></div></div>
+          } @else {
+            @if (p.primaryImageUrl) {
+              <img [src]="p.primaryImageUrl" [alt]="p.title" class="detail-img mb-3" />
+            }
+
+            <!-- Owning broker banner (company-specific) -->
+            <div class="broker-banner mb-3">
+              <div class="broker-avatar">{{ (p.listingBrokerName || '—').charAt(0).toUpperCase() }}</div>
+              <div>
+                <span class="broker-label">{{ 'COMPANY_PROPERTIES.OWNED_BY' | translate }}</span>
+                <span class="broker-name">{{ p.listingBrokerName || ('COMPANY_PROPERTIES.UNASSIGNED' | translate) }}</span>
+              </div>
+              <button class="btn btn-sm btn-outline-dark ms-auto" (click)="openAssign(p); closeView()">
+                <i class="fa-solid fa-user-tag me-1"></i>{{ 'COMPANY_BROKERS.ASSIGN_BROKER' | translate }}
+              </button>
+            </div>
+
+            <!-- Rent + chips banner -->
+            <div class="rent-banner mb-3">
+              <div class="rent-amount">
+                <span class="rent-label">{{ 'BROKER.PROPERTIES.MONTHLY_RENT' | translate }}</span>
+                <span class="rent-val">EGP {{ p.price | number }}</span>
+              </div>
+              <div class="chips">
+                <span class="chip"><i class="fa-solid fa-bed me-1"></i>{{ p.bedrooms }} {{ 'COMMON.BEDS' | translate }}</span>
+                <span class="chip"><i class="fa-solid fa-bath me-1"></i>{{ p.bathrooms }} {{ 'COMMON.BATHS' | translate }}</span>
+                <span class="chip"><i class="fa-solid fa-vector-square me-1"></i>{{ p.areaSqm }} m²</span>
+                @if (viewDetail(); as d) {
+                  <span class="chip"><i class="fa-solid fa-layer-group me-1"></i>{{ 'BROKER.PROPERTIES.FLOOR' | translate }} {{ d.floorNumber }}/{{ d.totalFloors }}</span>
+                  <span class="chip"><i class="fa-solid fa-calendar me-1"></i>{{ d.yearBuilt }}</span>
+                }
+                <span class="chip"><i class="fa-regular fa-eye me-1"></i>{{ p.viewsCount | number }} {{ 'COMMON.VIEWS' | translate }}</span>
+                @if (viewDetail(); as d) {
+                  <span class="chip"><i class="fa-regular fa-envelope me-1"></i>{{ d.inquiriesCount }} {{ 'BROKER.PROPERTIES.BTN_INQUIRIES' | translate }}</span>
+                }
+              </div>
+            </div>
+
+            <!-- Property information -->
+            <div class="section-head"><i class="fa-solid fa-circle-info me-2"></i>{{ 'BROKER.PROPERTIES.INFO_SECTION' | translate }}</div>
+            <ul class="list-group list-group-flush mb-3">
+              <li class="list-group-item d-flex justify-content-between"><span class="text-muted">{{ 'COMPANY_PROPERTIES.COL_BROKER' | translate }}</span><span>{{ p.listingBrokerName || ('COMPANY_PROPERTIES.UNASSIGNED' | translate) }}</span></li>
+              @if (viewDetail(); as d) {
+                <li class="list-group-item d-flex justify-content-between"><span class="text-muted">{{ 'BROKER.PROPERTIES.ADDRESS' | translate }}</span><span>{{ d.address }}@if (d.apartmentNumber) {, Apt {{ d.apartmentNumber }}}</span></li>
+                <li class="list-group-item d-flex justify-content-between"><span class="text-muted">{{ 'COMMON.LOCATION' | translate }}</span><span>{{ d.district }}, {{ d.city }}</span></li>
+                <li class="list-group-item d-flex justify-content-between"><span class="text-muted">{{ 'BROKER.PROPERTIES.GOVERNORATE' | translate }}</span><span>{{ d.governorate }}</span></li>
+                <li class="list-group-item d-flex justify-content-between"><span class="text-muted">{{ 'BROKER.PROPERTIES.COUNTRY' | translate }}</span><span>{{ d.country }}</span></li>
+                <li class="list-group-item d-flex justify-content-between"><span class="text-muted">{{ 'BROKER.PROPERTIES.LISTING_SOURCE' | translate }}</span><span>{{ d.listingSource }}</span></li>
+              } @else {
+                <li class="list-group-item d-flex justify-content-between"><span class="text-muted">{{ 'COMMON.LOCATION' | translate }}</span><span>{{ p.district }}, {{ p.city }}</span></li>
+              }
+              <li class="list-group-item d-flex justify-content-between"><span class="text-muted">{{ 'COMMON.TYPE' | translate }}</span><span>{{ p.propertyType }}</span></li>
+              <li class="list-group-item d-flex justify-content-between"><span class="text-muted">{{ 'COMMON.FURNISHED' | translate }}</span><span>{{ (p.isFurnished ? 'COMMON.YES' : 'COMMON.NO') | translate }}</span></li>
+              <li class="list-group-item d-flex justify-content-between"><span class="text-muted">{{ 'COMMON.PETS' | translate }}</span><span>{{ (p.petsAllowed ? 'COMMON.YES' : 'COMMON.NO') | translate }}</span></li>
+              <li class="list-group-item d-flex justify-content-between"><span class="text-muted">{{ 'COMMON.STATUS' | translate }}</span><span [class]="badgeClass(p.status)">{{ statusLabel(p.status) }}</span></li>
+            </ul>
+
+            <!-- Amenities -->
+            @if (viewDetail()?.amenities?.length) {
+              <div class="section-head"><i class="fa-solid fa-list-check me-2"></i>{{ 'BROKER.PROPERTIES.AMENITIES' | translate }}</div>
+              <div class="amenities">
+                @for (a of viewDetail()!.amenities; track a.id) {
+                  <span class="amenity-chip">{{ a.name }}</span>
+                }
+              </div>
+            }
+          }
+        </div>
+
+        <div class="modal-footer">
+          <button type="button" class="btn btn-outline-secondary" (click)="closeView()">{{ 'COMMON.CLOSE' | translate }}</button>
+        </div>
+      </div>
+    </div>
+  </div>
+  <div class="modal-backdrop show"></div>
+}
+
+<!-- Assign broker modal -->
+@if (propertyToAssign(); as property) {
+  <div class="modal d-block" tabindex="-1" role="dialog">
+    <div class="modal-dialog modal-dialog-centered">
+      <div class="modal-content">
+        <div class="modal-header">
+          <h5 class="modal-title">{{ 'COMPANY_PROPERTIES.ASSIGN_BROKER_MODAL' | translate }}</h5>
+          <button type="button" class="btn-close" (click)="propertyToAssign.set(null)"></button>
+        </div>
+        <div class="modal-body">
+          <p class="text-muted">
+            {{ 'COMPANY_PROPERTIES.ASSIGN_CHOOSE' | translate }} <strong>{{ property.title }}</strong>.
+            @if (property.listingBrokerName) {
+              {{ 'COMPANY_PROPERTIES.ASSIGN_CURRENTLY' | translate }} <strong>{{ property.listingBrokerName }}</strong>.
+            }
+          </p>
+
+          @if (assignError()) {
+            <div class="alert alert-danger py-2">{{ assignError() }}</div>
+          }
+
+          @if (activeBrokers().length === 0) {
+            <div class="alert alert-warning py-2">
+              {{ 'COMPANY_PROPERTIES.NO_ACTIVE_BROKERS' | translate }}
+            </div>
+          } @else {
+            <label class="form-label">{{ 'COMPANY_PROPERTIES.BROKER_LABEL' | translate }}</label>
+            <select class="form-select" [value]="selectedBrokerId()" (change)="onBrokerSelected($event)">
+              <option value="" disabled>{{ 'COMPANY_PROPERTIES.BROKER_PLACEHOLDER' | translate }}</option>
+              @for (broker of activeBrokers(); track broker.id) {
+                <option [value]="broker.id">
+                  {{ broker.fullName || broker.licenseNumber }}
+                </option>
+              }
+            </select>
+          }
+        </div>
+        <div class="modal-footer">
+          <button type="button" class="btn btn-outline-secondary" (click)="propertyToAssign.set(null)">{{ 'COMMON.CANCEL' | translate }}</button>
+          <button type="button" class="btn btn-dark"
+                  (click)="confirmAssign()"
+                  [disabled]="assigning() || !selectedBrokerId() || activeBrokers().length === 0">
+            @if (assigning()) {
+              <span class="spinner-border spinner-border-sm me-2"></span>
+            }
+            {{ 'COMPANY_PROPERTIES.ASSIGN' | translate }}
+          </button>
+        </div>
+      </div>
+    </div>
+  </div>
+  <div class="modal-backdrop show"></div>
+}

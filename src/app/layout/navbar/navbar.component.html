@@ -1,3 +1,7 @@
+@if (searchOpen()) {
+  <app-search-overlay (closed)="closeSearch()" />
+}
+
 <nav class="navbar navbar-expand-md site-navbar sticky-top" [class.site-navbar--scrolled]="scrolled()">
     <div class="container-xl">
 
@@ -50,10 +54,9 @@
                     <span>{{ lang.isRtl() ? 'EN' : 'ع' }}</span>
                 </button>
 
-                <button class="site-navbar__icon-btn" aria-label="Search">
+                <button class="site-navbar__icon-btn" aria-label="Search" (click)="openSearch()">
                     <i class="fa-solid fa-magnifying-glass"></i>
                 </button>
-
                 @if (authenticated()) {
                 <button class="site-navbar__icon-btn site-navbar__bell" aria-label="Notifications"
                     routerLink="/dashboard/notifications">

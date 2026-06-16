@@ -1,0 +1,188 @@
+<div class="companies-page">
+
+    <div class="page-head">
+        <div>
+            <h1>{{ 'ADMIN.COMPANIES.PAGE_TITLE' | translate }}</h1>
+            <p>{{ 'ADMIN.COMPANIES.PAGE_SUBTITLE' | translate }}</p>
+        </div>
+        <span class="total-badge">
+            {{ 'ADMIN.COMPANIES.TOTAL_BADGE' | translate: { n: companies().length } }}
+        </span>
+    </div>
+
+    <!-- Search -->
+    <div class="search-bar">
+        <i class="fa-solid fa-magnifying-glass"></i>
+        <input type="text" [placeholder]="'ADMIN.COMPANIES.SEARCH_PLACEHOLDER' | translate"
+            [value]="searchQuery()" (input)="searchQuery.set($any($event.target).value)" />
+        @if (searchQuery()) {
+        <button class="clear-btn" (click)="searchQuery.set('')">
+            <i class="fa-solid fa-xmark"></i>
+        </button>
+        }
+    </div>
+
+    <!-- Loading -->
+    @if (loading()) {
+    <div class="empty"><i class="fa-solid fa-spinner fa-spin"></i><p>{{ 'ADMIN.COMPANIES.LOADING' | translate }}</p></div>
+    } @else if (filtered().length === 0) {
+    <div class="empty"><i class="fa-solid fa-building-circle-xmark"></i><p>{{ 'ADMIN.COMPANIES.NOT_FOUND' | translate }}</p></div>
+    } @else {
+
+    <!-- Grid -->
+    <div class="companies-grid">
+        @for (c of filtered(); track c.id) {
+        <div class="company-card" (click)="openCompany(c)">
+            <div class="company-logo">
+                @if (c.logoUrl) {
+                <img [src]="c.logoUrl" [alt]="c.name" />
+                } @else {
+                <div class="logo-placeholder">{{ c.name.charAt(0).toUpperCase() }}</div>
+                }
+            </div>
+            <div class="company-info">
+                <div class="company-header">
+                    <h3>{{ c.name }}</h3>
+                    <span class="status-badge" [class.verified]="c.isVerified" [class.unverified]="!c.isVerified">
+                        @if (c.isVerified) {
+                        <i class="fa-solid fa-circle-check"></i> {{ 'ADMIN.COMPANIES.VERIFIED' | translate }}
+                        } @else {
+                        <i class="fa-solid fa-clock"></i> {{ 'ADMIN.COMPANIES.UNVERIFIED' | translate }}
+                        }
+                    </span>
+                </div>
+                <span class="company-city"><i class="fa-solid fa-location-dot"></i> {{ c.city }}</span>
+                <span class="company-email"><i class="fa-regular fa-envelope"></i> {{ c.email }}</span>
+                @if (c.ratingAvg > 0) {
+                <span class="company-rating">
+                    <i class="fa-solid fa-star"></i> {{ c.ratingAvg | number:'1.1-1' }}
+                    <small>({{ c.totalRatings }})</small>
+                </span>
+                }
+                <span class="company-date">{{ 'ADMIN.COMPANIES.JOINED' | translate: { date: formatDate(c.createdAt) } }}</span>
+            </div>
+            <div class="company-action">
+                <i class="fa-solid fa-chevron-right"></i>
+            </div>
+        </div>
+        }
+    </div>
+    }
+
+    <!-- Modal -->
+    @if (selectedCompany(); as c) {
+    <div class="modal-backdrop" (click)="closeModal()">
+        <div class="company-modal" (click)="$event.stopPropagation()">
+
+            <!-- Modal Header -->
+            <div class="modal-head">
+                <div class="modal-logo">
+                    @if (c.logoUrl) {
+                    <img [src]="c.logoUrl" [alt]="c.name" />
+                    } @else {
+                    <div class="logo-placeholder lg">{{ c.name.charAt(0).toUpperCase() }}</div>
+                    }
+                </div>
+                <div class="modal-title">
+                    <h2>{{ c.name }}</h2>
+                    <span class="status-badge" [class.verified]="c.isVerified" [class.unverified]="!c.isVerified">
+                        @if (c.isVerified) { <i class="fa-solid fa-circle-check"></i> {{ 'ADMIN.COMPANIES.VERIFIED' | translate }} }
+                        @else { <i class="fa-solid fa-clock"></i> {{ 'ADMIN.COMPANIES.UNVERIFIED' | translate }} }
+                    </span>
+                </div>
+                <button class="close-btn" (click)="closeModal()">
+                    <i class="fa-solid fa-xmark"></i>
+                </button>
+            </div>
+
+            <!-- Company Details -->
+            <div class="modal-details">
+                <div class="detail-row">
+                    <span>{{ 'ADMIN.COMPANIES.DETAIL_EMAIL' | translate }}</span>
+                    <strong>{{ c.email }}</strong>
+                </div>
+                <div class="detail-row">
+                    <span>{{ 'ADMIN.COMPANIES.DETAIL_PHONE' | translate }}</span>
+                    <strong>{{ c.phone }}</strong>
+                </div>
+                <div class="detail-row">
+                    <span>{{ 'ADMIN.COMPANIES.DETAIL_CITY' | translate }}</span>
+                    <strong>{{ c.city }}</strong>
+                </div>
+                <div class="detail-row">
+                    <span>{{ 'ADMIN.COMPANIES.DETAIL_ADDRESS' | translate }}</span>
+                    <strong>{{ c.address }}</strong>
+                </div>
+                <div class="detail-row">
+                    <span>{{ 'ADMIN.COMPANIES.DETAIL_REGISTER' | translate }}</span>
+                    <strong>{{ c.commercialRegister }}</strong>
+                </div>
+                @if (c.website) {
+                <div class="detail-row">
+                    <span>{{ 'ADMIN.COMPANIES.DETAIL_WEBSITE' | translate }}</span>
+                    <strong>{{ c.website }}</strong>
+                </div>
+                }
+                <div class="detail-row">
+                    <span>{{ 'ADMIN.COMPANIES.DETAIL_JOINED' | translate }}</span>
+                    <strong>{{ formatDate(c.createdAt) }}</strong>
+                </div>
+            </div>
+
+            <!-- Brokers Section -->
+            <div class="brokers-section">
+                <h3><i class="fa-solid fa-id-badge"></i> {{ 'ADMIN.COMPANIES.BROKERS_SECTION' | translate }}</h3>
+
+                @if (loadingBrokers()) {
+                <div class="brokers-loading">
+                    <i class="fa-solid fa-spinner fa-spin"></i> {{ 'ADMIN.COMPANIES.BROKERS_LOADING' | translate }}
+                </div>
+                } @else if (brokers().length === 0) {
+                <p class="no-brokers">{{ 'ADMIN.COMPANIES.NO_BROKERS' | translate }}</p>
+                } @else {
+                <div class="brokers-list">
+                    @for (b of brokers(); track b.id) {
+                    <div class="broker-row" [class.inactive]="!b.isActive">
+                        <div class="broker-avatar">
+                            @if (b.profileImageUrl) {
+                            <img [src]="b.profileImageUrl" [alt]="b.fullName" />
+                            } @else {
+                            <span>{{ (b.fullName || '?').charAt(0).toUpperCase() }}</span>
+                            }
+                        </div>
+                        <div class="broker-info">
+                            <strong>{{ b.fullName || 'Unknown' }}</strong>
+                            <span>{{ b.email }}</span>
+                            <span class="broker-license">
+                                {{ 'ADMIN.COMPANIES.LICENSE' | translate }} {{ b.licenseNumber }}
+                            </span>
+                        </div>
+                        <div class="broker-stats">
+                            <span>
+                                <i class="fa-solid fa-handshake"></i>
+                                {{ 'ADMIN.COMPANIES.BROKER_DEALS' | translate: { n: b.closedDealsCount } }}
+                            </span>
+                            @if (b.ratingAvg > 0) {
+                            <span><i class="fa-solid fa-star"></i> {{ b.ratingAvg | number:'1.1-1' }}</span>
+                            }
+                        </div>
+                        <span class="broker-status" [class.active]="b.isActive" [class.inactive]="!b.isActive">
+                            {{ b.isActive
+                                ? ('ADMIN.COMPANIES.BROKER_STATUS_ACTIVE' | translate)
+                                : ('ADMIN.COMPANIES.BROKER_STATUS_INACTIVE' | translate) }}
+                        </span>
+                    </div>
+                    }
+                </div>
+                }
+            </div>
+
+            <div class="modal-footer">
+                <button class="btn-outline" (click)="closeModal()">
+                    {{ 'ADMIN.COMPANIES.CLOSE' | translate }}
+                </button>
+            </div>
+        </div>
+    </div>
+    }
+</div>

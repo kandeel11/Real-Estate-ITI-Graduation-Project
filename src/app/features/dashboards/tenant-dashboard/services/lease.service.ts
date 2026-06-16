@@ -1,6 +1,7 @@
 import { Injectable, inject } from '@angular/core';
 import { HttpClient } from '@angular/common/http';
-import { Observable } from 'rxjs';
+import { Observable, of } from 'rxjs';
+import { catchError } from 'rxjs/operators';
 import { environment } from '../../../../../environments/environment';
 
 // ── API lease shape ─────────────────────────────────────────────────────────
@@ -25,7 +26,7 @@ export interface ApiLease {
 
 export interface ApiPropertyMedia {
   id: string;
-  url: string;
+  mediaUrl: string;
   mediaType: string;
   isPrimary?: boolean;
 }
@@ -58,6 +59,19 @@ export interface ApiPropertyDto {
   amenities: ApiAmenity[];
 }
 
+export interface LeaseOffer {
+  id: string;
+  propertyId: string;
+  propertyTitle: string;
+  startDate: string;
+  endDate: string;
+  monthlyRent: number;
+  deposit: number;
+  pdfUrl?: string;
+  status: 'pending_tenant' | 'accepted' | 'declined';
+  sentAt: string;
+}
+
 export interface RentedPropertyItem {
   property: ApiPropertyDto;
   leaseId: string;
@@ -83,6 +97,19 @@ export class LeaseService {
 
   getRentedProperties(): Observable<RentedPropertyItem[]> {
     return this.http.get<RentedPropertyItem[]>(`${this.base}/tenant/rented-properties`);
+  }
+
+  getPendingOffer(): Observable<LeaseOffer | null> {
+    return this.http.get<LeaseOffer>(`${this.base}/tenant/leases/pending-offer`)
+      .pipe(catchError(() => of(null)));
+  }
+
+  acceptOffer(offerId: string): Observable<void> {
+    return this.http.post<void>(`${this.base}/tenant/leases/${offerId}/accept`, {});
+  }
+
+  declineOffer(offerId: string): Observable<void> {
+    return this.http.post<void>(`${this.base}/tenant/leases/${offerId}/decline`, {});
   }
 
   contractUrl(relativePath: string): string {
