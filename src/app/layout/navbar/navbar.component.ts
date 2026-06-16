@@ -4,10 +4,11 @@ import { TranslatePipe } from '@ngx-translate/core';
 import { AuthService } from '../../core/services/auth.service';
 import { NotificationService } from '../../features/dashboards/tenant-dashboard/services/notification.service';
 import { LanguageService } from '../../core/services/language.service';
+import { SearchOverlayComponent } from '../../shared/components/search-overlay/search-overlay.component';
 
 @Component({
   selector: 'app-navbar',
-  imports: [RouterLink, RouterLinkActive, TranslatePipe],
+  imports: [RouterLink, RouterLinkActive, TranslatePipe, SearchOverlayComponent],
   templateUrl: './navbar.component.html',
   styleUrl: './navbar.component.css'
 })
@@ -19,8 +20,12 @@ export class NavbarComponent {
   protected readonly notifService = inject(NotificationService);
   readonly authenticated = this.authService.authenticated;
   readonly user = this.authService.user;
-  scrolled = signal(false);
-  menuOpen = signal(false);
+  scrolled    = signal(false);
+  menuOpen    = signal(false);
+  searchOpen  = signal(false);
+
+  openSearch(): void  { this.searchOpen.set(true);  this.menuOpen.set(false); }
+  closeSearch(): void { this.searchOpen.set(false); }
 
   readonly isTenant = computed(() => this.authService.userRole() === 'tenant');
   readonly isOwner = computed(() => this.authService.userRole() === 'owner');
