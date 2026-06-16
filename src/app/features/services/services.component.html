@@ -1,0 +1,264 @@
+<main class="svc-page">
+
+  <!-- ═══════════════════════════════════════════════════════════════
+       HERO
+  ═══════════════════════════════════════════════════════════════ -->
+  <section class="svc-hero">
+    <div class="container-xl">
+      <div class="svc-hero__inner">
+        <span class="page-badge" inView [inViewDelay]="0">
+          <i class="fa-solid fa-star fa-xs"></i> Our Services
+        </span>
+        <h1 class="svc-hero__title" inView [inViewDelay]="100">
+          Everything You Need to<br>
+          <span class="accent">Manage Real Estate</span>
+        </h1>
+        <p class="svc-hero__subtitle" inView [inViewDelay]="200">
+          Estatein brings together property listing, AI-powered search, tenant management, maintenance, and
+          analytics into one seamless platform — built for owners, tenants, brokers, and agencies.
+        </p>
+        <div class="svc-hero__actions" inView [inViewDelay]="300">
+          <a routerLink="/auth/register" class="btn-primary-solid">
+            Get Started Free <i class="fa-solid fa-arrow-right"></i>
+          </a>
+          <a routerLink="/properties" class="btn-outline-solid">
+            Browse Properties
+          </a>
+        </div>
+      </div>
+    </div>
+    <div class="svc-hero__bg-ring svc-hero__bg-ring--1"></div>
+    <div class="svc-hero__bg-ring svc-hero__bg-ring--2"></div>
+  </section>
+
+  <!-- ═══════════════════════════════════════════════════════════════
+       SERVICES GRID
+  ═══════════════════════════════════════════════════════════════ -->
+  <section class="svc-grid-section">
+    <div class="container-xl">
+      <div class="section-header" inView>
+        <span class="section-badge">What We Offer</span>
+        <h2 class="section-title">A Full Suite of Real Estate Tools</h2>
+        <p class="section-sub">From first listing to final lease, every tool you need is one click away.</p>
+      </div>
+
+      <div class="svc-grid">
+        @for (svc of services; track svc.title) {
+          <div class="svc-card" inView [inViewDelay]="$index * 80">
+            <div class="svc-card__icon" [style.background]="svc.bg" [style.color]="svc.color">
+              <i class="fa-solid {{ svc.icon }}"></i>
+            </div>
+            <h3 class="svc-card__title">{{ svc.title }}</h3>
+            <p class="svc-card__desc">{{ svc.desc }}</p>
+            <a routerLink="/auth/register" class="svc-card__link">
+              Get started <i class="fa-solid fa-arrow-right fa-xs"></i>
+            </a>
+          </div>
+        }
+      </div>
+    </div>
+  </section>
+
+  <!-- ═══════════════════════════════════════════════════════════════
+       PROPERTY MANAGEMENT SPOTLIGHT
+  ═══════════════════════════════════════════════════════════════ -->
+  <section class="pm-section">
+    <div class="container-xl">
+      <div class="pm-grid">
+
+        <!-- Visual panel -->
+        <div class="pm-visual" inView [inViewDelay]="0">
+          <div class="pm-visual__card pm-visual__card--main">
+            <div class="pm-visual__card-header">
+              <div class="pm-visual__avatar pm-visual__avatar--indigo">
+                <i class="fa-solid fa-building"></i>
+              </div>
+              <div>
+                <p class="pm-visual__card-title">Portfolio Overview</p>
+                <p class="pm-visual__card-sub">Riverside Tower, Block A</p>
+              </div>
+              <span class="pm-visual__badge pm-visual__badge--green">Active</span>
+            </div>
+            <div class="pm-visual__stats-row">
+              <div class="pm-visual__stat">
+                <span class="pm-visual__stat-num">24</span>
+                <span class="pm-visual__stat-lbl">Units</span>
+              </div>
+              <div class="pm-visual__stat">
+                <span class="pm-visual__stat-num">91%</span>
+                <span class="pm-visual__stat-lbl">Occupied</span>
+              </div>
+              <div class="pm-visual__stat">
+                <span class="pm-visual__stat-num">EGP 84k</span>
+                <span class="pm-visual__stat-lbl">Monthly Income</span>
+              </div>
+            </div>
+            <div class="pm-visual__bar-wrap">
+              <span class="pm-visual__bar-lbl">Occupancy Rate</span>
+              <div class="pm-visual__bar"><div class="pm-visual__bar-fill" style="width:91%"></div></div>
+            </div>
+          </div>
+
+          <div class="pm-visual__card pm-visual__card--float pm-visual__card--float-tr">
+            <i class="fa-solid fa-wrench pm-visual__float-icon"></i>
+            <div>
+              <p class="pm-visual__float-title">3 Open Tickets</p>
+              <p class="pm-visual__float-sub">Maintenance requests</p>
+            </div>
+          </div>
+
+          <div class="pm-visual__card pm-visual__card--float pm-visual__card--float-bl">
+            <i class="fa-solid fa-file-signature pm-visual__float-icon pm-visual__float-icon--green"></i>
+            <div>
+              <p class="pm-visual__float-title">Lease Renewed</p>
+              <p class="pm-visual__float-sub">Unit 12B · 12 months</p>
+            </div>
+          </div>
+        </div>
+
+        <!-- Text panel -->
+        <div class="pm-content" inView [inViewDelay]="100">
+          <span class="section-badge">Property Management</span>
+          <h2 class="pm-content__title">
+            Take Full Control of Your<br>
+            <span class="accent">Property Portfolio</span>
+          </h2>
+          <p class="pm-content__desc">
+            Estatein's property management module gives landlords, companies and brokers a
+            single command centre for every aspect of managing real estate — from onboarding
+            new tenants to tracking monthly income and scheduling maintenance.
+          </p>
+
+          <ul class="pm-features">
+            <li class="pm-feature">
+              <span class="pm-feature__dot"></span>
+              <div>
+                <strong>Smart Listing Tools</strong>
+                <p>Create detailed listings with photos, virtual tours and AI-written descriptions in minutes.</p>
+              </div>
+            </li>
+            <li class="pm-feature">
+              <span class="pm-feature__dot"></span>
+              <div>
+                <strong>Tenant Lifecycle Management</strong>
+                <p>Screen applicants, generate digital leases, collect rent, and track payment history automatically.</p>
+              </div>
+            </li>
+            <li class="pm-feature">
+              <span class="pm-feature__dot"></span>
+              <div>
+                <strong>Maintenance Coordination</strong>
+                <p>Tenants raise tickets; owners approve; certified maintenance companies execute — fully tracked.</p>
+              </div>
+            </li>
+            <li class="pm-feature">
+              <span class="pm-feature__dot"></span>
+              <div>
+                <strong>Financial Reporting</strong>
+                <p>Monthly income summaries, expense tracking, and occupancy rate trends — export ready.</p>
+              </div>
+            </li>
+          </ul>
+
+          <a routerLink="/auth/register" class="btn-primary-solid" inView [inViewDelay]="400">
+            Start Managing Today <i class="fa-solid fa-arrow-right"></i>
+          </a>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- ═══════════════════════════════════════════════════════════════
+       WHO IS IT FOR
+  ═══════════════════════════════════════════════════════════════ -->
+  <section class="roles-section">
+    <div class="container-xl">
+      <div class="section-header" inView>
+        <span class="section-badge">Built for Everyone</span>
+        <h2 class="section-title">The Right Tools for Every Role</h2>
+        <p class="section-sub">Whether you own one apartment or manage a portfolio of hundreds, Estatein fits your workflow.</p>
+      </div>
+      <div class="roles-grid">
+        @for (role of roles; track role.label) {
+          <div class="role-card" inView [inViewDelay]="$index * 80">
+            <div class="role-card__icon" [style.background]="role.gradient">
+              <i class="fa-solid {{ role.icon }}"></i>
+            </div>
+            <h3 class="role-card__title">{{ role.label }}</h3>
+            <ul class="role-card__list">
+              @for (pt of role.points; track pt) {
+                <li><i class="fa-solid fa-check"></i> {{ pt }}</li>
+              }
+            </ul>
+            <a routerLink="/auth/register" class="role-card__cta">
+              Get started <i class="fa-solid fa-arrow-right fa-xs"></i>
+            </a>
+          </div>
+        }
+      </div>
+    </div>
+  </section>
+
+  <!-- ═══════════════════════════════════════════════════════════════
+       HOW IT WORKS
+  ═══════════════════════════════════════════════════════════════ -->
+  <section class="how-section">
+    <div class="container-xl">
+      <div class="section-header" inView>
+        <span class="section-badge">How It Works</span>
+        <h2 class="section-title">Up and Running in Three Steps</h2>
+      </div>
+      <div class="how-grid">
+        @for (step of steps; track step.num) {
+          <div class="how-card" inView [inViewDelay]="$index * 120">
+            <div class="how-card__num">{{ step.num }}</div>
+            <div class="how-card__icon-wrap">
+              <i class="fa-solid {{ step.icon }}"></i>
+            </div>
+            <h3 class="how-card__title">{{ step.title }}</h3>
+            <p class="how-card__desc">{{ step.desc }}</p>
+          </div>
+        }
+      </div>
+    </div>
+  </section>
+
+  <!-- ═══════════════════════════════════════════════════════════════
+       STATS
+  ═══════════════════════════════════════════════════════════════ -->
+  <section class="stats-strip">
+    <div class="container-xl">
+      <div class="stats-inner">
+        @for (stat of stats; track stat.label) {
+          <div class="stat-item" inView [inViewDelay]="$index * 80">
+            <span class="stat-item__value">{{ stat.value }}</span>
+            <span class="stat-item__label">{{ stat.label }}</span>
+          </div>
+        }
+      </div>
+    </div>
+  </section>
+
+  <!-- ═══════════════════════════════════════════════════════════════
+       CTA
+  ═══════════════════════════════════════════════════════════════ -->
+  <section class="svc-cta">
+    <div class="container-xl">
+      <div class="svc-cta__inner" inView>
+        <div class="svc-cta__text">
+          <h2 class="svc-cta__title">Ready to Transform the Way You Manage Real Estate?</h2>
+          <p class="svc-cta__sub">Join thousands of property owners, tenants, and brokers already on Estatein.</p>
+        </div>
+        <div class="svc-cta__actions">
+          <a routerLink="/auth/register" class="btn-white-solid">
+            Create Free Account <i class="fa-solid fa-arrow-right"></i>
+          </a>
+          <a routerLink="/contact" class="btn-outline-white">
+            Contact Sales
+          </a>
+        </div>
+      </div>
+    </div>
+  </section>
+
+</main>

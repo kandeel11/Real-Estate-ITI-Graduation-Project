@@ -28,65 +28,62 @@ export class AiChatComponent implements OnInit, AfterViewChecked {
   @ViewChild('scrollArea') scrollArea?: ElementRef<HTMLDivElement>;
   private shouldScroll = false;
 
-  // ===== State =====
-  messages = signal<ChatMessage[]>([]);
-  sessions = signal<ChatSession[]>([]);
+  // ── State ──────────────────────────────────────────────────────────────────
+  messages  = signal<ChatMessage[]>([]);
+  sessions  = signal<ChatSession[]>([]);
   sessionId = signal<string | null>(null);
-  draft = signal('');
-  sending = signal(false);
+  draft     = signal('');
+  sending   = signal(false);
   sidebarOpen = signal(true);
 
-  // ===== Computed =====
+  // ── Computed ───────────────────────────────────────────────────────────────
   hasMessages = computed(() => this.messages().length > 0);
-  canSend = computed(() => this.draft().trim().length > 0 && !this.sending());
+  canSend     = computed(() => this.draft().trim().length > 0 && !this.sending());
 
-  // ===== Prompt Suggestions =====
+  // ── Analytics-focused suggestions ─────────────────────────────────────────
   suggestions: PromptSuggestion[] = [
     {
       icon: 'fa-chart-line',
-      title: 'Market Trends',
-      prompt: 'Summarize the current real estate market trends',
+      title: 'Revenue Summary',
+      prompt: 'What is the total rent revenue collected and how many payments are overdue?',
       color: 'indigo',
     },
     {
-      icon: 'fa-users',
-      title: 'User Insights',
-      prompt: 'Give me an overview of registered users',
+      icon: 'fa-building',
+      title: 'Property Overview',
+      prompt: 'Give me a full breakdown of properties by status and top cities.',
       color: 'green',
     },
     {
-      icon: 'fa-building',
-      title: 'Property Status',
-      prompt: 'Which properties need verification?',
+      icon: 'fa-users',
+      title: 'User Growth',
+      prompt: 'How many new users and companies signed up this month?',
       color: 'amber',
     },
     {
-      icon: 'fa-money-bill-trend-up',
-      title: 'Revenue',
-      prompt: 'How is revenue trending this month?',
+      icon: 'fa-credit-card',
+      title: 'Subscriptions',
+      prompt: 'Which subscription plan is most popular and what is the total subscription revenue?',
       color: 'purple',
     },
   ];
 
   ngOnInit() {
-    this.loadSessions();
-  }
-
-  ngAfterViewChecked() {
-    if (this.shouldScroll && this.scrollArea) {
-      this.scrollArea.nativeElement.scrollTop = this.scrollArea.nativeElement.scrollHeight;
-      this.shouldScroll = false;
-    }
-  }
-
-  loadSessions() {
     this.svc.getSessions().subscribe({
       next: (s) => this.sessions.set(s),
       error: () => {},
     });
   }
 
-  // ===== Send =====
+  ngAfterViewChecked() {
+    if (this.shouldScroll && this.scrollArea) {
+      this.scrollArea.nativeElement.scrollTop =
+        this.scrollArea.nativeElement.scrollHeight;
+      this.shouldScroll = false;
+    }
+  }
+
+  // ── Send ───────────────────────────────────────────────────────────────────
   usePrompt(prompt: string) {
     this.draft.set(prompt);
     this.send();
@@ -124,12 +121,14 @@ export class AiChatComponent implements OnInit, AfterViewChecked {
     this.sending.set(true);
     this.shouldScroll = true;
 
-    this.svc.sendMessage({ sessionId: this.sessionId(), message: text }).subscribe({
-      next: (res) => {
-        this.sessionId.set(res.sessionId);
+    // ── Call the real analytics endpoint ──────────────────────────────────
+    this.svc.sendAnalyticsMessage(text).subscribe({
+      next: (answer) => {
         this.messages.update((list) =>
           list.map((msg) =>
-            msg.id === pendingMsg.id ? { ...msg, content: res.replyText, pending: false } : msg,
+            msg.id === pendingMsg.id
+              ? { ...msg, content: answer, pending: false }
+              : msg,
           ),
         );
         this.sending.set(false);
@@ -141,7 +140,7 @@ export class AiChatComponent implements OnInit, AfterViewChecked {
             msg.id === pendingMsg.id
               ? {
                   ...msg,
-                  content: 'Sorry, something went wrong. Please try again.',
+                  content: 'The analytics assistant is temporarily unavailable. Please try again.',
                   pending: false,
                   error: true,
                 }
@@ -154,7 +153,7 @@ export class AiChatComponent implements OnInit, AfterViewChecked {
     });
   }
 
-  // ===== Sessions =====
+  // ── Sessions (local UX only) ───────────────────────────────────────────────
   newChat() {
     this.messages.set([]);
     this.sessionId.set(null);
@@ -163,7 +162,6 @@ export class AiChatComponent implements OnInit, AfterViewChecked {
 
   openSession(s: ChatSession) {
     this.sessionId.set(s.id);
-    // For mock: just clear and let user continue. Real: load history.
     this.messages.set([
       {
         id: crypto.randomUUID(),
@@ -179,8 +177,7 @@ export class AiChatComponent implements OnInit, AfterViewChecked {
     this.sidebarOpen.update((v) => !v);
   }
 
-  // ===== Helpers =====
-  // Lightweight markdown → HTML (bold, bullets, line breaks)
+  // ── Helpers ────────────────────────────────────────────────────────────────
   renderMarkdown(text: string): string {
     let html = text
       .replace(/&/g, '&amp;')
@@ -195,7 +192,10 @@ export class AiChatComponent implements OnInit, AfterViewChecked {
   }
 
   formatTime(iso: string) {
-    return new Date(iso).toLocaleTimeString('en-US', { hour: '2-digit', minute: '2-digit' });
+    return new Date(iso).toLocaleTimeString('en-US', {
+      hour: '2-digit',
+      minute: '2-digit',
+    });
   }
 
   relativeTime(iso: string) {

@@ -1,7 +1,7 @@
 import { HttpClient } from '@angular/common/http';
 import { Injectable, inject } from '@angular/core';
 import { Observable, BehaviorSubject } from 'rxjs';
-import { tap, timeout } from 'rxjs/operators';
+import { map, tap, timeout } from 'rxjs/operators';
 import { environment } from '../../../../../environments/environment';
 import {
   AdminTicket,
@@ -62,6 +62,9 @@ export class MaintenanceService {
 
   // ===== TICKETS =====
   getAllTickets(): Observable<AdminTicket[]> {
-    return this.http.get<AdminTicket[]>(`${this.base}/maintenance/tickets/admin`).pipe(timeout(15000));
+    return this.http.get<any>(`${this.base}/maintenance/tickets/admin`).pipe(
+      timeout(15000),
+      map((res) => Array.isArray(res) ? res : (res?.$values ?? res?.data ?? res?.items ?? [])),
+    );
   }
 }

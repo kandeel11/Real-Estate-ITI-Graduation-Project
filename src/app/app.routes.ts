@@ -50,6 +50,20 @@ export const routes: Routes = [
             (m) => m.DetailComponent,
           ),
       },
+      {
+        path: 'services',
+        loadComponent: () =>
+          import('./features/services/services.component').then(
+            (m) => m.ServicesComponent,
+          ),
+      },
+      {
+        path: 'contact',
+        loadComponent: () =>
+          import('./features/contact/contact.component').then(
+            (m) => m.ContactComponent,
+          ),
+      },
     ],
   },
 

@@ -12,8 +12,18 @@ import { AuthService } from '../../../../core/services/auth.service';
 })
 export class MaintenanceLayoutComponent {
   protected readonly auth = inject(AuthService);
-  sidebarCollapsed = signal(false);
+  sidebarCollapsed  = signal(false);
+  mobileSidebarOpen = signal(false);
+
   toggleSidebar() {
-    this.sidebarCollapsed.update((v) => !v);
+    if (typeof window !== 'undefined' && window.innerWidth <= 768) {
+      this.mobileSidebarOpen.update((v) => !v);
+    } else {
+      this.sidebarCollapsed.update((v) => !v);
+    }
+  }
+
+  closeMobileSidebar() {
+    this.mobileSidebarOpen.set(false);
   }
 }
