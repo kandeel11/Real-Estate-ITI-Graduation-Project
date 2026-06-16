@@ -1,5 +1,5 @@
 @if (searchOpen()) {
-  <app-search-overlay (closed)="closeSearch()" />
+<app-search-overlay (closed)="closeSearch()" />
 }
 
 <nav class="navbar navbar-expand-md site-navbar sticky-top" [class.site-navbar--scrolled]="scrolled()">
@@ -39,7 +39,7 @@
                     </a>
                 </li>
                 <li class="nav-item">
-                    <a class="nav-link site-navbar__link" routerLink="/contact-us" routerLinkActive="active">
+                    <a class="nav-link site-navbar__link" routerLink="/contact" routerLinkActive="active">
                         {{ 'NAVBAR.CONTACT' | translate }}
                     </a>
                 </li>
@@ -49,7 +49,8 @@
             <div class="site-navbar__actions">
 
                 <!-- Language toggle -->
-                <button class="site-navbar__lang-btn" (click)="lang.toggle()" [title]="lang.isRtl() ? 'Switch to English' : 'التبديل إلى العربية'">
+                <button class="site-navbar__lang-btn" (click)="lang.toggle()"
+                    [title]="lang.isRtl() ? 'Switch to English' : 'التبديل إلى العربية'">
                     <i class="fa-solid fa-globe"></i>
                     <span>{{ lang.isRtl() ? 'EN' : 'ع' }}</span>
                 </button>
@@ -72,44 +73,44 @@
                 }
 
                 @if (authenticated()) {
-                    @if (isOwner()) {
-                        <a routerLink="/my-listings" class="btn btn-outline-primary site-navbar__cta me-1">
-                            <i class="fa-solid fa-list me-1"></i>{{ 'NAVBAR.MY_LISTINGS' | translate }}
-                        </a>
-                    }
-                    @if (isTenant()) {
-                        <div class="site-navbar__user" (click)="$event.stopPropagation()">
-                            <button class="site-navbar__avatar" (click)="toggleMenu($event)"
-                                aria-label="Account menu" [attr.aria-expanded]="menuOpen()">
-                                {{ initials() }}
-                            </button>
+                @if (isOwner()) {
+                <a routerLink="/my-listings" class="btn btn-outline-primary site-navbar__cta me-1">
+                    <i class="fa-solid fa-list me-1"></i>{{ 'NAVBAR.MY_LISTINGS' | translate }}
+                </a>
+                }
+                @if (isTenant()) {
+                <div class="site-navbar__user" (click)="$event.stopPropagation()">
+                    <button class="site-navbar__avatar" (click)="toggleMenu($event)" aria-label="Account menu"
+                        [attr.aria-expanded]="menuOpen()">
+                        {{ initials() }}
+                    </button>
 
-                            @if (menuOpen()) {
-                                <div class="site-navbar__menu shadow">
-                                    <div class="site-navbar__menu-header">
-                                        <div class="site-navbar__menu-name">{{ user()?.fullName }}</div>
-                                        <div class="site-navbar__menu-email">{{ user()?.email }}</div>
-                                    </div>
-                                    <div class="site-navbar__menu-divider"></div>
-                                    <a class="site-navbar__menu-item" [routerLink]="dashboardRoute()" (click)="closeMenu()">
-                                        <i class="fa-solid fa-gauge"></i>{{ 'NAVBAR.MY_DASHBOARD' | translate }}
-                                    </a>
-                                    <div class="site-navbar__menu-divider"></div>
-                                    <button class="site-navbar__menu-item site-navbar__menu-item--danger" (click)="logout()">
-                                        <i class="fa-solid fa-arrow-right-from-bracket"></i>{{ 'NAVBAR.LOGOUT' | translate }}
-                                    </button>
-                                </div>
-                            }
+                    @if (menuOpen()) {
+                    <div class="site-navbar__menu shadow">
+                        <div class="site-navbar__menu-header">
+                            <div class="site-navbar__menu-name">{{ user()?.fullName }}</div>
+                            <div class="site-navbar__menu-email">{{ user()?.email }}</div>
                         </div>
-                    } @else {
-                        <button class="btn btn-outline-danger site-navbar__cta" (click)="logout()">
-                            <i class="fa-solid fa-arrow-right-from-bracket me-1"></i>{{ 'NAVBAR.LOGOUT' | translate }}
+                        <div class="site-navbar__menu-divider"></div>
+                        <a class="site-navbar__menu-item" [routerLink]="dashboardRoute()" (click)="closeMenu()">
+                            <i class="fa-solid fa-gauge"></i>{{ 'NAVBAR.MY_DASHBOARD' | translate }}
+                        </a>
+                        <div class="site-navbar__menu-divider"></div>
+                        <button class="site-navbar__menu-item site-navbar__menu-item--danger" (click)="logout()">
+                            <i class="fa-solid fa-arrow-right-from-bracket"></i>{{ 'NAVBAR.LOGOUT' | translate }}
                         </button>
+                    </div>
                     }
+                </div>
                 } @else {
-                    <a routerLink="/auth/login" class="btn btn-primary site-navbar__cta">
-                        {{ 'NAVBAR.LOGIN' | translate }}
-                    </a>
+                <button class="btn btn-outline-danger site-navbar__cta" (click)="logout()">
+                    <i class="fa-solid fa-arrow-right-from-bracket me-1"></i>{{ 'NAVBAR.LOGOUT' | translate }}
+                </button>
+                }
+                } @else {
+                <a routerLink="/auth/login" class="btn btn-primary site-navbar__cta">
+                    {{ 'NAVBAR.LOGIN' | translate }}
+                </a>
                 }
             </div>
 
