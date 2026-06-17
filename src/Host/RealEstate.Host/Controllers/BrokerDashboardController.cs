@@ -1,7 +1,7 @@
 using Document.Application.Queries.Inquiry;
 using Document.Application.Queries.Lead.GetLeadsByBroker;
 using Document.Application.Queries.Lead.GetLeadsByProperties;
-using Document.Application.Queries.Lead.GetLeadsWithLeases;
+using Document.Application.Queries.Lease.GetLeadsWithLeases;
 using Document.Application.Queries.Message.GetInquiryLastMessages;
 using Document.Application.Queries.Notification;
 using Identity.Application.Interfaces;
