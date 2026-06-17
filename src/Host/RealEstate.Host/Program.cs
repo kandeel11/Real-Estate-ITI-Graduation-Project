@@ -148,6 +148,7 @@ public class Program
 
         builder.Services.AddScoped<PropertyEnrichmentService>();
         builder.Services.AddScoped<LeaseExpiryJob>();
+        builder.Services.AddHostedService<LeaseExpiryBackgroundService>();
         builder.Services.AddAiApplication(builder.Configuration);
         builder.Services.AddAiInfrastructure(builder.Configuration);
         builder.Services.AddDocumentModule(builder.Configuration);

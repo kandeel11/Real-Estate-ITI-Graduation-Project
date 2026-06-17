@@ -47,6 +47,7 @@ public static class PaymentModuleExtensions
 
         services.AddScoped<StripeWebhookService>();
 
+        services.AddSingleton<OutboxProcessingSignal>();
         services.AddScoped<IOutboxWriter, OutboxWriter>();
         services.AddHostedService<OutboxPublisherJob>();
 
