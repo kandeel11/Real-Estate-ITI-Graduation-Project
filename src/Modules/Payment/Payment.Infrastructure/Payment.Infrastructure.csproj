@@ -1,15 +1,14 @@
 ﻿<Project Sdk="Microsoft.NET.Sdk">
 
-	<PropertyGroup>
-		<TargetFramework>net9.0</TargetFramework>
-		<Nullable>enable</Nullable>
-		<ImplicitUsings>enable</ImplicitUsings>
-	</PropertyGroup>
-
-	<ItemGroup>
-		<ProjectReference Include="..\Payment.Application\Payment.Application.csproj" />
-		<ProjectReference Include="..\..\..\Shared\RealEstate.Shared.Kernel\RealEstate.Shared.Kernel.csproj" />
-	</ItemGroup>
+  <ItemGroup>
+    <PackageReference Include="FluentValidation.DependencyInjectionExtensions" Version="12.1.1" />
+    <PackageReference Include="Microsoft.EntityFrameworkCore" Version="9.0.16" />
+	  <PackageReference Include="Microsoft.EntityFrameworkCore.Relational" Version="9.0.16" />
+	  <PackageReference Include="Microsoft.EntityFrameworkCore.SqlServer" Version="9.0.16" />
+	  <PackageReference Include="Microsoft.EntityFrameworkCore.Design" Version="9.0.16" />
+	  <PackageReference Include="Stripe.net" Version="52.0.0" />
+	  <PackageReference Include="Microsoft.Extensions.Options.ConfigurationExtensions" Version="10.0.0" />
+  </ItemGroup>
 
 	<ItemGroup>
 		<PackageReference Include="Microsoft.AspNetCore.Http.Abstractions" Version="2.3.0" />
@@ -28,5 +27,11 @@
 		<!-- Stripe .NET SDK -->
 		<PackageReference Include="Stripe.net" Version="52.0.0" />
 	</ItemGroup>
+
+  <PropertyGroup>
+    <TargetFramework>net10.0</TargetFramework>
+    <ImplicitUsings>enable</ImplicitUsings>
+    <Nullable>enable</Nullable>
+  </PropertyGroup>
 
 </Project>

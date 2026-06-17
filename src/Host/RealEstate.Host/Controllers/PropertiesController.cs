@@ -1,17 +1,16 @@
 using Identity.Application.Interfaces;
 using MediatR;
-using RealEstate.Host.Services;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using Property.Application.Features.Commands.AddPropertyAmenity;
-using Property.Application.Features.Commands.AssignBroker;
-using Property.Application.Features.Commands.MarkAsRented;
-using Property.Application.Features.Commands.RequestAiDescription;
 using Property.Application.Features.Commands.AddPropertyMedia;
+using Property.Application.Features.Commands.AssignBroker;
 using Property.Application.Features.Commands.CreateProperty;
 using Property.Application.Features.Commands.DeleteProperty;
+using Property.Application.Features.Commands.MarkAsRented;
 using Property.Application.Features.Commands.RemovePropertyAmenity;
 using Property.Application.Features.Commands.RemovePropertyMedia;
+using Property.Application.Features.Commands.RequestAiDescription;
 using Property.Application.Features.Commands.SetAiDescription;
 using Property.Application.Features.Commands.SetAiDuplicateScore;
 using Property.Application.Features.Commands.SetFeatured;
@@ -20,6 +19,7 @@ using Property.Application.Features.Commands.SetVerificationStatus;
 using Property.Application.Features.Commands.SubmitPropertyForReview;
 using Property.Application.Features.Commands.TrackPropertyView;
 using Property.Application.Features.Commands.UpdateProperty;
+using Property.Application.Features.Queries.GetActiveProperties;
 using Property.Application.Features.Queries.GetAllProperties;
 using Property.Application.Features.Queries.GetFeaturedProperties;
 using Property.Application.Features.Queries.GetPendingVerification;
@@ -27,7 +27,10 @@ using Property.Application.Features.Queries.GetPropertiesByOwner;
 using Property.Application.Features.Queries.GetPropertyAnalytics;
 using Property.Application.Features.Queries.GetPropertyById;
 using Property.Application.Features.Queries.SearchProperties;
+using Property.Application.Interfaces;
 using Property.Domain.Enums;
+using RealEstate.Host.Services;
+using static Property.Application.Interfaces.IMediaStorageService;
 
 namespace RealEstate.Host.Controllers;
 
@@ -38,19 +41,32 @@ public class PropertiesController : ControllerBase
     private readonly IMediator _mediator;
     private readonly ICurrentUserService _currentUser;
     private readonly PropertyEnrichmentService _enrichment;
+    private readonly IMediaStorageService _docs;
 
-    public PropertiesController(IMediator mediator, ICurrentUserService currentUser, PropertyEnrichmentService enrichment)
+    public PropertiesController(IMediator mediator, ICurrentUserService currentUser, PropertyEnrichmentService enrichment, IMediaStorageService docs)
     {
         _mediator = mediator;
         _currentUser = currentUser;
         _enrichment = enrichment;
+        _docs = docs;
     }
 
+    // Admin-only: returns ALL properties including Draft/Rejected. Public callers should
+    // use GET /api/properties/active or /search (which only expose Active listings).
     [HttpGet]
-    [AllowAnonymous]
+    [Authorize(Policy = "AdminOnly")]
     public async Task<IActionResult> GetAll(CancellationToken ct = default)
     {
         var result = await _mediator.Send(new GetAllPropertiesQuery(), ct);
+        await _enrichment.EnrichAsync(result, ct);
+        return Ok(result);
+    }
+
+    [HttpGet("active")]
+    [AllowAnonymous]
+    public async Task<IActionResult> GetActive(CancellationToken ct = default)
+    {
+        var result = await _mediator.Send(new GetActivePropertiesQuery(), ct);
         await _enrichment.EnrichAsync(result, ct);
         return Ok(result);
     }
@@ -68,9 +84,6 @@ public class PropertiesController : ControllerBase
         [FromQuery] int? bedrooms,
         [FromQuery] bool? isFurnished,
         [FromQuery] bool? petsAllowed,
-        [FromQuery] decimal? latitude,
-        [FromQuery] decimal? longitude,
-        [FromQuery] double? radiusKm,
         [FromQuery] int page = 1,
         [FromQuery] int pageSize = 20,
         CancellationToken ct = default)
@@ -78,7 +91,7 @@ public class PropertiesController : ControllerBase
         var result = await _mediator.Send(new SearchPropertiesQuery(
             city, district, propertyType, minPrice, maxPrice,
             minBedrooms, maxBedrooms, bedrooms, isFurnished, petsAllowed,
-            latitude, longitude, radiusKm, page, pageSize), ct);
+            page, pageSize), ct);
         await _enrichment.EnrichAsync(result.Items, ct);
         return Ok(result);
     }
@@ -93,6 +106,7 @@ public class PropertiesController : ControllerBase
     }
 
     [HttpGet("pending-verification")]
+
     [Authorize(Policy = "AdminOnly")]
     public async Task<IActionResult> GetPendingVerification(CancellationToken ct = default)
     {
@@ -134,40 +148,146 @@ public class PropertiesController : ControllerBase
         return Ok(result);
     }
 
+    // Properties.Api/Controllers/PropertiesController.cs
+
     [HttpPost]
     [Authorize(Policy = "OwnerOrAdmin")]
-    public async Task<IActionResult> Create([FromBody] CreatePropertyRequest request, CancellationToken ct = default)
+    [Consumes("multipart/form-data")]                                    // 🆕 multipart
+    [RequestSizeLimit(50 * 1024 * 1024)]                                 // 50 MB cap
+    public async Task<IActionResult> Create(
+        [FromForm] CreatePropertyRequest request,
+        CancellationToken ct = default)
     {
         var ownerId = _currentUser.UserId;
-        if (ownerId is null) return Unauthorized(new { error = "User not authenticated." });
+        if (ownerId is null)
+            return Unauthorized(new { error = "User not authenticated." });
 
-        var id = await _mediator.Send(new CreatePropertyCommand(
-            ownerId.Value,
-            request.CompanyId ?? _currentUser.CompanyId,
-            request.ListingBrokerId,
-            request.Title,
-            request.TitleAr,
-            request.Description,
-            request.DescriptionAr,
-            request.PropertyType,
-            request.Price,
-            request.Bedrooms,
-            request.Bathrooms,
-            request.AreaSqm,
-            request.FloorNumber,
-            request.TotalFloors,
-            request.YearBuilt,
-            request.IsFurnished,
-            request.PetsAllowed,
-            request.Latitude,
-            request.Longitude,
-            request.Address,
-            request.ApartmentNumber,
-            request.City,
-            request.District,
-            request.ListingSource), ct);
+        // Company managers don't create listings themselves — their brokers do.
+        // (A manager-created listing would have no owner identity to verify and wouldn't
+        //  belong to a broker, so we block it and steer them to add/assign a broker.)
+        if (_currentUser.IsInRole("company_manager"))
+            return StatusCode(StatusCodes.Status403Forbidden, new
+            {
+                error = "Company managers cannot create listings directly. Add a broker to your company — brokers create and are assigned listings."
+            });
 
-        return CreatedAtAction(nameof(GetById), new { id }, new { id });
+        // 🔍 Determine submission type from role
+        var isOwnerSubmission = _currentUser.IsInRole("owner");          // ⬅ adjust to your role constants
+        var isBrokerSubmission = _currentUser.IsInRole("broker");
+
+        // CompanyId / ListingBrokerId are derived from the caller's identity — never from the body:
+        //   • Owner            → both null
+        //   • Individual broker → CompanyId null,            ListingBrokerId = broker's own user id
+        //   • Company broker    → CompanyId = broker's company, ListingBrokerId = broker's own user id
+        Guid? companyId = null;
+        Guid? listingBrokerId = null;
+        if (isBrokerSubmission)
+        {
+            listingBrokerId = ownerId.Value;          // ListingBrokerId is the broker's USER id
+            companyId = _currentUser.CompanyId;       // null for individual broker, set for company broker
+        }
+
+        string? nationalIdBlobPath = null;
+        string? ownershipProofBlobPath = null;
+
+        if (isOwnerSubmission)
+        {
+            // ── Owner path: REQUIRE both files + owner name ──────────
+            if (request.NationalIdFile is null || request.NationalIdFile.Length == 0)
+                return BadRequest(new { error = "National ID file is required for owner submissions." });
+
+            if (request.OwnershipProofFile is null || request.OwnershipProofFile.Length == 0)
+                return BadRequest(new { error = "Ownership proof file is required for owner submissions." });
+
+            if (string.IsNullOrWhiteSpace(request.OwnerFullName))
+                return BadRequest(new { error = "Owner full name is required." });
+
+            // Validate file types
+            var allowedTypes = new[] { "application/pdf", "image/jpeg", "image/png", "image/bmp", "image/tiff" };
+            if (!allowedTypes.Contains(request.NationalIdFile.ContentType) ||
+                !allowedTypes.Contains(request.OwnershipProofFile.ContentType))
+                return BadRequest(new { error = "Documents must be PDF or image (JPEG/PNG/BMP/TIFF)." });
+
+            // Upload to blob storage in parallel
+            var folder = $"ownership/{ownerId.Value}";
+            var idTask = UploadAsync(_currentUser.UserId, request.NationalIdFile, MediaCategory.Ownership, ct);
+            var proofTask = UploadAsync(_currentUser.UserId, request.OwnershipProofFile, MediaCategory.Ownership, ct);
+            await Task.WhenAll(idTask, proofTask);
+
+            nationalIdBlobPath = await idTask;
+            ownershipProofBlobPath = await proofTask;
+        }
+        else if (isBrokerSubmission)
+        {
+            // ── Broker path: files NOT required, skip verification ───
+            // (blob paths stay null → handler skips PropertyCreatedEvent)
+        }
+
+        // ── Build & send command ─────────────────────────────────────
+        try
+        {
+            var id = await _mediator.Send(new CreatePropertyCommand(
+       OwnerId: ownerId.Value,
+       CompanyId: companyId,
+       ListingBrokerId: listingBrokerId,
+       Title: request.Title,
+       TitleAr: request.TitleAr,
+       // Descriptions come from the AI flow later; start empty.
+       Description: string.Empty,
+       DescriptionAr: string.Empty,
+       PropertyType: request.PropertyType,
+       Price: request.Price,
+       Bedrooms: request.Bedrooms,
+       Bathrooms: request.Bathrooms,
+       AreaSqm: request.AreaSqm,
+       FloorNumber: request.FloorNumber,
+       TotalFloors: request.TotalFloors,
+       YearBuilt: request.YearBuilt,
+       IsFurnished: request.IsFurnished,
+       PetsAllowed: request.PetsAllowed,
+       Address: request.Address,
+       ApartmentNumber: request.ApartmentNumber,
+       Country: request.Country,
+       Governorate: request.Governorate,
+
+       // 👇 هذا هو السطر الذي كان ينقصك لحل المشكلة
+       ownerShipStatus: "Pending", // يمكنك تغييره إلى request.OwnerShipStatus إذا كان قادماً من الـ Request
+
+       City: request.City,
+       District: request.District,
+       ListingSource: request.ListingSource,
+       IsOwnerSubmission: isOwnerSubmission,
+       OwnerFullName: request.OwnerFullName,
+       NationalIdBlobPath: nationalIdBlobPath,
+       OwnershipProofBlobPath: ownershipProofBlobPath), ct);
+
+            return CreatedAtAction(nameof(GetById), new { id }, new { id });
+        }
+        catch (InvalidOperationException ex)
+        {
+            // Duplicate listing (same owner+title, or same address+apartment) or plan limit reached.
+            // The property is NOT created in any of these cases.
+            return Conflict(new { error = ex.Message });
+        }
+    }
+
+    // ─── Helper for upload ────────────────────────────────────────────
+    // ─── Helper for ownership document upload ─────────────────────────
+    private async Task<string> UploadAsync(
+        Guid? OwnerId,
+        IFormFile file,
+        MediaCategory category,
+        CancellationToken ct)
+    {
+        using var stream = file.OpenReadStream();
+
+        return await _docs.UploadAsync(
+            OwnerId: _currentUser.UserId,
+            fileStream: stream,
+            fileName: file.FileName,
+            contentType: file.ContentType,
+            category: category,
+            ct: ct);
     }
 
     [HttpPut("{id:guid}")]
@@ -194,12 +314,12 @@ public class PropertiesController : ControllerBase
             request.YearBuilt,
             request.IsFurnished,
             request.PetsAllowed,
-            request.Latitude,
-            request.Longitude,
             request.Address,
             request.ApartmentNumber,
             request.City,
             request.District,
+            request.Country,
+            request.Governorate,
             request.ListingBrokerId), ct);
         return NoContent();
     }
@@ -251,14 +371,21 @@ public class PropertiesController : ControllerBase
     }
 
     [HttpPost("{id:guid}/feature")]
-    [Authorize(Policy = "AdminOnly")]
+    [Authorize]
     public async Task<IActionResult> SetFeatured(Guid id, [FromBody] SetFeaturedRequest request, CancellationToken ct = default)
     {
         var userId = _currentUser.UserId;
         if (userId is null) return Unauthorized(new { error = "User not authenticated." });
 
-        await _mediator.Send(new SetFeaturedCommand(id, userId.Value, request.IsFeatured, request.FeaturedUntil), ct);
-        return NoContent();
+        try
+        {
+            await _mediator.Send(
+                new SetFeaturedCommand(id, userId.Value, _currentUser.CompanyId, request.IsFeatured, request.FeaturedUntil), ct);
+            return NoContent();
+        }
+        catch (KeyNotFoundException ex) { return NotFound(new { error = ex.Message }); }
+        catch (UnauthorizedAccessException ex) { return Forbid(); }
+        catch (InvalidOperationException ex) { return BadRequest(new { error = ex.Message }); }
     }
 
     [HttpPut("{id:guid}/ai-duplicate-score")]
@@ -303,8 +430,16 @@ public class PropertiesController : ControllerBase
         var userId = _currentUser.UserId;
         if (userId is null) return Unauthorized(new { error = "User not authenticated." });
 
-        await _mediator.Send(new PropertyAiDescriptionRequestCommand(id, userId.Value), ct);
-        return Accepted(new { message = "AI description is being generated. It will appear shortly.", propertyId = id });
+        try
+        {
+            await _mediator.Send(new PropertyAiDescriptionRequestCommand(id, userId.Value), ct);
+            return Accepted(new { message = "AI description is being generated. It will appear shortly.", propertyId = id });
+        }
+        catch (InvalidOperationException ex)
+        {
+            // Plan AI quota reached
+            return Conflict(new { error = ex.Message });
+        }
     }
 
     [HttpPut("{id:guid}/ai-description")]
@@ -340,18 +475,26 @@ public class PropertiesController : ControllerBase
         if (request.File is null || request.File.Length == 0)
             return BadRequest("No file provided.");
 
-        await using var stream = request.File.OpenReadStream();
-        var mediaId = await _mediator.Send(new AddPropertyMediaCommand(
-            id,
-            userId.Value,
-            stream,
-            request.File.FileName,
-            request.File.ContentType,
-            request.MediaType,
-            (int)(request.File.Length / 1024),
-            request.SortOrder), ct);
+        try
+        {
+            await using var stream = request.File.OpenReadStream();
+            var mediaId = await _mediator.Send(new AddPropertyMediaCommand(
+                id,
+                userId.Value,
+                stream,
+                request.File.FileName,
+                request.File.ContentType,
+                request.MediaType,
+                (int)(request.File.Length / 1024),
+                request.SortOrder), ct);
 
-        return Ok(new { mediaId });
+            return Ok(new { mediaId });
+        }
+        catch (InvalidOperationException ex)
+        {
+            // Plan storage limit reached
+            return Conflict(new { error = ex.Message });
+        }
     }
 
     [HttpPut("{id:guid}/media/{mediaId:guid}/primary")]
@@ -401,13 +544,17 @@ public class PropertiesController : ControllerBase
 
 // --- Request DTOs ---
 
+// Property.Application/Features/Commands/CreateProperty/CreatePropertyRequest.cs
+
+
+
 public record CreatePropertyRequest(
-    Guid? CompanyId,
-    Guid? ListingBrokerId,
+    // CompanyId & ListingBrokerId are NOT accepted from the client — they're derived from the
+    // caller's JWT (role + company_id) in the controller. See Create().
     string Title,
     string TitleAr,
-    string Description,
-    string DescriptionAr,
+    // Description/DescriptionAr are NOT collected here — they are produced by the AI
+    // description flow (request-ai-description → accept) after the property exists.
     PropertyType PropertyType,
     decimal Price,
     int Bedrooms,
@@ -418,15 +565,19 @@ public record CreatePropertyRequest(
     int YearBuilt,
     bool IsFurnished,
     bool PetsAllowed,
-    decimal Latitude,
-    decimal Longitude,
     string Address,
     int? ApartmentNumber,
+    string Country,            // 🆕 needed for location verification
+    string Governorate,        // 🆕 needed for location verification
     string City,
     string District,
-    ListingSource ListingSource
-);
+    ListingSource ListingSource,
 
+    // 🆕 Ownership documents (only required when owner submits)
+    string? OwnerFullName,
+    IFormFile? NationalIdFile,
+    IFormFile? OwnershipProofFile
+);
 public record UpdatePropertyRequest(
     string Title,
     string TitleAr,
@@ -442,15 +593,14 @@ public record UpdatePropertyRequest(
     int YearBuilt,
     bool IsFurnished,
     bool PetsAllowed,
-    decimal Latitude,
-    decimal Longitude,
     string Address,
     int? ApartmentNumber,
+    string Country,            // 🆕
+    string Governorate,        // 🆕
     string City,
     string District,
     Guid? ListingBrokerId
 );
-
 public record SetVerificationRequest(VerificationStatus VerificationStatus, string? RejectionReason);
 
 public record SetFeaturedRequest(bool IsFeatured, DateTime? FeaturedUntil);

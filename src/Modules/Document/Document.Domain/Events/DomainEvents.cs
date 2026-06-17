@@ -3,7 +3,7 @@ using MediatR;
 
 namespace Document.Domain.Events;
 
-public abstract class DomainEvent
+public abstract class DomainEvent : INotification
 {
     public Guid Id { get; } = Guid.NewGuid();
     public DateTime OccurredAt { get; } = DateTime.UtcNow;
@@ -26,17 +26,6 @@ public class LeadClosedWonEvent : DomainEvent
     public Guid TenantId { get; init; }
     public Guid OwnerId { get; init; }
     public decimal? DealValue { get; init; }
-}
-
-public class RatingApprovedEvent : DomainEvent
-{
-    public Guid RatingId { get; init; }
-    public Guid ReviewerId { get; init; }
-    public Guid? BrokerId { get; init; }
-    public Guid? CompanyId { get; init; }
-    public Guid? PropertyId { get; init; }
-    public Guid? MaintenanceCompanyId { get; init; }
-    public int RatingValue { get; init; }
 }
 
 public record LeaseUploadedEvent(

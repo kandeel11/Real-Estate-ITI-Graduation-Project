@@ -20,11 +20,11 @@ public record UpdatePropertyCommand(
     int YearBuilt,
     bool IsFurnished,
     bool PetsAllowed,
-    decimal Latitude,
-    decimal Longitude,
     string Address,
     int? ApartmentNumber,
     string City,
     string District,
+    string ownerShipStatus, // e.g. "verified", "pending", "rejected"
+    string governorate,
     Guid? ListingBrokerId
 ) : IRequest;

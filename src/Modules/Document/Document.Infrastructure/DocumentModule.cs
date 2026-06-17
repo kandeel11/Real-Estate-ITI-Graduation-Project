@@ -6,6 +6,7 @@ using Document.Infrastructure.Services;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
+using RealEstate.Shared.Kernel.Interfaces;
 
 namespace Document.Infrastructure;
 
@@ -21,9 +22,13 @@ public static class DocumentModule
         services.AddScoped<IDocumentDbContext>(sp => sp.GetRequiredService<DocumentDbContext>());
         services.AddScoped<IAzureBlobService, AzureBlobService>();
         services.AddScoped<IInquiryRepository, InquiryRepository>();
+        services.AddScoped<IInquiryStatsRepository, InquiryStatsRepository>();
+        services.AddScoped<IRatingStatsRepository, RatingStatsRepository>();
         services.AddScoped<INotificationRepository, NotificationRepository>();
         services.AddScoped<INotificationService, NotificationService>();
-        //services.AddMediatR();
+	    services.AddScoped<ILeaseService, LeaseService>();
+	 //services.AddMediatR();
+	services.AddSignalR();
         return services;
     }
 }

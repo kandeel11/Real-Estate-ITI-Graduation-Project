@@ -15,9 +15,6 @@ public record SearchPropertiesQuery(
     int? Bedrooms,
     bool? IsFurnished,
     bool? PetsAllowed,
-    decimal? Latitude,
-    decimal? Longitude,
-    double? RadiusKm,
     int Page = 1,
     int PageSize = 20
 ) : IRequest<PagedResult<PropertySummaryDto>>;

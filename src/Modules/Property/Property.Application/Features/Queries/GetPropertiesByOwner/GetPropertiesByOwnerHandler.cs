@@ -4,7 +4,7 @@ using Property.Application.Interfaces;
 
 namespace Property.Application.Features.Queries.GetPropertiesByOwner;
 
-public class GetPropertiesByOwnerHandler : IRequestHandler<GetPropertiesByOwnerQuery, List<PropertySummaryDto>>
+public class GetPropertiesByOwnerHandler : IRequestHandler<GetPropertiesByOwnerQuery, List<MyPropertySummaryDto>>
 {
     private readonly IPropertyRepository _repository;
 
@@ -13,6 +13,6 @@ public class GetPropertiesByOwnerHandler : IRequestHandler<GetPropertiesByOwnerQ
         _repository = repository;
     }
 
-    public Task<List<PropertySummaryDto>> Handle(GetPropertiesByOwnerQuery request, CancellationToken cancellationToken)
+    public Task<List<MyPropertySummaryDto>> Handle(GetPropertiesByOwnerQuery request, CancellationToken cancellationToken)
         => _repository.GetByOwnerAsync(request.OwnerId, cancellationToken);
 }

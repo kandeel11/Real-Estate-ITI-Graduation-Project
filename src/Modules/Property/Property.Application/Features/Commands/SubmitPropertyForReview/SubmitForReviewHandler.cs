@@ -25,12 +25,8 @@ public class SubmitForReviewHandler : IRequestHandler<SubmitPropertyForReviewCom
 
         property.SubmitForReview();
 
+        // Domain events are dispatched by DispatchDomainEventsInterceptor after save.
         await _repository.SaveChangesAsync(cancellationToken);
-
-        foreach (var domainEvent in property.DomainEvents)
-            await _publisher.Publish(domainEvent, cancellationToken);
-
-        property.ClearDomainEvents();
 
         // Publish integration event so AI module can run duplicate detection
         await _publisher.Publish(new PropertySubmittedForReviewEvent(

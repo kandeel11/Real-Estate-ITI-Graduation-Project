@@ -166,6 +166,70 @@ public class User : BaseEntity
         return OtpVerificationResult.Success;
     }
 
+    // ────────────────────────────────────────────────────────────────────
+    // Password reset (OTP-based) — unlike email verification these MUST
+    // work for verified users, so they skip the IsEmailVerified gates.
+    // ────────────────────────────────────────────────────────────────────
+
+    /// <summary>
+    /// Stores a password-reset OTP. Same storage and cooldown rules as the
+    /// verification OTP, but allowed for verified accounts.
+    /// </summary>
+    public void SetPasswordResetOtp(string codeHash, DateTime expiresAtUtc)
+    {
+        if (LastOtpRequestedAt is not null &&
+            (DateTime.UtcNow - LastOtpRequestedAt.Value).TotalSeconds < OtpResendCooldownSeconds)
+        {
+            var wait = OtpResendCooldownSeconds -
+                       (int)(DateTime.UtcNow - LastOtpRequestedAt.Value).TotalSeconds;
+            throw new InvalidOperationException(
+                $"Please wait {wait} seconds before requesting another code.");
+        }
+
+        EmailOtpHash = codeHash;
+        EmailOtpExpiresAt = expiresAtUtc;
+        EmailOtpAttempts = 0;
+        LastOtpRequestedAt = DateTime.UtcNow;
+
+        MarkAsUpdated();
+        AddDomainEvent(new OtpRequestedEvent(Id, Email, EmailOtpExpiresAt.Value));
+    }
+
+    /// <summary>
+    /// Verifies a password-reset OTP. Works regardless of verification state;
+    /// a successful check also proves email ownership, so it marks the email
+    /// verified as a side benefit.
+    /// </summary>
+    public OtpVerificationResult VerifyPasswordResetOtp(string code)
+    {
+        if (EmailOtpHash is null || EmailOtpExpiresAt is null)
+            return OtpVerificationResult.NotIssued;
+
+        if (EmailOtpExpiresAt < DateTime.UtcNow)
+            return OtpVerificationResult.Expired;
+
+        if (EmailOtpAttempts >= OtpMaxAttempts)
+        {
+            ClearOtp();
+            MarkAsUpdated();
+            return OtpVerificationResult.TooManyAttempts;
+        }
+
+        var ok = BCrypt.Net.BCrypt.Verify(code, EmailOtpHash);
+
+        if (!ok)
+        {
+            EmailOtpAttempts++;
+            MarkAsUpdated();
+            return OtpVerificationResult.Invalid;
+        }
+
+        MarkEmailVerified();
+        ClearOtp();
+        MarkAsUpdated();
+        return OtpVerificationResult.Success;
+    }
+
     // ── Activity ─────────────────────────────────────────────────────────
     public void RecordLogin() => LastLoginAt = DateTime.UtcNow;
 
@@ -181,11 +245,32 @@ public class User : BaseEntity
         BannedAt = DateTime.UtcNow;
     }
 
-    public void UpdateProfile(string fullName, string phone, string? imageUrl)
+    public void Unban()
     {
-        FullName = fullName.Trim();
+        IsActive = true;
+        BanReason = null;
+        BannedAt = null;
+    }
+
+    public void SetPasswordHash(string passwordHash)
+    {
+        PasswordHash = passwordHash;
+        MarkAsUpdated();
+    }
+
+    //public void UpdateProfile(string fullName, string phone, string? imageUrl)
+    //{
+    //    FullName = fullName.Trim();
+    //    Phone = phone;
+    //    ProfileImageUrl = imageUrl;
+    //    MarkAsUpdated();
+    //}
+    public void UpdateProfile(string fullName, string phone, string? email)
+    {
+        FullName = fullName;
         Phone = phone;
-        ProfileImageUrl = imageUrl;
+        if (!string.IsNullOrWhiteSpace(email))
+            Email = email;
         MarkAsUpdated();
     }
 

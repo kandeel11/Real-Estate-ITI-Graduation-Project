@@ -12,6 +12,9 @@ public class TicketStatusHistoryConfiguration : IEntityTypeConfiguration<TicketS
         b.HasKey(x => x.Id);
         b.Property(x => x.Id).ValueGeneratedNever();
         b.Property(x => x.TicketId).IsRequired();
+        // Match the parent ticket's soft-delete filter so this required dependent
+        // is filtered out together with its ticket.
+        b.HasQueryFilter(x => x.Ticket.DeletedAt == null);
         b.Property(x => x.FromStatus).IsRequired().HasConversion<string>();
         b.Property(x => x.ToStatus).IsRequired().HasConversion<string>();
         b.Property(x => x.ChangedBy).IsRequired().HasMaxLength(255);

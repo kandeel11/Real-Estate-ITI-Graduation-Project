@@ -54,9 +54,10 @@ public sealed class PropertyDuplicateCheckHandler
                 cancellationToken);
 
             await _publisher.Publish(new PropertyDuplicateCheckCompletedEvent(
-                PropertyId:  notification.PropertyId,
-                Confidence:  (decimal)result.HighestSimilarityScore,
-                IsDuplicate: result.IsDuplicate
+                PropertyId:         notification.PropertyId,
+                SimilarityScore:    (decimal)result.HighestSimilarityScore,
+                DecisionConfidence: (decimal)result.DecisionConfidence,
+                IsDuplicate:        result.IsDuplicate
             ), cancellationToken);
         }
         catch (Exception ex)

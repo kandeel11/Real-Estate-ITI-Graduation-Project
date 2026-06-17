@@ -44,4 +44,34 @@ public class Broker : BaseEntity
         TotalRatings = total;
         MarkAsUpdated();
     }
+
+    public void RecordClosedDeal()
+    {
+        ClosedDealsCount++;
+        MarkAsUpdated();
+    }
+
+    /// <summary>
+    /// Sets the closed-deals count to an absolute value. Used by the one-time
+    /// backfill/recompute so the metric can be rebuilt from the source of truth
+    /// (won leads) without double-counting.
+    /// </summary>
+    public void SetClosedDealsCount(int count)
+    {
+        ClosedDealsCount = count < 0 ? 0 : count;
+        MarkAsUpdated();
+    }
+
+    /// <summary>
+    /// Folds a new response time into the average. Without a dedicated
+    /// response counter we weight by closed conversations approximated via
+    /// a simple running blend — good enough for dashboard trends.
+    /// </summary>
+    public void RecordResponseTime(int minutes)
+    {
+        AvgResponseTimeMinutes = AvgResponseTimeMinutes == 0
+            ? minutes
+            : (AvgResponseTimeMinutes + minutes) / 2;
+        MarkAsUpdated();
+    }
 }

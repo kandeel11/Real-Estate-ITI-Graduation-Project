@@ -6,8 +6,10 @@ using Maintenance.Domain.Enums;
 namespace Maintenance.Application.Features.Commands.SubmitTicket;
 
 public record SubmitTicketCommand(
-    Guid TicketId, string PropertyAddress,
-    string TenantEmail, string TenantPhone) : IRequest;
+    Guid TicketId,
+    string TenantEmail,     
+    string TenantPhone,
+    string PropertyAddress) : IRequest;
 
 public class SubmitTicketHandler(
     IMaintenanceTicketRepository repo,
@@ -37,7 +39,7 @@ public class SubmitTicketHandler(
                 ?.FileUrl ?? string.Empty;
 
             var result = await aiService.EvaluateAsync(
-                ticket.TicketNumber,
+                ticket.TicketNumber!,
                 ticket.LeaseId?.ToString() ?? string.Empty,
                 ticket.Description, imageUrl, ct);
 
@@ -51,6 +53,6 @@ public class SubmitTicketHandler(
             ticket.ApplyAiEvaluation(responsible);
             await repo.SaveChangesAsync(ct);
         }
-        catch { /* AI failed — ticket stays Submitted for manual retry */ }
+        catch { }
     }
 }

@@ -39,6 +39,18 @@ public class MaintenanceCompany : BaseEntity
     public string[] GetServiceTypes() =>
         ServiceTypes.Split(',', StringSplitOptions.RemoveEmptyEntries);
 
+    public void Activate()
+    {
+        IsActive = true;
+        MarkAsUpdated();
+    }
+
+    public void Deactivate()
+    {
+        IsActive = false;
+        MarkAsUpdated();
+    }
+
     public void UpdateRating(decimal avg, int total)
     {
         RatingAvg = avg;

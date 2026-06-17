@@ -21,8 +21,6 @@ public class PropertyConfiguration : IEntityTypeConfiguration<Domain.Entities.Pr
         builder.Property(x => x.TitleAr).IsRequired().HasMaxLength(500);
         builder.Property(x => x.Description).IsRequired();
         builder.Property(x => x.DescriptionAr).IsRequired();
-        builder.Property(x => x.AiGeneratedDescriptionEn);
-        builder.Property(x => x.AiGeneratedDescriptionAr);
 
         builder.Property(x => x.PropertyType)
             .IsRequired()
@@ -38,8 +36,6 @@ public class PropertyConfiguration : IEntityTypeConfiguration<Domain.Entities.Pr
         builder.Property(x => x.IsFurnished).IsRequired();
         builder.Property(x => x.PetsAllowed).IsRequired();
 
-        builder.Property(x => x.Latitude).IsRequired().HasPrecision(10, 7);
-        builder.Property(x => x.Longitude).IsRequired().HasPrecision(10, 7);
         builder.Property(x => x.Address).IsRequired().HasMaxLength(500);
         builder.Property(x => x.ApartmentNumber);
         builder.Property(x => x.City).IsRequired().HasMaxLength(200);
@@ -65,6 +61,18 @@ public class PropertyConfiguration : IEntityTypeConfiguration<Domain.Entities.Pr
             .HasDefaultValue(VerificationStatus.Pending);
 
         builder.Property(x => x.RejectionReason);
+
+        builder.Property(x => x.OwnershipGate)
+            .IsRequired()
+            .HasConversion<string>()
+            .HasMaxLength(20)
+            .HasDefaultValue(GateStatus.Pending);
+
+        builder.Property(x => x.DuplicateGate)
+            .IsRequired()
+            .HasConversion<string>()
+            .HasMaxLength(20)
+            .HasDefaultValue(GateStatus.Pending);
 
         builder.Property(x => x.ViewsCount).IsRequired().HasDefaultValue(0);
         builder.Property(x => x.InquiriesCount).IsRequired().HasDefaultValue(0);

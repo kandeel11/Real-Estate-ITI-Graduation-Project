@@ -30,6 +30,12 @@ public class AddBrokerHandler : IRequestHandler<AddBrokerCommand, Guid>
 
     public async Task<Guid> Handle(AddBrokerCommand request, CancellationToken cancellationToken)
     {
+        // Realign the usage counter with the actual active brokers before
+        // checking — it drifts otherwise (deactivate/delete never decremented)
+        var activeBrokers = (await _brokerRepo.GetByCompanyIdAsync(request.CompanyId, cancellationToken))
+            .Count(b => b.IsActive);
+        await _limitChecker.SyncBrokerUsageAsync(request.CompanyId, activeBrokers, cancellationToken);
+
         var (allowed, reason) = await _limitChecker.CheckBrokerLimitAsync(request.CompanyId, cancellationToken);
         if (!allowed)
             throw new InvalidOperationException(reason);

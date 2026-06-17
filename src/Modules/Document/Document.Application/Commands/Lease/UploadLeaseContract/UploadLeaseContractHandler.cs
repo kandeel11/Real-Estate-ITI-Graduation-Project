@@ -20,19 +20,20 @@ public class UploadLeaseContractHandler : IRequestHandler<UploadLeaseContractCom
             throw new Exception("File size exceeds 10MB");
 
         var lead = await _db.Leads.FindAsync(new object[] { cmd.LeadId }, ct)
-            ?? throw new Exception("Lead not found");
+            ?? throw new KeyNotFoundException($"Lead {cmd.LeadId} not found");
 
         using var stream = cmd.File.OpenReadStream();
-        var fileUrl = await _blob.UploadAsync(stream, cmd.File.FileName);
+        var blobName  = await _blob.UploadAsync(stream, cmd.File.FileName);
 
         var lease = new Document.Domain.Entities.Lease
         {
             Id = Guid.NewGuid(),
             PropertyId = lead.PropertyId,
             TenantId = lead.TenantId,
-            OwnerId = cmd.OwnerId,
+            // Derive the real owner from the lead — the controller no longer fabricates one.
+            OwnerId = lead.OwnerId,
             LeadId = cmd.LeadId,
-            ContractFileUrl = fileUrl,
+            ContractFileUrl = blobName,
             ExtractionStatus = LeaseExtractionStatus.Pending,
             CreatedAt = DateTime.UtcNow,
             UpdatedAt = DateTime.UtcNow
@@ -40,7 +41,7 @@ public class UploadLeaseContractHandler : IRequestHandler<UploadLeaseContractCom
         _db.Leases.Add(lease);
         await _db.SaveChangesAsync(ct);
 
-        await _publisher.Publish(new LeaseUploadedEvent(lease.Id, fileUrl, cmd.OwnerId), ct);
+        await _publisher.Publish(new LeaseUploadedEvent(lease.Id, blobName, lease.OwnerId), ct);
 
         var updated = await _db.Leases.FindAsync(new object[] { lease.Id }, ct);
 

@@ -1,9 +1,11 @@
+// Property.Application/Features/Commands/CreateProperty/CreatePropertyCommand.cs
+
 using MediatR;
 using Property.Domain.Enums;
 
 namespace Property.Application.Features.Commands.CreateProperty;
 
-public record CreatePropertyCommand(
+public sealed record CreatePropertyCommand(
     Guid OwnerId,
     Guid? CompanyId,
     Guid? ListingBrokerId,
@@ -16,16 +18,23 @@ public record CreatePropertyCommand(
     int Bedrooms,
     int Bathrooms,
     decimal AreaSqm,
-    int FloorNumber,
-    int TotalFloors,
-    int YearBuilt,
+    int? FloorNumber,
+    int? TotalFloors,
+    int? YearBuilt,
     bool IsFurnished,
     bool PetsAllowed,
-    decimal Latitude,
-    decimal Longitude,
     string Address,
     int? ApartmentNumber,
+    string Country,
+    string Governorate,
+    string ownerShipStatus, // e.g. "verified", "pending", "rejected"
     string City,
-    string District,
-    ListingSource ListingSource
+    string? District,
+    ListingSource ListingSource,
+
+    // 🆕 Ownership docs — null when submitted by a broker
+    bool IsOwnerSubmission,
+    string? OwnerFullName,
+    string? NationalIdBlobPath,
+    string? OwnershipProofBlobPath
 ) : IRequest<Guid>;

@@ -32,7 +32,7 @@ public sealed class PropertyFilterService : IPropertyFilterService
     {
         // 1. استخدام GetQueryable بدل Where مباشرة
         var query = _db.GetQueryable()
-            .Where(p => !p.IsDeleted && p.Status == Property.Domain.Enums.PropertyStatus.Active);
+            .Where(p =>  p.Status == Property.Domain.Enums.PropertyStatus.Active);
 
         // ── Apply filters dynamically ─────────────────────────────────────────
 
@@ -153,7 +153,7 @@ public sealed class PropertyFilterService : IPropertyFilterService
         // 1. استخدام GetQueryable بدل GetAllAsync
         var query = _db.GetQueryable()
             .Where(p => p.Id == propertyId &&
-                        p.IsDeleted == false &&
+                       
                         p.Status == PropertyStatus.Active);
 
         if (!string.IsNullOrWhiteSpace(filters.PropertyType) &&

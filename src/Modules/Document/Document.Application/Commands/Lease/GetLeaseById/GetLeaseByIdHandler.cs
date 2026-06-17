@@ -1,4 +1,4 @@
-using Document.Application.Interfaces; 
+using Document.Application.Interfaces;
 using MediatR;
 using Microsoft.EntityFrameworkCore;
 
@@ -7,7 +7,10 @@ namespace Document.Application.Queries.Lease.GetLeaseById;
 public class GetLeaseByIdHandler : IRequestHandler<GetLeaseByIdQuery, LeaseDto?>
 {
     private readonly IDocumentDbContext _db;
-    public GetLeaseByIdHandler(IDocumentDbContext db) => _db = db;
+    private readonly IAzureBlobService _blob;
+
+    public GetLeaseByIdHandler(IDocumentDbContext db, IAzureBlobService blob)
+    { _db = db; _blob = blob; }
 
     public async Task<LeaseDto?> Handle(GetLeaseByIdQuery query, CancellationToken ct)
     {
@@ -17,9 +20,11 @@ public class GetLeaseByIdHandler : IRequestHandler<GetLeaseByIdQuery, LeaseDto?>
 
         if (l == null) return null;
 
+        var sasUrl = _blob.GenerateSasUrl(l.ContractFileUrl);
+
         return new LeaseDto(l.Id, l.PropertyId, l.TenantId, l.OwnerId,
             l.RentAmount, l.SecurityDeposit, l.StartDate, l.EndDate,
             l.PaymentDayOfMonth, l.ExtractionStatus,
-            l.ExtractionConfidence, l.IsActive, l.ContractFileUrl);
+            l.ExtractionConfidence, l.IsActive, sasUrl, l.CreatedAt);
     }
 }

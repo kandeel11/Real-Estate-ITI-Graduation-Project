@@ -130,14 +130,22 @@ public class RentPayment
         AiPredictedLate = predictedLate;
         UpdatedAt = DateTime.UtcNow;
     }
+
     public bool IsOverdue(DateOnly today) =>
         Status == PaymentStatus.Pending && DueDate < today;
-    public void MarkAsRefunded(string reason)
+
+    public void MarkAsRefunded(string? reason = null)
     {
+        if (Status != PaymentStatus.Paid)
+            throw new InvalidOperationException("Only paid payments can be refunded.");
+
         Status = PaymentStatus.Refunded;
-        Notes = string.IsNullOrWhiteSpace(Notes)
-            ? $"Refunded: {reason}"
-            : $"{Notes} | Refunded: {reason}";
+
+        if (!string.IsNullOrWhiteSpace(reason))
+            Notes = string.IsNullOrWhiteSpace(Notes)
+                ? $"Refund reason: {reason}"
+                : $"{Notes} | Refund reason: {reason}";
+
         UpdatedAt = DateTime.UtcNow;
     }
 }

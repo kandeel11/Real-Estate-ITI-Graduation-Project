@@ -56,25 +56,6 @@ public class PropertyRepository : IPropertyRepository
         if (criteria.PetsAllowed.HasValue)
             query = query.Where(p => p.PetsAllowed == criteria.PetsAllowed.Value);
 
-        if (criteria.Latitude.HasValue && criteria.Longitude.HasValue && criteria.RadiusKm.HasValue)
-        {
-            var lat = (double)criteria.Latitude.Value;
-            var lon = (double)criteria.Longitude.Value;
-            var radiusKm = criteria.RadiusKm.Value;
-
-            // Haversine approximation using bounding box pre-filter
-            double latDelta = radiusKm / 111.0;
-            double lonDelta = radiusKm / (111.0 * Math.Cos(lat * Math.PI / 180.0));
-
-            var minLat = (decimal)(lat - latDelta);
-            var maxLat = (decimal)(lat + latDelta);
-            var minLon = (decimal)(lon - lonDelta);
-            var maxLon = (decimal)(lon + lonDelta);
-
-            query = query.Where(p =>
-                p.Latitude >= minLat && p.Latitude <= maxLat &&
-                p.Longitude >= minLon && p.Longitude <= maxLon);
-        }
 
         var totalCount = await query.CountAsync(ct);
 
@@ -100,8 +81,6 @@ public class PropertyRepository : IPropertyRepository
                 PetsAllowed = p.PetsAllowed,
                 City = p.City,
                 District = p.District,
-                Latitude = p.Latitude,
-                Longitude = p.Longitude,
                 Status = p.Status.ToString(),
                 IsFeatured = p.IsFeatured,
                 PrimaryImageUrl = _context.PropertyMedia
@@ -142,24 +121,27 @@ public class PropertyRepository : IPropertyRepository
                 PetsAllowed = p.PetsAllowed,
                 City = p.City,
                 District = p.District,
-                Latitude = p.Latitude,
-                Longitude = p.Longitude,
                 Status = p.Status.ToString(),
+                VerificationStatus = p.VerificationStatus.ToString(),
                 IsFeatured = p.IsFeatured,
                 PrimaryImageUrl = _context.PropertyMedia
                     .Where(m => m.PropertyId == p.Id && m.IsPrimary)
                     .Select(m => m.MediaUrl)
                     .FirstOrDefault(),
                 ViewsCount = p.ViewsCount,
-                CreatedAt = p.CreatedAt
+                CreatedAt = p.CreatedAt,
+                AmenityIds = _context.PropertyAmenities
+                    .Where(pa => pa.PropertyId == p.Id)
+                    .Select(pa => pa.AmenityId)
+                    .ToList()
             })
             .ToListAsync(ct);
 
-    public async Task<List<PropertySummaryDto>> GetByOwnerAsync(Guid ownerId, CancellationToken ct = default)
+    public async Task<List<MyPropertySummaryDto>> GetByOwnerAsync(Guid ownerId, CancellationToken ct = default)
         => await _context.Properties
             .Where(p => p.OwnerId == ownerId)
             .OrderByDescending(p => p.CreatedAt)
-            .Select(p => new PropertySummaryDto
+            .Select(p => new MyPropertySummaryDto
             {
                 Id = p.Id,
                 OwnerId = p.OwnerId,
@@ -176,8 +158,6 @@ public class PropertyRepository : IPropertyRepository
                 PetsAllowed = p.PetsAllowed,
                 City = p.City,
                 District = p.District,
-                Latitude = p.Latitude,
-                Longitude = p.Longitude,
                 Status = p.Status.ToString(),
                 IsFeatured = p.IsFeatured,
                 PrimaryImageUrl = _context.PropertyMedia
@@ -185,7 +165,13 @@ public class PropertyRepository : IPropertyRepository
                     .Select(m => m.MediaUrl)
                     .FirstOrDefault(),
                 ViewsCount = p.ViewsCount,
-                CreatedAt = p.CreatedAt
+                CreatedAt = p.CreatedAt,
+                // Owner/admin-only verification state
+                VerificationStatus = p.VerificationStatus.ToString(),
+                RejectionReason = p.RejectionReason,
+                AiDuplicateConfidence = p.AiDuplicateConfidence,
+                OwnershipGate = p.OwnershipGate.ToString(),
+                DuplicateGate = p.DuplicateGate.ToString()
             })
             .ToListAsync(ct);
 
@@ -210,8 +196,6 @@ public class PropertyRepository : IPropertyRepository
                 PetsAllowed = p.PetsAllowed,
                 City = p.City,
                 District = p.District,
-                Latitude = p.Latitude,
-                Longitude = p.Longitude,
                 Status = p.Status.ToString(),
                 IsFeatured = p.IsFeatured,
                 PrimaryImageUrl = _context.PropertyMedia
@@ -223,10 +207,12 @@ public class PropertyRepository : IPropertyRepository
             })
             .ToListAsync(ct);
 
-    public async Task<List<PropertySummaryDto>> GetPendingVerificationAsync(CancellationToken ct = default)
+    public async Task<List<PropertySummaryDto>> GetByBrokerAsync(Guid brokerUserId, CancellationToken ct = default)
+        // A broker sees listings they manage AND listings they own — covers both
+        // independent brokers (owner == broker) and company brokers (assigned).
         => await _context.Properties
-            .Where(p => p.Status == PropertyStatus.PendingReview)
-            .OrderBy(p => p.CreatedAt)
+            .Where(p => p.ListingBrokerId == brokerUserId || p.OwnerId == brokerUserId)
+            .OrderByDescending(p => p.CreatedAt)
             .Select(p => new PropertySummaryDto
             {
                 Id = p.Id,
@@ -244,12 +230,48 @@ public class PropertyRepository : IPropertyRepository
                 PetsAllowed = p.PetsAllowed,
                 City = p.City,
                 District = p.District,
-                Latitude = p.Latitude,
-                Longitude = p.Longitude,
+                Status = p.Status.ToString(),
+                IsFeatured = p.IsFeatured,
+                PrimaryImageUrl = _context.PropertyMedia
+                    .Where(m => m.PropertyId == p.Id && m.IsPrimary)
+                    .Select(m => m.MediaUrl)
+                    .FirstOrDefault(),
+                ViewsCount = p.ViewsCount,
+                CreatedAt = p.CreatedAt
+            })
+            .ToListAsync(ct);
+
+    public async Task<List<MyPropertySummaryDto>> GetPendingVerificationAsync(CancellationToken ct = default)
+        => await _context.Properties
+            .Where(p => p.Status == PropertyStatus.PendingReview)
+            .OrderBy(p => p.CreatedAt)
+            .Select(p => new MyPropertySummaryDto
+            {
+                Id = p.Id,
+                OwnerId = p.OwnerId,
+                CompanyId = p.CompanyId,
+                ListingBrokerId = p.ListingBrokerId,
+                Title = p.Title,
+                TitleAr = p.TitleAr,
+                PropertyType = p.PropertyType.ToString(),
+                Price = p.Price,
+                Bedrooms = p.Bedrooms,
+                Bathrooms = p.Bathrooms,
+                AreaSqm = p.AreaSqm,
+                IsFurnished = p.IsFurnished,
+                PetsAllowed = p.PetsAllowed,
+                City = p.City,
+                District = p.District,
                 Status = p.Status.ToString(),
                 IsFeatured = p.IsFeatured,
                 ViewsCount = p.ViewsCount,
-                CreatedAt = p.CreatedAt
+                CreatedAt = p.CreatedAt,
+                // Admin-only verification state
+                VerificationStatus = p.VerificationStatus.ToString(),
+                RejectionReason = p.RejectionReason,
+                AiDuplicateConfidence = p.AiDuplicateConfidence,
+                OwnershipGate = p.OwnershipGate.ToString(),
+                DuplicateGate = p.DuplicateGate.ToString()
             })
             .ToListAsync(ct);
 
@@ -275,8 +297,6 @@ public class PropertyRepository : IPropertyRepository
                 PetsAllowed = p.PetsAllowed,
                 City = p.City,
                 District = p.District,
-                Latitude = p.Latitude,
-                Longitude = p.Longitude,
                 Status = p.Status.ToString(),
                 IsFeatured = p.IsFeatured,
                 PrimaryImageUrl = _context.PropertyMedia
@@ -288,11 +308,22 @@ public class PropertyRepository : IPropertyRepository
             })
             .ToListAsync(ct);
 
+    public async Task<Domain.Entities.Property?> GetCurrentlyFeaturedByOwnerAsync(
+        Guid ownerId, Guid? companyId, CancellationToken ct = default)
+        => await _context.Properties
+            .Where(p => p.IsFeatured &&
+                        (companyId.HasValue ? p.CompanyId == companyId : p.OwnerId == ownerId) &&
+                        p.DeletedAt == null)
+            .FirstOrDefaultAsync(ct);
+
     public async Task<bool> ExistsByOwnerAndTitleAsync(Guid ownerId, string title, CancellationToken ct = default)
-        => await _context.Properties.AnyAsync(
+    {
+        var normalized = (title ?? string.Empty).Trim().ToLower();
+        return await _context.Properties.AnyAsync(
             p => p.OwnerId == ownerId &&
-                 p.Title.ToLower() == title.ToLower() &&
+                 p.Title.Trim().ToLower() == normalized &&
                  p.DeletedAt == null, ct);
+    }
 
     public async Task<bool> ExistsByOwnerAndAddressAsync(Guid ownerId, string address, int apartmentNumber, CancellationToken ct = default)
         => await _context.Properties.AnyAsync(
