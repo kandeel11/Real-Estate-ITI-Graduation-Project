@@ -17,6 +17,9 @@
       <button class="filter-tab" [class.active]="filter() === 'replied'" (click)="filter.set('replied')">
         {{ 'BROKER.INQUIRIES.FILTER_REPLIED' | translate }}
       </button>
+      <button class="filter-tab" [class.active]="filter() === 'chat'" (click)="filter.set('chat')">
+        <i class="fa-solid fa-comments"></i> {{ 'BROKER.INQUIRIES.FILTER_CHAT' | translate }}
+      </button>
     </div>
     <div class="search-wrap">
       <i class="fa-solid fa-magnifying-glass search-icon"></i>
@@ -38,6 +41,30 @@
         </div>
       }
     </div>
+  } @else if (filter() === 'chat') {
+    @if (chatList().length === 0) {
+      <div class="empty">
+        <i class="fa-regular fa-comments empty-icon"></i>
+        <p>{{ 'BROKER.INQUIRIES.EMPTY' | translate }}</p>
+      </div>
+    } @else {
+      <ul class="chat-threads">
+        @for (d of chatList(); track d.id) {
+          <li class="chat-thread" (click)="openChatDetail(d)">
+            <div class="chat-thread-avatar">{{ initials(d.tenantName) }}</div>
+            <div class="chat-thread-body">
+              <div class="chat-thread-top">
+                <span class="chat-thread-name">{{ d.tenantName }}</span>
+                <span class="chat-thread-time">{{ (d.lastMessageAt ?? d.createdAt) | date:'MMM d' }}</span>
+              </div>
+              <span class="chat-thread-prop">{{ d.propertyTitle }}</span>
+              <p class="chat-thread-preview">{{ chatPreview(d) }}</p>
+            </div>
+            <i class="fa-solid fa-chevron-right chat-thread-chevron"></i>
+          </li>
+        }
+      </ul>
+    }
   } @else if (filtered().length === 0) {
     <div class="empty">
       <i class="fa-regular fa-envelope empty-icon"></i>

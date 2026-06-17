@@ -40,7 +40,7 @@
             <div class="thread-content">
               <div class="thread-top">
                 <span class="thread-title">{{ inq.propertyTitle }}</span>
-                <span class="thread-time">{{ inq.createdAt | date:'MMM d' }}</span>
+                <span class="thread-time">{{ lastTime(inq) | date:'MMM d' }}</span>
               </div>
               <p class="thread-preview">{{ lastMessage(inq) }}</p>
             </div>

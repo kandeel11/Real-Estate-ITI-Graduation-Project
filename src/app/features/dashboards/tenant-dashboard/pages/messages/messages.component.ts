@@ -28,9 +28,16 @@ export class TenantMessagesComponent implements OnInit, AfterViewChecked {
 
   ngOnInit(): void {
     this.svc.getInquiries().subscribe({
-      next: inqs => { this.inquiries.set(inqs); this.loadingInquiries.set(false); },
+      next: inqs => { this.inquiries.set(this.sortByLatest(inqs)); this.loadingInquiries.set(false); },
       error: () => this.loadingInquiries.set(false),
     });
+  }
+
+  /** Newest activity first. */
+  private sortByLatest(list: TenantInquiry[]): TenantInquiry[] {
+    return [...list].sort((a, b) =>
+      new Date(b.lastMessageAt ?? b.createdAt).getTime() -
+      new Date(a.lastMessageAt ?? a.createdAt).getTime());
   }
 
   ngAfterViewChecked(): void {
@@ -61,6 +68,11 @@ export class TenantMessagesComponent implements OnInit, AfterViewChecked {
     this.svc.sendMessage(inq.id, t).subscribe({
       next: msg => {
         this.messages.update(m => [...m, msg]);
+        // Reflect the new last message in the list and float this chat to the top.
+        this.inquiries.update(list => this.sortByLatest(list.map(i =>
+          i.id === inq.id
+            ? { ...i, lastMessage: msg.text, lastMessageAt: msg.sentAt, status: 'replied' as const }
+            : i)));
         this.sending.set(false);
         this.shouldScroll = true;
       },
@@ -73,7 +85,12 @@ export class TenantMessagesComponent implements OnInit, AfterViewChecked {
   }
 
   lastMessage(inq: TenantInquiry): string {
-    return inq.message.length > 50 ? inq.message.slice(0, 50) + '…' : inq.message;
+    const text = inq.lastMessage ?? inq.message;
+    return text.length > 50 ? text.slice(0, 50) + '…' : text;
+  }
+
+  lastTime(inq: TenantInquiry): string {
+    return inq.lastMessageAt ?? inq.createdAt;
   }
 
   initials(name: string): string {

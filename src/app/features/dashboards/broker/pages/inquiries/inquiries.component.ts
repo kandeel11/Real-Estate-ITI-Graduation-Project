@@ -23,7 +23,7 @@ export class InquiriesComponent implements OnInit {
   private readonly details = signal<InquiryDetail[]>([]);
   readonly chatInquiry = signal<InquiryDetail | null>(null);
   readonly loading = signal(true);
-  readonly filter = signal<'all' | 'new' | 'replied'>('all');
+  readonly filter = signal<'all' | 'new' | 'replied' | 'chat'>('all');
   readonly search = signal('');
   readonly sendingId = signal<string | null>(null);
   readonly convertingId = signal<string | null>(null);
@@ -40,6 +40,29 @@ export class InquiriesComponent implements OnInit {
       return matchFilter && matchSearch;
     });
   });
+
+  /** Conversations for the Chat tab — newest activity first. */
+  readonly chatList = computed(() => {
+    const q = this.search().toLowerCase();
+    return [...this.details()]
+      .filter(d => !q ||
+        d.tenantName.toLowerCase().includes(q) ||
+        d.propertyTitle.toLowerCase().includes(q))
+      .sort((a, b) =>
+        new Date(b.lastMessageAt ?? b.createdAt).getTime() -
+        new Date(a.lastMessageAt ?? a.createdAt).getTime());
+  });
+
+  openChatDetail(detail: InquiryDetail): void { this.chatInquiry.set(detail); }
+
+  chatPreview(d: InquiryDetail): string {
+    const text = d.lastMessage ?? d.message;
+    return text.length > 60 ? text.slice(0, 60) + '…' : text;
+  }
+
+  initials(name: string): string {
+    return name.split(' ').slice(0, 2).map(w => w[0]).join('').toUpperCase() || '?';
+  }
 
   ngOnInit(): void {
     this.dataService.getInquiryDetails().subscribe({
@@ -66,6 +89,10 @@ export class InquiriesComponent implements OnInit {
 
   closeChat(): void {
     this.chatInquiry.set(null);
+    // Refresh so the Chat list shows the newest message + reorders to the top.
+    this.dataService.getInquiryDetails().subscribe({
+      next: list => this.details.set(list),
+    });
   }
 
   onChatLeadConverted(): void {

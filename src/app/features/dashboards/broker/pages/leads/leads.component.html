@@ -46,10 +46,17 @@
                   }
                 </div>
                 @if (col.status === 'closed_won') {
-                  <button class="btn-lease" (click)="$event.stopPropagation(); leaseUploadLead.set(lead)">
-                    <i class="fa-solid fa-file-contract"></i>
-                    {{ 'BROKER.LEADS.CREATE_LEASE' | translate }}
-                  </button>
+                  @if (hasLease(lead)) {
+                    <span class="lease-created">
+                      <i class="fa-solid fa-circle-check"></i>
+                      {{ 'BROKER.LEADS.LEASE_CREATED' | translate }}
+                    </span>
+                  } @else {
+                    <button class="btn-lease" (click)="$event.stopPropagation(); leaseUploadLead.set(lead)">
+                      <i class="fa-solid fa-file-contract"></i>
+                      {{ 'BROKER.LEADS.CREATE_LEASE' | translate }}
+                    </button>
+                  }
                 }
               </div>
             }
@@ -73,6 +80,20 @@
         @if (lead.dealValue) {
           <p class="modal-deal">{{ 'BROKER.LEADS.DEAL_VALUE' | translate:{ value: lead.dealValue } }}</p>
         }
+
+        @if (canClose(lead)) {
+          <label class="modal-label">{{ 'BROKER.LEADS.STAGE_LABEL' | translate }}</label>
+          <div class="stage-buttons">
+            @for (s of openStages; track s.status) {
+              <button class="stage-btn" [class.active]="lead.status === s.status"
+                      [disabled]="movingStage() || (lead.status !== s.status && !canMoveTo(lead, s.status))"
+                      (click)="moveToStage(lead, s.status)">
+                {{ s.labelKey | translate }}
+              </button>
+            }
+          </div>
+        }
+
         <label class="modal-label">{{ 'BROKER.LEADS.NOTES_LABEL' | translate }}</label>
         <textarea class="modal-textarea" [(ngModel)]="noteText"
           [placeholder]="'BROKER.LEADS.NOTES_PLACEHOLDER' | translate" rows="4"></textarea>

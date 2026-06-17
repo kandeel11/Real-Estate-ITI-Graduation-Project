@@ -10,6 +10,9 @@ export interface TenantInquiry {
   message: string;
   status: 'new' | 'replied' | 'converted';
   createdAt: string;
+  /** Preview + sort key for the chat list (falls back to the inquiry message). */
+  lastMessage?: string;
+  lastMessageAt?: string;
 }
 
 export interface ChatMessage {

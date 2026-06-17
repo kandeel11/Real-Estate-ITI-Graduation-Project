@@ -48,6 +48,8 @@ export interface Lead {
   stageEnteredAt: number;
   dealValue?: string;
   notes?: string;
+  /** True once a lease has been created from this lead (persisted across reloads). */
+  hasLease?: boolean;
 }
 
 export interface ChatMessage {
@@ -69,6 +71,9 @@ export interface InquiryDetail {
   message: string;
   status: 'new' | 'replied' | 'converted';
   createdAt: string;
+  /** Preview + sort key for the chat list (falls back to the inquiry message). */
+  lastMessage?: string;
+  lastMessageAt?: string;
 }
 
 export interface LeaseAiExtraction {
