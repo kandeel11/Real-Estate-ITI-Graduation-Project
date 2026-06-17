@@ -1,6 +1,8 @@
 using AI.Application;
 using AI.Infrastructure;
+using AI.Infrastructure.Persistence.Contexts;
 using Document.Infrastructure;
+using Document.Infrastructure.Persistence;
 using Hangfire;
 using Hangfire.SqlServer;
 using Identity.Application;
@@ -9,12 +11,14 @@ using Identity.Infrastructure.Persistence;
 using Identity.Infrastructure.Seed;
 using Identity.Infrastructure.Services;
 using Maintenance.Infrastructure;
+using Maintenance.Infrastructure.Persistence.Contexts;
 using Microsoft.AspNetCore.Authentication.JwtBearer;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.IdentityModel.Tokens;
 using Payment.Infrastructure;
 using Payment.Infrastructure.Persistence;
 using Property.Infrastructure;
+using Property.Infrastructure.Persistence.Contexts;
 using RealEstate.Host.Services;
 using Subscription.Infrastructure;
 using Subscription.Infrastructure.Persistence;
@@ -160,6 +164,21 @@ public class Program
             options.Queues = new[] { "emails", "default" };
         });
 
+        builder.Services.AddCors(options =>
+        {
+            options.AddPolicy("AllowAngular", policy =>
+            {
+                policy
+                    .WithOrigins(
+                        "http://localhost:4200",
+                        "https://localhost:4200"
+                    )
+                    .AllowAnyHeader()
+                    .AllowAnyMethod()
+                    .AllowCredentials();
+            });
+        });
+
         var app = builder.Build();
 
         // لوحة تحكم Hangfire
@@ -171,20 +190,31 @@ public class Program
         // ==========================================
         // Database migrations + seeding
         // ==========================================
-        using (var scope = app.Services.CreateScope())
-        {
-            var subscriptionDb = scope.ServiceProvider.GetRequiredService<SubscriptionDbContext>();
-            await subscriptionDb.Database.MigrateAsync();
-            await SubscriptionPlanSeed.SeedAsync(subscriptionDb);
+        //using (var scope = app.Services.CreateScope())
+        //{
+        //    var aiDb = scope.ServiceProvider.GetRequiredService<AiDbContext>();
+        //    var propertyDb = scope.ServiceProvider.GetRequiredService<PropertyDbContext>();
+        //    var maintenanceDb = scope.ServiceProvider.GetRequiredService<MaintenanceDbContext>();
+        //    var documentDb = scope.ServiceProvider.GetRequiredService<DocumentDbContext>();
+        //    await documentDb.Database.MigrateAsync();
+        //    await maintenanceDb.Database.MigrateAsync();
+        //    await propertyDb.Database.MigrateAsync();
+        //    //await aiDb.Database.MigrateAsync();
 
-            var identityDb = scope.ServiceProvider.GetRequiredService<IdentityDbContext>();
-            await identityDb.Database.MigrateAsync();
-            var hasher = scope.ServiceProvider.GetRequiredService<Identity.Application.Interfaces.IPasswordHasher>();
-            await AdminSeed.SeedAsync(identityDb, hasher);
+        //    await Property.Infrastructure.Persistence.Seeding.AmenitySeed.SeedAsync(propertyDb);
 
-            var paymentDb = scope.ServiceProvider.GetRequiredService<PaymentDbContext>();
-            await paymentDb.Database.MigrateAsync();
-        }
+        //    var subscriptionDb = scope.ServiceProvider.GetRequiredService<SubscriptionDbContext>();
+        //    await subscriptionDb.Database.MigrateAsync();
+        //    await SubscriptionPlanSeed.SeedAsync(subscriptionDb);
+
+        //    var identityDb = scope.ServiceProvider.GetRequiredService<IdentityDbContext>();
+        //    await identityDb.Database.MigrateAsync();
+        //    var hasher = scope.ServiceProvider.GetRequiredService<Identity.Application.Interfaces.IPasswordHasher>();
+        //    await AdminSeed.SeedAsync(identityDb, hasher);
+
+        //    //var paymentDb = scope.ServiceProvider.GetRequiredService<PaymentDbContext>();
+        //    //await paymentDb.Database.MigrateAsync();
+        //}
         //stripe
         app.Use(async (context, next) =>
         {
@@ -195,15 +225,16 @@ public class Program
             await next();
         });
 
-        if (app.Environment.IsDevelopment())
-        {
+        //if (app.Environment.IsDevelopment())
+        //{
             app.UseSwagger();
             app.UseSwaggerUI(c =>
             {
                 c.SwaggerEndpoint("/swagger/v1/swagger.json", "Real Estate API v1");
             });
-        }
-
+        //}
+        app.UseRouting();
+        app.UseCors("AllowAngular");
         app.UseAuthentication();
         app.UseAuthorization();
         app.MapControllers();

@@ -3,37 +3,62 @@ using Microsoft.Extensions.Options;
 using Payment.Application.Interfaces;
 using Payment.Domain.Enums;
 using Payment.Infrastructure.Settings;
+using RealEstate.Shared.Kernel.Shared.IntegrationEvents;
 using Stripe;
+using Stripe.Checkout;
+using PaymentEntity = Payment.Domain.Entities.Payment;
 
 namespace Payment.Infrastructure.Services.Stripe;
 
+/// <summary>
+/// بيستقبل ويعالج الـ Webhook events القادمة من Stripe
+///
+/// ليه محتاجين Webhook؟
+/// لأن الدفع ببطاقة بياخد وقت أحياناً (3D Secure, bank verification, Checkout redirect)
+/// Stripe بيبعت Webhook لما الدفع يتأكد فعلاً
+///
+/// الـ Events اللي بنستمع ليها:
+/// - payment_intent.succeeded       → الدفع نجح (Rent) ✅
+/// - payment_intent.payment_failed  → الدفع فشل ❌
+/// - charge.refunded                → الاسترداد تم 🔄
+/// - checkout.session.completed     → الدفع نجح (Subscription عبر Checkout) ✅
+/// - checkout.session.expired       → جلسة الدفع انتهت بدون دفع ⌛
+/// </summary>
 public sealed class StripeWebhookService
 {
-    private readonly IRentPaymentRepository _repository;
+    private readonly IPaymentRepository _repository;
     private readonly INotificationService _notificationService;
     private readonly ILeaseService _leaseService;
+    private readonly IOutboxWriter _outboxWriter;
     private readonly StripeSettings _settings;
     private readonly ILogger<StripeWebhookService> _logger;
 
     public StripeWebhookService(
-        IRentPaymentRepository repository,
+        IPaymentRepository repository,
         INotificationService notificationService,
         ILeaseService leaseService,
+        IOutboxWriter outboxWriter,
         IOptions<StripeSettings> settings,
         ILogger<StripeWebhookService> logger)
     {
         _repository = repository;
         _notificationService = notificationService;
         _leaseService = leaseService;
+        _outboxWriter = outboxWriter;
         _settings = settings.Value;
         _logger = logger;
     }
 
+    /// <summary>
+    /// نقطة الدخول الرئيسية — بتستقبل الـ raw payload من الـ controller
+    /// وبتتحقق من الـ signature علشان تتأكد إن الـ event جاي من Stripe فعلاً
+    /// </summary>
     public async Task HandleWebhookAsync(
         string payload,
         string stripeSignatureHeader,
         CancellationToken cancellationToken = default)
     {
+        // التحقق من الـ Stripe Signature — أهم خطوة أمنية
         Event stripeEvent;
         try
         {
@@ -52,15 +77,19 @@ public sealed class StripeWebhookService
         _logger.LogInformation("Received Stripe webhook event: {EventType} Id={EventId}",
             stripeEvent.Type, stripeEvent.Id);
 
+        // روّح للـ handler المناسب بناءً على نوع الـ event
         await (stripeEvent.Type switch
         {
             "payment_intent.succeeded"      => HandlePaymentSucceededAsync(stripeEvent, cancellationToken),
             "payment_intent.payment_failed" => HandlePaymentFailedAsync(stripeEvent, cancellationToken),
-            "charge.refunded"               => HandleChargeRefundedAsync(stripeEvent, cancellationToken),
-            _                               => Task.CompletedTask  
+            "charge.refunded"                => HandleChargeRefundedAsync(stripeEvent, cancellationToken),
+            "checkout.session.completed"     => HandleCheckoutSessionCompletedAsync(stripeEvent, cancellationToken),
+            "checkout.session.expired"       => HandleCheckoutSessionExpiredAsync(stripeEvent, cancellationToken),
+            _                               => Task.CompletedTask  // نتجاهل الـ events التانية
         });
     }
 
+    // ── payment_intent.succeeded (Rent — PaymentIntent flow) ──
     private async Task HandlePaymentSucceededAsync(Event stripeEvent, CancellationToken ct)
     {
         if (stripeEvent.Data.Object is not PaymentIntent intent)
@@ -68,6 +97,8 @@ public sealed class StripeWebhookService
             _logger.LogWarning("payment_intent.succeeded: could not cast event data.");
             return;
         }
+
+        // جيب الـ payment_id اللي حطيناه في الـ metadata
         if (!intent.Metadata.TryGetValue("payment_id", out var paymentIdStr)
             || !Guid.TryParse(paymentIdStr, out var paymentId))
         {
@@ -82,6 +113,7 @@ public sealed class StripeWebhookService
             return;
         }
 
+        // تجنب التكرار — لو اتعمل process قبل كده
         if (payment.Status == PaymentStatus.Paid)
         {
             _logger.LogInformation("Payment {PaymentId} already marked as Paid. Skipping.", paymentId);
@@ -101,9 +133,118 @@ public sealed class StripeWebhookService
             "Payment {PaymentId} marked as Paid via Stripe Webhook. IntentId={IntentId}",
             paymentId, intent.Id);
 
-        await TrySendPaymentConfirmationAsync(payment, intent.Id, receiptUrl, ct);
+        // إرسال إيميل للمستأجر — بس لو دي دفعة إيجار (عندها Lease)
+        if (payment.PaymentType == PaymentType.Rent)
+        {
+            await TrySendPaymentConfirmationAsync(payment, intent.Id, receiptUrl, ct);
+        }
     }
 
+    // ── checkout.session.completed (Subscription — Checkout flow) ──
+    //
+    // دي أهم خطوة في الـ Subscription Payment Flow:
+    // 1. payment.MarkPaid()
+    // 2. Publish SubscriptionPaymentSucceededEvent (عبر Outbox)
+    // 3. Subscription module بيستقبل الـ event ويعمل subscription.Activate()
+    private async Task HandleCheckoutSessionCompletedAsync(Event stripeEvent, CancellationToken ct)
+    {
+        if (stripeEvent.Data.Object is not Session session)
+        {
+            _logger.LogWarning("checkout.session.completed: could not cast event data.");
+            return;
+        }
+
+        if (!session.Metadata.TryGetValue("payment_id", out var paymentIdStr)
+            || !Guid.TryParse(paymentIdStr, out var paymentId))
+        {
+            _logger.LogWarning("checkout.session.completed: missing payment_id. SessionId={Id}", session.Id);
+            return;
+        }
+
+        var payment = await _repository.GetByIdAsync(paymentId, ct);
+        if (payment is null)
+        {
+            _logger.LogWarning("checkout.session.completed: Payment {PaymentId} not found.", paymentId);
+            return;
+        }
+
+        if (payment.Status == PaymentStatus.Paid)
+        {
+            _logger.LogInformation("Payment {PaymentId} already Paid. Skipping.", paymentId);
+            return;
+        }
+
+        if (session.PaymentStatus != "paid")
+        {
+            _logger.LogWarning("checkout.session.completed: PaymentStatus={Status} for SessionId={SessionId}",
+                session.PaymentStatus, session.Id);
+            return;
+        }
+
+        var paymentIntentId = session.PaymentIntentId ?? session.Id;
+
+        payment.MarkAsPaid(
+            transactionId: paymentIntentId,
+            paymentMethod: "card",
+            receiptUrl: null);
+
+        await _repository.SaveChangesAsync(ct);
+
+        _logger.LogInformation(
+            "Payment {PaymentId} marked Paid via Checkout. SessionId={SessionId}",
+            paymentId, session.Id);
+
+        // ── Publish Integration Event via Outbox (Subscription Activation) ──
+        if (payment.PaymentType == PaymentType.Subscription && payment.SubscriptionDetails is not null)
+        {
+            var details = payment.SubscriptionDetails;
+
+            // الـ UserId مش مخزّن في SubscriptionPaymentDetails (modular boundary) —
+            // بنجيبه من الـ Stripe metadata اللي حطيناه وقت إنشاء الـ Checkout Session
+            var userId = session.Metadata.TryGetValue("user_id", out var userIdStr)
+                && Guid.TryParse(userIdStr, out var parsedUserId)
+                ? parsedUserId
+                : Guid.Empty;
+
+            await _outboxWriter.AddAsync(
+                new SubscriptionPaymentSucceededEvent(
+                    SubscriptionId: details.SubscriptionId,
+                    PaymentId: payment.Id,
+                    UserId: userId,
+                    PlanId: details.PlanId,
+                    Amount: payment.Amount
+                ),
+                ct);
+
+            // الـ outbox message محتاجة SaveChanges منفصل (نفس DbContext، نفس الـ scope)
+            // عشان تُحفظ كصف فعلي في الجدول
+            await _repository.SaveChangesAsync(ct);
+
+            _logger.LogInformation(
+                "SubscriptionPaymentSucceededEvent queued in outbox for Payment {PaymentId}, Subscription {SubscriptionId}",
+                payment.Id, details.SubscriptionId);
+        }
+    }
+
+    // ── checkout.session.expired (Subscription — abandoned checkout) ──
+    private async Task HandleCheckoutSessionExpiredAsync(Event stripeEvent, CancellationToken ct)
+    {
+        if (stripeEvent.Data.Object is not Session session) return;
+
+        if (!session.Metadata.TryGetValue("payment_id", out var paymentIdStr)
+            || !Guid.TryParse(paymentIdStr, out var paymentId))
+            return;
+
+        var payment = await _repository.GetByIdAsync(paymentId, ct);
+        if (payment is null || payment.Status == PaymentStatus.Paid) return;
+
+        payment.MarkAsFailed();
+        await _repository.SaveChangesAsync(ct);
+
+        _logger.LogInformation("Checkout session expired for Payment {PaymentId}. Marked as Failed.", paymentId);
+    }
+
+    // ── payment_intent.payment_failed ─────────────────────────
     private async Task HandlePaymentFailedAsync(Event stripeEvent, CancellationToken ct)
     {
         if (stripeEvent.Data.Object is not PaymentIntent intent) return;
@@ -124,16 +265,23 @@ public sealed class StripeWebhookService
             "Payment {PaymentId} marked as Failed via Stripe Webhook. Reason={Reason}",
             paymentId, failureMessage);
 
-        await TrySendPaymentFailedNotificationAsync(payment, failureMessage, ct);
+        // إرسال إيميل للمستأجر بالفشل — بس لو دي دفعة إيجار
+        if (payment.PaymentType == PaymentType.Rent)
+        {
+            await TrySendPaymentFailedNotificationAsync(payment, failureMessage, ct);
+        }
     }
 
+    // ── charge.refunded ───────────────────────────────────────
     private async Task HandleChargeRefundedAsync(Event stripeEvent, CancellationToken ct)
     {
         if (stripeEvent.Data.Object is not Charge charge) return;
 
+        // جيب الـ payment_id من metadata الـ PaymentIntent
         var paymentIntentId = charge.PaymentIntentId;
         if (string.IsNullOrEmpty(paymentIntentId)) return;
 
+        // ابحث عن الدفعة بالـ TransactionId (اللي هو الـ PaymentIntent ID)
         var allPayments = await _repository.GetAllAsync(ct);
         var payment = allPayments.FirstOrDefault(p => p.TransactionId == paymentIntentId);
 
@@ -151,8 +299,9 @@ public sealed class StripeWebhookService
             payment.Id);
     }
 
+    // ── Notification Helpers (Rent only) ──────────────────────
     private async Task TrySendPaymentConfirmationAsync(
-        Domain.Entities.RentPayment payment,
+        PaymentEntity payment,
         string transactionId,
         string? receiptUrl,
         CancellationToken ct)
@@ -191,7 +340,7 @@ public sealed class StripeWebhookService
     }
 
     private async Task TrySendPaymentFailedNotificationAsync(
-        Domain.Entities.RentPayment payment,
+        PaymentEntity payment,
         string reason,
         CancellationToken ct)
     {

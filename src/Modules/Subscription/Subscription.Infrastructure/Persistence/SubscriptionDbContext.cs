@@ -11,7 +11,6 @@ public class SubscriptionDbContext : DbContext
     public DbSet<SubscriptionPlan> Plans => Set<SubscriptionPlan>();
     public DbSet<PlanFeature> PlanFeatures => Set<PlanFeature>();
     public DbSet<Domain.Entities.Subscription> Subscriptions => Set<Domain.Entities.Subscription>();
-    public DbSet<SubscriptionPayment> Payments => Set<SubscriptionPayment>();
     public DbSet<SubscriptionUsage> Usage => Set<SubscriptionUsage>();
 
     protected override void OnModelCreating(ModelBuilder modelBuilder)

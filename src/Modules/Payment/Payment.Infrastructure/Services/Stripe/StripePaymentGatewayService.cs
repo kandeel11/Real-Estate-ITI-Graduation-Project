@@ -6,6 +6,19 @@ using Stripe;
 
 namespace Payment.Infrastructure.Services.Stripe;
 
+/// <summary>
+/// Real Stripe implementation للـ IPaymentGatewayService
+/// بيستخدم Stripe PaymentIntents API
+/// 
+/// إزاي بيشتغل:
+/// 1. بنعمل PaymentIntent بالمبلغ والعملة
+/// 2. Stripe بيرجع client_secret للـ frontend
+/// 3. الـ frontend بيكمل الدفع بالـ card details
+/// 4. Stripe بيبعت Webhook لما الدفع يتأكد
+/// 
+/// ملاحظة: المبلغ في Stripe بيتبعت بالـ smallest currency unit
+/// مثلاً 100 AED = 10000 (بالفلس/هللة)
+/// </summary>
 public sealed class StripePaymentGatewayService : IPaymentGatewayService
 {
     private readonly StripeSettings _settings;
@@ -18,6 +31,7 @@ public sealed class StripePaymentGatewayService : IPaymentGatewayService
         _settings = settings.Value;
         _logger = logger;
 
+        // إعداد الـ Stripe SDK بالـ Secret Key
         StripeConfiguration.ApiKey = _settings.SecretKey;
     }
 
@@ -31,15 +45,16 @@ public sealed class StripePaymentGatewayService : IPaymentGatewayService
                 "Creating Stripe PaymentIntent for PaymentId={PaymentId} Amount={Amount} {Currency}",
                 request.PaymentId, request.Amount, _settings.DefaultCurrency);
 
+            // تحويل المبلغ لـ smallest unit (AED → fils: × 100)
             var amountInSmallestUnit = (long)(request.Amount * 100);
 
             var options = new PaymentIntentCreateOptions
             {
                 Amount = amountInSmallestUnit,
                 Currency = _settings.DefaultCurrency,
-                PaymentMethod = request.CardToken, 
-                Confirm = true,                    
-                ReturnUrl = "https://your-app.com/payment/complete",
+                PaymentMethod = request.CardToken, // الـ PaymentMethod ID من الـ frontend
+                Confirm = true,                    // اعمل confirm فوراً
+                ReturnUrl = "https://your-app.com/payment/complete", // مطلوب لـ 3D Secure
                 Metadata = new Dictionary<string, string>
                 {
                     ["payment_id"] = request.PaymentId.ToString(),
@@ -49,17 +64,22 @@ public sealed class StripePaymentGatewayService : IPaymentGatewayService
                 AutomaticPaymentMethods = new PaymentIntentAutomaticPaymentMethodsOptions
                 {
                     Enabled = true,
-                    AllowRedirects = "never" 
+                    AllowRedirects = "never" // مش محتاجين redirect في الـ API
                 }
             };
 
             var service = new PaymentIntentService();
-            var paymentIntent = await service.CreateAsync(options, cancellationToken: cancellationToken);
+
+            // Idempotency Key: لو نفس الـ request اتبعت مرتين بسبب network retry
+            // Stripe بيرجع نفس الـ PaymentIntent بدل ما يعمل charge جديد
+            var requestOptions = new RequestOptions { IdempotencyKey = $"pay_{request.PaymentId}" };
+            var paymentIntent = await service.CreateAsync(options, requestOptions, cancellationToken: cancellationToken);
 
             _logger.LogInformation(
                 "Stripe PaymentIntent created. IntentId={IntentId} Status={Status}",
                 paymentIntent.Id, paymentIntent.Status);
 
+            // لو الـ status = succeeded → الدفع اتم بنجاح
             if (paymentIntent.Status == "succeeded")
             {
                 return new PaymentGatewayResult(
@@ -70,6 +90,7 @@ public sealed class StripePaymentGatewayService : IPaymentGatewayService
                 );
             }
 
+            // لو محتاج action تاني (مثلاً 3D Secure)
             if (paymentIntent.Status == "requires_action")
             {
                 _logger.LogWarning(
@@ -84,6 +105,7 @@ public sealed class StripePaymentGatewayService : IPaymentGatewayService
                 );
             }
 
+            // أي status تاني = فشل
             return new PaymentGatewayResult(
                 IsSuccess: false,
                 TransactionId: paymentIntent.Id,
@@ -118,6 +140,10 @@ public sealed class StripePaymentGatewayService : IPaymentGatewayService
         }
     }
 
+    /// <summary>
+    /// إنشاء PaymentIntent بدون Confirm — بيرجع client_secret للـ frontend
+    /// الـ frontend يستخدمه مع Stripe.js لإكمال الدفع
+    /// </summary>
     public async Task<CreatePaymentIntentResult> CreatePaymentIntentAsync(
         Guid paymentId,
         decimal amount,
@@ -165,6 +191,9 @@ public sealed class StripePaymentGatewayService : IPaymentGatewayService
         }
     }
 
+    /// <summary>
+    /// عمل Refund لدفعة عبر Stripe
+    /// </summary>
     public async Task<PaymentGatewayResult> RefundAsync(
         string transactionId,
         decimal? amount = null,
@@ -178,7 +207,7 @@ public sealed class StripePaymentGatewayService : IPaymentGatewayService
             var options = new RefundCreateOptions
             {
                 PaymentIntent = transactionId,
-                Amount = amount.HasValue ? (long?)(amount.Value * 100) : null,
+                Amount = amount.HasValue ? (long?)(amount.Value * 100) : null, // null = full refund
                 Reason = reason switch
                 {
                     "duplicate" => "duplicate",
@@ -216,6 +245,9 @@ public sealed class StripePaymentGatewayService : IPaymentGatewayService
     }
 }
 
+/// <summary>
+/// نتيجة إنشاء PaymentIntent — بتتبعت للـ frontend
+/// </summary>
 public sealed record CreatePaymentIntentResult(
     string ClientSecret,
     string PaymentIntentId,

@@ -5,5 +5,8 @@ public sealed record ActiveLeaseDto(
     int PaymentDayOfMonth,
     string TenantName,
     string TenantEmail,
-    string? TenantPhone
+    string? TenantPhone,
+    Guid PropertyId = default,
+    Guid TenantId = default,
+    Guid LandlordId = default
 );
