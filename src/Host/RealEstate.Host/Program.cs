@@ -20,6 +20,7 @@ using Payment.Infrastructure;
 using Payment.Infrastructure.Persistence;
 using Property.Infrastructure;
 using Property.Infrastructure.Persistence.Contexts;
+using RealEstate.Host.Infrastructure;
 using RealEstate.Host.Jobs;
 using RealEstate.Host.Services;
 using Subscription.Infrastructure;
@@ -155,27 +156,33 @@ public class Program
         // ── SignalR ───────────────────────────────────────────
         builder.Services.AddSignalR();
 
-        // ── Hangfire ──────────────────────────────────────────
-        builder.Services.AddHangfire(config => config
-            .SetDataCompatibilityLevel(CompatibilityLevel.Version_180)
-            .UseSimpleAssemblyNameTypeSerializer()
-            .UseRecommendedSerializerSettings()
-            .UseSqlServerStorage(
-                builder.Configuration.GetConnectionString("DefaultConnection"),
-                new SqlServerStorageOptions
-                {
-                    CommandBatchMaxTimeout = TimeSpan.FromMinutes(5),
-                    SlidingInvisibilityTimeout = TimeSpan.FromMinutes(5),
-                    QueuePollInterval = TimeSpan.Zero,
-                    UseRecommendedIsolationLevel = true,
-                    DisableGlobalLocks = true
-                }));
+        // ── Hangfire (critical scheduled jobs only) ───────────
+        var hangfireOpts = builder.Configuration.GetSection("Hangfire").Get<HangfireOptions>()
+            ?? new HangfireOptions();
 
-        builder.Services.AddHangfireServer(options =>
+        if (hangfireOpts.Enabled)
         {
-            options.WorkerCount = Environment.ProcessorCount * 2;
-            options.Queues = new[] { "emails", "default" };
-        });
+            builder.Services.AddHangfire(config => config
+                .SetDataCompatibilityLevel(CompatibilityLevel.Version_180)
+                .UseSimpleAssemblyNameTypeSerializer()
+                .UseRecommendedSerializerSettings()
+                .UseSqlServerStorage(
+                    builder.Configuration.GetConnectionString("DefaultConnection"),
+                    new SqlServerStorageOptions
+                    {
+                        CommandBatchMaxTimeout = TimeSpan.FromMinutes(5),
+                        SlidingInvisibilityTimeout = TimeSpan.FromMinutes(5),
+                        QueuePollInterval = TimeSpan.FromSeconds(hangfireOpts.QueuePollIntervalSeconds),
+                        UseRecommendedIsolationLevel = true,
+                        DisableGlobalLocks = true
+                    }));
+
+            builder.Services.AddHangfireServer(options =>
+            {
+                options.WorkerCount = hangfireOpts.WorkerCount;
+                options.Queues = new[] { "default" };
+            });
+        }
 
         builder.Services.AddCors(options =>
         {
@@ -188,16 +195,22 @@ public class Program
 
         var app = builder.Build();
 
-        app.UseHangfireDashboard("/hangfire", new DashboardOptions
+        if (hangfireOpts.Enabled)
         {
-            Authorization = new[] { new HangfireDashboardAuthFilter() }
-        });
+            if (hangfireOpts.DashboardEnabled)
+            {
+                app.UseHangfireDashboard("/hangfire", new DashboardOptions
+                {
+                    Authorization = new[] { new HangfireDashboardAuthFilter() }
+                });
+            }
 
-        // Daily sweep: end leases past their EndDate and return properties to market.
-        RecurringJob.AddOrUpdate<LeaseExpiryJob>(
-            "expire-due-leases",
-            job => job.RunAsync(),
-            Cron.Daily);
+            // Daily sweep: end leases past their EndDate and return properties to market.
+            RecurringJob.AddOrUpdate<LeaseExpiryJob>(
+                "expire-due-leases",
+                job => job.RunAsync(),
+                Cron.Daily);
+        }
 
         // ── Migrations + Seeding ──────────────────────────────
         using (var scope = app.Services.CreateScope())
