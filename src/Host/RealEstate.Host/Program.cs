@@ -203,23 +203,14 @@ public class Program
             var propertyDb = scope.ServiceProvider.GetRequiredService<PropertyDbContext>();
             var maintenanceDb = scope.ServiceProvider.GetRequiredService<MaintenanceDbContext>();
             var documentDb = scope.ServiceProvider.GetRequiredService<DocumentDbContext>();
-            await documentDb.Database.MigrateAsync();
-            await maintenanceDb.Database.MigrateAsync();
-            await propertyDb.Database.MigrateAsync();
-            //await aiDb.Database.MigrateAsync();
-
-            await Property.Infrastructure.Persistence.Seeding.AmenitySeed.SeedAsync(propertyDb);
-
             var subscriptionDb = scope.ServiceProvider.GetRequiredService<SubscriptionDbContext>();
-            var aiDb = scope.ServiceProvider.GetRequiredService<AiDbContext>();
-            var propertyDb = scope.ServiceProvider.GetRequiredService<PropertyDbContext>();
-            var maintenanceDb = scope.ServiceProvider.GetRequiredService<MaintenanceDbContext>();
-            var documentDb = scope.ServiceProvider.GetRequiredService<DocumentDbContext>();
+
             await documentDb.Database.MigrateAsync();
             await maintenanceDb.Database.MigrateAsync();
             await propertyDb.Database.MigrateAsync();
             await aiDb.Database.MigrateAsync();
             await subscriptionDb.Database.MigrateAsync();
+
             await SubscriptionPlanSeed.SeedAsync(subscriptionDb);
             await Property.Infrastructure.Persistence.Seeding.AmenitySeed.SeedAsync(propertyDb);
 
@@ -231,14 +222,8 @@ public class Program
             var paymentDb = scope.ServiceProvider.GetRequiredService<PaymentDbContext>();
             await paymentDb.Database.MigrateAsync();
 
-            //var documentDb = scope.ServiceProvider.GetRequiredService<DocumentDbContext>();
-            //await documentDb.Database.MigrateAsync();
-
             var maintenanceCompaniesDb = scope.ServiceProvider.GetRequiredService<MaintenanceModuleDbContext>();
             await maintenanceCompaniesDb.Database.MigrateAsync();
-
-            //var maintenanceDb = scope.ServiceProvider.GetRequiredService<MaintenanceDbContext>();
-            //await maintenanceDb.Database.MigrateAsync();
         }
         //stripe
         app.Use(async (context, next) =>
@@ -250,12 +235,9 @@ public class Program
             await next();
         });
 
-        //if (app.Environment.IsDevelopment())
-        //{
-            app.UseSwagger();
-            app.UseSwaggerUI(c =>
-                c.SwaggerEndpoint("/swagger/v1/swagger.json", "Real Estate API v1"));
-        }
+        app.UseSwagger();
+        app.UseSwaggerUI(c =>
+            c.SwaggerEndpoint("/swagger/v1/swagger.json", "Real Estate API v1"));
         app.UseHttpsRedirection();
         app.UseStaticFiles();
         app.UseCors("AllowAngular");

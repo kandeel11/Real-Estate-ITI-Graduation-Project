@@ -13,7 +13,7 @@ public sealed class PaymentAnalyticsService : IPaymentAnalyticsService
 
     public async Task<PaymentAnalyticsSummaryDto> GetSummaryAsync(CancellationToken ct = default)
     {
-        var q = _db.RentPayments.AsNoTracking();
+        var q = _db.Payments.AsNoTracking().Where(p => p.PaymentType == PaymentType.Rent);
 
         var totalCollected = await q.Where(p => p.Status == PaymentStatus.Paid).SumAsync(p => p.Amount, ct);
         var totalPending   = await q.Where(p => p.Status == PaymentStatus.Pending).SumAsync(p => p.Amount, ct);
@@ -25,9 +25,10 @@ public sealed class PaymentAnalyticsService : IPaymentAnalyticsService
     }
 
     public async Task<decimal> GetRevenueInRangeAsync(DateTime from, DateTime to, CancellationToken ct = default)
-        => await _db.RentPayments
+        => await _db.Payments
             .AsNoTracking()
-            .Where(p => p.Status == PaymentStatus.Paid
+            .Where(p => p.PaymentType == PaymentType.Rent
+                     && p.Status == PaymentStatus.Paid
                      && p.PaidAt.HasValue
                      && p.PaidAt.Value >= from
                      && p.PaidAt.Value <= to)

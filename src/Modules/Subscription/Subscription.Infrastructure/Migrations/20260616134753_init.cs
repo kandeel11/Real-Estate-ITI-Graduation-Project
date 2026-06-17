@@ -1,4 +1,4 @@
-﻿using System;
+using System;
 using Microsoft.EntityFrameworkCore.Migrations;
 
 #nullable disable
@@ -11,204 +11,193 @@ namespace Subscription.Infrastructure.Migrations
         /// <inheritdoc />
         protected override void Up(MigrationBuilder migrationBuilder)
         {
-            migrationBuilder.EnsureSchema(
-                name: "subscription");
+            migrationBuilder.EnsureSchema(name: "subscription");
 
-            migrationBuilder.CreateTable(
-                name: "subscription_plans",
-                schema: "subscription",
-                columns: table => new
-                {
-                    Id = table.Column<Guid>(type: "uniqueidentifier", nullable: false),
-                    Name = table.Column<string>(type: "nvarchar(100)", maxLength: 100, nullable: false),
-                    Tier = table.Column<string>(type: "nvarchar(450)", nullable: false),
-                    PriceMonthly = table.Column<decimal>(type: "decimal(10,2)", precision: 10, scale: 2, nullable: false),
-                    PriceAnnual = table.Column<decimal>(type: "decimal(10,2)", precision: 10, scale: 2, nullable: false),
-                    MaxProperties = table.Column<int>(type: "int", nullable: false),
-                    MaxBrokers = table.Column<int>(type: "int", nullable: false),
-                    MaxAiRequestsPerMonth = table.Column<int>(type: "int", nullable: false),
-                    MaxStorageGb = table.Column<int>(type: "int", nullable: false),
-                    HasAdvancedAnalytics = table.Column<bool>(type: "bit", nullable: false, defaultValue: false),
-                    HasFeaturedListings = table.Column<bool>(type: "bit", nullable: false, defaultValue: false),
-                    HasAiPriceEstimation = table.Column<bool>(type: "bit", nullable: false, defaultValue: false),
-                    HasAiChatbot = table.Column<bool>(type: "bit", nullable: false, defaultValue: false),
-                    HasAiLeadPrioritization = table.Column<bool>(type: "bit", nullable: false, defaultValue: false),
-                    HasAiDescriptionGenerator = table.Column<bool>(type: "bit", nullable: false, defaultValue: false),
-                    IsActive = table.Column<bool>(type: "bit", nullable: false, defaultValue: true),
-                    MaxSavedListings = table.Column<int>(type: "int", nullable: false, defaultValue: 0),
-                    MaxSavedSearches = table.Column<int>(type: "int", nullable: false, defaultValue: 0),
-                    MaxInquiriesPerMonth = table.Column<int>(type: "int", nullable: false, defaultValue: 0),
-                    HasEarlyAccessListings = table.Column<bool>(type: "bit", nullable: false, defaultValue: false),
-                    HasPriorityBrokerResponse = table.Column<bool>(type: "bit", nullable: false, defaultValue: false),
-                    CreatedAt = table.Column<DateTime>(type: "datetime2", nullable: false),
-                    UpdatedAt = table.Column<DateTime>(type: "datetime2", nullable: true),
-                    DeletedAt = table.Column<DateTime>(type: "datetime2", nullable: true)
-                },
-                constraints: table =>
-                {
-                    table.PrimaryKey("PK_subscription_plans", x => x.Id);
-                });
+            // ── subscription_plans ────────────────────────────────────────────
+            migrationBuilder.Sql(@"
+                IF OBJECT_ID(N'[subscription].[subscription_plans]', N'U') IS NULL
+                BEGIN
+                    CREATE TABLE [subscription].[subscription_plans] (
+                        [Id]                       uniqueidentifier NOT NULL,
+                        [Name]                     nvarchar(100)    NOT NULL,
+                        [Tier]                     nvarchar(450)    NOT NULL,
+                        [PriceMonthly]             decimal(10,2)    NOT NULL,
+                        [PriceAnnual]              decimal(10,2)    NOT NULL,
+                        [MaxProperties]            int              NOT NULL,
+                        [MaxBrokers]               int              NOT NULL,
+                        [MaxAiRequestsPerMonth]    int              NOT NULL,
+                        [MaxStorageGb]             int              NOT NULL,
+                        [HasAdvancedAnalytics]     bit              NOT NULL DEFAULT CAST(0 AS bit),
+                        [HasFeaturedListings]      bit              NOT NULL DEFAULT CAST(0 AS bit),
+                        [HasAiPriceEstimation]     bit              NOT NULL DEFAULT CAST(0 AS bit),
+                        [HasAiChatbot]             bit              NOT NULL DEFAULT CAST(0 AS bit),
+                        [HasAiLeadPrioritization]  bit              NOT NULL DEFAULT CAST(0 AS bit),
+                        [HasAiDescriptionGenerator] bit             NOT NULL DEFAULT CAST(0 AS bit),
+                        [IsActive]                 bit              NOT NULL DEFAULT CAST(1 AS bit),
+                        [MaxSavedListings]         int              NOT NULL DEFAULT 0,
+                        [MaxSavedSearches]         int              NOT NULL DEFAULT 0,
+                        [MaxInquiriesPerMonth]     int              NOT NULL DEFAULT 0,
+                        [HasEarlyAccessListings]   bit              NOT NULL DEFAULT CAST(0 AS bit),
+                        [HasPriorityBrokerResponse] bit             NOT NULL DEFAULT CAST(0 AS bit),
+                        [CreatedAt]                datetime2        NOT NULL,
+                        [UpdatedAt]                datetime2        NULL,
+                        [DeletedAt]                datetime2        NULL,
+                        CONSTRAINT [PK_subscription_plans] PRIMARY KEY ([Id])
+                    );
+                END
+            ");
 
-            migrationBuilder.CreateTable(
-                name: "plan_features",
-                schema: "subscription",
-                columns: table => new
-                {
-                    Id = table.Column<Guid>(type: "uniqueidentifier", nullable: false),
-                    PlanId = table.Column<Guid>(type: "uniqueidentifier", nullable: false),
-                    FeatureKey = table.Column<string>(type: "nvarchar(100)", maxLength: 100, nullable: false),
-                    FeatureLabel = table.Column<string>(type: "nvarchar(255)", maxLength: 255, nullable: false),
-                    FeatureValue = table.Column<string>(type: "nvarchar(255)", maxLength: 255, nullable: false),
-                    CreatedAt = table.Column<DateTime>(type: "datetime2", nullable: false),
-                    UpdatedAt = table.Column<DateTime>(type: "datetime2", nullable: true),
-                    DeletedAt = table.Column<DateTime>(type: "datetime2", nullable: true)
-                },
-                constraints: table =>
-                {
-                    table.PrimaryKey("PK_plan_features", x => x.Id);
-                    table.ForeignKey(
-                        name: "FK_plan_features_subscription_plans_PlanId",
-                        column: x => x.PlanId,
-                        principalSchema: "subscription",
-                        principalTable: "subscription_plans",
-                        principalColumn: "Id",
-                        onDelete: ReferentialAction.Cascade);
-                });
+            // ── plan_features ─────────────────────────────────────────────────
+            migrationBuilder.Sql(@"
+                IF OBJECT_ID(N'[subscription].[plan_features]', N'U') IS NULL
+                BEGIN
+                    CREATE TABLE [subscription].[plan_features] (
+                        [Id]           uniqueidentifier NOT NULL,
+                        [PlanId]       uniqueidentifier NOT NULL,
+                        [FeatureKey]   nvarchar(100)    NOT NULL,
+                        [FeatureLabel] nvarchar(255)    NOT NULL,
+                        [FeatureValue] nvarchar(255)    NOT NULL,
+                        [CreatedAt]    datetime2        NOT NULL,
+                        [UpdatedAt]    datetime2        NULL,
+                        [DeletedAt]    datetime2        NULL,
+                        CONSTRAINT [PK_plan_features] PRIMARY KEY ([Id]),
+                        CONSTRAINT [FK_plan_features_subscription_plans_PlanId]
+                            FOREIGN KEY ([PlanId]) REFERENCES [subscription].[subscription_plans] ([Id])
+                            ON DELETE CASCADE
+                    );
+                END
+            ");
 
-            migrationBuilder.CreateTable(
-                name: "subscriptions",
-                schema: "subscription",
-                columns: table => new
-                {
-                    Id = table.Column<Guid>(type: "uniqueidentifier", nullable: false),
-                    PlanId = table.Column<Guid>(type: "uniqueidentifier", nullable: false),
-                    UserId = table.Column<Guid>(type: "uniqueidentifier", nullable: false),
-                    CompanyId = table.Column<Guid>(type: "uniqueidentifier", nullable: true),
-                    BillingCycle = table.Column<string>(type: "nvarchar(max)", nullable: false),
-                    Status = table.Column<string>(type: "nvarchar(450)", nullable: false),
-                    StartDate = table.Column<DateTime>(type: "datetime2", nullable: false),
-                    EndDate = table.Column<DateTime>(type: "datetime2", nullable: false),
-                    TrialEndDate = table.Column<DateTime>(type: "datetime2", nullable: true),
-                    IsAutoRenew = table.Column<bool>(type: "bit", nullable: false, defaultValue: true),
-                    CancelledAt = table.Column<DateTime>(type: "datetime2", nullable: true),
-                    CancellationReason = table.Column<string>(type: "nvarchar(max)", nullable: true),
-                    UpgradeFromPlanId = table.Column<Guid>(type: "uniqueidentifier", nullable: true),
-                    DowngradeToPlanId = table.Column<Guid>(type: "uniqueidentifier", nullable: true),
-                    CreatedAt = table.Column<DateTime>(type: "datetime2", nullable: false),
-                    UpdatedAt = table.Column<DateTime>(type: "datetime2", nullable: true),
-                    DeletedAt = table.Column<DateTime>(type: "datetime2", nullable: true)
-                },
-                constraints: table =>
-                {
-                    table.PrimaryKey("PK_subscriptions", x => x.Id);
-                    table.ForeignKey(
-                        name: "FK_subscriptions_subscription_plans_PlanId",
-                        column: x => x.PlanId,
-                        principalSchema: "subscription",
-                        principalTable: "subscription_plans",
-                        principalColumn: "Id",
-                        onDelete: ReferentialAction.Restrict);
-                });
+            // ── subscriptions ─────────────────────────────────────────────────
+            migrationBuilder.Sql(@"
+                IF OBJECT_ID(N'[subscription].[subscriptions]', N'U') IS NULL
+                BEGIN
+                    CREATE TABLE [subscription].[subscriptions] (
+                        [Id]                  uniqueidentifier NOT NULL,
+                        [PlanId]              uniqueidentifier NOT NULL,
+                        [UserId]              uniqueidentifier NOT NULL,
+                        [CompanyId]           uniqueidentifier NULL,
+                        [BillingCycle]        nvarchar(max)    NOT NULL,
+                        [Status]              nvarchar(450)    NOT NULL,
+                        [StartDate]           datetime2        NOT NULL,
+                        [EndDate]             datetime2        NOT NULL,
+                        [TrialEndDate]        datetime2        NULL,
+                        [IsAutoRenew]         bit              NOT NULL DEFAULT CAST(1 AS bit),
+                        [CancelledAt]         datetime2        NULL,
+                        [CancellationReason]  nvarchar(max)    NULL,
+                        [UpgradeFromPlanId]   uniqueidentifier NULL,
+                        [DowngradeToPlanId]   uniqueidentifier NULL,
+                        [CreatedAt]           datetime2        NOT NULL,
+                        [UpdatedAt]           datetime2        NULL,
+                        [DeletedAt]           datetime2        NULL,
+                        CONSTRAINT [PK_subscriptions] PRIMARY KEY ([Id]),
+                        CONSTRAINT [FK_subscriptions_subscription_plans_PlanId]
+                            FOREIGN KEY ([PlanId]) REFERENCES [subscription].[subscription_plans] ([Id])
+                            ON DELETE NO ACTION
+                    );
+                END
+            ");
 
-            migrationBuilder.CreateTable(
-                name: "subscription_usage",
-                schema: "subscription",
-                columns: table => new
-                {
-                    Id = table.Column<Guid>(type: "uniqueidentifier", nullable: false),
-                    SubscriptionId = table.Column<Guid>(type: "uniqueidentifier", nullable: false),
-                    PeriodStart = table.Column<DateTime>(type: "datetime2", nullable: false),
-                    PeriodEnd = table.Column<DateTime>(type: "datetime2", nullable: false),
-                    PropertiesUsed = table.Column<int>(type: "int", nullable: false, defaultValue: 0),
-                    BrokersUsed = table.Column<int>(type: "int", nullable: false, defaultValue: 0),
-                    AiRequestsUsed = table.Column<int>(type: "int", nullable: false, defaultValue: 0),
-                    StorageUsedGb = table.Column<decimal>(type: "decimal(10,4)", precision: 10, scale: 4, nullable: false, defaultValue: 0m),
-                    SavedListingsUsed = table.Column<int>(type: "int", nullable: false, defaultValue: 0),
-                    SavedSearchesUsed = table.Column<int>(type: "int", nullable: false, defaultValue: 0),
-                    InquiriesUsed = table.Column<int>(type: "int", nullable: false, defaultValue: 0),
-                    CreatedAt = table.Column<DateTime>(type: "datetime2", nullable: false),
-                    UpdatedAt = table.Column<DateTime>(type: "datetime2", nullable: true),
-                    DeletedAt = table.Column<DateTime>(type: "datetime2", nullable: true)
-                },
-                constraints: table =>
-                {
-                    table.PrimaryKey("PK_subscription_usage", x => x.Id);
-                    table.ForeignKey(
-                        name: "FK_subscription_usage_subscriptions_SubscriptionId",
-                        column: x => x.SubscriptionId,
-                        principalSchema: "subscription",
-                        principalTable: "subscriptions",
-                        principalColumn: "Id",
-                        onDelete: ReferentialAction.Cascade);
-                });
+            // ── subscription_usage ────────────────────────────────────────────
+            migrationBuilder.Sql(@"
+                IF OBJECT_ID(N'[subscription].[subscription_usage]', N'U') IS NULL
+                BEGIN
+                    CREATE TABLE [subscription].[subscription_usage] (
+                        [Id]               uniqueidentifier NOT NULL,
+                        [SubscriptionId]   uniqueidentifier NOT NULL,
+                        [PeriodStart]      datetime2        NOT NULL,
+                        [PeriodEnd]        datetime2        NOT NULL,
+                        [PropertiesUsed]   int              NOT NULL DEFAULT 0,
+                        [BrokersUsed]      int              NOT NULL DEFAULT 0,
+                        [AiRequestsUsed]   int              NOT NULL DEFAULT 0,
+                        [StorageUsedGb]    decimal(10,4)    NOT NULL DEFAULT 0,
+                        [SavedListingsUsed]  int            NOT NULL DEFAULT 0,
+                        [SavedSearchesUsed]  int            NOT NULL DEFAULT 0,
+                        [InquiriesUsed]    int              NOT NULL DEFAULT 0,
+                        [CreatedAt]        datetime2        NOT NULL,
+                        [UpdatedAt]        datetime2        NULL,
+                        [DeletedAt]        datetime2        NULL,
+                        CONSTRAINT [PK_subscription_usage] PRIMARY KEY ([Id]),
+                        CONSTRAINT [FK_subscription_usage_subscriptions_SubscriptionId]
+                            FOREIGN KEY ([SubscriptionId]) REFERENCES [subscription].[subscriptions] ([Id])
+                            ON DELETE CASCADE
+                    );
+                END
+            ");
 
-            migrationBuilder.CreateIndex(
-                name: "IX_plan_features_PlanId",
-                schema: "subscription",
-                table: "plan_features",
-                column: "PlanId");
+            // ── Indexes (all guarded) ─────────────────────────────────────────
+            migrationBuilder.Sql(@"
+                IF NOT EXISTS (SELECT 1 FROM sys.indexes
+                               WHERE name = N'IX_plan_features_PlanId'
+                                 AND object_id = OBJECT_ID(N'[subscription].[plan_features]'))
+                    CREATE INDEX [IX_plan_features_PlanId]
+                        ON [subscription].[plan_features] ([PlanId]);
+            ");
 
-            migrationBuilder.CreateIndex(
-                name: "IX_subscription_plans_IsActive",
-                schema: "subscription",
-                table: "subscription_plans",
-                column: "IsActive");
+            migrationBuilder.Sql(@"
+                IF NOT EXISTS (SELECT 1 FROM sys.indexes
+                               WHERE name = N'IX_subscription_plans_IsActive'
+                                 AND object_id = OBJECT_ID(N'[subscription].[subscription_plans]'))
+                    CREATE INDEX [IX_subscription_plans_IsActive]
+                        ON [subscription].[subscription_plans] ([IsActive]);
+            ");
 
-            migrationBuilder.CreateIndex(
-                name: "IX_subscription_plans_Tier",
-                schema: "subscription",
-                table: "subscription_plans",
-                column: "Tier");
+            migrationBuilder.Sql(@"
+                IF NOT EXISTS (SELECT 1 FROM sys.indexes
+                               WHERE name = N'IX_subscription_plans_Tier'
+                                 AND object_id = OBJECT_ID(N'[subscription].[subscription_plans]'))
+                    CREATE INDEX [IX_subscription_plans_Tier]
+                        ON [subscription].[subscription_plans] ([Tier]);
+            ");
 
-            migrationBuilder.CreateIndex(
-                name: "IX_subscription_usage_SubscriptionId",
-                schema: "subscription",
-                table: "subscription_usage",
-                column: "SubscriptionId");
+            migrationBuilder.Sql(@"
+                IF NOT EXISTS (SELECT 1 FROM sys.indexes
+                               WHERE name = N'IX_subscription_usage_SubscriptionId'
+                                 AND object_id = OBJECT_ID(N'[subscription].[subscription_usage]'))
+                    CREATE INDEX [IX_subscription_usage_SubscriptionId]
+                        ON [subscription].[subscription_usage] ([SubscriptionId]);
+            ");
 
-            migrationBuilder.CreateIndex(
-                name: "IX_subscriptions_CompanyId",
-                schema: "subscription",
-                table: "subscriptions",
-                column: "CompanyId");
+            migrationBuilder.Sql(@"
+                IF NOT EXISTS (SELECT 1 FROM sys.indexes
+                               WHERE name = N'IX_subscriptions_CompanyId'
+                                 AND object_id = OBJECT_ID(N'[subscription].[subscriptions]'))
+                    CREATE INDEX [IX_subscriptions_CompanyId]
+                        ON [subscription].[subscriptions] ([CompanyId]);
+            ");
 
-            migrationBuilder.CreateIndex(
-                name: "IX_subscriptions_PlanId",
-                schema: "subscription",
-                table: "subscriptions",
-                column: "PlanId");
+            migrationBuilder.Sql(@"
+                IF NOT EXISTS (SELECT 1 FROM sys.indexes
+                               WHERE name = N'IX_subscriptions_PlanId'
+                                 AND object_id = OBJECT_ID(N'[subscription].[subscriptions]'))
+                    CREATE INDEX [IX_subscriptions_PlanId]
+                        ON [subscription].[subscriptions] ([PlanId]);
+            ");
 
-            migrationBuilder.CreateIndex(
-                name: "IX_subscriptions_Status",
-                schema: "subscription",
-                table: "subscriptions",
-                column: "Status");
+            migrationBuilder.Sql(@"
+                IF NOT EXISTS (SELECT 1 FROM sys.indexes
+                               WHERE name = N'IX_subscriptions_Status'
+                                 AND object_id = OBJECT_ID(N'[subscription].[subscriptions]'))
+                    CREATE INDEX [IX_subscriptions_Status]
+                        ON [subscription].[subscriptions] ([Status]);
+            ");
 
-            migrationBuilder.CreateIndex(
-                name: "IX_subscriptions_UserId",
-                schema: "subscription",
-                table: "subscriptions",
-                column: "UserId");
+            migrationBuilder.Sql(@"
+                IF NOT EXISTS (SELECT 1 FROM sys.indexes
+                               WHERE name = N'IX_subscriptions_UserId'
+                                 AND object_id = OBJECT_ID(N'[subscription].[subscriptions]'))
+                    CREATE INDEX [IX_subscriptions_UserId]
+                        ON [subscription].[subscriptions] ([UserId]);
+            ");
         }
 
         /// <inheritdoc />
         protected override void Down(MigrationBuilder migrationBuilder)
         {
-            migrationBuilder.DropTable(
-                name: "plan_features",
-                schema: "subscription");
-
-            migrationBuilder.DropTable(
-                name: "subscription_usage",
-                schema: "subscription");
-
-            migrationBuilder.DropTable(
-                name: "subscriptions",
-                schema: "subscription");
-
-            migrationBuilder.DropTable(
-                name: "subscription_plans",
-                schema: "subscription");
+            migrationBuilder.DropTable(name: "plan_features",        schema: "subscription");
+            migrationBuilder.DropTable(name: "subscription_usage",   schema: "subscription");
+            migrationBuilder.DropTable(name: "subscriptions",        schema: "subscription");
+            migrationBuilder.DropTable(name: "subscription_plans",   schema: "subscription");
         }
     }
 }
