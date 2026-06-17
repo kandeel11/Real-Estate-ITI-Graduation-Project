@@ -81,11 +81,15 @@ public sealed class OutboxPublisherJob : BackgroundService
                         message.Content, JsonOptions);
 
                     if (@event is not null)
-                    {
-                        // MediatR Notification — Subscription module's
-                        // INotificationHandler<SubscriptionPaymentSucceededEvent> بيستقبلها
                         await publisher.Publish(@event, ct);
-                    }
+                }
+                else if (message.Type.Contains(nameof(RentPaymentSucceededEvent)))
+                {
+                    var @event = JsonSerializer.Deserialize<RentPaymentSucceededEvent>(
+                        message.Content, JsonOptions);
+
+                    if (@event is not null)
+                        await publisher.Publish(@event, ct);
                 }
                 else
                 {

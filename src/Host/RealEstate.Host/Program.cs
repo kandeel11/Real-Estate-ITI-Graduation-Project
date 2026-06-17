@@ -25,6 +25,8 @@ using RealEstate.Host.Services;
 using Subscription.Infrastructure;
 using Subscription.Infrastructure.Persistence;
 using Subscription.Infrastructure.Seed;
+using Wallet.Infrastructure;
+using Wallet.Infrastructure.Persistence;
 using System.IdentityModel.Tokens.Jwt;
 using System.Text;
 using MaintenanceCompanies.Infrastructure;
@@ -125,6 +127,7 @@ public class Program
         builder.Services.AddMaintenanceModule(builder.Configuration);
         builder.Services.AddSubscriptionModule(builder.Configuration);
         builder.Services.AddPaymentModule(builder.Configuration);
+        builder.Services.AddWalletModule(builder.Configuration);
 
         // ── MediatR ───────────────────────────────────────────
         builder.Services.AddMediatR(cfg =>
@@ -221,6 +224,9 @@ public class Program
 
             var paymentDb = scope.ServiceProvider.GetRequiredService<PaymentDbContext>();
             await paymentDb.Database.MigrateAsync();
+
+            var walletDb = scope.ServiceProvider.GetRequiredService<WalletDbContext>();
+            await walletDb.Database.MigrateAsync();
 
             var maintenanceCompaniesDb = scope.ServiceProvider.GetRequiredService<MaintenanceModuleDbContext>();
             await maintenanceCompaniesDb.Database.MigrateAsync();

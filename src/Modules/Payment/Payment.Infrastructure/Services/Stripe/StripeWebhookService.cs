@@ -137,6 +137,25 @@ public sealed class StripeWebhookService
         if (payment.PaymentType == PaymentType.Rent)
         {
             await TrySendPaymentConfirmationAsync(payment, intent.Id, receiptUrl, ct);
+
+            if (payment.RentDetails is not null)
+            {
+                var details = payment.RentDetails;
+                await _outboxWriter.AddAsync(
+                    new RentPaymentSucceededEvent(
+                        PaymentId: payment.Id,
+                        OwnerId: details.LandlordId,
+                        TenantId: details.TenantId,
+                        LeaseId: details.LeaseId,
+                        PropertyId: details.PropertyId,
+                        Amount: payment.Amount
+                    ),
+                    ct);
+                await _repository.SaveChangesAsync(ct);
+                _logger.LogInformation(
+                    "RentPaymentSucceededEvent queued in outbox for Payment {PaymentId}, Owner {OwnerId}",
+                    payment.Id, details.LandlordId);
+            }
         }
     }
 
