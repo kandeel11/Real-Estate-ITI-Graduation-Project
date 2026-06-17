@@ -1,3 +1,4 @@
+using Identity.Application.Commands.ChangePassword;
 using Identity.Application.Commands.RegisterMaintenanceCompany;
 using Identity.Application.Interfaces;
 using MaintenanceCompanies.Application.Commands.CreateCompany;
@@ -112,6 +113,27 @@ public class MaintenanceCompaniesController(IMediator mediator) : ControllerBase
             return BadRequest(new { error = ex.Message });
         }
     }
+    [HttpPatch("password")]
+    [Authorize(Policy = "MaintenanceCompany")]
+    public async Task<IActionResult> ChangePassword(
+        [FromBody] MaintenanceChangePasswordRequest body,
+        [FromServices] ICurrentUserService currentUser,
+        CancellationToken ct)
+    {
+        var userId = currentUser.UserId;
+        if (userId is null) return Unauthorized();
+
+        try
+        {
+            await mediator.Send(new ChangePasswordCommand(userId.Value, body.CurrentPassword, body.NewPassword), ct);
+            return Ok(new { message = "Password updated successfully." });
+        }
+        catch (UnauthorizedAccessException ex)
+        {
+            return BadRequest(new { error = ex.Message });
+        }
+    }
+
     [AllowAnonymous]
     [HttpGet]
     public async Task<IActionResult> GetAllCompanies()
@@ -126,6 +148,8 @@ public class MaintenanceCompaniesController(IMediator mediator) : ControllerBase
         return Ok(companies);
     }
 }
+
+public record MaintenanceChangePasswordRequest(string CurrentPassword, string NewPassword);
 
 // Request record
 public record CreateMaintenanceCompanyRequest(
