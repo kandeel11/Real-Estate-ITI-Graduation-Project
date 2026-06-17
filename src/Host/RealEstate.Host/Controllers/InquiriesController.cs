@@ -2,6 +2,7 @@
 using Document.Application.DTOs;
 using Document.Application.Queries.Inquiry;
 using Document.Application.Queries.Lead.GetLeadByInquiry;
+using Document.Application.Queries.Message.GetInquiryLastMessages;
 using Document.Application.Queries.Message.GetMessagesByConversation;
 using Document.Application.Queries.Message.GetMessagesByInquiry;
 using Identity.Application.Interfaces;
@@ -52,11 +53,49 @@ public class InquiriesController(
         return result is null ? NotFound() : Ok(result);
     }
 
-    // FIX: was GET /tenant/{tenantId} — now /mine scoped from JWT
+    // FIX: was GET /tenant/{tenantId} — now /mine scoped from JWT.
+    // Enriched for the chat list: property title, last message + time, newest-first.
     [HttpGet("mine")]
     [Authorize(Roles = "tenant")]
     public async Task<IActionResult> GetMine(CancellationToken ct)
-        => Ok(await mediator.Send(new GetMyInquiriesQuery(UserId), ct));
+    {
+        var inquiries = await mediator.Send(new GetMyInquiriesQuery(UserId), ct);
+        if (inquiries.Count == 0) return Ok(Array.Empty<object>());
+
+        var lastMessages = await mediator.Send(
+            new GetInquiryLastMessagesQuery(inquiries.Select(i => i.Id).ToList()), ct);
+
+        var titles = new Dictionary<Guid, string>();
+        foreach (var pid in inquiries.Select(i => i.PropertyId).Distinct())
+        {
+            var prop = await mediator.Send(new GetPropertyByIdQuery(pid), ct);
+            titles[pid] = prop?.Title ?? string.Empty;
+        }
+
+        var result = inquiries
+            .OrderByDescending(i => lastMessages.GetValueOrDefault(i.Id)?.At ?? i.CreatedAt)
+            .Select(i =>
+            {
+                var last = lastMessages.GetValueOrDefault(i.Id);
+                var status = i.Status == "Accepted" ? "converted"
+                           : last is not null ? "replied"
+                           : "new";
+                return (object)new
+                {
+                    id = i.Id,
+                    propertyId = i.PropertyId,
+                    propertyTitle = titles.GetValueOrDefault(i.PropertyId, string.Empty),
+                    message = i.Message,
+                    status,
+                    createdAt = i.CreatedAt,
+                    lastMessage = last?.Text ?? i.Message,
+                    lastMessageAt = last?.At ?? i.CreatedAt
+                };
+            })
+            .ToList();
+
+        return Ok(result);
+    }
 
     [HttpGet("property/{propertyId:guid}")]
     public async Task<IActionResult> GetByProperty(Guid propertyId, CancellationToken ct)
@@ -124,7 +163,21 @@ public class InquiriesController(
         if (inquiry is null) return NotFound(new { error = $"Inquiry {id} not found." });
 
         var messages = await mediator.Send(new GetMessagesByInquiryQuery(id), ct);
-        return Ok(await ToChatMessages(messages, inquiry, ct));
+        var chat = await ToChatMessages(messages, inquiry, ct);
+
+        // The tenant's original inquiry is the first message of every thread.
+        var tenantNames = await userRepo.GetFullNamesByIdsAsync(new[] { inquiry.TenantId }, ct);
+        chat.Insert(0, new
+        {
+            id = inquiry.Id,
+            senderId = inquiry.TenantId,
+            senderName = tenantNames.GetValueOrDefault(inquiry.TenantId, string.Empty),
+            senderRole = "tenant",
+            text = inquiry.Message,
+            sentAt = inquiry.CreatedAt
+        });
+
+        return Ok(chat);
     }
 
     /// <summary>Post a chat message on an inquiry thread (either tenant or broker/owner).</summary>

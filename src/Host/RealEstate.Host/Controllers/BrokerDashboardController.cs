@@ -1,6 +1,8 @@
 using Document.Application.Queries.Inquiry;
 using Document.Application.Queries.Lead.GetLeadsByBroker;
 using Document.Application.Queries.Lead.GetLeadsByProperties;
+using Document.Application.Queries.Lead.GetLeadsWithLeases;
+using Document.Application.Queries.Message.GetInquiryLastMessages;
 using Document.Application.Queries.Notification;
 using Identity.Application.Interfaces;
 using MediatR;
@@ -161,6 +163,10 @@ public class BrokerDashboardController(
             if (u is not null) tenantContacts[tid] = (u.Email, u.Phone);
         }
 
+        // Which leads already have a lease → show "Lease Created" instead of "Create Lease".
+        var leadsWithLease = await sender.Send(
+            new GetLeadsWithLeasesQuery(leads.Select(l => l.Id).ToList()), ct);
+
         var result = leads.Select(l => new
         {
             id = l.Id,
@@ -173,7 +179,8 @@ public class BrokerDashboardController(
             status = MapLeadStatus(l.Status),
             stageEnteredAt = new DateTimeOffset(DateTime.SpecifyKind(l.UpdatedAt, DateTimeKind.Utc)).ToUnixTimeMilliseconds(),
             dealValue = l.DealValue?.ToString(),
-            notes = l.Notes
+            notes = l.Notes,
+            hasLease = leadsWithLease.Contains(l.Id)
         });
 
         return Ok(result);
@@ -191,11 +198,19 @@ public class BrokerDashboardController(
         var tenantNames = await userRepo.GetFullNamesByIdsAsync(
             inquiries.Select(i => i.TenantId).Distinct(), ct);
         var propertyTitles = properties.ToDictionary(p => p.Id, p => p.Title);
+        var lastMessages = await sender.Send(
+            new GetInquiryLastMessagesQuery(inquiries.Select(i => i.Id).ToList()), ct);
 
-        var result = new List<object>(inquiries.Count);
-        foreach (var i in inquiries)
+        // Newest activity first (chat list ordering).
+        var ordered = inquiries
+            .OrderByDescending(i => lastMessages.GetValueOrDefault(i.Id)?.At ?? i.CreatedAt)
+            .ToList();
+
+        var result = new List<object>(ordered.Count);
+        foreach (var i in ordered)
         {
             var tenant = await userRepo.GetByIdAsync(i.TenantId, ct);
+            var last = lastMessages.GetValueOrDefault(i.Id);
             result.Add(new
             {
                 id = i.Id,
@@ -206,7 +221,10 @@ public class BrokerDashboardController(
                 tenantEmail = tenant?.Email ?? string.Empty,
                 message = i.Message,
                 status = MapInquiryStatus(i.Status),
-                createdAt = i.CreatedAt
+                createdAt = i.CreatedAt,
+                // Latest activity for the chat list (falls back to the inquiry itself).
+                lastMessage = last?.Text ?? i.Message,
+                lastMessageAt = last?.At ?? i.CreatedAt
             });
         }
 
