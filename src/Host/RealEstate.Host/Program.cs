@@ -187,34 +187,31 @@ public class Program
             Authorization = new[] { new HangfireDashboardAuthFilter() } // عمل Authorization
         });
 
-        // ==========================================
-        // Database migrations + seeding
-        // ==========================================
-        //using (var scope = app.Services.CreateScope())
-        //{
-        //    var aiDb = scope.ServiceProvider.GetRequiredService<AiDbContext>();
-        //    var propertyDb = scope.ServiceProvider.GetRequiredService<PropertyDbContext>();
-        //    var maintenanceDb = scope.ServiceProvider.GetRequiredService<MaintenanceDbContext>();
-        //    var documentDb = scope.ServiceProvider.GetRequiredService<DocumentDbContext>();
-        //    await documentDb.Database.MigrateAsync();
-        //    await maintenanceDb.Database.MigrateAsync();
-        //    await propertyDb.Database.MigrateAsync();
-        //    //await aiDb.Database.MigrateAsync();
+        using (var scope = app.Services.CreateScope())
+        {
+            var aiDb = scope.ServiceProvider.GetRequiredService<AiDbContext>();
+            var propertyDb = scope.ServiceProvider.GetRequiredService<PropertyDbContext>();
+            var maintenanceDb = scope.ServiceProvider.GetRequiredService<MaintenanceDbContext>();
+            var documentDb = scope.ServiceProvider.GetRequiredService<DocumentDbContext>();
+            await documentDb.Database.MigrateAsync();
+            await maintenanceDb.Database.MigrateAsync();
+            await propertyDb.Database.MigrateAsync();
+            //await aiDb.Database.MigrateAsync();
 
-        //    await Property.Infrastructure.Persistence.Seeding.AmenitySeed.SeedAsync(propertyDb);
+            await Property.Infrastructure.Persistence.Seeding.AmenitySeed.SeedAsync(propertyDb);
 
-        //    var subscriptionDb = scope.ServiceProvider.GetRequiredService<SubscriptionDbContext>();
-        //    await subscriptionDb.Database.MigrateAsync();
-        //    await SubscriptionPlanSeed.SeedAsync(subscriptionDb);
+            var subscriptionDb = scope.ServiceProvider.GetRequiredService<SubscriptionDbContext>();
+            await subscriptionDb.Database.MigrateAsync();
+            await SubscriptionPlanSeed.SeedAsync(subscriptionDb);
 
-        //    var identityDb = scope.ServiceProvider.GetRequiredService<IdentityDbContext>();
-        //    await identityDb.Database.MigrateAsync();
-        //    var hasher = scope.ServiceProvider.GetRequiredService<Identity.Application.Interfaces.IPasswordHasher>();
-        //    await AdminSeed.SeedAsync(identityDb, hasher);
+            var identityDb = scope.ServiceProvider.GetRequiredService<IdentityDbContext>();
+            await identityDb.Database.MigrateAsync();
+            var hasher = scope.ServiceProvider.GetRequiredService<Identity.Application.Interfaces.IPasswordHasher>();
+            await AdminSeed.SeedAsync(identityDb, hasher);
 
-        //    //var paymentDb = scope.ServiceProvider.GetRequiredService<PaymentDbContext>();
-        //    //await paymentDb.Database.MigrateAsync();
-        //}
+            //var paymentDb = scope.ServiceProvider.GetRequiredService<PaymentDbContext>();
+            //await paymentDb.Database.MigrateAsync();
+        }
         //stripe
         app.Use(async (context, next) =>
         {
