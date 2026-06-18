@@ -133,6 +133,7 @@ public class Program
         // Real adapters registered before AddPaymentModule so its TryAddScoped mocks are never used.
         builder.Services.AddScoped<ILeaseService, DocumentLeaseServiceAdapter>();
         builder.Services.AddScoped<INotificationService, SmtpNotificationServiceAdapter>();
+        builder.Services.AddScoped<Property.Application.Interfaces.IAdminEmailService, PropertyAdminEmailAdapter>();
 
         builder.Services.AddPaymentModule(builder.Configuration);
         builder.Services.AddWalletModule(builder.Configuration);

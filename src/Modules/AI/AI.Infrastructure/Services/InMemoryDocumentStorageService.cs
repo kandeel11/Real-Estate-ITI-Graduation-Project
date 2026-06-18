@@ -34,22 +34,18 @@ namespace AI.Infrastructure.Services
 
         public Task<string> UploadAsync(string blobFolder, string fileName, string mediaType, byte[] content, CancellationToken ct = default)
         {
-            throw new NotImplementedException();
+            var path = $"{blobFolder}/{fileName}";
+            _storage[path] = content;
+            return Task.FromResult(path);
         }
 
         public Task<string> GetSecureUrlAsync(string blobPath, TimeSpan? expiry = null, CancellationToken ct = default)
-        {
-            throw new NotImplementedException();
-        }
+            => Task.FromResult(blobPath);
 
         public Task DeleteAsync(string blobPath, CancellationToken ct = default)
-        {
-            throw new NotImplementedException();
-        }
+            => DeleteAsync(blobPath);
 
         public Task<byte[]> DownloadAsync(string blobPath, CancellationToken ct = default)
-        {
-            throw new NotImplementedException();
-        }
+            => DownloadAsync(blobPath);
     }
 }
