@@ -5,17 +5,21 @@ using Payment.Domain.Enums;
 
 namespace Payment.Application.Features.Commands.ProcessPayment;
 
+/// <summary>
+/// Handler بتاع ProcessPaymentCommand
+/// بعد الـ process بيبعت notification للتنانت
+/// </summary>
 public sealed class ProcessPaymentHandler
     : IRequestHandler<ProcessPaymentCommand, ProcessPaymentResult>
 {
-    private readonly IRentPaymentRepository _repository;
+    private readonly IPaymentRepository _repository;
     private readonly IPaymentGatewayService _paymentGateway;
     private readonly ILeaseService _leaseService;
     private readonly INotificationService _notificationService;
     private readonly ILogger<ProcessPaymentHandler> _logger;
 
     public ProcessPaymentHandler(
-        IRentPaymentRepository repository,
+        IPaymentRepository repository,
         IPaymentGatewayService paymentGateway,
         ILeaseService leaseService,
         INotificationService notificationService,
@@ -59,6 +63,7 @@ public sealed class ProcessPaymentHandler
             payment.MarkAsPaid(gatewayResult.TransactionId!, request.PaymentMethod, gatewayResult.ReceiptUrl);
             await _repository.SaveChangesAsync(cancellationToken);
 
+            // إرسال إشعار للتنانت بعد نجاح الدفع
             await TrySendSuccessNotificationAsync(payment, gatewayResult, cancellationToken);
         }
         else
@@ -76,7 +81,7 @@ public sealed class ProcessPaymentHandler
     }
 
     private async Task TrySendSuccessNotificationAsync(
-        Domain.Entities.RentPayment payment,
+        Domain.Entities.Payment payment,
         PaymentGatewayResult gatewayResult,
         CancellationToken cancellationToken)
     {
@@ -102,6 +107,7 @@ public sealed class ProcessPaymentHandler
         }
         catch (Exception ex)
         {
+            // الـ notification failure لا توقف العملية الأساسية
             _logger.LogError(ex, "Failed to send payment success notification for PaymentId={Id}", payment.Id);
         }
     }

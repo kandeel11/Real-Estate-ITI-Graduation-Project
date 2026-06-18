@@ -5,13 +5,18 @@ using Payment.Domain.Enums;
 
 namespace Payment.Application.Features.Commands.ApplyLateFee;
 
+/// <summary>
+/// Handler بتاع ApplyLateFeeCommand
+/// 
+/// بيطبق غرامة التأخير على الدفعة ويحول حالتها لـ Late
+/// </summary>
 public sealed class ApplyLateFeeHandler : IRequestHandler<ApplyLateFeeCommand, bool>
 {
-    private readonly IRentPaymentRepository _repository;
+    private readonly IPaymentRepository _repository;
     private readonly ILogger<ApplyLateFeeHandler> _logger;
 
     public ApplyLateFeeHandler(
-        IRentPaymentRepository repository,
+        IPaymentRepository repository,
         ILogger<ApplyLateFeeHandler> logger)
     {
         _repository = repository;
@@ -28,6 +33,7 @@ public sealed class ApplyLateFeeHandler : IRequestHandler<ApplyLateFeeCommand, b
             return false;
         }
 
+        // الغرامة بتتطبق على الدفعات اللي لسه Pending أو Late
         if (payment.Status is not (PaymentStatus.Pending or PaymentStatus.Late))
         {
             _logger.LogWarning(

@@ -3,6 +3,12 @@ using Payment.Application.Interfaces;
 
 namespace Payment.Infrastructure.Services;
 
+/// <summary>
+/// Mock implementation للـ Payment Gateway
+/// ده للتطوير والاختبار — في الـ production هيتبدل بـ PayMob أو Stripe
+/// 
+/// نفس نمط الـ NullMediaStorageService في Property module
+/// </summary>
 public sealed class MockPaymentGatewayService : IPaymentGatewayService
 {
     private readonly ILogger<MockPaymentGatewayService> _logger;
@@ -20,6 +26,7 @@ public sealed class MockPaymentGatewayService : IPaymentGatewayService
             "[MockGateway] Processing payment {PaymentId} Amount={Amount} Method={Method}",
             request.PaymentId, request.Amount, request.PaymentMethod);
 
+        // في الـ mock: دايماً هينجح ويرجع transaction ID وهمي
         var transactionId = $"TXN-{Guid.NewGuid():N}".ToUpper()[..20];
         var receiptUrl = $"https://receipts.example.com/{transactionId}";
 

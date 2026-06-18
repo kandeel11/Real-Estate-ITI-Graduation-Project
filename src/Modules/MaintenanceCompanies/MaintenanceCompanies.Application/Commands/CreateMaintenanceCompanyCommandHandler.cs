@@ -18,7 +18,12 @@ public class CreateMaintenanceCompanyCommandHandler : IRequestHandler<CreateMain
 
     public async Task<MaintenanceCompanyResponseDto> Handle(CreateMaintenanceCompanyCommand request, CancellationToken cancellationToken)
     {
-        // 1. التأكد من الأقسام
+        // 1. التأكد إن الإيميل مش موجود في شركات الصيانة
+        var emailNormalized = request.Email.Trim().ToLowerInvariant();
+        if (await _db.MaintenanceCompanies.AnyAsync(c => c.Email == emailNormalized, cancellationToken))
+            throw new InvalidOperationException("A maintenance company with this email already exists.");
+
+        // 2. التأكد من الأقسام
         var categories = await _db.MaintenanceCategories
             .Where(c => request.CategoryIds.Contains(c.Id) && c.IsActive)
             .ToListAsync(cancellationToken);
@@ -26,7 +31,7 @@ public class CreateMaintenanceCompanyCommandHandler : IRequestHandler<CreateMain
         if (categories.Count != request.CategoryIds.Count)
             throw new InvalidOperationException("One or more categories are invalid or inactive.");
 
-        // 2. إنشاء كيان الشركة
+        // 3. إنشاء كيان الشركة
         var company = MaintenanceCompany.Create(
             userId: request.UserId,
             adminId: request.AdminId,

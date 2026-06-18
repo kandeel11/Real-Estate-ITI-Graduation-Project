@@ -4,13 +4,18 @@ using Payment.Application.Interfaces;
 
 namespace Payment.Application.Features.Commands.UpdateAiPrediction;
 
+/// <summary>
+/// Handler بتاع UpdateAiPredictionCommand
+/// 
+/// بيحدث الـ AiPredictedLate field في الدفعة
+/// </summary>
 public sealed class UpdateAiPredictionHandler : IRequestHandler<UpdateAiPredictionCommand, bool>
 {
-    private readonly IRentPaymentRepository _repository;
+    private readonly IPaymentRepository _repository;
     private readonly ILogger<UpdateAiPredictionHandler> _logger;
 
     public UpdateAiPredictionHandler(
-        IRentPaymentRepository repository,
+        IPaymentRepository repository,
         ILogger<UpdateAiPredictionHandler> logger)
     {
         _repository = repository;

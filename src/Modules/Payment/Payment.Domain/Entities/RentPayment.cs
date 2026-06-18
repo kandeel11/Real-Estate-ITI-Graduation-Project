@@ -29,6 +29,22 @@ public class RentPayment
     public DateTime CreatedAt { get; private set; }
 
     public DateTime UpdatedAt { get; private set; }
+    public PaymentType PaymentType { get; private set; } = PaymentType.Rent;
+
+    /// <summary>
+    /// Stripe Checkout Session ID — مستخدم بس مع Subscription
+    /// </summary>
+    public string? CheckoutSessionId { get; private set; }
+
+    /// <summary>
+    /// Stripe Checkout Session URL — يتم تحويل المستخدم له للدفع
+    /// </summary>
+    public string? CheckoutUrl { get; private set; }
+
+    /// <summary>
+    /// تفاصيل دفعة الاشتراك — موجودة بس لما PaymentType = Subscription
+    /// </summary>
+    public SubscriptionPaymentDetails? SubscriptionDetails { get; private set; }
 
     private RentPayment() { }
 
@@ -48,7 +64,44 @@ public class RentPayment
             UpdatedAt = DateTime.UtcNow
         };
     }
+    public static RentPayment CreateSubscriptionPayment(decimal amount, string? notes = null)
+    {
+        return new RentPayment
+        {
+            Id = Guid.NewGuid(),
+            LeaseId = Guid.Empty, // غير مستخدم لـ Subscription
+            Amount = amount,
+            DueDate = DateOnly.FromDateTime(DateTime.UtcNow),
+            Status = PaymentStatus.Pending,
+            PaymentType = PaymentType.Subscription,
+            LateFee = 0,
+            AiPredictedLate = false,
+            Notes = notes,
+            CreatedAt = DateTime.UtcNow,
+            UpdatedAt = DateTime.UtcNow
+        };
+    }
 
+    /// <summary>
+    /// يربط تفاصيل الاشتراك بهذه الدفعة — مسموح بس لو PaymentType=Subscription
+    /// </summary>
+    public void AttachSubscriptionDetails(SubscriptionPaymentDetails details)
+    {
+        if (PaymentType != PaymentType.Subscription)
+            throw new InvalidOperationException("Cannot attach subscription details to a non-subscription payment.");
+
+        SubscriptionDetails = details;
+        UpdatedAt = DateTime.UtcNow;
+    }
+    /// <summary>
+    /// يخزن بيانات Stripe Checkout Session على الدفعة
+    /// </summary>
+    public void SetCheckoutSession(string sessionId, string checkoutUrl)
+    {
+        CheckoutSessionId = sessionId;
+        CheckoutUrl = checkoutUrl;
+        UpdatedAt = DateTime.UtcNow;
+    }
     public void MarkAsPaid(string transactionId, string paymentMethod, string? receiptUrl = null)
     {
         Status = PaymentStatus.Paid;

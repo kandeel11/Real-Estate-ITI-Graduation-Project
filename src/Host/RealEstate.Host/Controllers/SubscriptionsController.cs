@@ -4,7 +4,6 @@ using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using Subscription.Application.Commands.CancelMySubscription;
 using Subscription.Application.Commands.UpgradeMySubscription;
-using Subscription.Application.Queries.GetMyPayments;
 using Subscription.Application.Queries.GetMySubscription;
 using Subscription.Application.Queries.GetMyUsage;
 
@@ -48,24 +47,6 @@ public class SubscriptionsController(IMediator mediator, ICurrentUserService cur
 
         var result = await mediator.Send(
             new GetMyUsageQuery(userId.Value, currentUser.CompanyId), ct);
-
-        return result is null
-            ? NotFound(new { error = "No active subscription found." })
-            : Ok(result);
-    }
-
-    /// <summary>
-    /// Returns payment history (invoices) for the caller's active subscription.
-    /// Empty list = subscribed but nothing charged yet (e.g. free plans).
-    /// </summary>
-    [HttpGet("mine/payments")]
-    public async Task<IActionResult> GetMyPayments(CancellationToken ct)
-    {
-        var userId = currentUser.UserId;
-        if (userId is null) return Unauthorized(new { error = "User not authenticated." });
-
-        var result = await mediator.Send(
-            new GetMyPaymentsQuery(userId.Value, currentUser.CompanyId), ct);
 
         return result is null
             ? NotFound(new { error = "No active subscription found." })

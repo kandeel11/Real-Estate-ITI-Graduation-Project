@@ -35,11 +35,6 @@ public class SubscriptionConfiguration : IEntityTypeConfiguration<Domain.Entitie
             .HasForeignKey(x => x.PlanId)
             .OnDelete(DeleteBehavior.Restrict);
 
-        builder.HasMany(x => x.Payments)
-            .WithOne(p => p.Subscription)
-            .HasForeignKey(p => p.SubscriptionId)
-            .OnDelete(DeleteBehavior.Cascade);
-
         builder.HasMany(x => x.UsageRecords)
             .WithOne(u => u.Subscription)
             .HasForeignKey(u => u.SubscriptionId)

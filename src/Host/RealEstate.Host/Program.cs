@@ -20,11 +20,14 @@ using Payment.Infrastructure;
 using Payment.Infrastructure.Persistence;
 using Property.Infrastructure;
 using Property.Infrastructure.Persistence.Contexts;
+using RealEstate.Host.Infrastructure;
 using RealEstate.Host.Jobs;
 using RealEstate.Host.Services;
 using Subscription.Infrastructure;
 using Subscription.Infrastructure.Persistence;
 using Subscription.Infrastructure.Seed;
+using Wallet.Infrastructure;
+using Wallet.Infrastructure.Persistence;
 using System.IdentityModel.Tokens.Jwt;
 using System.Text;
 using MaintenanceCompanies.Infrastructure;
@@ -125,6 +128,7 @@ public class Program
         builder.Services.AddMaintenanceModule(builder.Configuration);
         builder.Services.AddSubscriptionModule(builder.Configuration);
         builder.Services.AddPaymentModule(builder.Configuration);
+        builder.Services.AddWalletModule(builder.Configuration);
 
         // ── MediatR ───────────────────────────────────────────
         builder.Services.AddMediatR(cfg =>
@@ -144,6 +148,7 @@ public class Program
 
         builder.Services.AddScoped<PropertyEnrichmentService>();
         builder.Services.AddScoped<LeaseExpiryJob>();
+        builder.Services.AddHostedService<LeaseExpiryBackgroundService>();
         builder.Services.AddAiApplication(builder.Configuration);
         builder.Services.AddAiInfrastructure(builder.Configuration);
         builder.Services.AddDocumentModule(builder.Configuration);
@@ -152,27 +157,33 @@ public class Program
         // ── SignalR ───────────────────────────────────────────
         builder.Services.AddSignalR();
 
-        // ── Hangfire ──────────────────────────────────────────
-        builder.Services.AddHangfire(config => config
-            .SetDataCompatibilityLevel(CompatibilityLevel.Version_180)
-            .UseSimpleAssemblyNameTypeSerializer()
-            .UseRecommendedSerializerSettings()
-            .UseSqlServerStorage(
-                builder.Configuration.GetConnectionString("DefaultConnection"),
-                new SqlServerStorageOptions
-                {
-                    CommandBatchMaxTimeout = TimeSpan.FromMinutes(5),
-                    SlidingInvisibilityTimeout = TimeSpan.FromMinutes(5),
-                    QueuePollInterval = TimeSpan.Zero,
-                    UseRecommendedIsolationLevel = true,
-                    DisableGlobalLocks = true
-                }));
+        // ── Hangfire (critical scheduled jobs only) ───────────
+        var hangfireOpts = builder.Configuration.GetSection("Hangfire").Get<HangfireOptions>()
+            ?? new HangfireOptions();
 
-        builder.Services.AddHangfireServer(options =>
+        if (hangfireOpts.Enabled)
         {
-            options.WorkerCount = Environment.ProcessorCount * 2;
-            options.Queues = new[] { "emails", "default" };
-        });
+            builder.Services.AddHangfire(config => config
+                .SetDataCompatibilityLevel(CompatibilityLevel.Version_180)
+                .UseSimpleAssemblyNameTypeSerializer()
+                .UseRecommendedSerializerSettings()
+                .UseSqlServerStorage(
+                    builder.Configuration.GetConnectionString("DefaultConnection"),
+                    new SqlServerStorageOptions
+                    {
+                        CommandBatchMaxTimeout = TimeSpan.FromMinutes(5),
+                        SlidingInvisibilityTimeout = TimeSpan.FromMinutes(5),
+                        QueuePollInterval = TimeSpan.FromSeconds(hangfireOpts.QueuePollIntervalSeconds),
+                        UseRecommendedIsolationLevel = true,
+                        DisableGlobalLocks = true
+                    }));
+
+            builder.Services.AddHangfireServer(options =>
+            {
+                options.WorkerCount = hangfireOpts.WorkerCount;
+                options.Queues = new[] { "default" };
+            });
+        }
 
         builder.Services.AddCors(options =>
         {
@@ -185,30 +196,38 @@ public class Program
 
         var app = builder.Build();
 
-        app.UseHangfireDashboard("/hangfire", new DashboardOptions
+        if (hangfireOpts.Enabled)
         {
-            Authorization = new[] { new HangfireDashboardAuthFilter() }
-        });
+            if (hangfireOpts.DashboardEnabled)
+            {
+                app.UseHangfireDashboard("/hangfire", new DashboardOptions
+                {
+                    Authorization = new[] { new HangfireDashboardAuthFilter() }
+                });
+            }
 
-        // Daily sweep: end leases past their EndDate and return properties to market.
-        RecurringJob.AddOrUpdate<LeaseExpiryJob>(
-            "expire-due-leases",
-            job => job.RunAsync(),
-            Cron.Daily);
+            // Daily sweep: end leases past their EndDate and return properties to market.
+            RecurringJob.AddOrUpdate<LeaseExpiryJob>(
+                "expire-due-leases",
+                job => job.RunAsync(),
+                Cron.Daily);
+        }
 
         // ── Migrations + Seeding ──────────────────────────────
         using (var scope = app.Services.CreateScope())
         {
-            var subscriptionDb = scope.ServiceProvider.GetRequiredService<SubscriptionDbContext>();
             var aiDb = scope.ServiceProvider.GetRequiredService<AiDbContext>();
             var propertyDb = scope.ServiceProvider.GetRequiredService<PropertyDbContext>();
             var maintenanceDb = scope.ServiceProvider.GetRequiredService<MaintenanceDbContext>();
             var documentDb = scope.ServiceProvider.GetRequiredService<DocumentDbContext>();
+            var subscriptionDb = scope.ServiceProvider.GetRequiredService<SubscriptionDbContext>();
+
             await documentDb.Database.MigrateAsync();
             await maintenanceDb.Database.MigrateAsync();
             await propertyDb.Database.MigrateAsync();
             await aiDb.Database.MigrateAsync();
             await subscriptionDb.Database.MigrateAsync();
+
             await SubscriptionPlanSeed.SeedAsync(subscriptionDb);
             await Property.Infrastructure.Persistence.Seeding.AmenitySeed.SeedAsync(propertyDb);
 
@@ -220,14 +239,11 @@ public class Program
             var paymentDb = scope.ServiceProvider.GetRequiredService<PaymentDbContext>();
             await paymentDb.Database.MigrateAsync();
 
-            //var documentDb = scope.ServiceProvider.GetRequiredService<DocumentDbContext>();
-            //await documentDb.Database.MigrateAsync();
+            var walletDb = scope.ServiceProvider.GetRequiredService<WalletDbContext>();
+            await walletDb.Database.MigrateAsync();
 
             var maintenanceCompaniesDb = scope.ServiceProvider.GetRequiredService<MaintenanceModuleDbContext>();
             await maintenanceCompaniesDb.Database.MigrateAsync();
-
-            //var maintenanceDb = scope.ServiceProvider.GetRequiredService<MaintenanceDbContext>();
-            //await maintenanceDb.Database.MigrateAsync();
         }
         //stripe
         app.Use(async (context, next) =>
@@ -239,12 +255,9 @@ public class Program
             await next();
         });
 
-        if (app.Environment.IsDevelopment())
-        {
-            app.UseSwagger();
-            app.UseSwaggerUI(c =>
-                c.SwaggerEndpoint("/swagger/v1/swagger.json", "Real Estate API v1"));
-        }
+        app.UseSwagger();
+        app.UseSwaggerUI(c =>
+            c.SwaggerEndpoint("/swagger/v1/swagger.json", "Real Estate API v1"));
         app.UseHttpsRedirection();
         app.UseStaticFiles();
         app.UseCors("AllowAngular");
