@@ -1,6 +1,7 @@
-import { Component, inject, OnInit, computed } from '@angular/core';
-import { RouterOutlet, RouterLink, RouterLinkActive, Router } from '@angular/router';
+import { Component, inject, OnInit, computed, ChangeDetectorRef } from '@angular/core';
+import { RouterOutlet, RouterLink, RouterLinkActive, Router, NavigationEnd } from '@angular/router';
 import { trigger, transition, query, style, animate } from '@angular/animations';
+import { filter } from 'rxjs/operators';
 import { TranslatePipe } from '@ngx-translate/core';
 import { AuthService } from '../../../core/services/auth.service';
 import { LanguageService } from '../../../core/services/language.service';
@@ -36,6 +37,9 @@ export class BrokerDashboardComponent implements OnInit {
   protected readonly lang = inject(LanguageService);
   protected readonly notifications = inject(NotificationService);
   private readonly router = inject(Router);
+  private readonly cdr = inject(ChangeDetectorRef);
+
+  routeState = '';
 
   readonly isCompanyBroker = computed(() => !!this.auth.user()?.companyId);
 
@@ -65,15 +69,15 @@ export class BrokerDashboardComponent implements OnInit {
     return this.isCompanyBroker() ? 'BROKER_NAV.ROLE_COMPANY' : 'BROKER_NAV.ROLE_INDEPENDENT';
   }
 
-  prepareRoute(outlet: RouterOutlet): string {
-    return outlet?.isActivated
-      ? (outlet.activatedRoute.snapshot.url.map(s => s.path).join('/') || 'root')
-      : '';
-  }
-
   ngOnInit(): void {
-    // The app-root watcher keeps unreadCount fresh; refresh once on entry too.
     this.notifications.fetchUnreadCount();
+    // Update routeState from router events to avoid ExpressionChangedAfterItHasBeenCheckedError
+    this.router.events
+      .pipe(filter(e => e instanceof NavigationEnd))
+      .subscribe((e) => {
+        this.routeState = (e as NavigationEnd).urlAfterRedirects;
+        this.cdr.detectChanges();
+      });
   }
 
   logout(): void {

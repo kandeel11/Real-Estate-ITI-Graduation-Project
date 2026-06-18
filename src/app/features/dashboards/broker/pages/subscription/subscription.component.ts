@@ -29,15 +29,19 @@ export class BrokerSubscriptionComponent implements OnInit {
   upgradeError = signal<string | null>(null);
   upgradeSuccess = signal<string | null>(null);
 
+  private tierStr(p: BrokerPlan): string {
+    return String(p.tier ?? '');
+  }
+
   readonly freePlan = computed(() =>
-    this.plans().find(p => p.tier === 'FreeIndividual') ??
-    this.plans().find(p => p.priceMonthly === 0 && (p.tier?.includes('Individual') || p.maxProperties <= 5)) ??
+    this.plans().find(p => this.tierStr(p) === 'FreeIndividual') ??
+    this.plans().find(p => p.priceMonthly === 0 && (this.tierStr(p).includes('Individual') || p.maxProperties <= 5)) ??
     null
   );
 
   readonly premiumPlan = computed(() =>
-    this.plans().find(p => p.tier === 'PremiumIndividual') ??
-    this.plans().find(p => p.priceMonthly > 0 && (p.tier?.includes('Individual') || p.maxProperties <= 30)) ??
+    this.plans().find(p => this.tierStr(p) === 'PremiumIndividual') ??
+    this.plans().find(p => p.priceMonthly > 0 && (this.tierStr(p).includes('Individual') || p.maxProperties <= 30)) ??
     null
   );
 
@@ -55,10 +59,10 @@ export class BrokerSubscriptionComponent implements OnInit {
 
     this.svc.getPlans().pipe(finalize(finish)).subscribe({
       next: plans => {
-        const individual = plans.filter(p =>
-          p.tier?.includes('Individual') ||
-          (!p.tier?.includes('Company') && !p.tier?.includes('Tenant'))
-        );
+        const individual = plans.filter(p => {
+          const tier = String(p.tier ?? '');
+          return tier.includes('Individual') || (!tier.includes('Company') && !tier.includes('Tenant'));
+        });
         this.plans.set(individual.length > 0 ? individual : plans.filter(p => p.maxProperties <= 30));
       },
       error: () => { this.error.set('Failed to load plans.'); finish(); },
@@ -84,7 +88,7 @@ export class BrokerSubscriptionComponent implements OnInit {
   }
 
   isCurrent(plan: BrokerPlan): boolean {
-    return this.currentTier() === plan.tier;
+    return this.currentTier() === String(plan.tier ?? '');
   }
 
   openModal(): void {

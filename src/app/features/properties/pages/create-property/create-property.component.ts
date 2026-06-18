@@ -11,7 +11,15 @@
  * Step 3 — confirmation.
  */
 
-import { Component, inject, signal, computed, OnInit } from '@angular/core';
+import {
+  Component,
+  inject,
+  signal,
+  computed,
+  OnInit,
+  HostListener,
+  ElementRef,
+} from '@angular/core';
 import {
   ReactiveFormsModule,
   FormsModule,
@@ -23,6 +31,7 @@ import {
 import { ActivatedRoute, RouterLink } from '@angular/router';
 import { toSignal } from '@angular/core/rxjs-interop';
 import { AuthService } from '../../../../core/services/auth.service';
+import { COUNTRIES, STATES_BY_COUNTRY } from './geo-data';
 import { PropertyService } from '../../services/property.service';
 import { CompanySubscriptionService } from '../../../dashboards/company/services/company-subscription.service';
 import { Amenity, DescriptionDraft, Property } from '../../models/property.model';
@@ -65,6 +74,71 @@ export class CreatePropertyComponent implements OnInit {
   private auth = inject(AuthService);
   private subSvc = inject(CompanySubscriptionService);
   private route = inject(ActivatedRoute);
+  private elRef = inject(ElementRef);
+
+  // ── Country / Governorate autocomplete ─────────────────────────────
+  allCountries = signal<string[]>([]);
+  filteredCountries = signal<string[]>([]);
+  allGovernorates = signal<string[]>([]);
+  filteredGovernorates = signal<string[]>([]);
+  countryDropdownOpen = signal(false);
+  governorateDropdownOpen = signal(false);
+
+  @HostListener('document:click', ['$event'])
+  onDocClick(e: MouseEvent): void {
+    const el = this.elRef.nativeElement as HTMLElement;
+    if (!el.contains(e.target as Node)) {
+      this.countryDropdownOpen.set(false);
+      this.governorateDropdownOpen.set(false);
+    }
+  }
+
+  private loadCountries(): void {
+    this.allCountries.set(COUNTRIES);
+    this.filteredCountries.set(COUNTRIES);
+  }
+
+  onCountryInput(event: Event): void {
+    const val = (event.target as HTMLInputElement).value;
+    this.form.get('country')!.setValue(val);
+    this.filteredCountries.set(
+      this.allCountries().filter((c) => c.toLowerCase().includes(val.toLowerCase())),
+    );
+    this.countryDropdownOpen.set(true);
+    this.form.get('governorate')!.setValue('');
+    this.allGovernorates.set([]);
+    this.filteredGovernorates.set([]);
+  }
+
+  selectCountry(country: string): void {
+    this.form.get('country')!.setValue(country);
+    this.countryDropdownOpen.set(false);
+    this.form.get('governorate')!.setValue('');
+    this.allGovernorates.set([]);
+    this.filteredGovernorates.set([]);
+    this.loadGovernorates(country);
+  }
+
+  loadGovernorates(country: string): void {
+    if (!country) return;
+    const states = STATES_BY_COUNTRY[country] ?? [];
+    this.allGovernorates.set(states);
+    this.filteredGovernorates.set(states);
+  }
+
+  onGovernorateInput(event: Event): void {
+    const val = (event.target as HTMLInputElement).value;
+    this.form.get('governorate')!.setValue(val);
+    this.filteredGovernorates.set(
+      this.allGovernorates().filter((g) => g.toLowerCase().includes(val.toLowerCase())),
+    );
+    this.governorateDropdownOpen.set(true);
+  }
+
+  selectGovernorate(gov: string): void {
+    this.form.get('governorate')!.setValue(gov);
+    this.governorateDropdownOpen.set(false);
+  }
 
   step = signal<1 | 2 | 3>(1);
   isOwner = computed(() => this.auth.userRole() === 'owner');
@@ -143,6 +217,10 @@ export class CreatePropertyComponent implements OnInit {
   discardingDraft = signal(false);
 
   ngOnInit(): void {
+    this.loadCountries();
+    // Pre-load governorates for the default country (Egypt)
+    this.loadGovernorates(this.form.get('country')!.value);
+
     if (this.isOwner()) {
       this.form.get('ownerFullName')!.addValidators(Validators.required);
       this.form.get('ownerFullName')!.updateValueAndValidity();
