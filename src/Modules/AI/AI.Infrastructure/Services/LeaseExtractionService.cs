@@ -79,36 +79,50 @@ public sealed class LeaseExtractionService : ILeaseExtractionService
     You are a lease contract data extraction specialist.
     Extract the following fields from the lease contract text.
     For each field provide the extracted value AND a confidence score (0–100).
-    
+
     Contract Text:
     ===
     {{snippet}}
     ===
-    
+
     Fields to extract:
-    - rent_amount          : Monthly rent (number only, no currency symbol)
-    - security_deposit     : Security deposit (number only)
-    - start_date           : Lease start date (YYYY-MM-DD)
-    - end_date             : Lease end date (YYYY-MM-DD)
-    - payment_day_of_month : Day rent is due (1–31)
-    - tenant_name          : Full name of tenant
-    - owner_name           : Full name of owner/landlord
-    
+    - installment_amount    : The value of ONE payment installment (number only, no currency symbol).
+                              This could be a monthly, quarterly, semi-annual, or annual figure —
+                              extract exactly what the contract states as a single payment.
+    - payment_frequency     : How often payments are made. Must be exactly one of:
+                              Monthly, Quarterly, SemiAnnually, Annually.
+                              If ambiguous, infer from context (e.g. "monthly rent" → Monthly).
+    - total_rent_amount     : Total contract value if EXPLICITLY stated in the text (number only).
+                              If not explicitly written, return null.
+    - duration_in_months    : Lease duration in months if EXPLICITLY stated (e.g. "12-month lease" → 12).
+                              If not explicitly stated, return null (backend will calculate from dates).
+    - security_deposit      : Security deposit amount (number only).
+    - start_date            : Lease start date (YYYY-MM-DD).
+    - end_date              : Lease end date (YYYY-MM-DD).
+    - payment_day_of_month  : Day of month when each installment is due (1–31).
+    - tenant_name           : Full name of tenant.
+    - owner_name            : Full name of owner/landlord.
+
     Confidence scoring:
     - 95–100 : Explicitly stated, no ambiguity
     - 80–94  : Clearly implied
     - 60–79  : Some ambiguity — needs review
     -  0–59  : Not found or very uncertain
-    
+
+    For fields that are null (not found), use: { "value": null, "confidence": 0 }
+
     Return ONLY valid JSON — no markdown, no explanation:
     {
-      "rent_amount"          : { "value": "1500",       "confidence": 98 },
-      "security_deposit"     : { "value": "3000",       "confidence": 95 },
-      "start_date"           : { "value": "2026-01-01", "confidence": 97 },
-      "end_date"             : { "value": "2026-12-31", "confidence": 97 },
-      "payment_day_of_month" : { "value": "1",          "confidence": 92 },
-      "tenant_name"          : { "value": "John Smith", "confidence": 99 },
-      "owner_name"           : { "value": "Sara Ahmed", "confidence": 99 },
+      "installment_amount"   : { "value": "60000",        "confidence": 97 },
+      "payment_frequency"    : { "value": "SemiAnnually", "confidence": 95 },
+      "total_rent_amount"    : { "value": "120000",       "confidence": 98 },
+      "duration_in_months"   : { "value": "12",           "confidence": 90 },
+      "security_deposit"     : { "value": "10000",        "confidence": 95 },
+      "start_date"           : { "value": "2026-01-01",   "confidence": 97 },
+      "end_date"             : { "value": "2026-12-31",   "confidence": 97 },
+      "payment_day_of_month" : { "value": "1",            "confidence": 92 },
+      "tenant_name"          : { "value": "John Smith",   "confidence": 99 },
+      "owner_name"           : { "value": "Sara Ahmed",   "confidence": 99 },
       "overall_confidence"   : 96
     }
     """;
@@ -138,7 +152,9 @@ public sealed class LeaseExtractionService : ILeaseExtractionService
                 if (!root.TryGetProperty(key, out var el))
                     return new ExtractedLeaseField(null, 0, true);
 
-                var value = el.TryGetProperty("value", out var v) ? v.GetString() : null;
+                var value = el.TryGetProperty("value", out var v)
+                    ? (v.ValueKind == JsonValueKind.Null ? null : v.GetString())
+                    : null;
                 var confidence = el.TryGetProperty("confidence", out var c) ? c.GetDecimal() : 0m;
 
                 return new ExtractedLeaseField(value, confidence, confidence < ConfidenceThreshold);
@@ -148,74 +164,25 @@ public sealed class LeaseExtractionService : ILeaseExtractionService
                 ? oc.GetDecimal() : 0m;
 
             return new ExtractedLeaseData(
-                RentAmount: ParseField("rent_amount"),
-                SecurityDeposit: ParseField("security_deposit"),
-                StartDate: ParseField("start_date"),
-                EndDate: ParseField("end_date"),
-                PaymentDayOfMonth: ParseField("payment_day_of_month"),
-                TenantName: ParseField("tenant_name"),
-                OwnerName: ParseField("owner_name"),
-                OverallConfidence: overall,
-                RawAiResponse: raw);
+                InstallmentAmount:  ParseField("installment_amount"),
+                PaymentFrequency:   ParseField("payment_frequency"),
+                TotalRentAmount:    ParseField("total_rent_amount"),
+                DurationInMonths:   ParseField("duration_in_months"),
+                SecurityDeposit:    ParseField("security_deposit"),
+                StartDate:          ParseField("start_date"),
+                EndDate:            ParseField("end_date"),
+                PaymentDayOfMonth:  ParseField("payment_day_of_month"),
+                TenantName:         ParseField("tenant_name"),
+                OwnerName:          ParseField("owner_name"),
+                OverallConfidence:  overall,
+                RawAiResponse:      raw);
         }
         catch (Exception ex)
         {
             _logger.LogError(ex, "Failed to parse Claude response: {Raw}", raw);
             var failed = new ExtractedLeaseField(null, 0, true);
             return new ExtractedLeaseData(
-                failed, failed, failed, failed, failed, failed, failed, 0, raw);
-        }
-    }
-
-
-    private ExtractedLeaseData ParseExtractionResponse(string raw)
-    {
-        try
-        {
-            var json = raw
-                .Replace("```json", "")
-                .Replace("```", "")
-                .Trim();
-
-            using var doc = JsonDocument.Parse(json);
-            var root = doc.RootElement;
-
-            // Helper — parses one field block { "value": "...", "confidence": 98 }
-            ExtractedLeaseField ParseField(string key)
-            {
-                if (!root.TryGetProperty(key, out var el))
-                    return new ExtractedLeaseField(null, 0, true);
-
-                var value = el.TryGetProperty("value", out var v) ? v.GetString() : null;
-                var confidence = el.TryGetProperty("confidence", out var c) ? c.GetDecimal() : 0m;
-                var needs = confidence < ConfidenceThreshold;
-
-                return new ExtractedLeaseField(value, confidence, needs);
-            }
-
-            var overallConfidence = root.TryGetProperty("overall_confidence", out var oc)
-                ? oc.GetDecimal()
-                : 0m;
-
-            return new ExtractedLeaseData(
-                RentAmount: ParseField("rent_amount"),
-                SecurityDeposit: ParseField("security_deposit"),
-                StartDate: ParseField("start_date"),
-                EndDate: ParseField("end_date"),
-                PaymentDayOfMonth: ParseField("payment_day_of_month"),
-                TenantName: ParseField("tenant_name"),
-                OwnerName: ParseField("owner_name"),
-                OverallConfidence: overallConfidence,
-                RawAiResponse: raw);
-        }
-        catch (Exception ex)
-        {
-            _logger.LogError(ex, "Failed to parse Claude extraction response: {Raw}", raw);
-
-            // All fields failed — owner must fill manually
-            var failed = new ExtractedLeaseField(null, 0, true);
-            return new ExtractedLeaseData(
-                failed, failed, failed, failed, failed, failed, failed, 0, raw);
+                failed, failed, failed, failed, failed, failed, failed, failed, failed, failed, 0, raw);
         }
     }
 }

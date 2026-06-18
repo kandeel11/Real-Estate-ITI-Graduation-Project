@@ -211,6 +211,9 @@ namespace Document.Infrastructure.Migrations
                     b.Property<DateTime?>("DeletedAt")
                         .HasColumnType("datetime2");
 
+                    b.Property<int?>("DurationInMonths")
+                        .HasColumnType("int");
+
                     b.Property<DateOnly?>("EndDate")
                         .HasColumnType("date");
 
@@ -224,6 +227,9 @@ namespace Document.Infrastructure.Migrations
 
                     b.Property<Guid?>("InquiryId")
                         .HasColumnType("uniqueidentifier");
+
+                    b.Property<decimal?>("InstallmentAmount")
+                        .HasColumnType("decimal(12,2)");
 
                     b.Property<bool>("IsActive")
                         .HasColumnType("bit");
@@ -243,14 +249,15 @@ namespace Document.Infrastructure.Migrations
                     b.Property<int?>("PaymentDayOfMonth")
                         .HasColumnType("int");
 
+                    b.Property<string>("PaymentFrequency")
+                        .HasMaxLength(20)
+                        .HasColumnType("nvarchar(20)");
+
                     b.Property<Guid>("PropertyId")
                         .HasColumnType("uniqueidentifier");
 
                     b.Property<string>("RejectionReason")
                         .HasColumnType("nvarchar(max)");
-
-                    b.Property<decimal?>("RentAmount")
-                        .HasColumnType("decimal(12,2)");
 
                     b.Property<decimal?>("SecurityDeposit")
                         .HasColumnType("decimal(12,2)");
@@ -272,6 +279,9 @@ namespace Document.Infrastructure.Migrations
 
                     b.Property<string>("TerminationReason")
                         .HasColumnType("nvarchar(max)");
+
+                    b.Property<decimal?>("TotalRentAmount")
+                        .HasColumnType("decimal(12,2)");
 
                     b.Property<DateTime>("UpdatedAt")
                         .HasColumnType("datetime2");

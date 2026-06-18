@@ -2,6 +2,7 @@ using MediatR;
 using Microsoft.Extensions.Logging;
 using Payment.Application.Interfaces;
 using Payment.Domain.Enums;
+using RealEstate.Shared.Kernel.Shared.IntegrationEvents;
 
 namespace Payment.Application.Features.Commands.ProcessPayment;
 
@@ -16,6 +17,7 @@ public sealed class ProcessPaymentHandler
     private readonly IPaymentGatewayService _paymentGateway;
     private readonly ILeaseService _leaseService;
     private readonly INotificationService _notificationService;
+    private readonly IOutboxWriter _outboxWriter;
     private readonly ILogger<ProcessPaymentHandler> _logger;
 
     public ProcessPaymentHandler(
@@ -23,12 +25,14 @@ public sealed class ProcessPaymentHandler
         IPaymentGatewayService paymentGateway,
         ILeaseService leaseService,
         INotificationService notificationService,
+        IOutboxWriter outboxWriter,
         ILogger<ProcessPaymentHandler> logger)
     {
         _repository = repository;
         _paymentGateway = paymentGateway;
         _leaseService = leaseService;
         _notificationService = notificationService;
+        _outboxWriter = outboxWriter;
         _logger = logger;
     }
 
@@ -61,7 +65,27 @@ public sealed class ProcessPaymentHandler
         if (gatewayResult.IsSuccess)
         {
             payment.MarkAsPaid(gatewayResult.TransactionId!, request.PaymentMethod, gatewayResult.ReceiptUrl);
+
+            // Record 1% platform commission on every rent payment
+            if (payment.PaymentType == PaymentType.Rent)
+                payment.RecordCommission();
+
             await _repository.SaveChangesAsync(cancellationToken);
+
+            // Publish wallet-credit event via outbox (same as Stripe webhook path)
+            if (payment.PaymentType == PaymentType.Rent && payment.RentDetails is not null)
+            {
+                var details = payment.RentDetails;
+                await _outboxWriter.AddAsync(new RentPaymentSucceededEvent(
+                    PaymentId: payment.Id,
+                    OwnerId: details.LandlordId,
+                    TenantId: details.TenantId,
+                    LeaseId: details.LeaseId,
+                    PropertyId: details.PropertyId,
+                    Amount: payment.Amount
+                ), cancellationToken);
+                await _repository.SaveChangesAsync(cancellationToken);
+            }
 
             // إرسال إشعار للتنانت بعد نجاح الدفع
             await TrySendSuccessNotificationAsync(payment, gatewayResult, cancellationToken);

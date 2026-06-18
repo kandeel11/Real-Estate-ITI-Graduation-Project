@@ -41,7 +41,7 @@ public class TenantDashboardController(
             {
                 leaseId = lease.Id,
                 propertyId = lease.PropertyId,
-                monthlyRent = lease.RentAmount,
+                installmentAmount = lease.InstallmentAmount,
                 startDate = lease.StartDate,
                 endDate = lease.EndDate,
                 daysUntilExpiry = daysLeft,

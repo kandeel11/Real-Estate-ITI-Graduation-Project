@@ -7,6 +7,8 @@ public class WithdrawalRequest
     public Guid Id { get; private set; }
     public Guid OwnerId { get; private set; }
     public decimal Amount { get; private set; }
+    public decimal CommissionAmount { get; private set; }
+    public decimal NetAmount { get; private set; }
     public string Currency { get; private set; } = "AED";
     public string BankAccountDetails { get; private set; } = string.Empty;
     public WithdrawalStatus Status { get; private set; }
@@ -16,16 +18,21 @@ public class WithdrawalRequest
 
     private WithdrawalRequest() { }
 
-    public static WithdrawalRequest Create(Guid ownerId, decimal amount, string bankAccountDetails)
+    public static WithdrawalRequest Create(Guid ownerId, decimal amount, string bankAccountDetails,
+        decimal commissionRate = 0.01m)
     {
         if (amount <= 0)
             throw new ArgumentException("Withdrawal amount must be positive.", nameof(amount));
+
+        var commission = Math.Round(amount * commissionRate, 2);
 
         return new WithdrawalRequest
         {
             Id = Guid.NewGuid(),
             OwnerId = ownerId,
             Amount = amount,
+            CommissionAmount = commission,
+            NetAmount = amount - commission,
             Currency = "AED",
             BankAccountDetails = bankAccountDetails,
             Status = WithdrawalStatus.Pending,

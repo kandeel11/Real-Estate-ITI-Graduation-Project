@@ -1,7 +1,7 @@
 namespace Payment.Application.DTOs;
 public sealed record ActiveLeaseDto(
     Guid LeaseId,
-    decimal RentAmount,
+    decimal InstallmentAmount,
     int PaymentDayOfMonth,
     string TenantName,
     string TenantEmail,

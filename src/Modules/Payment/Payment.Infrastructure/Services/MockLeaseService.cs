@@ -18,7 +18,7 @@ public sealed class MockLeaseService : ILeaseService
         {
             new(
                 LeaseId: Guid.Parse("11111111-0000-0000-0000-000000000001"),
-                RentAmount: 5000m,
+                InstallmentAmount: 5000m,
                 PaymentDayOfMonth: 1,
                 TenantName: "أحمد محمد",
                 TenantEmail: "ahmed@example.com",
@@ -29,7 +29,7 @@ public sealed class MockLeaseService : ILeaseService
             ),
             new(
                 LeaseId: Guid.Parse("22222222-0000-0000-0000-000000000002"),
-                RentAmount: 8000m,
+                InstallmentAmount: 8000m,
                 PaymentDayOfMonth: 5,
                 TenantName: "سارة علي",
                 TenantEmail: "sara@example.com",
@@ -40,7 +40,7 @@ public sealed class MockLeaseService : ILeaseService
             ),
             new(
                 LeaseId: Guid.Parse("33333333-0000-0000-0000-000000000003"),
-                RentAmount: 12000m,
+                InstallmentAmount: 12000m,
                 PaymentDayOfMonth: 10,
                 TenantName: "محمد إبراهيم",
                 TenantEmail: "mohamed@example.com",

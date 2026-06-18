@@ -37,6 +37,6 @@ public class LeaseService : ILeaseService
 
     private static LeaseDto MapToDto(Domain.Entities.Lease l) => new(
         l.Id, l.PropertyId, l.TenantId, l.OwnerId,
-        l.RentAmount, l.PaymentDayOfMonth,
+        l.InstallmentAmount, l.PaymentDayOfMonth,
         l.StartDate, l.EndDate, l.IsActive);
 }

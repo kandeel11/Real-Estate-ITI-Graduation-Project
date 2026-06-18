@@ -32,13 +32,17 @@ public class RentPaymentSucceededHandler : INotificationHandler<RentPaymentSucce
 
             var wallet = await _walletRepo.GetOrCreateAsync(notification.OwnerId, cancellationToken);
 
+            // 1% platform commission — landlord receives 99% of the rent payment
+            var netAmount = Math.Round(notification.Amount * 0.99m, 2);
+            var commission = notification.Amount - netAmount;
+
             var entry = LedgerEntry.CreateCredit(
                 walletId: wallet.Id,
                 paymentId: notification.PaymentId,
-                amount: notification.Amount,
-                description: $"Rent payment for lease {notification.LeaseId}");
+                amount: netAmount,
+                description: $"Rent payment for lease {notification.LeaseId} (net of {commission:0.##} AED platform commission)");
 
-            wallet.Credit(notification.Amount);
+            wallet.Credit(netAmount);
 
             await _walletRepo.AddLedgerEntryAsync(entry, cancellationToken);
             await _walletRepo.SaveChangesAsync(cancellationToken);
