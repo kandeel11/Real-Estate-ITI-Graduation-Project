@@ -1,5 +1,13 @@
 namespace Payment.Application.Interfaces;
 
+/// <summary>
+/// Contract للتواصل مع الـ Notification Module
+/// Payment module بيستخدمه لإرسال إيميلات وSMS عند:
+/// - نجاح الدفع
+/// - فشل الدفع
+/// - تطبيق غرامة التأخير
+/// - تذكير بالدفعات المتأخرة
+/// </summary>
 public interface INotificationService
 {
     Task SendEmailAsync(SendEmailRequest request, CancellationToken cancellationToken = default);

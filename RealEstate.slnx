@@ -45,6 +45,11 @@
     <Project Path="src/Modules/Subscription/Subscription.Domain/Subscription.Domain.csproj" />
     <Project Path="src/Modules/Subscription/Subscription.Infrastructure/Subscription.Infrastructure.csproj" />
   </Folder>
+  <Folder Name="/src/Modules/Wallet/">
+    <Project Path="src/Modules/Wallet/Wallet.Application/Wallet.Application.csproj" />
+    <Project Path="src/Modules/Wallet/Wallet.Domain/Wallet.Domain.csproj" />
+    <Project Path="src/Modules/Wallet/Wallet.Infrastructure/Wallet.Infrastructure.csproj" />
+  </Folder>
   <Folder Name="/src/Shared/">
     <Project Path="Domain/Domain.csproj" Id="d4d81e4b-128d-450d-b03c-8e482744951c" />
     <Project Path="src/Shared/RealEstate.Shared.Kernel/RealEstate.Shared.Kernel.csproj" />

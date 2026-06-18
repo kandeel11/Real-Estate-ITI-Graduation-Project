@@ -3,6 +3,11 @@ using Payment.Application.Interfaces;
 
 namespace Payment.Infrastructure.Services;
 
+/// <summary>
+/// Mock implementation للـ INotificationService
+/// بيعمل log بدل ما يبعت إيميل/SMS فعلي
+/// في الـ production يُستبدل بـ real implementation من الـ Notification Module
+/// </summary>
 public sealed class MockNotificationService : INotificationService
 {
     private readonly ILogger<MockNotificationService> _logger;

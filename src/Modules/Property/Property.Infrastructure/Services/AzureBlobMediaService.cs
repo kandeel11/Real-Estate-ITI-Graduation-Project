@@ -19,12 +19,12 @@ public class AzureBlobMediaService : IMediaStorageService
     private readonly ILogger<AzureBlobMediaService> _logger;
 
 
-    public AzureBlobMediaService(BlobServiceClient blobServiceClient, ILogger<AzureBlobMediaService> logger, IOptions< AzureBlobOptions >options)
+    public AzureBlobMediaService(BlobServiceClient blobServiceClient, ILogger<AzureBlobMediaService> logger, IOptions<AzureBlobOptions> options)
     {
         _blobServiceClient = blobServiceClient;
         _logger = logger;
-        _options = options.Value; 
-
+        _options = options.Value;
+        _credential = new StorageSharedKeyCredential(_options.AccountName, _options.AccountKey);
         _container = _blobServiceClient.GetBlobContainerClient("property-documents");
     }
 
@@ -44,10 +44,25 @@ public class AzureBlobMediaService : IMediaStorageService
 
     public async Task DeleteAsync(string fileUrl, CancellationToken ct = default)
     {
-        var ContainerName = "property-media";
-        var uri = new Uri(fileUrl);
-        var blobName = uri.Segments.Last();
-        var containerClient = _blobServiceClient.GetBlobContainerClient(ContainerName);
+        const string containerName = "property-media";
+        var containerClient = _blobServiceClient.GetBlobContainerClient(containerName);
+
+        string blobName;
+        if (Uri.TryCreate(fileUrl, UriKind.Absolute, out var uri))
+        {
+            // Full Azure Blob URL: https://{account}.blob.core.windows.net/{container}/{blob-path}
+            // AbsolutePath = "/{container}/{blob-path}" — strip the leading "/{container}/" prefix
+            var prefix = $"/{containerName}/";
+            var idx = uri.AbsolutePath.IndexOf(prefix, StringComparison.OrdinalIgnoreCase);
+            blobName = idx >= 0
+                ? Uri.UnescapeDataString(uri.AbsolutePath[(idx + prefix.Length)..])
+                : Uri.UnescapeDataString(uri.Segments.Last());
+        }
+        else
+        {
+            blobName = fileUrl; // already a relative blob path
+        }
+
         await containerClient.DeleteBlobIfExistsAsync(blobName, cancellationToken: ct);
     }
 

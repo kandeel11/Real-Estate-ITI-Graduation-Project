@@ -1,3 +1,4 @@
+using System.Threading.Channels;
 using FluentValidation;
 using Identity.Application.Commands.RegisterIndividualUser;
 using Identity.Application.Features.Auth.Otp.SendOtp;
@@ -66,8 +67,16 @@ public static class IdentityModuleExtensions
         services.AddScoped<IEmailVerificationService, EmailVerificationService>();
         services.AddScoped<IEmailJobs, EmailJobs>();
 
-        // Hangfire wrapper
-        services.AddSingleton<IEmailJobScheduler, HangfireEmailJobScheduler>();
+        // In-memory email queue — bounded at 500; drops with a warning if full (fire-and-forget emails)
+        var emailChannel = Channel.CreateBounded<EmailJobWorkItem>(new BoundedChannelOptions(500)
+        {
+            FullMode = BoundedChannelFullMode.DropWrite,
+            SingleReader = true,
+            SingleWriter = false
+        });
+        services.AddSingleton(emailChannel);
+        services.AddSingleton<IEmailJobScheduler, ChannelEmailJobScheduler>();
+        services.AddHostedService<EmailBackgroundWorker>();
 
 
         return services;

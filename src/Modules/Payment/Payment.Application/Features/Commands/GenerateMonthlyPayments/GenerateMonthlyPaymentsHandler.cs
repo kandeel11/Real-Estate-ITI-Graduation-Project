@@ -1,19 +1,25 @@
 using MediatR;
 using Microsoft.Extensions.Logging;
 using Payment.Application.Interfaces;
-using Payment.Domain.Entities;
+using PaymentEntity = Payment.Domain.Entities.Payment;
 
 namespace Payment.Application.Features.Commands.GenerateMonthlyPayments;
 
+/// <summary>
+/// Handler بتاع GenerateMonthlyPaymentsCommand
+/// 
+/// شغله: يجيب كل الـ leases الأكتيف من الـ ILeaseService،
+/// ويعمل دفعة Pending لكل lease مالهاش دفعة في الشهر ده
+/// </summary>
 public sealed class GenerateMonthlyPaymentsHandler
     : IRequestHandler<GenerateMonthlyPaymentsCommand, GenerateMonthlyPaymentsResult>
 {
-    private readonly IRentPaymentRepository _repository;
+    private readonly IPaymentRepository _repository;
     private readonly ILeaseService _leaseService;
     private readonly ILogger<GenerateMonthlyPaymentsHandler> _logger;
 
     public GenerateMonthlyPaymentsHandler(
-        IRentPaymentRepository repository,
+        IPaymentRepository repository,
         ILeaseService leaseService,
         ILogger<GenerateMonthlyPaymentsHandler> logger)
     {
@@ -26,6 +32,7 @@ public sealed class GenerateMonthlyPaymentsHandler
         GenerateMonthlyPaymentsCommand request,
         CancellationToken cancellationToken)
     {
+        // حدد الشهر المستهدف: لو مفيش شهر محدد، استخدم الشهر الحالي
         var targetMonth = request.TargetMonth ?? DateOnly.FromDateTime(DateTime.UtcNow);
         var dueDate = new DateOnly(targetMonth.Year, targetMonth.Month, 1);
 
@@ -33,6 +40,7 @@ public sealed class GenerateMonthlyPaymentsHandler
             "Starting monthly payment generation for {Month}/{Year}",
             targetMonth.Month, targetMonth.Year);
 
+        // جيب كل الـ leases الأكتيف من الـ Lease Module
         var activeLeases = await _leaseService.GetActiveLeasesAsync(cancellationToken);
 
         if (!activeLeases.Any())
@@ -41,7 +49,7 @@ public sealed class GenerateMonthlyPaymentsHandler
             return new GenerateMonthlyPaymentsResult(0, 0, []);
         }
 
-        var paymentsToCreate = new List<RentPayment>();
+        var paymentsToCreate = new List<PaymentEntity>();
         var errors = new List<string>();
         int skippedCount = 0;
 
@@ -49,10 +57,12 @@ public sealed class GenerateMonthlyPaymentsHandler
         {
             try
             {
+                // حدد يوم الاستحقاق بناءً على paymentDayOfMonth في الـ lease
                 var paymentDay = Math.Min(lease.PaymentDayOfMonth,
                     DateTime.DaysInMonth(targetMonth.Year, targetMonth.Month));
                 var exactDueDate = new DateOnly(targetMonth.Year, targetMonth.Month, paymentDay);
 
+                // تحقق إن مفيش دفعة موجودة لنفس الـ lease في نفس الشهر
                 var alreadyExists = await _repository.ExistsForLeaseAndMonthAsync(
                     lease.LeaseId, exactDueDate, cancellationToken);
 
@@ -65,8 +75,11 @@ public sealed class GenerateMonthlyPaymentsHandler
                     continue;
                 }
 
-                var payment = RentPayment.Create(
+                var payment = PaymentEntity.CreateRent(
                     leaseId: lease.LeaseId,
+                    propertyId: lease.PropertyId,
+                    tenantId: lease.TenantId,
+                    landlordId: lease.LandlordId,
                     amount: lease.RentAmount,
                     dueDate: exactDueDate,
                     notes: $"Monthly rent for {targetMonth:MMMM yyyy}"

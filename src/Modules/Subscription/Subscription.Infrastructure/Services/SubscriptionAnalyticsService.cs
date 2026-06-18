@@ -19,10 +19,15 @@ public sealed class SubscriptionAnalyticsService : ISubscriptionAnalyticsService
         var totalTrial              = await subs.CountAsync(s => s.Status == SubscriptionStatus.Trial, ct);
         var totalExpiredOrCancelled = await subs.CountAsync(
             s => s.Status == SubscriptionStatus.Expired || s.Status == SubscriptionStatus.Cancelled, ct);
-        var totalRevenue            = await _db.Payments
+        var totalRevenue            = await _db.Subscriptions
             .AsNoTracking()
-            .Where(p => p.Status == SubscriptionPaymentStatus.Paid)
-            .SumAsync(p => p.Amount, ct);
+            .Where(s => s.Status == SubscriptionStatus.Active)
+            .Select(s => s.BillingCycle == BillingCycle.Annual
+                ? s.Plan.PriceAnnual
+                : s.BillingCycle == BillingCycle.Quarterly
+                    ? s.Plan.PriceMonthly * 3
+                    : s.Plan.PriceMonthly)
+            .SumAsync(ct);
 
         return new SubscriptionAnalyticsSummaryDto(totalActive, totalTrial, totalExpiredOrCancelled, totalRevenue);
     }

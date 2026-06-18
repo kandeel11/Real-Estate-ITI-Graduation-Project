@@ -7,9 +7,9 @@ namespace Payment.Application.Features.Queries.GetFinancialSummary;
 public sealed class GetFinancialSummaryHandler
     : IRequestHandler<GetFinancialSummaryQuery, FinancialSummaryDto>
 {
-    private readonly IRentPaymentRepository _repository;
+    private readonly IPaymentRepository _repository;
 
-    public GetFinancialSummaryHandler(IRentPaymentRepository repository)
+    public GetFinancialSummaryHandler(IPaymentRepository repository)
     {
         _repository = repository;
     }

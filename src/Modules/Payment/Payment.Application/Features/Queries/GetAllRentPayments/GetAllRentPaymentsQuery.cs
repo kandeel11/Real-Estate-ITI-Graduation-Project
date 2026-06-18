@@ -7,4 +7,3 @@ namespace Payment.Application.Features.Queries.GetAllRentPayments;
 public sealed record GetAllRentPaymentsQuery(
     Guid? LeaseId = null
 ) : IRequest<IReadOnlyList<RentPaymentDto>>;
-

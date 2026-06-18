@@ -5,84 +5,53 @@ using Payment.Infrastructure.Services.Stripe;
 
 namespace RealEstate.Host.Controllers;
 
+/// <summary>
+/// Controller بيستقبل Webhook events من Stripe
+/// 
+/// خطوات الإعداد على Stripe Dashboard:
+/// 1. روح لـ Developers → Webhooks
+/// 2. اضغط "Add endpoint"
+/// 3. الـ URL: https://your-domain.com/api/stripe/webhook
+/// 4. اختار الـ events:
+///    - payment_intent.succeeded
+///    - payment_intent.payment_failed
+///    - charge.refunded
+/// 5. انسخ الـ "Signing secret" وحطه في appsettings.json → Stripe:WebhookSecret
+/// 
+/// مهم جداً: الـ endpoint ده لازم يكون بدون Authentication
+/// علشان Stripe نفسه هو اللي بيبعت الـ requests
+/// </summary>
 [ApiController]
-[Route("api/stripe")]
+[Route("api/payments/webhook")]
 public sealed class StripeWebhookController : ControllerBase
 {
     private readonly StripeWebhookService _webhookService;
-    private readonly ILogger<StripeWebhookController> _logger;
 
-    public StripeWebhookController(
-        StripeWebhookService webhookService,
-        ILogger<StripeWebhookController> logger)
+    public StripeWebhookController(StripeWebhookService webhookService)
     {
         _webhookService = webhookService;
-        _logger = logger;
     }
 
-    [HttpPost("webhook")]
-    [AllowAnonymous]
-    public async Task<IActionResult> HandleWebhook(CancellationToken cancellationToken)
+    [HttpPost("stripe")]
+    public async Task<IActionResult> HandleStripeWebhook(CancellationToken cancellationToken)
     {
-        string payload;
-        using (var reader = new StreamReader(HttpContext.Request.Body))
-        {
-            payload = await reader.ReadToEndAsync(cancellationToken);
-        }
+        var payload = await new StreamReader(Request.Body).ReadToEndAsync(cancellationToken);
+        var signatureHeader = Request.Headers["Stripe-Signature"].ToString();
 
-        var stripeSignature = Request.Headers["Stripe-Signature"];
-
-        if (string.IsNullOrEmpty(stripeSignature))
-        {
-            _logger.LogWarning("Stripe webhook received without signature header.");
-            return BadRequest("Missing Stripe-Signature header.");
-        }
+        if (string.IsNullOrEmpty(signatureHeader))
+            return BadRequest(new { error = "Missing Stripe-Signature header." });
 
         try
         {
-            await _webhookService.HandleWebhookAsync(payload, stripeSignature!, cancellationToken);
-            return Ok(new { received = true });
+            await _webhookService.HandleWebhookAsync(payload, signatureHeader, cancellationToken);
+            return Ok();
         }
-        catch (InvalidOperationException ex) when (ex.Message.Contains("signature"))
+        catch (InvalidOperationException ex)
         {
-            _logger.LogWarning("Invalid Stripe webhook signature attempt.");
-            return BadRequest("Invalid signature.");
+            Console.WriteLine(ex);
+            // فشل التحقق من الـ signature أو الـ payload — Stripe هيعيد المحاولة تلقائياً
+            // لو رجعنا غير 2xx، فمن المهم نرجع 400 بدل 500 عشان منمنعش الـ retries المفيدة
+            return BadRequest(new { error = ex.Message });
         }
-        catch (Exception ex)
-        {
-            _logger.LogError(ex, "Error processing Stripe webhook.");
-            return Ok(new { received = true, warning = "Processing error logged." });
-        }
-    }
-
-    [HttpPost("create-payment-intent/{paymentId:guid}")]
-    public async Task<IActionResult> CreatePaymentIntent(
-        Guid paymentId,
-        [FromServices] IRentPaymentRepository repository, 
-        [FromServices] StripePaymentGatewayService stripeService,
-        CancellationToken cancellationToken)
-    {
-        var payment = await repository.GetByIdAsync(paymentId, cancellationToken);
-        if (payment is null)
-            return NotFound(new { message = $"Payment {paymentId} not found." });
-
-        if (payment.Status == Payment.Domain.Enums.PaymentStatus.Paid)
-            return BadRequest(new { message = "Payment already completed." });
-
-        var result = await stripeService.CreatePaymentIntentAsync(
-            paymentId: payment.Id,
-            amount: payment.Amount + payment.LateFee,
-            description: $"Rent payment for {payment.DueDate:MMMM yyyy}",
-            cancellationToken: cancellationToken
-        );
-
-        return Ok(new
-        {
-            clientSecret = result.ClientSecret,
-            paymentIntentId = result.PaymentIntentId,
-            publishableKey = result.PublishableKey,
-            amount = payment.Amount + payment.LateFee,
-            currency = "aed"
-        });
     }
 }

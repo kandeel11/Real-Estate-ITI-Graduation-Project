@@ -19,10 +19,8 @@ public class ChangePasswordHandler(IUserRepository repo, IPasswordHasher hasher)
         if (!hasher.Verify(cmd.CurrentPassword, user.PasswordHash))
             throw new UnauthorizedAccessException("Current password is incorrect.");
 
-        var prop = user.GetType().GetProperty("PasswordHash");
-        prop?.SetValue(user, hasher.Hash(cmd.NewPassword));
+        user.SetPasswordHash(hasher.Hash(cmd.NewPassword));
 
-        user.MarkAsUpdated();
         await repo.UpdateAsync(user, ct);
         await repo.SaveChangesAsync(ct);
     }

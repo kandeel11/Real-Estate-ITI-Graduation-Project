@@ -4,12 +4,13 @@ using Payment.Application.Interfaces;
 using Payment.Domain.Enums;
 
 namespace Payment.Application.Features.Commands.RefundPayment;
+
 public sealed class RefundPaymentHandler : IRequestHandler<RefundPaymentCommand, bool>
 {
-    private readonly IRentPaymentRepository _repository;
+    private readonly IPaymentRepository _repository;
     private readonly ILogger<RefundPaymentHandler> _logger;
 
-    public RefundPaymentHandler(IRentPaymentRepository repository, ILogger<RefundPaymentHandler> logger)
+    public RefundPaymentHandler(IPaymentRepository repository, ILogger<RefundPaymentHandler> logger)
     {
         _repository = repository;
         _logger = logger;

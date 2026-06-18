@@ -1,8 +1,11 @@
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
+using Microsoft.Extensions.DependencyInjection.Extensions;
 using Payment.Application;
 using Payment.Application.Interfaces;
+using Payment.Infrastructure.BackgroundJobs;
+using Payment.Infrastructure.Outbox;
 using Payment.Infrastructure.Persistence;
 using Payment.Infrastructure.Persistence.Repositories;
 using Payment.Infrastructure.Services;
@@ -28,8 +31,11 @@ public static class PaymentModuleExtensions
         services.AddScoped<IPaymentDbContext>(sp =>
             sp.GetRequiredService<PaymentDbContext>());
 
-        services.AddScoped<IRentPaymentRepository, RentPaymentRepository>();
+        //services.AddScoped<IRentPaymentRepository, RentPaymentRepository>();
         services.AddScoped<IPaymentAnalyticsService, PaymentAnalyticsService>();
+        services.AddScoped<IPaymentRepository, PaymentRepository>();
+        services.AddScoped<IUnitOfWork, UnitOfWork>();
+
 
         services.Configure<StripeSettings>(
             configuration.GetSection(StripeSettings.SectionName));
@@ -37,11 +43,27 @@ public static class PaymentModuleExtensions
         services.AddScoped<StripePaymentGatewayService>();
         services.AddScoped<IPaymentGatewayService, StripePaymentGatewayService>();
 
+        services.AddScoped<IStripeCheckoutService, StripeCheckoutService>();
+
         services.AddScoped<StripeWebhookService>();
 
-        services.AddScoped<ILeaseService, MockLeaseService>();
+        services.AddSingleton<OutboxProcessingSignal>();
+        services.AddScoped<IOutboxWriter, OutboxWriter>();
+        services.AddHostedService<OutboxPublisherJob>();
 
-        services.AddScoped<INotificationService, MockNotificationService>();
+        services.Configure<OverdueJobSettings>(
+            configuration.GetSection(OverdueJobSettings.SectionName));
+        services.AddHostedService<OverduePaymentsJob>();
+        services.AddHostedService<MonthlyPaymentGenerationJob>();
+
+        services.TryAddScoped<ILeaseService, MockLeaseService>();
+        services.TryAddScoped<INotificationService, MockNotificationService>();
+
+        // ISubscriptionPlanService مش بيتسجل هنا — التسجيل الحقيقي موجود في
+        // Subscription.Infrastructure.SubscriptionModuleExtensions (Adapter Pattern)
+        // عشان Payment.Infrastructure لا يعرف أي شيء عن Subscription.Infrastructure
+        // (Modular Monolith boundary). تأكد من استدعاء AddSubscriptionModule()
+        // في Program.cs حتى يتوفر هذا الـ registration في الـ DI container.
 
         return services;
     }

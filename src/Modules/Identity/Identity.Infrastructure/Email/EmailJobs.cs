@@ -1,6 +1,5 @@
 ﻿// Identity.Infrastructure/Email/EmailJobs.cs
 
-using Hangfire;
 using Identity.Application.Interfaces;
 using Microsoft.Extensions.Logging;
 
@@ -22,8 +21,6 @@ public sealed class EmailJobs : IEmailJobs
         _logger = logger;
     }
 
-    [AutomaticRetry(Attempts = 3, DelaysInSeconds = new[] { 30, 60, 120 })]
-    [Queue("emails")]
     public async Task SendOtpAsync(Guid userId, string otpCode)
     {
         var user = await _users.GetByIdAsync(userId, CancellationToken.None);
@@ -37,8 +34,6 @@ public sealed class EmailJobs : IEmailJobs
         await _email.SendOtpAsync(user, otpCode, CancellationToken.None);
     }
 
-    [AutomaticRetry(Attempts = 3)]
-    [Queue("emails")]
     public async Task SendVerificationLinkAsync(Guid userId)
     {
         var user = await _users.GetByIdAsync(userId, CancellationToken.None);
@@ -46,8 +41,6 @@ public sealed class EmailJobs : IEmailJobs
         await _email.SendVerificationLinkAsync(user, CancellationToken.None);
     }
 
-    [AutomaticRetry(Attempts = 3)]
-    [Queue("emails")]
     public async Task SendWelcomeAsync(Guid userId)
     {
         var user = await _users.GetByIdAsync(userId, CancellationToken.None);
@@ -55,8 +48,6 @@ public sealed class EmailJobs : IEmailJobs
         await _email.SendWelcomeEmailAsync(user, CancellationToken.None);
     }
 
-    [AutomaticRetry(Attempts = 3)]
-    [Queue("emails")]
     public async Task SendPasswordResetAsync(Guid userId, string resetToken)
     {
         var user = await _users.GetByIdAsync(userId, CancellationToken.None);

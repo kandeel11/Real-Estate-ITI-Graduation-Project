@@ -1,4 +1,5 @@
 using Document.Application.Commands.Lead.UpdateLeadStatus;
+using Document.Application.Queries.Lead.GetAllLeads;
 using Document.Application.Queries.Lead.GetLeadsByBroker;
 using Identity.Application.Interfaces;
 using MediatR;
@@ -19,6 +20,22 @@ public class LeadsController : ControllerBase
     {
         _mediator = mediator;
         _currentUser = currentUser;
+    }
+
+    /// <summary>
+    /// Admin: all leads with optional status filter and pagination.
+    /// Brokers should use GET /api/leads/broker/{brokerId} for their own leads.
+    /// </summary>
+    [HttpGet]
+    [Authorize(Roles = "admin")]
+    public async Task<IActionResult> GetAll(
+        [FromQuery] int page = 1,
+        [FromQuery] int pageSize = 20,
+        [FromQuery] string? status = null,
+        CancellationToken ct = default)
+    {
+        var leads = await _mediator.Send(new GetAllLeadsQuery(page, pageSize, status), ct);
+        return Ok(leads);
     }
 
     [HttpPut("{id}/status")]
