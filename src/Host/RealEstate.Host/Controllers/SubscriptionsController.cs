@@ -3,9 +3,11 @@ using MediatR;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using Subscription.Application.Commands.CancelMySubscription;
+using Subscription.Application.Commands.SelectPlan;
 using Subscription.Application.Commands.UpgradeMySubscription;
 using Subscription.Application.Queries.GetMySubscription;
 using Subscription.Application.Queries.GetMyUsage;
+using Subscription.Domain.Enums;
 
 namespace RealEstate.Host.Controllers;
 
@@ -91,7 +93,31 @@ public class SubscriptionsController(IMediator mediator, ICurrentUserService cur
         catch (KeyNotFoundException ex) { return NotFound(new { error = ex.Message }); }
         catch (InvalidOperationException ex) { return BadRequest(new { error = ex.Message }); }
     }
+
+    /// <summary>
+    /// Step 1 of the subscription payment flow: user selects a plan → creates a
+    /// Subscription with status PendingPayment. Follow up with
+    /// POST /api/payments/subscriptions/checkout using the returned SubscriptionId.
+    /// </summary>
+    [HttpPost("select-plan")]
+    [AllowAnonymous]
+    public async Task<ActionResult<SelectPlanResult>> SelectPlan(
+        [FromBody] SelectPlanRequestBody body,
+        CancellationToken ct)
+    {
+        try
+        {
+            var result = await mediator.Send(
+                new SelectPlanCommand(body.UserId, body.CompanyId, body.PlanId, body.BillingCycle), ct);
+            return Ok(result);
+        }
+        catch (InvalidOperationException ex)
+        {
+            return BadRequest(new { error = ex.Message });
+        }
+    }
 }
 
 public record UpgradeSubscriptionRequest(Guid PlanId);
 public record CancelSubscriptionRequest(string? Reason);
+public sealed record SelectPlanRequestBody(Guid UserId, Guid? CompanyId, Guid PlanId, BillingCycle BillingCycle);

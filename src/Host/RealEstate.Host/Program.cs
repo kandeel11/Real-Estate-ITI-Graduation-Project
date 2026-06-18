@@ -20,6 +20,8 @@ using Payment.Infrastructure;
 using Payment.Infrastructure.Persistence;
 using Property.Infrastructure;
 using Property.Infrastructure.Persistence.Contexts;
+using Payment.Application.Interfaces;
+using RealEstate.Host.Adapters;
 using RealEstate.Host.Infrastructure;
 using RealEstate.Host.Jobs;
 using RealEstate.Host.Services;
@@ -127,6 +129,11 @@ public class Program
         builder.Services.AddPropertyModule(builder.Configuration);
         builder.Services.AddMaintenanceModule(builder.Configuration);
         builder.Services.AddSubscriptionModule(builder.Configuration);
+
+        // Real adapters registered before AddPaymentModule so its TryAddScoped mocks are never used.
+        builder.Services.AddScoped<ILeaseService, DocumentLeaseServiceAdapter>();
+        builder.Services.AddScoped<INotificationService, SmtpNotificationServiceAdapter>();
+
         builder.Services.AddPaymentModule(builder.Configuration);
         builder.Services.AddWalletModule(builder.Configuration);
 
