@@ -35,7 +35,10 @@ public record LeaseUploadedEvent(
 
 public record LeaseExtractionCompletedEvent(
     Guid LeaseId,
-    decimal? RentAmount,
+    decimal? InstallmentAmount,
+    string? PaymentFrequency,
+    decimal? TotalRentAmount,
+    int? DurationInMonths,
     decimal? SecurityDeposit,
     DateOnly? StartDate,
     DateOnly? EndDate,
@@ -46,7 +49,7 @@ public sealed record LeaseActivatedEvent(
     Guid LeaseId,
     Guid PropertyId,
     Guid OwnerId,
-    decimal RentAmount,
+    decimal InstallmentAmount,
     int PaymentDayOfMonth,
     DateOnly StartDate,
     DateOnly EndDate,

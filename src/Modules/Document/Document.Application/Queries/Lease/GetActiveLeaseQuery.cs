@@ -19,7 +19,8 @@ public class GetActiveLeaseHandler(IDocumentDbContext db)
 
         if (l is null) return null;
         return new LeaseDto(l.Id, l.PropertyId, l.TenantId, l.OwnerId,
-            l.RentAmount, l.SecurityDeposit, l.StartDate, l.EndDate,
+            l.InstallmentAmount, l.PaymentFrequency?.ToString(), l.TotalRentAmount, l.DurationInMonths,
+            l.SecurityDeposit, l.StartDate, l.EndDate,
             l.PaymentDayOfMonth, l.ExtractionStatus,
             l.ExtractionConfidence, l.IsActive, l.ContractFileUrl, l.CreatedAt);
     }

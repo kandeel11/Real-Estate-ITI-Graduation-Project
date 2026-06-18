@@ -42,6 +42,8 @@ public class Payment
 
     public decimal LateFee { get; private set; }
 
+    public decimal CommissionAmount { get; private set; }
+
     public bool AiPredictedLate { get; private set; }
 
     public string? ReceiptUrl { get; private set; }
@@ -242,6 +244,12 @@ public class Payment
     public void MarkAsFailed()
     {
         Status = PaymentStatus.Failed;
+        UpdatedAt = DateTime.UtcNow;
+    }
+
+    public void RecordCommission(decimal rate = 0.01m)
+    {
+        CommissionAmount = Math.Round(Amount * rate, 2);
         UpdatedAt = DateTime.UtcNow;
     }
 

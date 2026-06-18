@@ -68,6 +68,11 @@ public sealed class PaymentConfiguration : IEntityTypeConfiguration<Payment.Doma
             .HasDefaultValue(0m)
             .IsRequired();
 
+        builder.Property(p => p.CommissionAmount)
+            .HasColumnType("decimal(12,2)")
+            .HasDefaultValue(0m)
+            .IsRequired();
+
         builder.Property(p => p.AiPredictedLate)
             .HasDefaultValue(false)
             .IsRequired();

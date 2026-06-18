@@ -14,7 +14,10 @@ public record UploadLeaseResponse(
     ExtractedLeaseData? ExtractedData);
 
 public record ExtractedLeaseData(
-    decimal? RentAmount,
+    decimal? InstallmentAmount,
+    string? PaymentFrequency,
+    decimal? TotalRentAmount,
+    int? DurationInMonths,
     decimal? SecurityDeposit,
     DateOnly? StartDate,
     DateOnly? EndDate,

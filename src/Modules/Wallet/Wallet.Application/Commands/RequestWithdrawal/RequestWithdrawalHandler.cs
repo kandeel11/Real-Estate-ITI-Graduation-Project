@@ -27,6 +27,18 @@ public class RequestWithdrawalHandler : IRequestHandler<RequestWithdrawalCommand
             request.Amount,
             request.BankAccountDetails);
 
+        // Debit the full requested amount — commission is already embedded in NetAmount
+        wallet.Debit(request.Amount);
+
+        var debitEntry = LedgerEntry.CreateDebit(
+            walletId: wallet.Id,
+            paymentId: withdrawal.Id,
+            amount: request.Amount,
+            description: $"Withdrawal request — net payout {withdrawal.NetAmount:0.##} AED after {withdrawal.CommissionAmount:0.##} AED platform commission");
+
+        await _walletRepo.AddLedgerEntryAsync(debitEntry, cancellationToken);
+        await _walletRepo.SaveChangesAsync(cancellationToken);
+
         return await _withdrawalRepo.CreateAsync(withdrawal, cancellationToken);
     }
 }

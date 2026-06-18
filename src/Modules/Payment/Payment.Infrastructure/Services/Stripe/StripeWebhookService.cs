@@ -127,6 +127,10 @@ public sealed class StripeWebhookService
             receiptUrl: receiptUrl
         );
 
+        // Record 1% platform commission on every rent payment
+        if (payment.PaymentType == PaymentType.Rent)
+            payment.RecordCommission();
+
         await _repository.SaveChangesAsync(ct);
 
         _logger.LogInformation(

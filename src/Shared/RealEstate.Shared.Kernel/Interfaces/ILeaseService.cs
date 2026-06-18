@@ -12,7 +12,7 @@ public record LeaseDto(
     Guid PropertyId,
     Guid TenantId,
     Guid OwnerId,
-    decimal? RentAmount,
+    decimal? InstallmentAmount,
     int? PaymentDayOfMonth,
     DateOnly? StartDate,
     DateOnly? EndDate,

@@ -1,3 +1,5 @@
+using Document.Domain.Enums;
+
 namespace Document.Domain.Entities;
 
 public class Lease
@@ -9,7 +11,10 @@ public class Lease
     public Guid? BrokerId { get; set; }
     public Guid? InquiryId { get; set; }
     public Guid? LeadId { get; set; }
-    public decimal? RentAmount { get; set; }
+    public decimal? InstallmentAmount { get; set; }
+    public PaymentFrequency? PaymentFrequency { get; set; }
+    public decimal? TotalRentAmount { get; set; }
+    public int? DurationInMonths { get; set; }
     public decimal? SecurityDeposit { get; set; }
     public DateOnly? StartDate { get; set; }
     public DateOnly? EndDate { get; set; }

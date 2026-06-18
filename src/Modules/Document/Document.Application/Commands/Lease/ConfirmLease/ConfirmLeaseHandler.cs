@@ -2,6 +2,7 @@ using Document.Application.Interfaces;
 using Document.Domain.Enums;
 using Document.Domain.Events;
 using MediatR;
+using PaymentFrequencyEnum = Document.Domain.Enums.PaymentFrequency;
 
 namespace Document.Application.Commands.Lease.ConfirmLease;
 
@@ -29,11 +30,16 @@ public class ConfirmLeaseHandler : IRequestHandler<ConfirmLeaseCommand, ConfirmL
 
         if (isOwner)
         {
-            lease.RentAmount = cmd.RentAmount;
-            lease.SecurityDeposit = cmd.SecurityDeposit;
-            lease.StartDate = cmd.StartDate;
-            lease.EndDate = cmd.EndDate;
+            lease.InstallmentAmount = cmd.InstallmentAmount;
+            lease.SecurityDeposit   = cmd.SecurityDeposit;
+            lease.StartDate         = cmd.StartDate;
+            lease.EndDate           = cmd.EndDate;
             lease.PaymentDayOfMonth = cmd.PaymentDayOfMonth;
+            lease.TotalRentAmount   = cmd.TotalRentAmount;
+            lease.DurationInMonths  = cmd.DurationInMonths;
+            if (cmd.PaymentFrequency != null &&
+                Enum.TryParse<PaymentFrequencyEnum>(cmd.PaymentFrequency, ignoreCase: true, out var freq))
+                lease.PaymentFrequency = freq;
             lease.OwnerConfirmedAt = DateTime.UtcNow;
         }
         else
@@ -57,7 +63,7 @@ public class ConfirmLeaseHandler : IRequestHandler<ConfirmLeaseCommand, ConfirmL
                     lease.Id,
                     lease.PropertyId,
                     lease.OwnerId,
-                    lease.RentAmount ?? 0,
+                    lease.InstallmentAmount ?? 0,
                     lease.PaymentDayOfMonth ?? 1,
                     lease.StartDate ?? DateOnly.FromDateTime(DateTime.UtcNow),
                     lease.EndDate ?? DateOnly.FromDateTime(DateTime.UtcNow.AddYears(1)),
