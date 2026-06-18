@@ -32,4 +32,35 @@ public class WithdrawalRequest
             RequestedAt = DateTime.UtcNow
         };
     }
+
+    public void MarkProcessing()
+    {
+        if (Status != WithdrawalStatus.Pending)
+            throw new InvalidOperationException($"Cannot mark as processing from status {Status}.");
+        Status = WithdrawalStatus.Processing;
+    }
+
+    public void MarkCompleted()
+    {
+        if (Status != WithdrawalStatus.Processing)
+            throw new InvalidOperationException($"Cannot complete from status {Status}.");
+        Status = WithdrawalStatus.Completed;
+        ProcessedAt = DateTime.UtcNow;
+    }
+
+    public void Approve()
+    {
+        if (Status == WithdrawalStatus.Pending)
+            Status = WithdrawalStatus.Processing;
+        MarkCompleted();
+    }
+
+    public void Reject(string? notes = null)
+    {
+        if (Status == WithdrawalStatus.Completed)
+            throw new InvalidOperationException("Cannot reject an already-completed withdrawal.");
+        Status = WithdrawalStatus.Rejected;
+        ProcessedAt = DateTime.UtcNow;
+        Notes = notes;
+    }
 }

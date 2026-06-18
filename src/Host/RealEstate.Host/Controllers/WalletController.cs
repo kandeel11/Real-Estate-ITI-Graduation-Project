@@ -2,8 +2,12 @@ using Identity.Application.Interfaces;
 using MediatR;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
+using Wallet.Application.Commands.ApproveWithdrawal;
+using Wallet.Application.Commands.RejectWithdrawal;
 using Wallet.Application.Commands.RequestWithdrawal;
+using Wallet.Application.Queries.GetAllWithdrawals;
 using Wallet.Application.Queries.GetLedger;
+using Wallet.Application.Queries.GetOwnerWithdrawals;
 using Wallet.Application.Queries.GetWalletBalance;
 
 namespace RealEstate.Host.Controllers;
@@ -46,11 +50,59 @@ public class WalletController(IMediator mediator, ICurrentUserService currentUse
         var userId = currentUser.UserId;
         if (userId is null) return Unauthorized();
 
-        var id = await mediator.Send(
-            new RequestWithdrawalCommand(userId.Value, body.Amount, body.BankAccountDetails), ct);
+        try
+        {
+            var id = await mediator.Send(
+                new RequestWithdrawalCommand(userId.Value, body.Amount, body.BankAccountDetails), ct);
+            return Created($"/api/wallet/withdrawals/{id}", new { withdrawalId = id });
+        }
+        catch (InvalidOperationException ex) { return BadRequest(new { error = ex.Message }); }
+    }
 
-        return Created($"/api/wallet/withdrawals/{id}", new { withdrawalId = id });
+    [HttpGet("withdrawals")]
+    public async Task<IActionResult> GetWithdrawals(CancellationToken ct)
+    {
+        var userId = currentUser.UserId;
+        if (userId is null) return Unauthorized();
+
+        var result = await mediator.Send(new GetOwnerWithdrawalsQuery(userId.Value), ct);
+        return Ok(result);
+    }
+
+    [HttpGet("admin/withdrawals")]
+    [Authorize(Roles = "admin")]
+    public async Task<IActionResult> GetAllWithdrawals(CancellationToken ct)
+    {
+        var result = await mediator.Send(new GetAllWithdrawalsQuery(), ct);
+        return Ok(result);
+    }
+
+    [HttpPut("admin/withdrawals/{id:guid}/approve")]
+    [Authorize(Roles = "admin")]
+    public async Task<IActionResult> ApproveWithdrawal(Guid id, CancellationToken ct)
+    {
+        try
+        {
+            await mediator.Send(new ApproveWithdrawalCommand(id), ct);
+            return NoContent();
+        }
+        catch (KeyNotFoundException ex) { return NotFound(new { error = ex.Message }); }
+        catch (InvalidOperationException ex) { return BadRequest(new { error = ex.Message }); }
+    }
+
+    [HttpPut("admin/withdrawals/{id:guid}/reject")]
+    [Authorize(Roles = "admin")]
+    public async Task<IActionResult> RejectWithdrawal(Guid id, [FromBody] RejectWithdrawalRequest body, CancellationToken ct)
+    {
+        try
+        {
+            await mediator.Send(new RejectWithdrawalCommand(id, body.Notes), ct);
+            return NoContent();
+        }
+        catch (KeyNotFoundException ex) { return NotFound(new { error = ex.Message }); }
+        catch (InvalidOperationException ex) { return BadRequest(new { error = ex.Message }); }
     }
 }
 
 public record RequestWithdrawalRequest(decimal Amount, string BankAccountDetails);
+public record RejectWithdrawalRequest(string? Notes = null);

@@ -23,4 +23,18 @@ public class WithdrawalRepository : IWithdrawalRepository
             .Where(w => w.OwnerId == ownerId)
             .OrderByDescending(w => w.RequestedAt)
             .ToListAsync(ct);
+
+    public async Task<List<WithdrawalRequest>> GetAllAsync(CancellationToken ct = default)
+        => await _context.WithdrawalRequests
+            .OrderByDescending(w => w.RequestedAt)
+            .ToListAsync(ct);
+
+    public async Task<WithdrawalRequest?> GetByIdAsync(Guid id, CancellationToken ct = default)
+        => await _context.WithdrawalRequests.FirstOrDefaultAsync(w => w.Id == id, ct);
+
+    public async Task UpdateAsync(WithdrawalRequest request, CancellationToken ct = default)
+    {
+        _context.WithdrawalRequests.Update(request);
+        await _context.SaveChangesAsync(ct);
+    }
 }
