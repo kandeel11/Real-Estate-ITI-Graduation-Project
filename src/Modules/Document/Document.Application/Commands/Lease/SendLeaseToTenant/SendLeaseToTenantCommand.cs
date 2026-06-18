@@ -11,7 +11,7 @@ namespace Document.Application.Commands.Lease.SendLeaseToTenant;
 /// </summary>
 public record SendLeaseToTenantCommand(
     Guid LeaseId,
-    decimal? MonthlyRent,
+    decimal? InstallmentAmount,
     decimal? Deposit,
     DateOnly? StartDate,
     DateOnly? EndDate) : IRequest;
@@ -33,7 +33,7 @@ public class SendLeaseToTenantCommandHandler : IRequestHandler<SendLeaseToTenant
             .FirstOrDefaultAsync(l => l.Id == cmd.LeaseId && l.DeletedAt == null, ct)
             ?? throw new KeyNotFoundException($"Lease {cmd.LeaseId} not found.");
 
-        if (cmd.MonthlyRent.HasValue) lease.RentAmount = cmd.MonthlyRent;
+        if (cmd.InstallmentAmount.HasValue) lease.InstallmentAmount = cmd.InstallmentAmount;
         if (cmd.Deposit.HasValue) lease.SecurityDeposit = cmd.Deposit;
         if (cmd.StartDate.HasValue) lease.StartDate = cmd.StartDate;
         if (cmd.EndDate.HasValue) lease.EndDate = cmd.EndDate;

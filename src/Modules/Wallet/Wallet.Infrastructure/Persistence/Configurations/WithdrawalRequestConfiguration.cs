@@ -17,6 +17,8 @@ public class WithdrawalRequestConfiguration : IEntityTypeConfiguration<Withdrawa
         builder.HasIndex(w => w.OwnerId);
 
         builder.Property(w => w.Amount).HasColumnType("decimal(18,4)").IsRequired();
+        builder.Property(w => w.CommissionAmount).HasColumnType("decimal(18,4)").HasDefaultValue(0m).IsRequired();
+        builder.Property(w => w.NetAmount).HasColumnType("decimal(18,4)").HasDefaultValue(0m).IsRequired();
         builder.Property(w => w.Currency).HasMaxLength(3).IsRequired();
         builder.Property(w => w.BankAccountDetails).HasMaxLength(1000).IsRequired();
         builder.Property(w => w.Status).HasConversion<string>().HasMaxLength(20).IsRequired();

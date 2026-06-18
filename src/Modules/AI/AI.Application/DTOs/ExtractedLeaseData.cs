@@ -1,8 +1,10 @@
-﻿namespace AI.Application.DTOs
+namespace AI.Application.DTOs
 {
-
     public sealed record ExtractedLeaseData(
-        ExtractedLeaseField RentAmount,
+        ExtractedLeaseField InstallmentAmount,
+        ExtractedLeaseField PaymentFrequency,
+        ExtractedLeaseField TotalRentAmount,
+        ExtractedLeaseField DurationInMonths,
         ExtractedLeaseField SecurityDeposit,
         ExtractedLeaseField StartDate,
         ExtractedLeaseField EndDate,
@@ -14,11 +16,10 @@
     )
     {
         public bool AllFieldsConfident =>
-            RentAmount.ConfidenceScore >= 80 &&
+            InstallmentAmount.ConfidenceScore >= 80 &&
             SecurityDeposit.ConfidenceScore >= 80 &&
             StartDate.ConfidenceScore >= 80 &&
-            EndDate.ConfidenceScore >= 80 &&
-            PaymentDayOfMonth.ConfidenceScore >= 80 &&
+            PaymentFrequency.ConfidenceScore >= 80 &&
             TenantName.ConfidenceScore >= 80 &&
             OwnerName.ConfidenceScore >= 80;
 

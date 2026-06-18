@@ -23,7 +23,7 @@ public interface ILeaseService
 /// </summary>
 public sealed record ActiveLeaseDto(
     Guid LeaseId,
-    decimal RentAmount,
+    decimal InstallmentAmount,
     int PaymentDayOfMonth,
     string TenantName,
     string TenantEmail,

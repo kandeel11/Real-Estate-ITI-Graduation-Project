@@ -4,6 +4,7 @@ using Document.Application.Commands.Lease.TerminateLease;
 using Document.Application.Commands.Lease.UploadLeaseContract;
 using Document.Application.Queries.Lease;
 using Document.Application.Queries.Lease.GetLeaseById;
+using Document.Application.Queries.Lease.GetLeasePaymentSchedule;
 using Identity.Application.Interfaces;
 using MediatR;
 using Microsoft.AspNetCore.Mvc;
@@ -31,7 +32,6 @@ public class LeasesController : ControllerBase
 
         try
         {
-            // The owner is derived from the lead inside the handler; OwnerId here is ignored.
             var result = await _mediator.Send(new UploadLeaseContractCommand(leadId, Guid.Empty, file));
             return Ok(result);
         }
@@ -58,15 +58,18 @@ public class LeasesController : ControllerBase
 
         return Ok(new
         {
-            tenantName = tenant?.FullName ?? string.Empty,
-            tenantEmail = tenant?.Email ?? string.Empty,
-            propertyTitle = property?.Title ?? string.Empty,
-            startDate = lease.StartDate?.ToString("yyyy-MM-dd") ?? string.Empty,
-            endDate = lease.EndDate?.ToString("yyyy-MM-dd") ?? string.Empty,
-            monthlyRent = lease.RentAmount ?? 0m,
-            deposit = lease.SecurityDeposit ?? 0m,
-            extractionStatus = MapExtractionStatus(lease.ExtractionStatus),
-            confidence = lease.ExtractionConfidence ?? 0m
+            tenantName        = tenant?.FullName ?? string.Empty,
+            tenantEmail       = tenant?.Email ?? string.Empty,
+            propertyTitle     = property?.Title ?? string.Empty,
+            startDate         = lease.StartDate?.ToString("yyyy-MM-dd") ?? string.Empty,
+            endDate           = lease.EndDate?.ToString("yyyy-MM-dd") ?? string.Empty,
+            installmentAmount = lease.InstallmentAmount ?? 0m,
+            paymentFrequency  = lease.PaymentFrequency,
+            totalRentAmount   = lease.TotalRentAmount,
+            durationInMonths  = lease.DurationInMonths,
+            deposit           = lease.SecurityDeposit ?? 0m,
+            extractionStatus  = MapExtractionStatus(lease.ExtractionStatus),
+            confidence        = lease.ExtractionConfidence ?? 0m
         });
     }
 
@@ -78,7 +81,7 @@ public class LeasesController : ControllerBase
         {
             await _mediator.Send(new SendLeaseToTenantCommand(
                 id,
-                req.MonthlyRent,
+                req.InstallmentAmount,
                 req.Deposit,
                 DateOnly.TryParse(req.StartDate, out var s) ? s : null,
                 DateOnly.TryParse(req.EndDate, out var e) ? e : null), ct);
@@ -87,8 +90,6 @@ public class LeasesController : ControllerBase
         catch (KeyNotFoundException ex) { return NotFound(new { error = ex.Message }); }
     }
 
-    // Backend stores pending/extracted/confirmed/failed/rejected; the chat/lease UI
-    // only distinguishes pending → done → failed.
     private static string MapExtractionStatus(string? status) => status switch
     {
         "extracted" or "confirmed" => "done",
@@ -96,22 +97,20 @@ public class LeasesController : ControllerBase
         _ => "pending"
     };
 
-
-
     [HttpDelete("{id}")]
     public async Task<IActionResult> Terminate(Guid id, [FromBody] string reason)
     {
         await _mediator.Send(new TerminateLeaseCommand(id, reason));
         return NoContent();
     }
+
     [HttpPost("{id}/confirm")]
     public async Task<IActionResult> Confirm(Guid id, [FromBody] ConfirmLeaseRequest req)
     {
         var result = await _mediator.Send(new ConfirmLeaseCommand(
-        id, req.ConfirmerId,
-        req.RentAmount, req.SecurityDeposit,
-        req.StartDate, req.EndDate,
-        req.PaymentDayOfMonth));
+            id, req.ConfirmerId,
+            req.InstallmentAmount, req.PaymentFrequency, req.TotalRentAmount, req.DurationInMonths,
+            req.SecurityDeposit, req.StartDate, req.EndDate, req.PaymentDayOfMonth));
 
         return Ok(result);
     }
@@ -122,6 +121,7 @@ public class LeasesController : ControllerBase
         var result = await _mediator.Send(new RejectLeaseCommand(id, req.TenantId, req.Reason));
         return Ok(result);
     }
+
     [HttpGet("{id}/download")]
     public async Task<IActionResult> Download(Guid id)
     {
@@ -129,11 +129,37 @@ public class LeasesController : ControllerBase
         if (lease == null) return NotFound();
         return Ok(new { contractFileUrl = lease.ContractFileUrl });
     }
+
+    /// <summary>
+    /// Returns the full payment schedule for a lease: every installment period with
+    /// start/end/due dates and amount, plus which period is current, which is next,
+    /// and a summary of total/due-so-far/remaining amounts.
+    /// Returns 404 if the lease doesn't exist.
+    /// Returns 422 if the lease exists but extraction is incomplete (no installment/frequency/duration).
+    /// </summary>
+    [HttpGet("{id}/payment-schedule")]
+    public async Task<IActionResult> GetPaymentSchedule(Guid id, CancellationToken ct)
+    {
+        var schedule = await _mediator.Send(new GetLeasePaymentScheduleQuery(id), ct);
+
+        if (schedule is null)
+        {
+            var lease = await _mediator.Send(new GetLeaseByIdQuery(id), ct);
+            return lease is null
+                ? NotFound(new { error = "Lease not found." })
+                : UnprocessableEntity(new { error = "Payment schedule is not available yet — lease extraction is incomplete." });
+        }
+
+        return Ok(schedule);
+    }
 }
 
 public record ConfirmLeaseRequest(
     Guid ConfirmerId,
-    decimal? RentAmount,
+    decimal? InstallmentAmount,
+    string? PaymentFrequency,
+    decimal? TotalRentAmount,
+    int? DurationInMonths,
     decimal? SecurityDeposit,
     DateOnly? StartDate,
     DateOnly? EndDate,
@@ -142,7 +168,7 @@ public record ConfirmLeaseRequest(
 public record RejectLeaseRequest(Guid TenantId, string Reason);
 
 public record SendLeaseToTenantRequest(
-    decimal? MonthlyRent = null,
+    decimal? InstallmentAmount = null,
     decimal? Deposit = null,
     string? StartDate = null,
     string? EndDate = null,

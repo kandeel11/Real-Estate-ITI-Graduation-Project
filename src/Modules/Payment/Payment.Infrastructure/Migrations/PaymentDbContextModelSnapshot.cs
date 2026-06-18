@@ -87,6 +87,11 @@ namespace Payment.Infrastructure.Migrations
                     b.Property<DateOnly>("DueDate")
                         .HasColumnType("date");
 
+                    b.Property<decimal>("CommissionAmount")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("decimal(12,2)")
+                        .HasDefaultValue(0m);
+
                     b.Property<decimal>("LateFee")
                         .ValueGeneratedOnAdd()
                         .HasColumnType("decimal(10,2)")

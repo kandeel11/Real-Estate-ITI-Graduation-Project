@@ -48,8 +48,11 @@ public class UploadLeaseContractHandler : IRequestHandler<UploadLeaseContractCom
         return new UploadLeaseResponse(
             updated!.Id,
             updated.ExtractionStatus,
-            updated.RentAmount == null ? null : new ExtractedLeaseData(
-                updated.RentAmount,
+            updated.InstallmentAmount == null ? null : new ExtractedLeaseData(
+                updated.InstallmentAmount,
+                updated.PaymentFrequency?.ToString(),
+                updated.TotalRentAmount,
+                updated.DurationInMonths,
                 updated.SecurityDeposit,
                 updated.StartDate,
                 updated.EndDate,

@@ -12,7 +12,11 @@ public class LeaseConfiguration : IEntityTypeConfiguration<Lease>
         builder.HasKey(x => x.Id);
         builder.Property(x => x.ContractFileUrl).IsRequired();
         builder.Property(x => x.ExtractionStatus).IsRequired().HasMaxLength(50);
-        builder.Property(x => x.RentAmount).HasColumnType("decimal(12,2)");
+        builder.Property(x => x.InstallmentAmount).HasColumnType("decimal(12,2)");
+        builder.Property(x => x.TotalRentAmount).HasColumnType("decimal(12,2)");
+        builder.Property(x => x.PaymentFrequency)
+            .HasConversion<string>()
+            .HasMaxLength(20);
         builder.Property(x => x.SecurityDeposit).HasColumnType("decimal(12,2)");
         builder.Property(x => x.ExtractionConfidence).HasColumnType("decimal(5,2)");
         builder.Property(x => x.CreatedAt).IsRequired();

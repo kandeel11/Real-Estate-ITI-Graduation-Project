@@ -23,7 +23,7 @@ public sealed class DocumentLeaseServiceAdapter : ILeaseService
     public async Task<IReadOnlyList<ActiveLeaseDto>> GetActiveLeasesAsync(CancellationToken cancellationToken = default)
     {
         var leases = await _documentDb.Leases
-            .Where(l => l.IsActive && l.DeletedAt == null && l.RentAmount != null && l.PaymentDayOfMonth != null)
+            .Where(l => l.IsActive && l.DeletedAt == null && l.InstallmentAmount != null && l.PaymentDayOfMonth != null)
             .ToListAsync(cancellationToken);
 
         if (leases.Count == 0)
@@ -42,7 +42,7 @@ public sealed class DocumentLeaseServiceAdapter : ILeaseService
             tenantMap.TryGetValue(l.TenantId, out var tenant);
             return new ActiveLeaseDto(
                 LeaseId: l.Id,
-                RentAmount: l.RentAmount!.Value,
+                InstallmentAmount: l.InstallmentAmount!.Value,
                 PaymentDayOfMonth: l.PaymentDayOfMonth!.Value,
                 TenantName: tenant?.FullName ?? "Unknown",
                 TenantEmail: tenant?.Email ?? string.Empty,
@@ -70,7 +70,7 @@ public sealed class DocumentLeaseServiceAdapter : ILeaseService
 
         return new ActiveLeaseDto(
             LeaseId: lease.Id,
-            RentAmount: lease.RentAmount ?? 0m,
+            InstallmentAmount: lease.InstallmentAmount ?? 0m,
             PaymentDayOfMonth: lease.PaymentDayOfMonth ?? 1,
             TenantName: tenant?.FullName ?? "Unknown",
             TenantEmail: tenant?.Email ?? string.Empty,

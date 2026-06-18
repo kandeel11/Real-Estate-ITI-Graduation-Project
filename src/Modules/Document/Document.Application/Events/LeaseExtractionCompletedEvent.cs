@@ -3,7 +3,10 @@ using MediatR;
 namespace Document.Application.Events;
 
 public record LeaseExtractionData(
-    decimal? RentAmount,
+    decimal? InstallmentAmount,
+    string? PaymentFrequency,
+    decimal? TotalRentAmount,
+    int? DurationInMonths,
     decimal? SecurityDeposit,
     DateOnly? StartDate,
     DateOnly? EndDate,

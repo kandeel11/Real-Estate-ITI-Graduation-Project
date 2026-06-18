@@ -5,7 +5,10 @@ namespace Document.Application.Commands.Lease.ConfirmLease;
 public record ConfirmLeaseCommand(
     Guid LeaseId,
     Guid ConfirmerId,
-    decimal? RentAmount,
+    decimal? InstallmentAmount,
+    string? PaymentFrequency,
+    decimal? TotalRentAmount,
+    int? DurationInMonths,
     decimal? SecurityDeposit,
     DateOnly? StartDate,
     DateOnly? EndDate,

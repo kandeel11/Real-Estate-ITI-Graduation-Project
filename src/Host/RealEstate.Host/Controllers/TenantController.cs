@@ -88,7 +88,7 @@ public class TenantController(
             {
                 property = prop,
                 leaseId = lease.Id,
-                monthlyRent = lease.RentAmount,
+                installmentAmount = lease.InstallmentAmount,
                 startDate = lease.StartDate,
                 endDate = lease.EndDate,
                 isActive = lease.IsActive,
@@ -125,7 +125,9 @@ public class TenantController(
             propertyTitle = prop?.Title ?? $"Property {lease.PropertyId.ToString()[..6]}",
             startDate     = lease.StartDate,
             endDate       = lease.EndDate,
-            monthlyRent   = lease.RentAmount,
+            installmentAmount = lease.InstallmentAmount,
+            paymentFrequency  = lease.PaymentFrequency,
+            totalRentAmount   = lease.TotalRentAmount,
             deposit       = lease.SecurityDeposit,
             pdfUrl        = lease.ContractFileUrl,
             status        = "pending_tenant",
@@ -141,7 +143,7 @@ public class TenantController(
         if (lease.TenantId != UserId) return Forbid();
 
         var result = await sender.Send(
-            new ConfirmLeaseCommand(id, UserId, null, null, null, null, null), ct);
+            new ConfirmLeaseCommand(id, UserId, null, null, null, null, null, null, null, null), ct);
         return Ok(result);
     }
 

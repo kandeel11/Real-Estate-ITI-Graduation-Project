@@ -80,7 +80,7 @@ public sealed class GenerateMonthlyPaymentsHandler
                     propertyId: lease.PropertyId,
                     tenantId: lease.TenantId,
                     landlordId: lease.LandlordId,
-                    amount: lease.RentAmount,
+                    amount: lease.InstallmentAmount,
                     dueDate: exactDueDate,
                     notes: $"Monthly rent for {targetMonth:MMMM yyyy}"
                 );
