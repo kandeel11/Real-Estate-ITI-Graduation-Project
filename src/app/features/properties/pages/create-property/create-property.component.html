@@ -1,393 +1,606 @@
-<div class="container py-4 wizard">
-  <h2 class="mb-1">{{ 'CREATE_PROPERTY.TITLE' | translate }}</h2>
-  <p class="text-muted mb-4">
-    @if (isOwner()) {
-      {{ 'CREATE_PROPERTY.SUBTITLE_OWNER' | translate }}
-    } @else {
-      {{ 'CREATE_PROPERTY.SUBTITLE_BROKER' | translate }}
-    }
-  </p>
+<div class="cp-wrapper">
 
-  <!-- Stepper -->
-  <div class="d-flex align-items-center gap-2 mb-4">
-    <span class="badge rounded-pill" [class.bg-dark]="step() >= 1" [class.bg-secondary]="step() < 1">{{ 'CREATE_PROPERTY.STEP_1' | translate }}</span>
-    <i class="fa-solid fa-chevron-right text-muted small"></i>
-    <span class="badge rounded-pill" [class.bg-dark]="step() >= 2" [class.bg-secondary]="step() < 2">{{ 'CREATE_PROPERTY.STEP_2' | translate }}</span>
-    <i class="fa-solid fa-chevron-right text-muted small"></i>
-    <span class="badge rounded-pill" [class.bg-dark]="step() >= 3" [class.bg-secondary]="step() < 3">{{ 'CREATE_PROPERTY.STEP_3' | translate }}</span>
+  <!-- ══ Page hero ════════════════════════════════════════════════════════════ -->
+  <div class="cp-hero">
+    <div class="cp-hero__inner container-xl">
+      <div class="cp-hero__icon">
+      <i class="fa-solid fa-house-chimney"></i>
+      <i class="fa-solid fa-plus cp-hero__icon-plus"></i>
+    </div>
+      <div>
+        <h1 class="cp-hero__title">{{ 'CREATE_PROPERTY.TITLE' | translate }}</h1>
+        <p class="cp-hero__sub">
+          @if (isOwner()) { {{ 'CREATE_PROPERTY.SUBTITLE_OWNER' | translate }} }
+          @else { {{ 'CREATE_PROPERTY.SUBTITLE_BROKER' | translate }} }
+        </p>
+      </div>
+    </div>
   </div>
 
-  <!-- ════ STEP 1: DETAILS ════ -->
-  @if (step() === 1) {
-    @if (resuming()) {
-      <div class="d-flex justify-content-center py-5">
-        <div class="spinner-border text-secondary" role="status">
-          <span class="visually-hidden">{{ 'CREATE_PROPERTY.LOADING_DRAFT' | translate }}</span>
-        </div>
-      </div>
-    } @else {
+  <div class="container-xl cp-body">
 
-    <!-- Unfinished draft recovery -->
-    @if (pendingDraft(); as draft) {
-      <div class="alert alert-info d-flex justify-content-between align-items-center flex-wrap gap-2">
-        <span>
-          <i class="fa-solid fa-file-pen me-2"></i>
-          {{ 'CREATE_PROPERTY.DRAFT_ALERT' | translate: { title: draft.title, district: draft.district, city: draft.city } }}
-        </span>
-        <span class="d-flex gap-2">
-          <button type="button" class="btn btn-dark btn-sm" (click)="resume(draft.id)">
-            {{ 'CREATE_PROPERTY.CONTINUE_SETUP' | translate }}
-          </button>
-          <button type="button" class="btn btn-outline-danger btn-sm"
-                  (click)="discardDraft()" [disabled]="discardingDraft()">
-            @if (discardingDraft()) {
-              <span class="spinner-border spinner-border-sm"></span>
-            } @else {
-              {{ 'CREATE_PROPERTY.DISCARD' | translate }}
-            }
-          </button>
-        </span>
-      </div>
-    }
+    <!-- ══ Stepper ══════════════════════════════════════════════════════════ -->
+    <div class="cp-stepper">
+      <div class="cp-stepper__track">
 
-    <form [formGroup]="form" (ngSubmit)="next()" class="card p-4">
-      @if (createError()) {
-        <div class="alert alert-danger">{{ createError() }}</div>
-      }
-
-      <h5 class="mb-3">{{ 'CREATE_PROPERTY.DETAILS_SECTION' | translate }}</h5>
-      <div class="row g-3">
-        <div class="col-md-6">
-          <label class="form-label">{{ 'CREATE_PROPERTY.TITLE_EN' | translate }}</label>
-          <input class="form-control" formControlName="title"
-                 [class.is-invalid]="form.get('title')!.invalid && form.get('title')!.touched" />
-          <div class="invalid-feedback">
-            @if (form.get('title')!.errors?.['mustBeEnglish']) {
-              {{ 'CREATE_PROPERTY.ERR_TITLE_ENGLISH' | translate }}
-            } @else {
-              {{ 'CREATE_PROPERTY.ERR_TITLE_REQUIRED' | translate }}
-            }
+        <div class="cp-step" [class.cp-step--done]="step() > 1" [class.cp-step--active]="step() === 1">
+          <div class="cp-step__bubble">
+            @if (step() > 1) { <i class="fa-solid fa-check"></i> } @else { 1 }
           </div>
-        </div>
-        <div class="col-md-6">
-          <label class="form-label">{{ 'CREATE_PROPERTY.TITLE_AR' | translate }}</label>
-          <input class="form-control" dir="rtl" formControlName="titleAr"
-                 [class.is-invalid]="form.get('titleAr')!.invalid && form.get('titleAr')!.touched" />
-          <div class="invalid-feedback">
-            @if (form.get('titleAr')!.errors?.['mustBeArabic']) {
-              {{ 'CREATE_PROPERTY.ERR_TITLE_ARABIC' | translate }}
-            } @else {
-              {{ 'CREATE_PROPERTY.ERR_TITLE_AR_REQUIRED' | translate }}
-            }
+          <div class="cp-step__label">
+            <span class="cp-step__num">Step 1</span>
+            <span class="cp-step__name">{{ 'CREATE_PROPERTY.STEP_1' | translate }}</span>
           </div>
         </div>
 
-        <div class="col-md-4">
-          <label class="form-label">{{ 'CREATE_PROPERTY.TYPE' | translate }}</label>
-          <select class="form-select" formControlName="propertyType">
-            <option value="Apartment">{{ 'CREATE_PROPERTY.TYPE_APARTMENT' | translate }}</option>
-            <option value="Villa">{{ 'CREATE_PROPERTY.TYPE_VILLA' | translate }}</option>
-            <option value="House">{{ 'CREATE_PROPERTY.TYPE_HOUSE' | translate }}</option>
-          </select>
-        </div>
-        <div class="col-md-4">
-          <label class="form-label">{{ 'CREATE_PROPERTY.MONTHLY_PRICE' | translate }}</label>
-          <input type="number" class="form-control" formControlName="price" step="100" min="100"
-                 [class.is-invalid]="form.get('price')!.invalid && form.get('price')!.touched" />
-          <div class="invalid-feedback">{{ 'CREATE_PROPERTY.ERR_PRICE' | translate }}</div>
-        </div>
-        <div class="col-md-4">
-          <label class="form-label">{{ 'CREATE_PROPERTY.AREA' | translate }}</label>
-          <input type="number" class="form-control" formControlName="areaSqm"
-                 [class.is-invalid]="form.get('areaSqm')!.invalid && form.get('areaSqm')!.touched" />
-          <div class="invalid-feedback">{{ 'CREATE_PROPERTY.ERR_AREA' | translate }}</div>
-        </div>
+        <div class="cp-stepper__line" [class.cp-stepper__line--done]="step() > 1"></div>
 
-        <div class="col-md-3">
-          <label class="form-label">{{ 'CREATE_PROPERTY.BEDROOMS' | translate }}</label>
-          <input type="number" class="form-control" formControlName="bedrooms" />
-        </div>
-        <div class="col-md-3">
-          <label class="form-label">{{ 'CREATE_PROPERTY.BATHROOMS' | translate }}</label>
-          <input type="number" class="form-control" formControlName="bathrooms" />
-        </div>
-        <div class="col-md-3">
-          <label class="form-label">{{ 'CREATE_PROPERTY.FLOOR' | translate }}</label>
-          <input type="number" class="form-control" formControlName="floorNumber" />
-        </div>
-        <div class="col-md-3">
-          <label class="form-label">{{ 'CREATE_PROPERTY.TOTAL_FLOORS' | translate }}</label>
-          <input type="number" class="form-control" formControlName="totalFloors" />
-        </div>
-
-        <div class="col-md-4">
-          <label class="form-label">{{ 'CREATE_PROPERTY.YEAR_BUILT' | translate }}</label>
-          <input type="number" class="form-control" formControlName="yearBuilt" />
-        </div>
-        <div class="col-md-4 d-flex align-items-end gap-4">
-          <div class="form-check">
-            <input type="checkbox" class="form-check-input" id="furnished" formControlName="isFurnished" />
-            <label class="form-check-label" for="furnished">{{ 'CREATE_PROPERTY.FURNISHED' | translate }}</label>
+        <div class="cp-step" [class.cp-step--done]="step() > 2" [class.cp-step--active]="step() === 2">
+          <div class="cp-step__bubble">
+            @if (step() > 2) { <i class="fa-solid fa-check"></i> } @else { 2 }
           </div>
-          <div class="form-check">
-            <input type="checkbox" class="form-check-input" id="pets" formControlName="petsAllowed" />
-            <label class="form-check-label" for="pets">{{ 'CREATE_PROPERTY.PETS_ALLOWED' | translate }}</label>
+          <div class="cp-step__label">
+            <span class="cp-step__num">Step 2</span>
+            <span class="cp-step__name">{{ 'CREATE_PROPERTY.STEP_2' | translate }}</span>
           </div>
         </div>
-      </div>
 
-      <h5 class="mt-4 mb-3">{{ 'CREATE_PROPERTY.LOCATION_SECTION' | translate }}</h5>
-      <div class="row g-3">
-        <div class="col-md-8">
-          <label class="form-label">{{ 'CREATE_PROPERTY.ADDRESS' | translate }}</label>
-          <input class="form-control" formControlName="address"
-                 [class.is-invalid]="form.get('address')!.invalid && form.get('address')!.touched" />
-          <div class="invalid-feedback">{{ 'CREATE_PROPERTY.ERR_ADDRESS' | translate }}</div>
-        </div>
-        <div class="col-md-4">
-          <label class="form-label">{{ 'CREATE_PROPERTY.APT_NO' | translate }} <span class="text-muted">{{ 'CREATE_PROPERTY.OPTIONAL' | translate }}</span></label>
-          <input type="number" class="form-control" formControlName="apartmentNumber" />
-        </div>
-        <div class="col-md-3">
-          <label class="form-label">{{ 'CREATE_PROPERTY.COUNTRY' | translate }}</label>
-          <input class="form-control" formControlName="country"
-                 [class.is-invalid]="form.get('country')!.invalid && form.get('country')!.touched" />
-        </div>
-        <div class="col-md-3">
-          <label class="form-label">{{ 'CREATE_PROPERTY.GOVERNORATE' | translate }}</label>
-          <input class="form-control" formControlName="governorate"
-                 [class.is-invalid]="form.get('governorate')!.invalid && form.get('governorate')!.touched" />
-          <div class="invalid-feedback">{{ 'CREATE_PROPERTY.ERR_GOVERNORATE' | translate }}</div>
-        </div>
-        <div class="col-md-3">
-          <label class="form-label">{{ 'CREATE_PROPERTY.CITY' | translate }}</label>
-          <input class="form-control" formControlName="city"
-                 [class.is-invalid]="form.get('city')!.invalid && form.get('city')!.touched" />
-          <div class="invalid-feedback">{{ 'CREATE_PROPERTY.ERR_CITY' | translate }}</div>
-        </div>
-        <div class="col-md-3">
-          <label class="form-label">{{ 'CREATE_PROPERTY.DISTRICT' | translate }}</label>
-          <input class="form-control" formControlName="district"
-                 [class.is-invalid]="form.get('district')!.invalid && form.get('district')!.touched" />
-          <div class="invalid-feedback">{{ 'CREATE_PROPERTY.ERR_DISTRICT' | translate }}</div>
-        </div>
-      </div>
+        <div class="cp-stepper__line" [class.cp-stepper__line--done]="step() > 2"></div>
 
-      @if (isOwner() && !isEditing()) {
-        <h5 class="mt-4 mb-1">{{ 'CREATE_PROPERTY.OWNERSHIP_SECTION' | translate }}</h5>
-        <p class="text-muted small mb-3">{{ 'CREATE_PROPERTY.OWNERSHIP_HINT' | translate }}</p>
-        @if (filesError()) {
-          <div class="alert alert-danger py-2">{{ filesError() }}</div>
-        }
-        <div class="row g-3">
-          <div class="col-md-4">
-            <label class="form-label">{{ 'CREATE_PROPERTY.OWNER_FULL_NAME' | translate }}</label>
-            <input class="form-control" formControlName="ownerFullName"
-                   [class.is-invalid]="form.get('ownerFullName')!.invalid && form.get('ownerFullName')!.touched" />
-            <div class="invalid-feedback">{{ 'CREATE_PROPERTY.ERR_OWNER_NAME' | translate }}</div>
+        <div class="cp-step" [class.cp-step--done]="step() > 3" [class.cp-step--active]="step() === 3">
+          <div class="cp-step__bubble">
+            @if (step() > 3) { <i class="fa-solid fa-check"></i> } @else { 3 }
           </div>
-          <div class="col-md-4">
-            <label class="form-label">{{ 'CREATE_PROPERTY.NATIONAL_ID' | translate }}</label>
-            <input type="file" class="form-control" accept="application/pdf,image/*" (change)="onNationalId($event)" />
-          </div>
-          <div class="col-md-4">
-            <label class="form-label">{{ 'CREATE_PROPERTY.TITLE_DEED' | translate }}</label>
-            <input type="file" class="form-control" accept="application/pdf,image/*" (change)="onOwnershipProof($event)" />
+          <div class="cp-step__label">
+            <span class="cp-step__num">Step 3</span>
+            <span class="cp-step__name">{{ 'CREATE_PROPERTY.STEP_3' | translate }}</span>
           </div>
         </div>
-      }
 
-      <div class="mt-4 text-end">
-        <button type="submit" class="btn btn-dark" [disabled]="creating()">
-          @if (creating()) {
-            <span class="spinner-border spinner-border-sm me-2"></span>
-            @if (isEditing()) { {{ 'CREATE_PROPERTY.SAVING' | translate }} }
-            @else if (isOwner()) { {{ 'CREATE_PROPERTY.VERIFYING' | translate }} }
-            @else { {{ 'CREATE_PROPERTY.CREATING' | translate }} }
-          } @else {
-            @if (isEditing()) {
-              {{ 'CREATE_PROPERTY.SAVE_CONTINUE' | translate }} <i class="fa-solid fa-arrow-right ms-1"></i>
-            } @else if (isOwner()) {
-              <i class="fa-solid fa-shield-halved me-1"></i>{{ 'CREATE_PROPERTY.VERIFY_CONTINUE' | translate }}
-            } @else {
-              {{ 'CREATE_PROPERTY.NEXT' | translate }} <i class="fa-solid fa-arrow-right ms-1"></i>
-            }
-          }
-        </button>
-      </div>
-    </form>
-    }
-  }
-
-  <!-- ════ STEP 2: PHOTOS / AMENITIES / DESCRIPTION ════ -->
-  @if (step() === 2) {
-    <div class="card p-4 mb-3">
-      <h5 class="mb-1">{{ 'CREATE_PROPERTY.PHOTOS_SECTION' | translate }}</h5>
-      <p class="text-muted small mb-3">{{ 'CREATE_PROPERTY.PHOTOS_HINT' | translate }}</p>
-      <input type="file" class="form-control mb-3" accept="image/*" multiple (change)="onPhotosSelected($event)" />
-      <div class="d-flex flex-wrap gap-2">
-        @for (photo of photos(); track photo.preview) {
-          <div class="photo-tile rounded border"
-               [class.border-danger]="photo.status === 'error'"
-               [class.border-primary]="photo.isPrimary"
-               [class.border-2]="photo.isPrimary">
-            <img [src]="photo.preview" [alt]="photo.name" />
-            @if (photo.isPrimary) {
-              <span class="photo-primary-badge">
-                <i class="fa-solid fa-star fa-xs me-1"></i>{{ 'CREATE_PROPERTY.PRIMARY' | translate }}
-              </span>
-            }
-            <span class="photo-status">
-              @switch (photo.status) {
-                @case ('uploading') { <span class="spinner-border spinner-border-sm"></span> }
-                @case ('done') { <i class="fa-solid fa-circle-check text-success"></i> }
-                @case ('error') { <i class="fa-solid fa-circle-xmark text-danger"></i> }
-              }
-            </span>
-            @if (photo.status === 'done' && !photo.isPrimary) {
-              <button type="button" class="photo-set-primary-btn"
-                      (click)="setPrimaryPhoto(photo)"
-                      title="{{ 'CREATE_PROPERTY.SET_PRIMARY' | translate }}">
-                <i class="fa-regular fa-star"></i>
-              </button>
-            }
-          </div>
-        }
       </div>
     </div>
 
-    <div class="card p-4 mb-3">
-      <h5 class="mb-3">{{ 'CREATE_PROPERTY.AMENITIES_SECTION' | translate }}</h5>
-      @if (amenities().length === 0) {
-        <p class="text-muted mb-0">{{ 'CREATE_PROPERTY.NO_AMENITIES' | translate }}</p>
+    <!-- ════ STEP 1: DETAILS ════════════════════════════════════════════════ -->
+    @if (step() === 1) {
+
+      @if (resuming()) {
+        <div class="cp-loading-overlay">
+          <div class="cp-spinner"></div>
+          <p>{{ 'CREATE_PROPERTY.LOADING_DRAFT' | translate }}</p>
+        </div>
       } @else {
-        @for (group of amenityGroups(); track group.category) {
-          <div class="text-uppercase small text-muted mt-2 mb-1">{{ group.category }}</div>
-          <div class="row">
-            @for (amenity of group.items; track amenity.id) {
-              <div class="col-6 col-md-4 col-lg-3 mb-2">
-                <div class="form-check">
-                  <input type="checkbox" class="form-check-input" [id]="'am-' + amenity.id"
-                         [checked]="selectedAmenities().has(amenity.id)"
-                         (change)="toggleAmenity(amenity)" />
-                  <label class="form-check-label" [for]="'am-' + amenity.id">{{ amenity.name }}</label>
+
+        <!-- Draft recovery banner -->
+        @if (pendingDraft(); as draft) {
+          <div class="cp-draft-banner">
+            <div class="cp-draft-banner__icon"><i class="fa-solid fa-file-pen"></i></div>
+            <div class="cp-draft-banner__text">
+              <strong>Unfinished listing found</strong>
+              <span>{{ draft.title }} · {{ draft.district }}, {{ draft.city }}</span>
+            </div>
+            <div class="cp-draft-banner__actions">
+              <button type="button" class="cp-btn-ghost" (click)="resume(draft.id)">
+                <i class="fa-solid fa-rotate-right"></i> {{ 'CREATE_PROPERTY.CONTINUE_SETUP' | translate }}
+              </button>
+              <button type="button" class="cp-btn-danger-ghost" (click)="discardDraft()" [disabled]="discardingDraft()">
+                @if (discardingDraft()) { <span class="cp-spinner cp-spinner--sm"></span> }
+                @else { <i class="fa-solid fa-trash-can"></i> }
+                {{ 'CREATE_PROPERTY.DISCARD' | translate }}
+              </button>
+            </div>
+          </div>
+        }
+
+        <form [formGroup]="form" (ngSubmit)="next()">
+          @if (createError()) {
+            <div class="cp-alert cp-alert--danger">
+              <i class="fa-solid fa-triangle-exclamation"></i> {{ createError() }}
+            </div>
+          }
+
+          <!-- ── Section: Property Details ─────────────────────────────────── -->
+          <div class="cp-section">
+            <div class="cp-section__head">
+              <div class="cp-section__head-icon"><i class="fa-solid fa-building"></i></div>
+              <div>
+                <h3 class="cp-section__title">{{ 'CREATE_PROPERTY.DETAILS_SECTION' | translate }}</h3>
+                <p class="cp-section__sub">Basic information about the property</p>
+              </div>
+            </div>
+
+            <div class="cp-grid cp-grid--2">
+              <!-- Title EN -->
+              <div class="cp-field" [class.cp-field--error]="form.get('title')!.invalid && form.get('title')!.touched">
+                <label class="cp-label">
+                  <i class="fa-solid fa-pen-to-square"></i>
+                  {{ 'CREATE_PROPERTY.TITLE_EN' | translate }}
+                </label>
+                <input class="cp-input" formControlName="title" placeholder="e.g. Modern Apartment in Maadi" />
+                @if (form.get('title')!.invalid && form.get('title')!.touched) {
+                  <span class="cp-error">
+                    @if (form.get('title')!.errors?.['mustBeEnglish']) { {{ 'CREATE_PROPERTY.ERR_TITLE_ENGLISH' | translate }} }
+                    @else { {{ 'CREATE_PROPERTY.ERR_TITLE_REQUIRED' | translate }} }
+                  </span>
+                }
+              </div>
+              <!-- Title AR -->
+              <div class="cp-field" [class.cp-field--error]="form.get('titleAr')!.invalid && form.get('titleAr')!.touched">
+                <label class="cp-label">
+                  <i class="fa-solid fa-language"></i>
+                  {{ 'CREATE_PROPERTY.TITLE_AR' | translate }}
+                </label>
+                <input class="cp-input" dir="rtl" formControlName="titleAr" placeholder="مثل: شقة حديثة في المعادي" />
+                @if (form.get('titleAr')!.invalid && form.get('titleAr')!.touched) {
+                  <span class="cp-error">
+                    @if (form.get('titleAr')!.errors?.['mustBeArabic']) { {{ 'CREATE_PROPERTY.ERR_TITLE_ARABIC' | translate }} }
+                    @else { {{ 'CREATE_PROPERTY.ERR_TITLE_AR_REQUIRED' | translate }} }
+                  </span>
+                }
+              </div>
+            </div>
+
+            <div class="cp-grid cp-grid--3">
+              <!-- Type -->
+              <div class="cp-field">
+                <label class="cp-label">
+                  <i class="fa-solid fa-house-flag"></i>
+                  {{ 'CREATE_PROPERTY.TYPE' | translate }}
+                </label>
+                <div class="cp-select-wrap">
+                  <select class="cp-input cp-select" formControlName="propertyType">
+                    <option value="Apartment">{{ 'CREATE_PROPERTY.TYPE_APARTMENT' | translate }}</option>
+                    <option value="Villa">{{ 'CREATE_PROPERTY.TYPE_VILLA' | translate }}</option>
+                    <option value="House">{{ 'CREATE_PROPERTY.TYPE_HOUSE' | translate }}</option>
+                  </select>
+                  <i class="fa-solid fa-chevron-down cp-select-arrow"></i>
                 </div>
               </div>
+              <!-- Price -->
+              <div class="cp-field" [class.cp-field--error]="form.get('price')!.invalid && form.get('price')!.touched">
+                <label class="cp-label">
+                  <i class="fa-solid fa-tag"></i>
+                  {{ 'CREATE_PROPERTY.MONTHLY_PRICE' | translate }}
+                </label>
+                <div class="cp-input-prefix">
+                  <span class="cp-prefix">EGP</span>
+                  <input class="cp-input cp-input--prefixed" type="number" formControlName="price" step="100" min="100" placeholder="0" />
+                </div>
+                @if (form.get('price')!.invalid && form.get('price')!.touched) {
+                  <span class="cp-error">{{ 'CREATE_PROPERTY.ERR_PRICE' | translate }}</span>
+                }
+              </div>
+              <!-- Area -->
+              <div class="cp-field" [class.cp-field--error]="form.get('areaSqm')!.invalid && form.get('areaSqm')!.touched">
+                <label class="cp-label">
+                  <i class="fa-solid fa-ruler-combined"></i>
+                  {{ 'CREATE_PROPERTY.AREA' | translate }}
+                </label>
+                <div class="cp-input-prefix">
+                  <input class="cp-input cp-input--suffixed" type="number" formControlName="areaSqm" placeholder="0" />
+                  <span class="cp-suffix">m²</span>
+                </div>
+                @if (form.get('areaSqm')!.invalid && form.get('areaSqm')!.touched) {
+                  <span class="cp-error">{{ 'CREATE_PROPERTY.ERR_AREA' | translate }}</span>
+                }
+              </div>
+            </div>
+
+            <div class="cp-grid cp-grid--4">
+              <div class="cp-field">
+                <label class="cp-label"><i class="fa-solid fa-bed"></i> {{ 'CREATE_PROPERTY.BEDROOMS' | translate }}</label>
+                <input class="cp-input" type="number" formControlName="bedrooms" min="0" />
+              </div>
+              <div class="cp-field">
+                <label class="cp-label"><i class="fa-solid fa-bath"></i> {{ 'CREATE_PROPERTY.BATHROOMS' | translate }}</label>
+                <input class="cp-input" type="number" formControlName="bathrooms" min="0" />
+              </div>
+              <div class="cp-field">
+                <label class="cp-label"><i class="fa-solid fa-stairs"></i> {{ 'CREATE_PROPERTY.FLOOR' | translate }}</label>
+                <input class="cp-input" type="number" formControlName="floorNumber" min="0" />
+              </div>
+              <div class="cp-field">
+                <label class="cp-label"><i class="fa-solid fa-building"></i> {{ 'CREATE_PROPERTY.TOTAL_FLOORS' | translate }}</label>
+                <input class="cp-input" type="number" formControlName="totalFloors" min="1" />
+              </div>
+            </div>
+
+            <div class="cp-grid cp-grid--3">
+              <div class="cp-field">
+                <label class="cp-label"><i class="fa-solid fa-calendar"></i> {{ 'CREATE_PROPERTY.YEAR_BUILT' | translate }}</label>
+                <input class="cp-input" type="number" formControlName="yearBuilt" min="1900" max="2026" />
+              </div>
+              <!-- Toggle: Furnished -->
+              <div class="cp-field cp-field--toggle">
+                <label class="cp-label">{{ 'CREATE_PROPERTY.FURNISHED' | translate }}</label>
+                <label class="cp-toggle">
+                  <input type="checkbox" formControlName="isFurnished" />
+                  <span class="cp-toggle__track">
+                    <span class="cp-toggle__thumb"></span>
+                  </span>
+                  <span class="cp-toggle__txt">
+                    {{ form.get('isFurnished')!.value ? 'Yes' : 'No' }}
+                  </span>
+                </label>
+              </div>
+              <!-- Toggle: Pets -->
+              <div class="cp-field cp-field--toggle">
+                <label class="cp-label">{{ 'CREATE_PROPERTY.PETS_ALLOWED' | translate }}</label>
+                <label class="cp-toggle">
+                  <input type="checkbox" formControlName="petsAllowed" />
+                  <span class="cp-toggle__track">
+                    <span class="cp-toggle__thumb"></span>
+                  </span>
+                  <span class="cp-toggle__txt">
+                    {{ form.get('petsAllowed')!.value ? 'Yes' : 'No' }}
+                  </span>
+                </label>
+              </div>
+            </div>
+          </div>
+
+          <!-- ── Section: Location ──────────────────────────────────────────── -->
+          <div class="cp-section">
+            <div class="cp-section__head">
+              <div class="cp-section__head-icon cp-section__head-icon--green"><i class="fa-solid fa-location-dot"></i></div>
+              <div>
+                <h3 class="cp-section__title">{{ 'CREATE_PROPERTY.LOCATION_SECTION' | translate }}</h3>
+                <p class="cp-section__sub">Where is the property located?</p>
+              </div>
+            </div>
+
+            <div class="cp-grid cp-grid--2-1">
+              <div class="cp-field" [class.cp-field--error]="form.get('address')!.invalid && form.get('address')!.touched">
+                <label class="cp-label"><i class="fa-solid fa-map-pin"></i> {{ 'CREATE_PROPERTY.ADDRESS' | translate }}</label>
+                <input class="cp-input" formControlName="address" placeholder="Street address, building name…" />
+                @if (form.get('address')!.invalid && form.get('address')!.touched) {
+                  <span class="cp-error">{{ 'CREATE_PROPERTY.ERR_ADDRESS' | translate }}</span>
+                }
+              </div>
+              <div class="cp-field">
+                <label class="cp-label">
+                  <i class="fa-solid fa-hashtag"></i>
+                  {{ 'CREATE_PROPERTY.APT_NO' | translate }}
+                  <span class="cp-optional">optional</span>
+                </label>
+                <input class="cp-input" type="number" formControlName="apartmentNumber" placeholder="e.g. 12A" />
+              </div>
+            </div>
+
+            <div class="cp-grid cp-grid--2">
+              <!-- Country autocomplete -->
+              <div class="cp-field" [class.cp-field--error]="form.get('country')!.invalid && form.get('country')!.touched">
+                <label class="cp-label"><i class="fa-solid fa-globe"></i> {{ 'CREATE_PROPERTY.COUNTRY' | translate }}</label>
+                <div class="cp-autocomplete">
+                  <div class="cp-input-icon-wrap">
+                    <input
+                      class="cp-input"
+                      [value]="form.get('country')!.value"
+                      (input)="onCountryInput($event)"
+                      (focus)="filteredCountries().length > 0 && countryDropdownOpen.set(true)"
+                      placeholder="Search country…"
+                      autocomplete="off" />
+                    <i class="fa-solid fa-chevron-down cp-input-caret" [class.open]="countryDropdownOpen()"></i>
+                  </div>
+                  @if (countryDropdownOpen() && filteredCountries().length > 0) {
+                    <div class="cp-dropdown">
+                      @for (c of filteredCountries().slice(0, 60); track c) {
+                        <button type="button" class="cp-dropdown__item" (mousedown)="selectCountry(c)">
+                          {{ c }}
+                        </button>
+                      }
+                    </div>
+                  }
+                </div>
+              </div>
+
+              <!-- Governorate autocomplete -->
+              <div class="cp-field" [class.cp-field--error]="form.get('governorate')!.invalid && form.get('governorate')!.touched">
+                <label class="cp-label">
+                  <i class="fa-solid fa-city"></i>
+                  {{ 'CREATE_PROPERTY.GOVERNORATE' | translate }}
+                </label>
+                <div class="cp-autocomplete">
+                  <div class="cp-input-icon-wrap">
+                    <input
+                      class="cp-input"
+                      [value]="form.get('governorate')!.value"
+                      (input)="onGovernorateInput($event)"
+                      (focus)="filteredGovernorates().length > 0 && governorateDropdownOpen.set(true)"
+                      placeholder="Search governorate / state…"
+                      autocomplete="off" />
+                    <i class="fa-solid fa-chevron-down cp-input-caret" [class.open]="governorateDropdownOpen()"></i>
+                  </div>
+                  @if (governorateDropdownOpen() && filteredGovernorates().length > 0) {
+                    <div class="cp-dropdown">
+                      @for (g of filteredGovernorates().slice(0, 60); track g) {
+                        <button type="button" class="cp-dropdown__item" (mousedown)="selectGovernorate(g)">
+                          {{ g }}
+                        </button>
+                      }
+                    </div>
+                  }
+                </div>
+                @if (form.get('governorate')!.invalid && form.get('governorate')!.touched) {
+                  <span class="cp-error">{{ 'CREATE_PROPERTY.ERR_GOVERNORATE' | translate }}</span>
+                }
+              </div>
+            </div>
+
+            <div class="cp-grid cp-grid--2">
+              <div class="cp-field" [class.cp-field--error]="form.get('city')!.invalid && form.get('city')!.touched">
+                <label class="cp-label"><i class="fa-solid fa-map"></i> {{ 'CREATE_PROPERTY.CITY' | translate }}</label>
+                <input class="cp-input" formControlName="city" placeholder="e.g. Cairo" />
+                @if (form.get('city')!.invalid && form.get('city')!.touched) {
+                  <span class="cp-error">{{ 'CREATE_PROPERTY.ERR_CITY' | translate }}</span>
+                }
+              </div>
+              <div class="cp-field" [class.cp-field--error]="form.get('district')!.invalid && form.get('district')!.touched">
+                <label class="cp-label"><i class="fa-solid fa-map-marker-alt"></i> {{ 'CREATE_PROPERTY.DISTRICT' | translate }}</label>
+                <input class="cp-input" formControlName="district" placeholder="e.g. Maadi" />
+                @if (form.get('district')!.invalid && form.get('district')!.touched) {
+                  <span class="cp-error">{{ 'CREATE_PROPERTY.ERR_DISTRICT' | translate }}</span>
+                }
+              </div>
+            </div>
+          </div>
+
+          <!-- ── Section: Ownership Documents (owners only) ───────────────── -->
+          @if (isOwner() && !isEditing()) {
+            <div class="cp-section cp-section--ownership">
+              <div class="cp-section__head">
+                <div class="cp-section__head-icon cp-section__head-icon--amber"><i class="fa-solid fa-shield-halved"></i></div>
+                <div>
+                  <h3 class="cp-section__title">{{ 'CREATE_PROPERTY.OWNERSHIP_SECTION' | translate }}</h3>
+                  <p class="cp-section__sub">{{ 'CREATE_PROPERTY.OWNERSHIP_HINT' | translate }}</p>
+                </div>
+              </div>
+
+              @if (filesError()) {
+                <div class="cp-alert cp-alert--danger">
+                  <i class="fa-solid fa-triangle-exclamation"></i> {{ filesError() }}
+                </div>
+              }
+
+              <div class="cp-grid cp-grid--3">
+                <div class="cp-field" [class.cp-field--error]="form.get('ownerFullName')!.invalid && form.get('ownerFullName')!.touched">
+                  <label class="cp-label"><i class="fa-solid fa-user"></i> {{ 'CREATE_PROPERTY.OWNER_FULL_NAME' | translate }}</label>
+                  <input class="cp-input" formControlName="ownerFullName" placeholder="Full legal name" />
+                  @if (form.get('ownerFullName')!.invalid && form.get('ownerFullName')!.touched) {
+                    <span class="cp-error">{{ 'CREATE_PROPERTY.ERR_OWNER_NAME' | translate }}</span>
+                  }
+                </div>
+
+                <div class="cp-field">
+                  <label class="cp-label"><i class="fa-solid fa-id-card"></i> {{ 'CREATE_PROPERTY.NATIONAL_ID' | translate }}</label>
+                  <label class="cp-file-upload">
+                    <input type="file" accept="application/pdf,image/*" (change)="onNationalId($event)" />
+                    <div class="cp-file-upload__body">
+                      <i class="fa-solid fa-cloud-arrow-up cp-file-upload__icon"></i>
+                      <span>Click to upload</span>
+                      <small>PDF or image</small>
+                    </div>
+                  </label>
+                </div>
+
+                <div class="cp-field">
+                  <label class="cp-label"><i class="fa-solid fa-file-contract"></i> {{ 'CREATE_PROPERTY.TITLE_DEED' | translate }}</label>
+                  <label class="cp-file-upload">
+                    <input type="file" accept="application/pdf,image/*" (change)="onOwnershipProof($event)" />
+                    <div class="cp-file-upload__body">
+                      <i class="fa-solid fa-cloud-arrow-up cp-file-upload__icon"></i>
+                      <span>Click to upload</span>
+                      <small>PDF or image</small>
+                    </div>
+                  </label>
+                </div>
+              </div>
+            </div>
+          }
+
+          <!-- ── Submit ──────────────────────────────────────────────────────── -->
+          <div class="cp-form-footer">
+            <div class="cp-form-footer__hint">
+              <i class="fa-solid fa-circle-info"></i>
+              All fields marked with a label are required unless noted optional.
+            </div>
+            <button type="submit" class="cp-btn-primary" [disabled]="creating()">
+              @if (creating()) {
+                <span class="cp-spinner cp-spinner--sm"></span>
+                @if (isEditing()) { {{ 'CREATE_PROPERTY.SAVING' | translate }} }
+                @else if (isOwner()) { {{ 'CREATE_PROPERTY.VERIFYING' | translate }} }
+                @else { {{ 'CREATE_PROPERTY.CREATING' | translate }} }
+              } @else {
+                @if (isEditing()) {
+                  <i class="fa-solid fa-floppy-disk"></i> {{ 'CREATE_PROPERTY.SAVE_CONTINUE' | translate }}
+                } @else if (isOwner()) {
+                  <i class="fa-solid fa-shield-halved"></i> {{ 'CREATE_PROPERTY.VERIFY_CONTINUE' | translate }}
+                } @else {
+                  {{ 'CREATE_PROPERTY.NEXT' | translate }} <i class="fa-solid fa-arrow-right"></i>
+                }
+              }
+            </button>
+          </div>
+        </form>
+      }
+    }
+
+    <!-- ════ STEP 2: PHOTOS / AMENITIES / DESCRIPTION ═══════════════════════ -->
+    @if (step() === 2) {
+
+      <!-- Photos -->
+      <div class="cp-section">
+        <div class="cp-section__head">
+          <div class="cp-section__head-icon"><i class="fa-solid fa-images"></i></div>
+          <div>
+            <h3 class="cp-section__title">{{ 'CREATE_PROPERTY.PHOTOS_SECTION' | translate }}</h3>
+            <p class="cp-section__sub">{{ 'CREATE_PROPERTY.PHOTOS_HINT' | translate }}</p>
+          </div>
+        </div>
+        <label class="cp-file-upload cp-file-upload--wide">
+          <input type="file" accept="image/*" multiple (change)="onPhotosSelected($event)" />
+          <div class="cp-file-upload__body">
+            <i class="fa-solid fa-cloud-arrow-up cp-file-upload__icon"></i>
+            <span>Click or drag photos here</span>
+            <small>JPG, PNG, WEBP — multiple allowed</small>
+          </div>
+        </label>
+        <div class="cp-photos-grid">
+          @for (photo of photos(); track photo.preview) {
+            <div class="cp-photo-tile"
+                 [class.cp-photo-tile--primary]="photo.isPrimary"
+                 [class.cp-photo-tile--error]="photo.status === 'error'">
+              <img [src]="photo.preview" [alt]="photo.name" />
+              @if (photo.isPrimary) {
+                <span class="cp-photo-tile__badge"><i class="fa-solid fa-star fa-xs"></i> Primary</span>
+              }
+              <div class="cp-photo-tile__overlay">
+                @switch (photo.status) {
+                  @case ('uploading') { <div class="cp-spinner cp-spinner--white"></div> }
+                  @case ('done') { <i class="fa-solid fa-circle-check" style="color:#4ade80;font-size:20px"></i> }
+                  @case ('error') { <i class="fa-solid fa-circle-xmark" style="color:#f87171;font-size:20px"></i> }
+                }
+              </div>
+              @if (photo.status === 'done' && !photo.isPrimary) {
+                <button type="button" class="cp-photo-tile__star" (click)="setPrimaryPhoto(photo)" title="{{ 'CREATE_PROPERTY.SET_PRIMARY' | translate }}">
+                  <i class="fa-regular fa-star"></i>
+                </button>
+              }
+            </div>
+          }
+        </div>
+      </div>
+
+      <!-- Amenities -->
+      <div class="cp-section">
+        <div class="cp-section__head">
+          <div class="cp-section__head-icon cp-section__head-icon--green"><i class="fa-solid fa-list-check"></i></div>
+          <div>
+            <h3 class="cp-section__title">{{ 'CREATE_PROPERTY.AMENITIES_SECTION' | translate }}</h3>
+            <p class="cp-section__sub">Select all amenities available in this property</p>
+          </div>
+        </div>
+        @if (amenities().length === 0) {
+          <p class="text-muted">{{ 'CREATE_PROPERTY.NO_AMENITIES' | translate }}</p>
+        } @else {
+          @for (group of amenityGroups(); track group.category) {
+            <div class="cp-amenity-group">
+              <div class="cp-amenity-group__label">{{ group.category }}</div>
+              <div class="cp-amenity-chips">
+                @for (amenity of group.items; track amenity.id) {
+                  <label class="cp-amenity-chip" [class.cp-amenity-chip--on]="selectedAmenities().has(amenity.id)">
+                    <input type="checkbox" [checked]="selectedAmenities().has(amenity.id)" (change)="toggleAmenity(amenity)" />
+                    <i class="fa-solid fa-circle-check"></i>
+                    {{ amenity.name }}
+                  </label>
+                }
+              </div>
+            </div>
+          }
+        }
+      </div>
+
+      <!-- Description -->
+      <div class="cp-section">
+        <div class="cp-section__head">
+          <div class="cp-section__head-icon cp-section__head-icon--violet"><i class="fa-solid fa-align-left"></i></div>
+          <div>
+            <h3 class="cp-section__title">{{ 'CREATE_PROPERTY.DESCRIPTION_SECTION' | translate }}</h3>
+            <p class="cp-section__sub">Write or generate a compelling property description</p>
+          </div>
+          @if (aiGeneratorAllowed()) {
+            <button type="button" class="cp-btn-ai ms-auto" (click)="generateDescription()" [disabled]="generating() || accepted()">
+              @if (generating()) { <span class="cp-spinner cp-spinner--sm cp-spinner--white"></span> {{ 'CREATE_PROPERTY.GENERATING' | translate }} }
+              @else { <i class="fa-solid fa-wand-magic-sparkles"></i> {{ 'CREATE_PROPERTY.GENERATE_AI' | translate }} }
+            </button>
+          } @else {
+            <span class="cp-ai-locked ms-auto">
+              <i class="fa-solid fa-lock"></i> {{ 'CREATE_PROPERTY.AI_LOCKED' | translate }}
+            </span>
+          }
+        </div>
+
+        @if (aiError()) {
+          <div class="cp-alert cp-alert--warning">
+            <span>{{ aiError() }}</span>
+            @if (generating() || draft()) {
+              <button type="button" class="cp-btn-ghost" (click)="checkAgain()">{{ 'CREATE_PROPERTY.CHECK_AGAIN' | translate }}</button>
             }
           </div>
         }
-      }
-    </div>
 
-    <div class="card p-4 mb-3">
-      <div class="d-flex justify-content-between align-items-center mb-2">
-        <h5 class="mb-0">{{ 'CREATE_PROPERTY.DESCRIPTION_SECTION' | translate }}</h5>
-        @if (aiGeneratorAllowed()) {
-          <button type="button" class="btn btn-outline-dark btn-sm" (click)="generateDescription()" [disabled]="generating() || accepted()">
-            @if (generating()) {
-              <span class="spinner-border spinner-border-sm me-2"></span>{{ 'CREATE_PROPERTY.GENERATING' | translate }}
-            } @else {
-              <i class="fa-solid fa-wand-magic-sparkles me-2"></i>{{ 'CREATE_PROPERTY.GENERATE_AI' | translate }}
+        <div class="cp-grid cp-grid--2">
+          <div class="cp-field" [class.cp-field--error]="descEnInvalid()">
+            <label class="cp-label"><i class="fa-solid fa-flag-usa"></i> {{ 'CREATE_PROPERTY.DESC_EN' | translate }}</label>
+            <textarea class="cp-input cp-textarea" rows="7"
+                      [ngModel]="textEn()" (ngModelChange)="textEn.set($event)"
+                      [placeholder]="'CREATE_PROPERTY.DESC_EN_PLACEHOLDER' | translate"
+                      [disabled]="accepted()" [ngModelOptions]="{ standalone: true }"></textarea>
+            @if (descEnInvalid()) {
+              <span class="cp-error">{{ 'CREATE_PROPERTY.ERR_DESC_EN' | translate }}</span>
             }
-          </button>
-        }
-      </div>
-      @if (aiGeneratorAllowed()) {
-        <p class="text-muted small">{{ 'CREATE_PROPERTY.AI_DESC_HINT' | translate }}</p>
-      } @else {
-        <p class="text-muted small">
-          <i class="fa-solid fa-lock me-1"></i>
-          {{ 'CREATE_PROPERTY.AI_LOCKED' | translate }}
-        </p>
-      }
-
-      @if (aiError()) {
-        <div class="alert alert-warning py-2 d-flex justify-content-between align-items-center">
-          <span>{{ aiError() }}</span>
-          @if (generating() || draft()) {
-            <button type="button" class="btn btn-sm btn-outline-secondary" (click)="checkAgain()">{{ 'CREATE_PROPERTY.CHECK_AGAIN' | translate }}</button>
-          }
+          </div>
+          <div class="cp-field" [class.cp-field--error]="descArInvalid()">
+            <label class="cp-label"><i class="fa-solid fa-language"></i> {{ 'CREATE_PROPERTY.DESC_AR' | translate }}</label>
+            <textarea class="cp-input cp-textarea" rows="7" dir="rtl"
+                      [ngModel]="textAr()" (ngModelChange)="textAr.set($event)"
+                      placeholder="اكتب وصف العقار بالعربية…"
+                      [disabled]="accepted()" [ngModelOptions]="{ standalone: true }"></textarea>
+            @if (descArInvalid()) {
+              <span class="cp-error">{{ 'CREATE_PROPERTY.ERR_DESC_AR' | translate }}</span>
+            }
+          </div>
         </div>
-      }
 
-      <div class="row g-3">
-        <div class="col-md-6">
-          <label class="form-label fw-semibold">{{ 'CREATE_PROPERTY.DESC_EN' | translate }}</label>
-          <textarea class="form-control" rows="6"
-                    [ngModel]="textEn()" (ngModelChange)="textEn.set($event)"
-                    [class.is-invalid]="descEnInvalid()"
-                    [placeholder]="'CREATE_PROPERTY.DESC_EN_PLACEHOLDER' | translate"
-                    [disabled]="accepted()" [ngModelOptions]="{ standalone: true }"></textarea>
-          @if (descEnInvalid()) {
-            <div class="invalid-feedback d-block">{{ 'CREATE_PROPERTY.ERR_DESC_EN' | translate }}</div>
-          }
-        </div>
-        <div class="col-md-6">
-          <label class="form-label fw-semibold">{{ 'CREATE_PROPERTY.DESC_AR' | translate }}</label>
-          <textarea class="form-control" rows="6" dir="rtl"
-                    [ngModel]="textAr()" (ngModelChange)="textAr.set($event)"
-                    [class.is-invalid]="descArInvalid()"
-                    placeholder="اكتب وصف العقار بالعربية…"
-                    [disabled]="accepted()" [ngModelOptions]="{ standalone: true }"></textarea>
-          @if (descArInvalid()) {
-            <div class="invalid-feedback d-block">{{ 'CREATE_PROPERTY.ERR_DESC_AR' | translate }}</div>
+        <div class="cp-desc-actions">
+          @if (accepted()) {
+            <span class="cp-desc-saved"><i class="fa-solid fa-circle-check"></i> {{ 'CREATE_PROPERTY.DESC_SAVED' | translate }}</span>
+          } @else if (draft()) {
+            <button type="button" class="cp-btn-success" (click)="acceptDescription()" [disabled]="accepting()">
+              @if (accepting()) { <span class="cp-spinner cp-spinner--sm cp-spinner--white"></span> }
+              <i class="fa-solid fa-check"></i> {{ 'CREATE_PROPERTY.ACCEPT_DESC' | translate }}
+            </button>
+          } @else {
+            <button type="button" class="cp-btn-outline-success" (click)="saveManualDescription()" [disabled]="accepting()">
+              @if (accepting()) { <span class="cp-spinner cp-spinner--sm"></span> }
+              <i class="fa-solid fa-floppy-disk"></i> {{ 'CREATE_PROPERTY.SAVE_DESC' | translate }}
+            </button>
           }
         </div>
       </div>
-      <div class="mt-3">
-        @if (accepted()) {
-          <span class="text-success"><i class="fa-solid fa-circle-check me-1"></i>{{ 'CREATE_PROPERTY.DESC_SAVED' | translate }}</span>
-        } @else if (draft()) {
-          <button type="button" class="btn btn-success" (click)="acceptDescription()" [disabled]="accepting()">
-            @if (accepting()) {
-              <span class="spinner-border spinner-border-sm me-2"></span>
-            }
-            {{ 'CREATE_PROPERTY.ACCEPT_DESC' | translate }}
+
+      @if (submitError()) {
+        <div class="cp-alert cp-alert--danger"><i class="fa-solid fa-triangle-exclamation"></i> {{ submitError() }}</div>
+      }
+
+      <div class="cp-step2-footer">
+        @if (!isOwner()) {
+          <button type="button" class="cp-btn-ghost" (click)="goBack()" [disabled]="submitting() || creating()">
+            <i class="fa-solid fa-arrow-left"></i> {{ 'CREATE_PROPERTY.BACK_TO_DETAILS' | translate }}
           </button>
         } @else {
-          <button type="button" class="btn btn-outline-success" (click)="saveManualDescription()" [disabled]="accepting()">
-            @if (accepting()) {
-              <span class="spinner-border spinner-border-sm me-2"></span>
-            }
-            {{ 'CREATE_PROPERTY.SAVE_DESC' | translate }}
-          </button>
+          <span></span>
         }
-      </div>
-    </div>
-
-    @if (submitError()) {
-      <div class="alert alert-danger">{{ submitError() }}</div>
-    }
-    <div class="d-flex justify-content-between mb-4">
-      @if (!isOwner()) {
-        <button type="button" class="btn btn-outline-secondary" (click)="goBack()" [disabled]="submitting() || creating()">
-          <i class="fa-solid fa-arrow-left me-1"></i>{{ 'CREATE_PROPERTY.BACK_TO_DETAILS' | translate }}
+        <button type="button" class="cp-btn-primary" (click)="submit()" [disabled]="submitting()">
+          @if (submitting()) { <span class="cp-spinner cp-spinner--sm cp-spinner--white"></span> {{ 'CREATE_PROPERTY.SUBMITTING' | translate }} }
+          @else { <i class="fa-solid fa-paper-plane"></i> {{ 'CREATE_PROPERTY.SUBMIT_REVIEW' | translate }} }
         </button>
-      } @else {
-        <span></span>
-      }
-      <button type="button" class="btn btn-dark" (click)="submit()" [disabled]="submitting()">
-        @if (submitting()) {
-          <span class="spinner-border spinner-border-sm me-2"></span>{{ 'CREATE_PROPERTY.SUBMITTING' | translate }}
-        } @else {
-          {{ 'CREATE_PROPERTY.SUBMIT_REVIEW' | translate }} <i class="fa-solid fa-paper-plane ms-1"></i>
-        }
-      </button>
-    </div>
-  }
-
-  <!-- ════ STEP 3: DONE ════ -->
-  @if (step() === 3) {
-    <div class="card p-5 text-center">
-      <i class="fa-solid fa-circle-check text-success display-4 mb-3"></i>
-      <h4>{{ 'CREATE_PROPERTY.DONE_TITLE' | translate }}</h4>
-      <p class="text-muted mb-4">
-        {{ 'CREATE_PROPERTY.DONE_HINT' | translate }}
-        <span class="badge bg-warning text-dark">{{ 'CREATE_PROPERTY.DONE_PENDING' | translate }}</span>
-      </p>
-      <div>
-        <a routerLink="/" class="btn btn-outline-dark">{{ 'CREATE_PROPERTY.BACK_HOME' | translate }}</a>
       </div>
-    </div>
-  }
-</div>
+    }
+
+    <!-- ════ STEP 3: DONE ════════════════════════════════════════════════════ -->
+    @if (step() === 3) {
+      <div class="cp-done">
+        <div class="cp-done__icon"><i class="fa-solid fa-circle-check"></i></div>
+        <h2 class="cp-done__title">{{ 'CREATE_PROPERTY.DONE_TITLE' | translate }}</h2>
+        <p class="cp-done__sub">
+          {{ 'CREATE_PROPERTY.DONE_HINT' | translate }}
+          <span class="cp-done__badge">{{ 'CREATE_PROPERTY.DONE_PENDING' | translate }}</span>
+        </p>
+        <a routerLink="/" class="cp-btn-ghost">
+          <i class="fa-solid fa-house"></i> {{ 'CREATE_PROPERTY.BACK_HOME' | translate }}
+        </a>
+      </div>
+    }
+
+  </div><!-- /cp-body -->
+</div><!-- /cp-wrapper -->

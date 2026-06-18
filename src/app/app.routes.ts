@@ -53,16 +53,12 @@ export const routes: Routes = [
       {
         path: 'services',
         loadComponent: () =>
-          import('./features/services/services.component').then(
-            (m) => m.ServicesComponent,
-          ),
+          import('./features/services/services.component').then((m) => m.ServicesComponent),
       },
       {
         path: 'contact',
         loadComponent: () =>
-          import('./features/contact/contact.component').then(
-            (m) => m.ContactComponent,
-          ),
+          import('./features/contact/contact.component').then((m) => m.ContactComponent),
       },
     ],
   },

@@ -31,18 +31,20 @@ export class BrokerSubscriptionService {
   private readonly base = environment.apiUrl;
 
   getPlans(): Observable<BrokerPlan[]> {
-    return this.http.get<BrokerPlan[]>(`${this.base}/subscription-plans`, {
-      params: { audience: 'individual' },
-    }).pipe(
-      timeout(10000),
-      catchError(() => of([]))
-    );
+    return this.http
+      .get<BrokerPlan[]>(`${this.base}/subscription-plans`, {
+        params: { audience: 'individual' },
+      })
+      .pipe(
+        timeout(10000),
+        catchError(() => of([])),
+      );
   }
 
   getActive(): Observable<BrokerActiveSubscription | null> {
     return this.http.get<BrokerActiveSubscription>(`${this.base}/subscriptions/mine`).pipe(
       timeout(10000),
-      catchError(() => of(null))
+      catchError(() => of(null)),
     );
   }
 
