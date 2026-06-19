@@ -11,15 +11,19 @@ export interface ApiLease {
   propertyId: string;
   tenantId: string;
   ownerId: string;
-  rentAmount: number;
-  securityDeposit: number;
+  installmentAmount: number;
+  totalRentAmount?: number | null;
+  paymentFrequency?: string | null;
+  durationInMonths?: number | null;
+  securityDeposit?: number | null;
   startDate: string;
   endDate: string;
   paymentDayOfMonth: number;
   extractionStatus: string;
-  extractionConfidence: number;
+  extractionConfidence?: number | null;
   isActive: boolean;
   contractFileUrl: string;
+  createdAt?: string;
 }
 
 // ── Rented-properties API types ──────────────────────────────────────────────

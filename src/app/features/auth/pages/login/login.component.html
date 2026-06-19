@@ -106,8 +106,8 @@
         </div>
 
         <!-- Submit -->
-        <button type="submit" class="btn btn-primary login-card__submit" [disabled]="loading" inView [inViewDelay]="340">
-          @if (loading) {
+        <button type="submit" class="btn btn-primary login-card__submit" [disabled]="loading()" inView [inViewDelay]="340">
+          @if (loading()) {
           <span class="spinner-border spinner-border-sm me-2" aria-hidden="true"></span>
           {{ 'AUTH.LOGIN.SUBMITTING' | translate }}
           } @else {

@@ -1,4 +1,4 @@
-import { Component, inject } from '@angular/core';
+import { Component, inject, signal } from '@angular/core';
 import { ReactiveFormsModule, FormBuilder, Validators } from '@angular/forms';
 import { Router, ActivatedRoute, RouterLink } from '@angular/router';
 import { finalize } from 'rxjs';
@@ -24,7 +24,7 @@ export class LoginComponent {
   });
 
   showPassword = false;
-  loading = false;
+  loading = signal(false);
   errorMsg: string | null = null;
   sessionExpired = this.route.snapshot.queryParamMap.has('expired');
   emailVerified  = this.route.snapshot.queryParamMap.has('verified');
@@ -38,7 +38,7 @@ export class LoginComponent {
       return;
     }
 
-    this.loading = true;
+    this.loading.set(true);
     this.errorMsg = null;
     this.sessionExpired = false;
 
@@ -46,7 +46,7 @@ export class LoginComponent {
     // AuthService.login stores the session and maps the backend role
     // (company_manager → company) before emitting the signed-in user
     this.auth.login(email!, password!)
-      .pipe(finalize(() => (this.loading = false)))
+      .pipe(finalize(() => this.loading.set(false)))
       .subscribe({
         next: (user) => {
           // Tenants land on the public site (their main surface); dashboard

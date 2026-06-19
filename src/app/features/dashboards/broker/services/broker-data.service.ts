@@ -18,11 +18,14 @@ export interface BrokerLease {
   tenantEmail: string;
   startDate: string;
   endDate: string;
-  monthlyRent: number;
-  deposit: number;
+  installmentAmount: number;
+  totalRentAmount?: number | null;
+  paymentFrequency?: string | null;
+  durationInMonths?: number | null;
+  securityDeposit?: number | null;
   status: 'active' | 'ended' | 'expiring';
-  pdfUrl?: string;
-  aiStatus?: 'pending' | 'done' | 'failed';
+  contractFileUrl?: string;
+  extractionStatus?: string;
   tenantStatus?: 'pending_tenant' | 'accepted' | 'declined';
 }
 
