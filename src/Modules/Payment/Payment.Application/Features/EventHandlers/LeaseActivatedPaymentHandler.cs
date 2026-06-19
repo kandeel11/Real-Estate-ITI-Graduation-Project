@@ -23,70 +23,39 @@ public sealed class LeaseActivatedPaymentHandler
     public async Task Handle(LeaseActivatedIntegrationEvent notification, CancellationToken cancellationToken)
     {
         _logger.LogInformation(
-            "Lease {LeaseId} activated — generating {Duration}-month payment schedule ({Frequency})",
-            notification.LeaseId, notification.DurationInMonths, notification.PaymentFrequency);
+            "Lease {LeaseId} activated — generating first installment ({Frequency})",
+            notification.LeaseId, notification.PaymentFrequency);
 
-        int monthsPerInstallment = notification.PaymentFrequency?.ToLowerInvariant() switch
-        {
-            "quarterly"     => 3,
-            "semiannually"  => 6,
-            "annually"      => 12,
-            _               => 1   // Monthly (default)
-        };
+        int day = Math.Min(notification.PaymentDayOfMonth,
+            DateTime.DaysInMonth(notification.StartDate.Year, notification.StartDate.Month));
+        var firstDueDate = new DateOnly(notification.StartDate.Year, notification.StartDate.Month, day);
 
-        int totalInstallments = (int)Math.Ceiling(
-            (double)notification.DurationInMonths / monthsPerInstallment);
+        bool exists = await _repository.ExistsForLeaseAndMonthAsync(
+            notification.LeaseId, firstDueDate, cancellationToken);
 
-        var paymentsToCreate = new List<PaymentEntity>();
-
-        for (int i = 0; i < totalInstallments; i++)
-        {
-            var baseDate = notification.StartDate.AddMonths(i * monthsPerInstallment);
-            int day = Math.Min(notification.PaymentDayOfMonth,
-                DateTime.DaysInMonth(baseDate.Year, baseDate.Month));
-            var dueDate = new DateOnly(baseDate.Year, baseDate.Month, day);
-
-            // skip installments that fall after the lease end date
-            if (dueDate > notification.EndDate) break;
-
-            bool exists = await _repository.ExistsForLeaseAndMonthAsync(
-                notification.LeaseId, dueDate, cancellationToken);
-
-            if (exists)
-            {
-                _logger.LogDebug(
-                    "Payment already exists for lease {LeaseId} due {DueDate} — skipping",
-                    notification.LeaseId, dueDate);
-                continue;
-            }
-
-            var payment = PaymentEntity.CreateRent(
-                leaseId: notification.LeaseId,
-                propertyId: notification.PropertyId,
-                tenantId: notification.TenantId,
-                landlordId: notification.OwnerId,
-                amount: notification.InstallmentAmount,
-                dueDate: dueDate,
-                notes: $"Installment {i + 1} of {totalInstallments} — {baseDate:MMMM yyyy}"
-            );
-
-            paymentsToCreate.Add(payment);
-        }
-
-        if (paymentsToCreate.Count > 0)
-        {
-            await _repository.AddRangeAsync(paymentsToCreate, cancellationToken);
-            await _repository.SaveChangesAsync(cancellationToken);
-
-            _logger.LogInformation(
-                "Created {Count} payment records for lease {LeaseId}",
-                paymentsToCreate.Count, notification.LeaseId);
-        }
-        else
+        if (exists)
         {
             _logger.LogInformation(
-                "All payment records already exist for lease {LeaseId} — nothing created",
-                notification.LeaseId);
+                "First payment already exists for lease {LeaseId} due {DueDate} — skipping",
+                notification.LeaseId, firstDueDate);
+            return;
         }
+
+        var payment = PaymentEntity.CreateRent(
+            leaseId: notification.LeaseId,
+            propertyId: notification.PropertyId,
+            tenantId: notification.TenantId,
+            landlordId: notification.OwnerId,
+            amount: notification.InstallmentAmount,
+            dueDate: firstDueDate,
+            notes: $"Installment 1 — {notification.StartDate:MMMM yyyy}"
+        );
+
+        await _repository.AddAsync(payment, cancellationToken);
+        await _repository.SaveChangesAsync(cancellationToken);
+
+        _logger.LogInformation(
+            "Created first payment record for lease {LeaseId} due {DueDate}",
+            notification.LeaseId, firstDueDate);
     }
 }

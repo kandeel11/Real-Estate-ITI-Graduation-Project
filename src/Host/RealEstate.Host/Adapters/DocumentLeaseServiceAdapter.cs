@@ -49,7 +49,9 @@ public sealed class DocumentLeaseServiceAdapter : ILeaseService
                 TenantPhone: tenant?.Phone,
                 PropertyId: l.PropertyId,
                 TenantId: l.TenantId,
-                LandlordId: l.OwnerId
+                LandlordId: l.OwnerId,
+                StartDate: l.StartDate ?? DateOnly.FromDateTime(DateTime.UtcNow),
+                EndDate: l.EndDate ?? DateOnly.FromDateTime(DateTime.UtcNow.AddYears(1))
             );
         }).ToList();
     }
@@ -77,7 +79,9 @@ public sealed class DocumentLeaseServiceAdapter : ILeaseService
             TenantPhone: tenant?.Phone,
             PropertyId: lease.PropertyId,
             TenantId: lease.TenantId,
-            LandlordId: lease.OwnerId
+            LandlordId: lease.OwnerId,
+            StartDate: lease.StartDate ?? DateOnly.FromDateTime(DateTime.UtcNow),
+            EndDate: lease.EndDate ?? DateOnly.FromDateTime(DateTime.UtcNow.AddYears(1))
         );
     }
 }
