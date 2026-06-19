@@ -2,6 +2,7 @@ using Document.Application.Queries.Inquiry;
 using Document.Application.Queries.Lead.GetLeadsByProperties;
 using Document.Application.Queries.Lease;
 using Document.Application.Queries.Lease.GetLeadsWithLeases;
+using Document.Application.Queries.Message.GetInquiriesWithReply;
 using Document.Application.Queries.Message.GetInquiryLastMessages;
 using Document.Application.Queries.Notification;
 using Identity.Application.Interfaces;
@@ -183,6 +184,8 @@ public class OwnerDashboardController(
         var propertyTitles = properties.ToDictionary(p => p.Id, p => p.Title);
         var lastMessages = await sender.Send(
             new GetInquiryLastMessagesQuery(inquiries.Select(i => i.Id).ToList()), ct);
+        var repliedSet = await sender.Send(
+            new GetInquiriesWithReplyQuery(inquiries.Select(i => i.Id).ToList()), ct);
 
         // Newest activity first (chat list ordering).
         var ordered = inquiries
@@ -203,7 +206,7 @@ public class OwnerDashboardController(
                 tenantName = tenantNames.GetValueOrDefault(i.TenantId, string.Empty),
                 tenantEmail = tenant?.Email ?? string.Empty,
                 message = i.Message,
-                status = MapInquiryStatus(i.Status),
+                status = MapInquiryStatus(i.Status, repliedSet.Contains(i.Id)),
                 createdAt = i.CreatedAt,
                 // Latest activity for the chat list (falls back to the inquiry itself).
                 lastMessage = last?.Text ?? i.Message,
@@ -309,12 +312,12 @@ public class OwnerDashboardController(
         _ => "new"
     };
 
-    private static string MapInquiryStatus(string status) => status switch
+    private static string MapInquiryStatus(string status, bool hasReply) => status switch
     {
-        "Pending" => "new",
-        "Accepted" => "replied",
         "Closed" => "converted",
-        _ => "new"
+        "Accepted" => "replied",
+        // A pending inquiry counts as "replied" once the broker/owner has sent a message.
+        _ => hasReply ? "replied" : "new"
     };
 
     private static string MapExtractionStatus(string? status) => status switch

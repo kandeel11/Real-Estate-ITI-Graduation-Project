@@ -174,7 +174,7 @@ public class InquiriesController(
             senderName = tenantNames.GetValueOrDefault(inquiry.TenantId, string.Empty),
             senderRole = "tenant",
             text = inquiry.Message,
-            sentAt = inquiry.CreatedAt
+            sentAt = DateTime.SpecifyKind(inquiry.CreatedAt, DateTimeKind.Utc)
         });
 
         return Ok(chat);
@@ -214,7 +214,7 @@ public class InquiriesController(
                        : m.SenderId == inquiry.OwnerId ? "owner"
                        : "broker",
             text = m.Content,
-            sentAt = m.CreatedAt
+            sentAt = DateTime.SpecifyKind(m.CreatedAt, DateTimeKind.Utc)
         }).ToList();
     }
 }
