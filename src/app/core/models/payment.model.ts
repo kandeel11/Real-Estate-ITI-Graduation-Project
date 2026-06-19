@@ -30,6 +30,21 @@ export interface ProcessPaymentRequest {
   cardToken?: string | null;
 }
 
+export interface SubscriptionCheckoutRequest {
+  userId: string;
+  subscriptionId?: string | null;
+  planId: string;
+  billingCycle: 0 | 1; // 0 = monthly, 1 = annual
+  successRedirectUrl: string;
+  cancelRedirectUrl: string;
+}
+
+export interface SubscriptionCheckoutResponse {
+  paymentId: string;
+  checkoutUrl: string;
+  checkoutSessionId: string;
+}
+
 export interface ProcessPaymentResponse {
   isSuccess: boolean;
   transactionId?: string;

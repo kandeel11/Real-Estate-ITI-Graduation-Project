@@ -1,7 +1,7 @@
 import { Component, OnInit, inject, signal, computed } from '@angular/core';
-import { Router } from '@angular/router';
 import { finalize } from 'rxjs';
 import { AuthService } from '../../../../../core/services/auth.service';
+import { PaymentService } from '../../../../../core/services/payment.service';
 import { OwnerSubscriptionService, BrokerPlan, BrokerActiveSubscription } from '../../services/owner-subscription.service';
 
 @Component({
@@ -14,7 +14,7 @@ import { OwnerSubscriptionService, BrokerPlan, BrokerActiveSubscription } from '
 export class OwnerSubscriptionComponent implements OnInit {
   private readonly svc = inject(OwnerSubscriptionService);
   private readonly auth = inject(AuthService);
-  private readonly router = inject(Router);
+  private readonly paymentService = inject(PaymentService);
 
   readonly isCompanyBroker = computed(() => !!this.auth.user()?.companyId);
 
@@ -24,28 +24,13 @@ export class OwnerSubscriptionComponent implements OnInit {
   active = signal<BrokerActiveSubscription | null>(null);
   billingCycle = signal<'monthly' | 'annual'>('monthly');
   priceOpacity = signal(1);
-  showModal = signal(false);
-  upgrading = signal(false);
-  upgradeError = signal<string | null>(null);
-  upgradeSuccess = signal<string | null>(null);
+  checkingOut = signal(false);
+  checkoutError = signal<string | null>(null);
 
-  private tierStr(p: BrokerPlan): string {
-    return String(p.tier ?? '');
-  }
-
-  readonly freePlan = computed(() =>
-    this.plans().find(p => this.tierStr(p) === 'FreeIndividual') ??
-    this.plans().find(p => p.priceMonthly === 0 && (this.tierStr(p).includes('Individual') || p.maxProperties <= 5)) ??
-    null
-  );
-
-  readonly premiumPlan = computed(() =>
-    this.plans().find(p => this.tierStr(p) === 'PremiumIndividual') ??
-    this.plans().find(p => p.priceMonthly > 0 && (this.tierStr(p).includes('Individual') || p.maxProperties <= 30)) ??
-    null
-  );
-
-  readonly currentTier = computed(() => this.active()?.tier ?? '');
+  // Individual plans: tier 0 (Free Individual) and tier 1 (Premium Individual)
+  readonly freePlan = computed(() => this.plans().find(p => p.tier === 0) ?? null);
+  readonly premiumPlan = computed(() => this.plans().find(p => p.tier === 1) ?? null);
+  readonly currentPlanName = computed(() => this.active()?.planName ?? '');
 
   ngOnInit(): void {
     this.load();
@@ -59,17 +44,15 @@ export class OwnerSubscriptionComponent implements OnInit {
 
     this.svc.getPlans().pipe(finalize(finish)).subscribe({
       next: plans => {
-        const individual = plans.filter(p => {
-          const tier = String(p.tier ?? '');
-          return tier.includes('Individual') || (!tier.includes('Company') && !tier.includes('Tenant'));
-        });
-        this.plans.set(individual.length > 0 ? individual : plans.filter(p => p.maxProperties <= 30));
+        const individual = plans.filter(p => p.tier === 0 || p.tier === 1);
+        this.plans.set(individual.length > 0 ? individual : plans.slice(0, 2));
       },
       error: () => { this.error.set('Failed to load plans.'); finish(); },
     });
 
     this.svc.getActive().pipe(finalize(finish)).subscribe({
       next: sub => this.active.set(sub),
+      error: () => finish(),
     });
   }
 
@@ -88,20 +71,34 @@ export class OwnerSubscriptionComponent implements OnInit {
   }
 
   isCurrent(plan: BrokerPlan): boolean {
-    return this.currentTier() === String(plan.tier ?? '');
+    return this.currentPlanName() === plan.name;
   }
 
-  openModal(): void {
-    this.upgradeError.set(null);
-    this.showModal.set(true);
-  }
+  checkout(plan: BrokerPlan): void {
+    if (this.checkingOut() || plan.priceMonthly === 0) return;
+    this.checkingOut.set(true);
+    this.checkoutError.set(null);
 
-  closeModal(): void {
-    this.showModal.set(false);
-  }
+    const userId = this.auth.user()?.id ?? '';
+    const origin = window.location.origin;
+    const base = '/dashboard/owner/subscription';
 
-  goToCompany(): void {
-    this.router.navigate(['/dashboard/company/subscriptions']);
+    this.paymentService.checkoutSubscription({
+      userId,
+      subscriptionId: this.active()?.id ?? null,
+      planId: plan.id,
+      billingCycle: this.billingCycle() === 'monthly' ? 0 : 1,
+      successRedirectUrl: `${origin}${base}?checkout=success`,
+      cancelRedirectUrl:  `${origin}${base}?checkout=cancel`,
+    }).subscribe({
+      next: (res) => {
+        window.location.href = res.checkoutUrl;
+      },
+      error: (err) => {
+        this.checkingOut.set(false);
+        this.checkoutError.set(err?.error?.message ?? 'Checkout failed. Please try again.');
+      },
+    });
   }
 
   readonly skeletonRows = [1, 2, 3, 4];
