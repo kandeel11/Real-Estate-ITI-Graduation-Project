@@ -26,7 +26,9 @@ public class GetNotificationsHandler(INotificationRepository repo)
             .Skip((q.Page - 1) * q.PageSize).Take(q.PageSize)
             .Select(n => new NotificationResponse(
                 n.Id, n.UserId, n.Type.ToString(), n.Title, n.Body,
-                n.RelatedEntityType, n.RelatedEntityId, n.IsRead, n.ReadAt, n.CreatedAt))
+                n.RelatedEntityType, n.RelatedEntityId, n.IsRead,
+                n.ReadAt.HasValue ? DateTime.SpecifyKind(n.ReadAt.Value, DateTimeKind.Utc) : null,
+                DateTime.SpecifyKind(n.CreatedAt, DateTimeKind.Utc)))
             .ToList();
         return new NotificationListResult(items, total, unread);
     }
