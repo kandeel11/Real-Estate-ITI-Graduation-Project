@@ -48,8 +48,14 @@
 .modal-label { display: block; font-size: 13px; font-weight: 500; color: var(--color-on-surface); margin-bottom: 6px; }
 .modal-textarea { width: 100%; padding: 10px 12px; border: 1.5px solid var(--color-outline-variant); border-radius: var(--radius-md); font-size: 13px; resize: vertical; outline: none; background: var(--color-surface-container-lowest); color: var(--color-on-surface); }
 .modal-textarea:focus { border-color: var(--color-primary); }
+.stage-buttons { display: flex; flex-wrap: wrap; gap: 8px; margin-bottom: 1rem; }
+.stage-btn { padding: 6px 14px; border-radius: var(--radius-full); border: 1.5px solid var(--color-outline-variant); background: var(--color-surface-container-lowest); color: var(--color-on-surface); font-size: 13px; font-weight: 500; cursor: pointer; transition: all .15s; }
+.stage-btn:hover:not(:disabled) { border-color: var(--color-primary); color: var(--color-primary); }
+.stage-btn.active { background: var(--color-primary); border-color: var(--color-primary); color: #fff; cursor: default; }
+.stage-btn:disabled:not(.active) { opacity: .5; cursor: not-allowed; }
 .modal-footer { display: flex; justify-content: flex-end; gap: .75rem; padding: 1rem 1.5rem; border-top: 1px solid var(--color-outline-variant); }
 
 .skeleton-col { background: var(--color-surface-container); border-radius: 12px; padding: 10px; }
 .skeleton { background: linear-gradient(90deg,#f0f0f0 25%,#e0e0e0 50%,#f0f0f0 75%); background-size: 200% 100%; animation: shimmer 1.5s infinite; }
 @keyframes shimmer { 0%{background-position:200% 0} 100%{background-position:-200% 0} }
+.lease-created { display: inline-flex; align-items: center; gap: 5px; margin-top: 8px; font-size: 11px; font-weight: 600; color: #059669; background: #d1fae5; border-radius: var(--radius-sm); padding: 4px 10px; width: 100%; justify-content: center; }

@@ -3,6 +3,7 @@ import {
   roleGuard,
   multiRoleGuard,
   dashboardRedirectGuard,
+  ownerLockGuard,
   guestGuard,
 } from './core/guards/role.guard';
 
@@ -29,7 +30,7 @@ export const routes: Routes = [
       },
       {
         path: 'my-listings',
-        canActivate: [multiRoleGuard],
+        canActivate: [multiRoleGuard, ownerLockGuard],
         data: { expectedRoles: ['owner', 'broker'] },
         loadComponent: () =>
           import('./features/properties/pages/my-listings/my-listings.component').then(
@@ -38,6 +39,7 @@ export const routes: Routes = [
       },
       {
         path: 'properties',
+        canActivate: [ownerLockGuard],
         loadComponent: () =>
           import('./features/properties/pages/browse/browse.component').then(
             (m) => m.BrowseComponent,
@@ -45,6 +47,7 @@ export const routes: Routes = [
       },
       {
         path: 'properties/:id',
+        canActivate: [ownerLockGuard],
         loadComponent: () =>
           import('./features/properties/pages/detail/detail.component').then(
             (m) => m.DetailComponent,
@@ -52,11 +55,13 @@ export const routes: Routes = [
       },
       {
         path: 'services',
+        canActivate: [ownerLockGuard],
         loadComponent: () =>
           import('./features/services/services.component').then((m) => m.ServicesComponent),
       },
       {
         path: 'contact',
+        canActivate: [ownerLockGuard],
         loadComponent: () =>
           import('./features/contact/contact.component').then((m) => m.ContactComponent),
       },
@@ -277,6 +282,13 @@ export const routes: Routes = [
               ),
           },
           {
+            path: 'messages',
+            loadComponent: () =>
+              import('./features/dashboards/broker/pages/messages/messages.component').then(
+                (m) => m.MessagesComponent,
+              ),
+          },
+          {
             path: 'performance',
             loadComponent: () =>
               import('./features/dashboards/broker/pages/performance/performance.component').then(
@@ -308,6 +320,97 @@ export const routes: Routes = [
             path: 'profile',
             loadComponent: () =>
               import('./features/dashboards/broker/pages/profile/profile.component').then(
+                (m) => m.ProfileComponent,
+              ),
+          },
+        ],
+      },
+
+      // ============ OWNER DASHBOARD ============
+      {
+        path: 'owner',
+        canActivate: [roleGuard],
+        data: { expectedRole: 'owner' },
+        loadComponent: () =>
+          import('./features/dashboards/owner-dashboard/owner-dashboard.component').then(
+            (m) => m.OwnerDashboardComponent,
+          ),
+        children: [
+          { path: '', redirectTo: 'overview', pathMatch: 'full' },
+          {
+            path: 'overview',
+            loadComponent: () =>
+              import('./features/dashboards/owner-dashboard/pages/overview/overview.component').then(
+                (m) => m.OverviewComponent,
+              ),
+          },
+          {
+            path: 'properties',
+            loadComponent: () =>
+              import('./features/dashboards/owner-dashboard/pages/properties/properties.component').then(
+                (m) => m.PropertiesComponent,
+              ),
+          },
+          {
+            path: 'leads',
+            loadComponent: () =>
+              import('./features/dashboards/owner-dashboard/pages/leads/leads.component').then(
+                (m) => m.LeadsComponent,
+              ),
+          },
+          {
+            path: 'inquiries',
+            loadComponent: () =>
+              import('./features/dashboards/owner-dashboard/pages/inquiries/inquiries.component').then(
+                (m) => m.InquiriesComponent,
+              ),
+          },
+          {
+            path: 'messages',
+            loadComponent: () =>
+              import('./features/dashboards/owner-dashboard/pages/messages/messages.component').then(
+                (m) => m.MessagesComponent,
+              ),
+          },
+          {
+            path: 'performance',
+            loadComponent: () =>
+              import('./features/dashboards/owner-dashboard/pages/performance/performance.component').then(
+                (m) => m.PerformanceComponent,
+              ),
+          },
+          {
+            path: 'leases',
+            loadComponent: () =>
+              import('./features/dashboards/owner-dashboard/pages/leases/leases.component').then(
+                (m) => m.LeasesComponent,
+              ),
+          },
+          {
+            path: 'maintenance',
+            loadComponent: () =>
+              import('./features/dashboards/owner-dashboard/pages/maintenance/maintenance.component').then(
+                (m) => m.MaintenanceComponent,
+              ),
+          },
+          {
+            path: 'notifications',
+            loadComponent: () =>
+              import('./features/dashboards/owner-dashboard/pages/notifications/notifications.component').then(
+                (m) => m.OwnerNotificationsComponent,
+              ),
+          },
+          {
+            path: 'subscription',
+            loadComponent: () =>
+              import('./features/dashboards/owner-dashboard/pages/subscription/subscription.component').then(
+                (m) => m.OwnerSubscriptionComponent,
+              ),
+          },
+          {
+            path: 'profile',
+            loadComponent: () =>
+              import('./features/dashboards/owner-dashboard/pages/profile/profile.component').then(
                 (m) => m.ProfileComponent,
               ),
           },

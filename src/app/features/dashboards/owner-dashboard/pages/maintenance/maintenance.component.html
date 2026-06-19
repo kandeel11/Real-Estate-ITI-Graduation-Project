@@ -1,0 +1,67 @@
+<div class="page">
+  <div class="page-header">
+    <div>
+      <h1 class="page-title">{{ 'OWNER.MAINTENANCE.TITLE' | translate }}</h1>
+      <p class="page-subtitle">{{ 'OWNER.MAINTENANCE.SUBTITLE' | translate }}</p>
+    </div>
+  </div>
+
+  <!-- Filter tabs -->
+  <div class="filter-tabs">
+    <button class="filter-tab" [class.active]="filter() === 'all'"         (click)="filter.set('all')">{{ 'OWNER.MAINTENANCE.FILTER_ALL'         | translate }}</button>
+    <button class="filter-tab" [class.active]="filter() === 'open'"        (click)="filter.set('open')">{{ 'OWNER.MAINTENANCE.FILTER_OPEN'        | translate }}</button>
+    <button class="filter-tab" [class.active]="filter() === 'in_progress'" (click)="filter.set('in_progress')">{{ 'OWNER.MAINTENANCE.FILTER_IN_PROGRESS' | translate }}</button>
+    <button class="filter-tab" [class.active]="filter() === 'resolved'"    (click)="filter.set('resolved')">{{ 'OWNER.MAINTENANCE.FILTER_RESOLVED'    | translate }}</button>
+  </div>
+
+  @if (loading()) {
+    <div class="skeleton-list">
+      @for (i of [1,2,3]; track i) {
+        <div class="skeleton" style="height:64px;border-radius:10px"></div>
+      }
+    </div>
+  } @else if (filtered().length === 0) {
+    <div class="empty">
+      <i class="fa-solid fa-screwdriver-wrench empty-icon"></i>
+      <p>{{ 'OWNER.MAINTENANCE.EMPTY' | translate }}</p>
+    </div>
+  } @else {
+    <div class="table-wrap">
+      <table class="ticket-table">
+        <thead>
+          <tr>
+            <th>{{ 'OWNER.MAINTENANCE.COL_TICKET'   | translate }}</th>
+            <th>{{ 'OWNER.MAINTENANCE.COL_ISSUE'    | translate }}</th>
+            <th>{{ 'OWNER.MAINTENANCE.COL_PROPERTY' | translate }}</th>
+            <th>{{ 'OWNER.MAINTENANCE.COL_PRIORITY' | translate }}</th>
+            <th>{{ 'OWNER.MAINTENANCE.COL_STATUS'   | translate }}</th>
+            <th>{{ 'OWNER.MAINTENANCE.COL_DATE'     | translate }}</th>
+          </tr>
+        </thead>
+        <tbody>
+          @for (t of filtered(); track t.id) {
+            <tr>
+              <td class="num-cell">#{{ t.ticketNumber }}</td>
+              <td>
+                <span class="issue-title">{{ t.title }}</span>
+                @if (t.attachmentCount > 0) {
+                  <span class="attach"><i class="fa-solid fa-paperclip"></i> {{ t.attachmentCount }}</span>
+                }
+              </td>
+              <td class="prop-cell">{{ t.propertyAddress || '—' }}</td>
+              <td><span class="prio" [class]="priorityClass(t.priority)">{{ t.priority }}</span></td>
+              <td>
+                @switch (bucket(t.status)) {
+                  @case ('open')        { <span class="badge badge-open">{{ 'OWNER.MAINTENANCE.STATUS_OPEN'        | translate }}</span> }
+                  @case ('in_progress') { <span class="badge badge-progress">{{ 'OWNER.MAINTENANCE.STATUS_IN_PROGRESS' | translate }}</span> }
+                  @case ('resolved')    { <span class="badge badge-resolved">{{ 'OWNER.MAINTENANCE.STATUS_RESOLVED'    | translate }}</span> }
+                }
+              </td>
+              <td>{{ t.createdAt | date:'mediumDate' }}</td>
+            </tr>
+          }
+        </tbody>
+      </table>
+    </div>
+  }
+</div>

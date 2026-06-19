@@ -1,0 +1,94 @@
+<div class="page">
+  <div class="page-header">
+    <div>
+      <h1 class="page-title">{{ 'OWNER.LEASES.TITLE' | translate }}</h1>
+      <p class="page-subtitle">{{ 'OWNER.LEASES.SUBTITLE' | translate }}</p>
+    </div>
+    <a class="hint-link" routerLink="/dashboard/owner/leads">
+      <i class="fa-solid fa-filter"></i>
+      {{ 'OWNER.LEASES.CREATE_VIA_LEADS' | translate }}
+    </a>
+  </div>
+
+  <!-- Filter tabs -->
+  <div class="filter-tabs">
+    <button class="filter-tab" [class.active]="filter() === 'all'"     (click)="filter.set('all')">{{ 'OWNER.LEASES.FILTER_ALL'     | translate }}</button>
+    <button class="filter-tab" [class.active]="filter() === 'active'"  (click)="filter.set('active')">{{ 'OWNER.LEASES.FILTER_ACTIVE'  | translate }}</button>
+    <button class="filter-tab" [class.active]="filter() === 'pending'" (click)="filter.set('pending')">{{ 'OWNER.LEASES.FILTER_PENDING' | translate }}</button>
+    <button class="filter-tab" [class.active]="filter() === 'ended'"   (click)="filter.set('ended')">{{ 'OWNER.LEASES.FILTER_ENDED'   | translate }}</button>
+  </div>
+
+  @if (loading()) {
+    <div class="skeleton-list">
+      @for (i of [1,2,3]; track i) {
+        <div class="skeleton" style="height:72px;border-radius:10px"></div>
+      }
+    </div>
+  } @else if (filtered().length === 0) {
+    <div class="empty">
+      <i class="fa-solid fa-file-contract empty-icon"></i>
+      <p>{{ 'OWNER.LEASES.EMPTY' | translate }}</p>
+      <p class="empty-hint">{{ 'OWNER.LEASES.EMPTY_HINT' | translate }}</p>
+    </div>
+  } @else {
+    <div class="table-wrap">
+      <table class="lease-table">
+        <thead>
+          <tr>
+            <th>{{ 'OWNER.LEASES.COL_PROPERTY' | translate }}</th>
+            <th>{{ 'OWNER.LEASES.COL_TENANT'   | translate }}</th>
+            <th>{{ 'OWNER.LEASES.COL_START'     | translate }}</th>
+            <th>{{ 'OWNER.LEASES.COL_END'       | translate }}</th>
+            <th>{{ 'OWNER.LEASES.COL_RENT'      | translate }}</th>
+            <th>{{ 'OWNER.LEASES.COL_TENANT_STATUS' | translate }}</th>
+            <th>{{ 'OWNER.LEASES.COL_STATUS'    | translate }}</th>
+            <th>{{ 'OWNER.LEASES.COL_ACTIONS'   | translate }}</th>
+          </tr>
+        </thead>
+        <tbody>
+          @for (lease of filtered(); track lease.id) {
+            <tr>
+              <td class="prop-cell"><span class="prop-name">{{ lease.propertyTitle }}</span></td>
+              <td>
+                <span class="tenant-name">{{ lease.tenantName }}</span>
+                <span class="tenant-email">{{ lease.tenantEmail }}</span>
+              </td>
+              <td>{{ lease.startDate | date:'mediumDate' }}</td>
+              <td>{{ lease.endDate   | date:'mediumDate' }}</td>
+              <td class="rent-cell">{{ lease.monthlyRent | number }} EGP</td>
+
+              <!-- Tenant response status -->
+              <td>
+                @switch (lease.tenantStatus) {
+                  @case ('pending_tenant') { <span class="badge badge-waiting">{{ 'OWNER.LEASES.TENANT_WAITING'  | translate }}</span> }
+                  @case ('accepted')       { <span class="badge badge-accepted">{{ 'OWNER.LEASES.TENANT_ACCEPTED' | translate }}</span> }
+                  @case ('declined')       { <span class="badge badge-declined">{{ 'OWNER.LEASES.TENANT_DECLINED' | translate }}</span> }
+                  @default                 { <span class="badge badge-draft">{{ 'OWNER.LEASES.TENANT_DRAFT'    | translate }}</span> }
+                }
+              </td>
+
+              <!-- Lifecycle status -->
+              <td>
+                @switch (computedStatus(lease)) {
+                  @case ('active')   { <span class="badge badge-active">{{ 'OWNER.LEASES.STATUS_ACTIVE'   | translate }}</span> }
+                  @case ('expiring') { <span class="badge badge-expiring">{{ 'OWNER.LEASES.STATUS_EXPIRING' | translate }}</span> }
+                  @case ('ended')    { <span class="badge badge-ended">{{ 'OWNER.LEASES.STATUS_ENDED'    | translate }}</span> }
+                }
+              </td>
+
+              <td class="actions-cell">
+                @if (lease.pdfUrl) {
+                  <a class="action-link" [href]="lease.pdfUrl" target="_blank">
+                    <i class="fa-solid fa-file-pdf"></i> {{ 'OWNER.LEASES.VIEW_PDF' | translate }}
+                  </a>
+                } @else {
+                  <span class="no-pdf">{{ 'OWNER.LEASES.NO_PDF' | translate }}</span>
+                }
+              </td>
+            </tr>
+          }
+        </tbody>
+      </table>
+    </div>
+  }
+</div>

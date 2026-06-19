@@ -48,6 +48,7 @@ export class BrokerDashboardComponent implements OnInit {
     { id: 'properties',  labelKey: 'BROKER_NAV.PROPERTIES',   icon: 'fa-solid fa-building',      route: '/dashboard/broker/properties' },
     { id: 'leads',       labelKey: 'BROKER_NAV.LEADS',        icon: 'fa-solid fa-filter',        route: '/dashboard/broker/leads' },
     { id: 'inquiries',   labelKey: 'BROKER_NAV.INQUIRIES',    icon: 'fa-regular fa-envelope',    route: '/dashboard/broker/inquiries' },
+    { id: 'messages',    labelKey: 'BROKER_NAV.MESSAGES',     icon: 'fa-regular fa-comments',    route: '/dashboard/broker/messages' },
     { id: 'performance', labelKey: 'BROKER_NAV.PERFORMANCE',  icon: 'fa-solid fa-chart-line',    route: '/dashboard/broker/performance' },
     { id: 'leases',        labelKey: 'BROKER_NAV.LEASES',        icon: 'fa-solid fa-file-contract', route: '/dashboard/broker/leases' },
     { id: 'notifications', labelKey: 'BROKER_NAV.NOTIFICATIONS', icon: 'fa-regular fa-bell',       route: '/dashboard/broker/notifications',

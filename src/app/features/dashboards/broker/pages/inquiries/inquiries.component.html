@@ -44,64 +44,73 @@
       <p>{{ 'BROKER.INQUIRIES.EMPTY' | translate }}</p>
     </div>
   } @else {
-    <div class="inbox">
-      @for (inq of filtered(); track inq.id) {
-        <div class="inquiry-card" [class.is-new]="inq.status === 'new'">
-          <div class="inq-avatar">{{ inq.from.charAt(0).toUpperCase() }}</div>
-          <div class="inq-body">
-            <div class="inq-meta">
-              <span class="inq-from">{{ inq.from }}</span>
-              <span class="inq-property">{{ inq.property }}</span>
-              <span class="inq-time">{{ inq.timeAgo }}</span>
-              @if (inq.status === 'new') {
-                <span class="badge-new">{{ 'BROKER.INQUIRIES.NEW_BADGE' | translate }}</span>
-              } @else {
-                <span class="badge-replied">{{ 'BROKER.INQUIRIES.REPLIED_BADGE' | translate }}</span>
+    <div class="prop-groups">
+      @for (group of groups(); track group.property) {
+        <div class="prop-group">
+          <button class="prop-group-header" (click)="toggleGroup(group.property)">
+            <i class="fa-solid fa-chevron-right chevron" [class.open]="isOpen(group.property)"></i>
+            <i class="fa-solid fa-building prop-icon"></i>
+            <span class="prop-group-title">{{ group.property }}</span>
+            <span class="prop-count">{{ group.items.length }}</span>
+            @if (group.newCount > 0) {
+              <span class="prop-new-count">{{ group.newCount }} {{ 'BROKER.INQUIRIES.NEW_BADGE' | translate }}</span>
+            }
+          </button>
+
+          @if (isOpen(group.property)) {
+            <div class="inbox">
+              @for (inq of group.items; track inq.id) {
+                <div class="inquiry-card" [class.is-new]="inq.status === 'new'">
+                  <div class="inq-avatar">{{ inq.from.charAt(0).toUpperCase() }}</div>
+                  <div class="inq-body">
+                    <div class="inq-meta">
+                      <span class="inq-from">{{ inq.from }}</span>
+                      <span class="inq-time">{{ inq.timeAgo | date:'MMM d, y, h:mm a' }}</span>
+                      @if (inq.status === 'new') {
+                        <span class="badge-new">{{ 'BROKER.INQUIRIES.NEW_BADGE' | translate }}</span>
+                      } @else {
+                        <span class="badge-replied">{{ 'BROKER.INQUIRIES.REPLIED_BADGE' | translate }}</span>
+                      }
+                    </div>
+                    <p class="inq-message">{{ inq.message }}</p>
+
+                    <div class="inq-actions">
+                      @if (inq.status === 'new') {
+                        <!-- Unanswered: reply only -->
+                        <div class="reply-row">
+                          <input class="reply-input" [(ngModel)]="replyText[inq.id]"
+                            [placeholder]="'BROKER.INQUIRIES.REPLY_PLACEHOLDER' | translate"
+                            (keydown.enter)="sendReply(inq)" />
+                          <button class="btn btn-primary" (click)="sendReply(inq)"
+                            [disabled]="sendingId() === inq.id || !replyText[inq.id]?.trim()">
+                            @if (sendingId() === inq.id) {
+                              {{ 'BROKER.INQUIRIES.SENDING' | translate }}
+                            } @else {
+                              <i class="fa-solid fa-paper-plane"></i>
+                              {{ 'BROKER.INQUIRIES.SEND' | translate }}
+                            }
+                          </button>
+                        </div>
+                      } @else {
+                        <!-- Replied: continue in chat or convert to a lead -->
+                        <button class="btn btn-outline" (click)="openChat(inq)">
+                          <i class="fa-solid fa-comments"></i>
+                          {{ 'BROKER.INQUIRIES.CHAT' | translate }}
+                        </button>
+                        <button class="btn btn-outline" (click)="convertToLead(inq)"
+                          [disabled]="convertingId() === inq.id">
+                          <i class="fa-solid fa-filter"></i>
+                          {{ 'BROKER.INQUIRIES.CONVERT_LEAD' | translate }}
+                        </button>
+                      }
+                    </div>
+                  </div>
+                </div>
               }
             </div>
-            <p class="inq-message">{{ inq.message }}</p>
-
-            @if (inq.reply) {
-              <div class="inq-reply-preview">
-                <i class="fa-solid fa-reply"></i> {{ inq.reply }}
-              </div>
-            }
-
-            <div class="inq-actions">
-              <div class="reply-row">
-                <input class="reply-input" [(ngModel)]="replyText[inq.id]"
-                  [placeholder]="'BROKER.INQUIRIES.REPLY_PLACEHOLDER' | translate"
-                  (keydown.enter)="sendReply(inq)" />
-                <button class="btn btn-primary" (click)="sendReply(inq)"
-                  [disabled]="sendingId() === inq.id || !replyText[inq.id]?.trim()">
-                  @if (sendingId() === inq.id) {
-                    {{ 'BROKER.INQUIRIES.SENDING' | translate }}
-                  } @else {
-                    <i class="fa-solid fa-paper-plane"></i>
-                    {{ 'BROKER.INQUIRIES.SEND' | translate }}
-                  }
-                </button>
-              </div>
-              <button class="btn btn-outline" (click)="openChat(inq)">
-                <i class="fa-solid fa-comments"></i>
-                {{ 'BROKER.INQUIRIES.CHAT' | translate }}
-              </button>
-              <button class="btn btn-outline" (click)="convertToLead(inq)"
-                [disabled]="convertingId() === inq.id">
-                <i class="fa-solid fa-filter"></i>
-                {{ 'BROKER.INQUIRIES.CONVERT_LEAD' | translate }}
-              </button>
-            </div>
-          </div>
+          }
         </div>
       }
     </div>
-  }
-
-  @if (chatInquiry()) {
-    <app-chat-modal
-      [inquiry]="chatInquiry()!"
-      (closed)="closeChat()"
-      (leadConverted)="onChatLeadConverted()" />
   }
 </div>
