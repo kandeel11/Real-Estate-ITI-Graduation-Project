@@ -10,6 +10,8 @@ import {
   GenerateMonthlyResponse,
   PaymentSchedule,
   BrokerLeaseSchedule,
+  SubscriptionCheckoutRequest,
+  SubscriptionCheckoutResponse,
 } from '../models/payment.model';
 
 @Injectable({ providedIn: 'root' })
@@ -117,5 +119,13 @@ export class PaymentService {
   /** Company multi-lease schedule — GET /api/companies/mine/payments/schedule */
   getCompanyPaymentSchedules(): Observable<BrokerLeaseSchedule[]> {
     return this.http.get<BrokerLeaseSchedule[]>(`${this.base}${API_ENDPOINTS.COMPANY_PAYMENTS.GET_SCHEDULE}`);
+  }
+
+  /** Initiate Stripe checkout for a subscription plan — POST /api/payments/subscriptions/checkout */
+  checkoutSubscription(body: SubscriptionCheckoutRequest): Observable<SubscriptionCheckoutResponse> {
+    return this.http.post<SubscriptionCheckoutResponse>(
+      `${this.base}${API_ENDPOINTS.PAYMENTS.SUBSCRIPTIONS_CHECKOUT}`,
+      body,
+    );
   }
 }

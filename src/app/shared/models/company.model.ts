@@ -79,17 +79,33 @@ export interface CompanyInquiry {
   closedAt: string | null;
 }
 
-/** Matches the backend's SubscriptionPlanDto (GET /api/subscription-plans). */
+/** Matches the backend's SubscriptionPlanDto (GET /api/subscription-plans).
+ *  tier: 0=FreeIndividual, 1=PremiumIndividual, 2=FreeCompany, 3=PremiumCompany,
+ *        4=FreeTenant, 5=PremiumTenant
+ */
 export interface SubscriptionPlan {
   id: string;
   name: string;
+  tier: number;
   priceMonthly: number;
   priceAnnual: number;
   maxProperties: number;
   maxBrokers: number;
   maxAiRequestsPerMonth: number;
   maxStorageGb: number;
+  hasAdvancedAnalytics: boolean;
+  hasFeaturedListings: boolean;
+  hasAiPriceEstimation: boolean;
+  hasAiChatbot: boolean;
+  hasAiLeadPrioritization: boolean;
+  hasAiDescriptionGenerator: boolean;
+  maxSavedListings: number;
+  maxSavedSearches: number;
+  maxInquiriesPerMonth: number;
+  hasEarlyAccessListings: boolean;
+  hasPriorityBrokerResponse: boolean;
   isActive: boolean;
+  createdAt?: string;
 }
 
 /** Matches the backend's CompanyRatingSummaryDto (GET /api/companies/mine/ratings-summary). */
@@ -132,6 +148,7 @@ export interface SubscriptionUsage {
 
 /** Matches the backend's MySubscriptionDto (GET /api/subscriptions/mine). */
 export interface SubscriptionInfo {
+  id: string;
   planName: string;
   tier: string;
   status: string;

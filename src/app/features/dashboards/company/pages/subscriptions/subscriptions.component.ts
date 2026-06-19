@@ -9,6 +9,8 @@ import { Component, inject, signal, computed, OnInit } from '@angular/core';
 import { DatePipe, CurrencyPipe } from '@angular/common';
 import { TranslatePipe } from '@ngx-translate/core';
 import { CompanySubscriptionService } from '../../services/company-subscription.service';
+import { PaymentService } from '../../../../../core/services/payment.service';
+import { AuthService } from '../../../../../core/services/auth.service';
 import { UsageMeterComponent } from '../../../../../shared/components/usage-meter/usage-meter.component';
 import { ConfirmModalComponent } from '../../../../../shared/components/modal/confirm-modal.component';
 import {
@@ -27,6 +29,8 @@ import {
 })
 export class SubscriptionsComponent implements OnInit {
   private subSvc = inject(CompanySubscriptionService);
+  private paymentService = inject(PaymentService);
+  private auth = inject(AuthService);
 
   subscription = signal<SubscriptionInfo | null | undefined>(undefined);
   usage = signal<SubscriptionUsage | null>(null);
@@ -61,18 +65,19 @@ export class SubscriptionsComponent implements OnInit {
   planActionBusy = signal(false);
   planError = signal<string | null>(null);
   planSuccess = signal<string | null>(null);
+  checkingOut = signal(false);
 
-  /** Company-audience plans only (they're the ones with broker seats). */
+  /** Company-audience plans: tier 2 (Free Company) and tier 3 (Premium Company). */
   companyPlans = computed(() =>
-    this.plans().filter((p) => p.maxBrokers > 0 && p.isActive)
+    this.plans().filter(p => (p.tier === 2 || p.tier === 3) && p.isActive)
   );
 
   readonly freePlan = computed(() =>
-    this.companyPlans().find(p => p.priceMonthly === 0) ?? null
+    this.companyPlans().find(p => p.tier === 2) ?? null
   );
 
   readonly premiumPlan = computed(() =>
-    this.companyPlans().find(p => p.priceMonthly > 0) ?? null
+    this.companyPlans().find(p => p.tier === 3) ?? null
   );
 
   billingCycle = signal<'monthly' | 'annual'>('monthly');
@@ -139,24 +144,49 @@ export class SubscriptionsComponent implements OnInit {
 
   confirmUpgrade(): void {
     const planId = this.selectedPlanId();
-    if (!planId || this.planActionBusy()) return;
+    const plan = this.plans().find(p => p.id === planId);
+    if (!planId || !plan || this.planActionBusy()) return;
 
-    this.planActionBusy.set(true);
-    this.planError.set(null);
+    // Free plan downgrades use the direct upgrade endpoint; paid plans go through Stripe checkout
+    if (plan.priceMonthly === 0) {
+      this.planActionBusy.set(true);
+      this.planError.set(null);
+      this.subSvc.upgrade(planId).subscribe({
+        next: () => {
+          this.planActionBusy.set(false);
+          this.showPlanModal.set(false);
+          this.planSuccess.set('Plan changed successfully.');
+          setTimeout(() => this.planSuccess.set(null), 4000);
+          this.load();
+        },
+        error: (err) => {
+          this.planActionBusy.set(false);
+          this.planError.set(err?.error?.error ?? 'Failed to change the plan.');
+        },
+      });
+    } else {
+      this.checkingOut.set(true);
+      this.planError.set(null);
+      const userId = this.auth.user()?.id ?? '';
+      const origin = window.location.origin;
 
-    this.subSvc.upgrade(planId).subscribe({
-      next: () => {
-        this.planActionBusy.set(false);
-        this.showPlanModal.set(false);
-        this.planSuccess.set('Plan upgraded successfully.');
-        setTimeout(() => this.planSuccess.set(null), 4000);
-        this.load();
-      },
-      error: (err) => {
-        this.planActionBusy.set(false);
-        this.planError.set(err?.error?.error ?? 'Failed to change the plan.');
-      },
-    });
+      this.paymentService.checkoutSubscription({
+        userId,
+        subscriptionId: this.subscription()?.id ?? null,
+        planId: plan.id,
+        billingCycle: this.billingCycle() === 'monthly' ? 0 : 1,
+        successRedirectUrl: `${origin}/dashboard/company/subscriptions?checkout=success`,
+        cancelRedirectUrl:  `${origin}/dashboard/company/subscriptions?checkout=cancel`,
+      }).subscribe({
+        next: (res) => {
+          window.location.href = res.checkoutUrl;
+        },
+        error: (err) => {
+          this.checkingOut.set(false);
+          this.planError.set(err?.error?.message ?? 'Checkout failed. Please try again.');
+        },
+      });
+    }
   }
 
   confirmCancel(): void {
