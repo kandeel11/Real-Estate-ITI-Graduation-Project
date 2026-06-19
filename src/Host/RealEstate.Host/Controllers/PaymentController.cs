@@ -1,3 +1,4 @@
+using Identity.Application.Interfaces;
 using MediatR;
 using Microsoft.AspNetCore.Mvc;
 using Payment.Application.Exceptions;
@@ -10,6 +11,7 @@ using Payment.Application.Features.Commands.RefundPayment;
 using Payment.Application.Features.Commands.UpdateAiPrediction;
 using Payment.Application.Features.Queries.GetAllRentPayments;
 using Payment.Application.Features.Queries.GetFinancialSummary;
+using Payment.Application.Features.Queries.GetMyRentPayments;
 using Payment.Application.Features.Queries.GetOverduePayments;
 using Payment.Application.Features.Queries.GetPaymentReceipt;
 using Payment.Application.Features.Queries.GetPaymentsByStatus;
@@ -22,10 +24,12 @@ namespace RealEstate.Host.Controllers;
 public sealed class PaymentController : ControllerBase
 {
     private readonly IMediator _mediator;
+    private readonly ICurrentUserService _currentUser;
 
-    public PaymentController(IMediator mediator)
+    public PaymentController(IMediator mediator, ICurrentUserService currentUser)
     {
         _mediator = mediator;
+        _currentUser = currentUser;
     }
 
     // ── Subscription Payments ───────────────────────────────────
@@ -62,6 +66,20 @@ public sealed class PaymentController : ControllerBase
         CancellationToken cancellationToken)
     {
         var result = await _mediator.Send(new GetAllRentPaymentsQuery(leaseId), cancellationToken);
+        return Ok(result);
+    }
+
+    /// <summary>
+    /// Returns all rent payments for the currently logged-in user.
+    /// Tenants see payments where they are the payer; owners see payments for their properties.
+    /// </summary>
+    [HttpGet("my")]
+    public async Task<ActionResult> GetMyPayments(CancellationToken cancellationToken)
+    {
+        var userId = _currentUser.UserId
+            ?? throw new UnauthorizedAccessException("User not authenticated.");
+        var role = _currentUser.Role ?? "tenant";
+        var result = await _mediator.Send(new GetMyRentPaymentsQuery(userId, role), cancellationToken);
         return Ok(result);
     }
 

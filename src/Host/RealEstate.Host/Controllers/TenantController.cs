@@ -1,12 +1,14 @@
 ﻿using Document.Application.Commands.Lease.ConfirmLease;
 using Document.Application.Queries.Lease.GetLeaseById;
 using Document.Application.Queries.Lease;
+using Document.Application.Queries.Lease.GetLeasePaymentSchedule;
 using Identity.Application.Commands.ChangePassword;
 using Identity.Application.Commands.UpdateProfile;
 using Identity.Application.Interfaces;
 using MediatR;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
+using Payment.Application.Features.Queries.GetMyRentPayments;
 using Property.Application.Features.Queries.GetPropertyById;
 using RealEstate.Host.Services;
 using Identity.Application.Queries.GetCurrentUser;
@@ -145,6 +147,26 @@ public class TenantController(
         var result = await sender.Send(
             new ConfirmLeaseCommand(id, UserId, null, null, null, null, null, null, null, null), ct);
         return Ok(result);
+    }
+
+    [HttpGet("payments")]
+    public async Task<IActionResult> GetMyPayments(CancellationToken ct)
+    {
+        var result = await sender.Send(new GetMyRentPaymentsQuery(UserId, "tenant"), ct);
+        return Ok(result);
+    }
+
+    [HttpGet("payments/schedule")]
+    public async Task<IActionResult> GetPaymentSchedule(CancellationToken ct)
+    {
+        var lease = await sender.Send(new GetActiveLeaseQuery(UserId), ct);
+        if (lease is null) return NotFound(new { message = "No active lease found." });
+
+        var schedule = await sender.Send(new GetLeasePaymentScheduleQuery(lease.Id), ct);
+        if (schedule is null)
+            return UnprocessableEntity(new { error = "Payment schedule not available — lease extraction incomplete." });
+
+        return Ok(schedule);
     }
 
     [HttpPost("leases/{id}/decline")]

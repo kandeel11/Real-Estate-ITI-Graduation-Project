@@ -14,6 +14,10 @@ public interface IPaymentRepository
 
     Task<IReadOnlyList<Payment.Domain.Entities.Payment>> GetByLeaseIdAsync(Guid leaseId, CancellationToken cancellationToken = default);
 
+    Task<IReadOnlyList<Payment.Domain.Entities.Payment>> GetByTenantIdAsync(Guid tenantId, CancellationToken cancellationToken = default);
+
+    Task<IReadOnlyList<Payment.Domain.Entities.Payment>> GetByLandlordIdAsync(Guid landlordId, CancellationToken cancellationToken = default);
+
     /// <summary>
     /// جيب الدفعات المتأخرة: Status=Pending و DueDate < اليوم (Rent فقط)
     /// </summary>

@@ -51,6 +51,28 @@ public sealed class PaymentRepository : IPaymentRepository
             .ToListAsync(cancellationToken);
     }
 
+    public async Task<IReadOnlyList<Payment.Domain.Entities.Payment>> GetByTenantIdAsync(
+        Guid tenantId,
+        CancellationToken cancellationToken = default)
+    {
+        return await _context.Payments
+            .Include(p => p.RentDetails)
+            .Where(p => p.PaymentType == PaymentType.Rent && p.RentDetails!.TenantId == tenantId)
+            .OrderByDescending(p => p.DueDate)
+            .ToListAsync(cancellationToken);
+    }
+
+    public async Task<IReadOnlyList<Payment.Domain.Entities.Payment>> GetByLandlordIdAsync(
+        Guid landlordId,
+        CancellationToken cancellationToken = default)
+    {
+        return await _context.Payments
+            .Include(p => p.RentDetails)
+            .Where(p => p.PaymentType == PaymentType.Rent && p.RentDetails!.LandlordId == landlordId)
+            .OrderByDescending(p => p.DueDate)
+            .ToListAsync(cancellationToken);
+    }
+
     public async Task<IReadOnlyList<Payment.Domain.Entities.Payment>> GetOverdueAsync(CancellationToken cancellationToken = default)
     {
         var today = DateOnly.FromDateTime(DateTime.UtcNow);
