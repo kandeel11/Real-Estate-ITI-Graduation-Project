@@ -1,0 +1,345 @@
+using Document.Application.Queries.Inquiry;
+using Document.Application.Queries.Lead.GetLeadsByProperties;
+using Document.Application.Queries.Lease;
+using Document.Application.Queries.Lease.GetLeadsWithLeases;
+using Document.Application.Queries.Message.GetInquiryLastMessages;
+using Document.Application.Queries.Notification;
+using Identity.Application.Interfaces;
+using MediatR;
+using Microsoft.AspNetCore.Authorization;
+using Microsoft.AspNetCore.Mvc;
+using Property.Application.DTOs;
+using Property.Application.Features.Queries.GetPropertiesByOwner;
+using RealEstate.Host.Services;
+
+namespace RealEstate.Host.Controllers;
+
+/// <summary>
+/// Self-service workspace for the logged-in owner (landlord). Mirrors
+/// BrokerDashboardController but scopes everything to the properties the owner
+/// owns (GetPropertiesByOwnerQuery) instead of the ones a broker is assigned to.
+/// Owners have no Broker entity, so deal/conversion metrics are derived from leads.
+/// </summary>
+[ApiController]
+[Route("api/owners/me")]
+[Authorize(Roles = "owner")]
+public class OwnerDashboardController(
+    ISender sender,
+    ICurrentUserService currentUser,
+    IUserRepository userRepo,
+    PropertyEnrichmentService enrichment) : ControllerBase
+{
+    private Guid UserId => currentUser.UserId ?? throw new UnauthorizedAccessException();
+
+    // ── Profile ───────────────────────────────────────────────────────────────
+
+    [HttpGet]
+    public async Task<IActionResult> GetProfile(CancellationToken ct)
+    {
+        var user = await userRepo.GetByIdAsync(UserId, ct);
+        if (user is null) return NotFound(new { error = "Owner profile not found." });
+
+        return Ok(new
+        {
+            id = UserId,
+            name = user.FullName ?? string.Empty,
+            email = user.Email ?? string.Empty,
+            phone = user.Phone ?? string.Empty,
+            license = string.Empty,
+            companyName = string.Empty,
+            bio = string.Empty,
+            photo = user.ProfileImageUrl,
+            languages = Array.Empty<string>(),
+            specializations = Array.Empty<string>(),
+            rating = 0d,
+            rankInCompany = 1,
+            totalBrokers = 1
+        });
+    }
+
+    // ── Stats (overview cards) ──────────────────────────────────────────────────
+
+    [HttpGet("stats")]
+    public async Task<IActionResult> GetStats(CancellationToken ct)
+    {
+        var properties = await sender.Send(new GetPropertiesByOwnerQuery(UserId), ct);
+        var propertyIds = properties.Select(p => p.Id).ToList();
+        var inquiries = await sender.Send(new GetInquiriesByPropertiesQuery(propertyIds), ct);
+        var leads = await sender.Send(new GetLeadsByPropertiesQuery(propertyIds), ct);
+
+        return Ok(new
+        {
+            assignedProperties = properties.Count,
+            newInquiries = inquiries.Count(i => i.Status == "Pending"),
+            closedDeals = leads.Count(l => l.Status == "ClosedWon"),
+            rating = 0d,
+            rankInCompany = 1,
+            totalBrokers = 1
+        });
+    }
+
+    // ── Performance ─────────────────────────────────────────────────────────────
+
+    [HttpGet("performance")]
+    public async Task<IActionResult> GetPerformance(CancellationToken ct)
+    {
+        var properties = await sender.Send(new GetPropertiesByOwnerQuery(UserId), ct);
+        var leads = await sender.Send(new GetLeadsByPropertiesQuery(properties.Select(p => p.Id).ToList()), ct);
+
+        var now = DateTime.UtcNow;
+        var won = leads.Where(l => l.Status == "ClosedWon").ToList();
+
+        // Last 6 months of closed-won deals, oldest → newest
+        var monthly = new List<object>(6);
+        for (int i = 5; i >= 0; i--)
+        {
+            var month = new DateTime(now.Year, now.Month, 1).AddMonths(-i);
+            var deals = won.Count(l => l.UpdatedAt.Year == month.Year && l.UpdatedAt.Month == month.Month);
+            monthly.Add(new { month = month.ToString("MMM"), deals });
+        }
+
+        var dealsThisMonth = won.Count(l => l.UpdatedAt.Year == now.Year && l.UpdatedAt.Month == now.Month);
+        var conversionRate = leads.Count == 0 ? 0d : Math.Round((double)won.Count / leads.Count * 100, 1);
+
+        return Ok(new
+        {
+            dealsClosedThisMonth = dealsThisMonth,
+            avgResponseTimeMinutes = 0,
+            conversionRate,
+            rating = 0d,
+            ratingCount = 0,
+            rankInCompany = 1,
+            totalBrokers = "1",
+            monthlyDeals = monthly
+        });
+    }
+
+    // ── Owned properties ────────────────────────────────────────────────────────
+
+    [HttpGet("properties")]
+    public async Task<IActionResult> GetProperties(CancellationToken ct)
+    {
+        var properties = await sender.Send(new GetPropertiesByOwnerQuery(UserId), ct);
+        await enrichment.EnrichAsync(properties, ct);
+        return Ok(properties);
+    }
+
+    // ── Leads ───────────────────────────────────────────────────────────────────
+
+    [HttpGet("leads")]
+    public async Task<IActionResult> GetLeads(CancellationToken ct)
+    {
+        var properties = await sender.Send(new GetPropertiesByOwnerQuery(UserId), ct);
+        var leads = await sender.Send(new GetLeadsByPropertiesQuery(properties.Select(p => p.Id).ToList()), ct);
+        if (leads.Count == 0) return Ok(Array.Empty<object>());
+
+        var tenantIds = leads.Select(l => l.TenantId).Distinct().ToList();
+        var tenantNames = await userRepo.GetFullNamesByIdsAsync(tenantIds, ct);
+        var propertyTitles = properties.ToDictionary(p => p.Id, p => p.Title);
+
+        // Resolve tenant contact details so the owner never has to re-type them
+        // (e.g. the lease-upload modal prefills the email from the tenant's account).
+        var tenantContacts = new Dictionary<Guid, (string Email, string Phone)>();
+        foreach (var tid in tenantIds)
+        {
+            var u = await userRepo.GetByIdAsync(tid, ct);
+            if (u is not null) tenantContacts[tid] = (u.Email, u.Phone);
+        }
+
+        // Which leads already have a lease → show "Lease Created" instead of "Create Lease".
+        var leadsWithLease = await sender.Send(
+            new GetLeadsWithLeasesQuery(leads.Select(l => l.Id).ToList()), ct);
+
+        var result = leads.Select(l => new
+        {
+            id = l.Id,
+            tenantId = l.TenantId,
+            tenantName = tenantNames.GetValueOrDefault(l.TenantId, string.Empty),
+            tenantEmail = tenantContacts.GetValueOrDefault(l.TenantId).Email ?? string.Empty,
+            tenantPhone = tenantContacts.GetValueOrDefault(l.TenantId).Phone ?? string.Empty,
+            propertyId = l.PropertyId,
+            propertyTitle = propertyTitles.GetValueOrDefault(l.PropertyId, string.Empty),
+            status = MapLeadStatus(l.Status),
+            stageEnteredAt = new DateTimeOffset(DateTime.SpecifyKind(l.UpdatedAt, DateTimeKind.Utc)).ToUnixTimeMilliseconds(),
+            dealValue = l.DealValue?.ToString(),
+            notes = l.Notes,
+            hasLease = leadsWithLease.Contains(l.Id)
+        });
+
+        return Ok(result);
+    }
+
+    // ── Inquiries on my properties ──────────────────────────────────────────────
+
+    [HttpGet("inquiries")]
+    public async Task<IActionResult> GetInquiries(CancellationToken ct)
+    {
+        var properties = await sender.Send(new GetPropertiesByOwnerQuery(UserId), ct);
+        var inquiries = await sender.Send(new GetInquiriesByPropertiesQuery(properties.Select(p => p.Id).ToList()), ct);
+        if (inquiries.Count == 0) return Ok(Array.Empty<object>());
+
+        var tenantNames = await userRepo.GetFullNamesByIdsAsync(
+            inquiries.Select(i => i.TenantId).Distinct(), ct);
+        var propertyTitles = properties.ToDictionary(p => p.Id, p => p.Title);
+        var lastMessages = await sender.Send(
+            new GetInquiryLastMessagesQuery(inquiries.Select(i => i.Id).ToList()), ct);
+
+        // Newest activity first (chat list ordering).
+        var ordered = inquiries
+            .OrderByDescending(i => lastMessages.GetValueOrDefault(i.Id)?.At ?? i.CreatedAt)
+            .ToList();
+
+        var result = new List<object>(ordered.Count);
+        foreach (var i in ordered)
+        {
+            var tenant = await userRepo.GetByIdAsync(i.TenantId, ct);
+            var last = lastMessages.GetValueOrDefault(i.Id);
+            result.Add(new
+            {
+                id = i.Id,
+                propertyId = i.PropertyId,
+                propertyTitle = propertyTitles.GetValueOrDefault(i.PropertyId, string.Empty),
+                tenantId = i.TenantId,
+                tenantName = tenantNames.GetValueOrDefault(i.TenantId, string.Empty),
+                tenantEmail = tenant?.Email ?? string.Empty,
+                message = i.Message,
+                status = MapInquiryStatus(i.Status),
+                createdAt = i.CreatedAt,
+                // Latest activity for the chat list (falls back to the inquiry itself).
+                lastMessage = last?.Text ?? i.Message,
+                lastMessageAt = last?.At ?? i.CreatedAt
+            });
+        }
+
+        return Ok(result);
+    }
+
+    // ── Leases on my properties ─────────────────────────────────────────────────
+
+    [HttpGet("leases")]
+    public async Task<IActionResult> GetLeases(CancellationToken ct)
+    {
+        var leases = await sender.Send(new GetLeasesByOwnerQuery(UserId), ct);
+        if (leases.Count == 0) return Ok(Array.Empty<object>());
+
+        var properties = await sender.Send(new GetPropertiesByOwnerQuery(UserId), ct);
+        var propertyTitles = properties.ToDictionary(p => p.Id, p => p.Title);
+        var tenantNames = await userRepo.GetFullNamesByIdsAsync(
+            leases.Select(l => l.TenantId).Distinct(), ct);
+
+        var today = DateOnly.FromDateTime(DateTime.UtcNow);
+
+        var result = new List<object>(leases.Count);
+        foreach (var l in leases)
+        {
+            var tenant = await userRepo.GetByIdAsync(l.TenantId, ct);
+            result.Add(new
+            {
+                id = l.Id,
+                propertyId = l.PropertyId,
+                propertyTitle = propertyTitles.GetValueOrDefault(l.PropertyId, string.Empty),
+                tenantName = tenantNames.GetValueOrDefault(l.TenantId, string.Empty),
+                tenantEmail = tenant?.Email ?? string.Empty,
+                startDate = l.StartDate?.ToString("yyyy-MM-dd") ?? string.Empty,
+                endDate = l.EndDate?.ToString("yyyy-MM-dd") ?? string.Empty,
+                monthlyRent = l.InstallmentAmount ?? 0m,
+                deposit = l.SecurityDeposit ?? 0m,
+                status = MapLeaseStatus(l, today),
+                pdfUrl = l.ContractFileUrl,
+                aiStatus = MapExtractionStatus(l.ExtractionStatus)
+            });
+        }
+
+        return Ok(result);
+    }
+
+    // ── Activity (from notifications) ────────────────────────────────────────────
+
+    [HttpGet("activity")]
+    public async Task<IActionResult> GetActivity(CancellationToken ct)
+    {
+        var result = await sender.Send(
+            new GetNotificationsQuery(UserId, UnreadOnly: false, Page: 1, PageSize: 10), ct);
+
+        var activity = result.Items.Select(n => new
+        {
+            id = n.Id,
+            text = n.Title,
+            timeAgo = TimeAgo(n.CreatedAt)
+        });
+
+        return Ok(activity);
+    }
+
+    // ── Tasks (derived from real workload) ───────────────────────────────────────
+
+    [HttpGet("tasks")]
+    public async Task<IActionResult> GetTasks(CancellationToken ct)
+    {
+        var properties = await sender.Send(new GetPropertiesByOwnerQuery(UserId), ct);
+        var propertyIds = properties.Select(p => p.Id).ToList();
+        var inquiries = await sender.Send(new GetInquiriesByPropertiesQuery(propertyIds), ct);
+        var leads = await sender.Send(new GetLeadsByPropertiesQuery(propertyIds), ct);
+
+        var tasks = new List<object>();
+        var newInquiries = inquiries.Count(i => i.Status == "Pending");
+        if (newInquiries > 0)
+            tasks.Add(new { id = "new-inquiries", text = $"Respond to {newInquiries} new inquir{(newInquiries == 1 ? "y" : "ies")}", done = false });
+
+        var negotiating = leads.Count(l => l.Status == "Negotiating");
+        if (negotiating > 0)
+            tasks.Add(new { id = "negotiating", text = $"Follow up on {negotiating} lead{(negotiating == 1 ? "" : "s")} in negotiation", done = false });
+
+        return Ok(tasks);
+    }
+
+    // ── Ratings (owners have no per-broker review feed) ──────────────────────────
+    [HttpGet("ratings")]
+    public IActionResult GetRatings() => Ok(Array.Empty<object>());
+
+    // ── Helpers ──────────────────────────────────────────────────────────────────
+
+    private static string MapLeadStatus(string status) => status switch
+    {
+        "New" => "new",
+        "Contacted" => "contacted",
+        "Negotiating" => "negotiating",
+        "ClosedWon" => "closed_won",
+        "ClosedLost" => "closed_lost",
+        _ => "new"
+    };
+
+    private static string MapInquiryStatus(string status) => status switch
+    {
+        "Pending" => "new",
+        "Accepted" => "replied",
+        "Closed" => "converted",
+        _ => "new"
+    };
+
+    private static string MapExtractionStatus(string? status) => status switch
+    {
+        "extracted" or "confirmed" => "done",
+        "failed" or "rejected" => "failed",
+        _ => "pending"
+    };
+
+    private static string MapLeaseStatus(Document.Application.Queries.Lease.GetLeaseById.LeaseDto l, DateOnly today)
+    {
+        if (l.EndDate is DateOnly end)
+        {
+            if (end < today) return "ended";
+            if (end <= today.AddDays(30)) return "expiring";
+        }
+        return "active";
+    }
+
+    private static string TimeAgo(DateTime utc)
+    {
+        var span = DateTime.UtcNow - DateTime.SpecifyKind(utc, DateTimeKind.Utc);
+        if (span.TotalMinutes < 1) return "just now";
+        if (span.TotalMinutes < 60) return $"{(int)span.TotalMinutes}m ago";
+        if (span.TotalHours < 24) return $"{(int)span.TotalHours}h ago";
+        return $"{(int)span.TotalDays}d ago";
+    }
+}

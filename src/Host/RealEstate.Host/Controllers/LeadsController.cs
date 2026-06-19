@@ -10,7 +10,7 @@ namespace RealEstate.Host.Controllers;
 
 [ApiController]
 [Route("api/leads")]
-[Authorize(Roles = "broker,company_manager,admin")]
+[Authorize(Roles = "owner,broker,company_manager,admin")]
 public class LeadsController : ControllerBase
 {
     private readonly IMediator _mediator;
