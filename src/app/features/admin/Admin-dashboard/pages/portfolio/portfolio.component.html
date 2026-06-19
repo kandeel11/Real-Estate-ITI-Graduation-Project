@@ -266,54 +266,7 @@
     }
     }
 
-    <!-- Reject Modal (same as before) -->
-    @if (rejectingProperty(); as p) {
-    <div class="modal-backdrop" (click)="closeRejectModal()">
-        <div class="modal" (click)="$event.stopPropagation()">
-            <div class="modal-head">
-                <div class="modal-icon"><i class="fa-solid fa-circle-xmark"></i></div>
-                <div>
-                    <h3>Reject Property</h3>
-                    <p>Please provide a reason for rejecting this property.</p>
-                </div>
-                <button class="modal-close" (click)="closeRejectModal()">
-                    <i class="fa-solid fa-xmark"></i>
-                </button>
-            </div>
-            <div class="modal-body">
-                <div class="prop-summary">
-                    <strong>{{ p.title }}</strong>
-                    <span>{{ p.district }}, {{ p.city }} · {{ formatPrice(p.price) }}</span>
-                </div>
-                <label>Rejection Reason *</label>
-                <textarea rows="4" [value]="rejectReason()" (input)="rejectReason.set($any($event.target).value)"
-                    placeholder="e.g. Incomplete information, duplicate listing..."></textarea>
-                <small class="hint">The owner will be notified with this reason.</small>
-            </div>
-            <div class="modal-actions">
-                <button class="btn-outline" (click)="closeRejectModal()" [disabled]="processing()">Cancel</button>
-                <button class="btn-danger" (click)="confirmReject()"
-                    [disabled]="processing() || rejectReason().trim().length < 5">
-                    @if (processing()) {
-                    <i class="fa-solid fa-spinner fa-spin"></i> Rejecting...
-                    } @else {
-                    <i class="fa-solid fa-circle-xmark"></i> Confirm Reject
-                    }
-                </button>
-            </div>
-        </div>
-    </div>
-    }
-
-    <!-- Toast -->
-    @if (toast(); as t) {
-    <div class="toast" [class.success]="t.type === 'success'" [class.error]="t.type === 'error'">
-        <i class="fa-solid" [class.fa-circle-check]="t.type === 'success'"
-            [class.fa-circle-xmark]="t.type === 'error'"></i>
-        {{ t.text }}
-    </div>
-    }
-    <!-- ============ DETAILS MODAL 🆕 ============ -->
+    <!-- ============ DETAILS MODAL ============ -->
     @if (detailProperty(); as p) {
     <div class="modal-backdrop details-backdrop" (click)="closeDetailsModal()">
         <div class="details-modal" (click)="$event.stopPropagation()">
@@ -658,41 +611,57 @@
     </div>
     }
     <!-- Reject Modal -->
-    @if (rejectingProperty(); as p) {
-    <div class="modal-backdrop" (click)="closeRejectModal()">
-        <div class="modal" (click)="$event.stopPropagation()">
-            <div class="modal-head">
-                <div class="modal-icon">
+    @if (rejectingProperty()) {
+    <div class="pf-modal-backdrop" (click)="closeRejectModal()">
+        <div class="pf-reject-modal" (click)="$event.stopPropagation()">
+            <div class="pf-mhead">
+                <div class="pf-mhead-icon">
                     <i class="fa-solid fa-circle-xmark"></i>
                 </div>
                 <div>
                     <h3>Reject Property</h3>
                     <p>Please provide a reason for rejecting this property.</p>
                 </div>
-                <button class="modal-close" (click)="closeRejectModal()">
+                <button class="pf-close-btn" (click)="closeRejectModal()">
                     <i class="fa-solid fa-xmark"></i>
                 </button>
             </div>
 
-            <div class="modal-body">
-                <div class="prop-summary">
-                    <strong>{{ p.title }}</strong>
-                    <span>{{ p.district }}, {{ p.city }} · {{ formatPrice(p.price) }}</span>
+            <div class="pf-mbody">
+                <div class="pf-prop-summary">
+                    <strong>{{ rejectingProperty()!.title }}</strong>
+                    <span>
+                        {{ rejectingProperty()!.district }}, {{ rejectingProperty()!.city }}
+                        &nbsp;·&nbsp;
+                        {{ formatPrice(rejectingProperty()!.price) }}
+                    </span>
                 </div>
 
                 <label>Rejection Reason *</label>
                 <textarea rows="4" [value]="rejectReason()" (input)="rejectReason.set($any($event.target).value)"
-                    placeholder="e.g. Incomplete information, duplicate listing, photos don't match description..."></textarea>
-                <small class="hint">
-                    The owner will be notified with this reason.
+                    placeholder="e.g. Incomplete information, duplicate listing, photos don't match description...">
+                </textarea>
+
+                @if (rejectReason().trim().length > 0 && rejectReason().trim().length < 5) {
+                <small class="pf-err">
+                    <i class="fa-solid fa-triangle-exclamation"></i>
+                    Minimum 5 characters required ({{ rejectReason().trim().length }}/5)
                 </small>
+                } @else {
+                <small class="pf-hint">
+                    The owner will be notified with this reason.
+                    @if (rejectReason().trim().length === 0) {
+                    <span style="color:#94a3b8"> — min 5 characters</span>
+                    }
+                </small>
+                }
             </div>
 
-            <div class="modal-actions">
-                <button class="btn-outline" (click)="closeRejectModal()" [disabled]="processing()">
+            <div class="pf-mfooter">
+                <button class="pf-btn-outline" (click)="closeRejectModal()" [disabled]="processing()">
                     Cancel
                 </button>
-                <button class="btn-danger" (click)="confirmReject()"
+                <button class="pf-btn-danger" (click)="confirmReject()"
                     [disabled]="processing() || rejectReason().trim().length < 5">
                     @if (processing()) {
                     <i class="fa-solid fa-spinner fa-spin"></i> Rejecting...
