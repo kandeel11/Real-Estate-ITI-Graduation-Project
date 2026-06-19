@@ -1,0 +1,49 @@
+<div class="modal-backdrop" (click)="closed.emit()">
+  <div class="inq-dialog" (click)="$event.stopPropagation()">
+    <div class="modal-header">
+      <div>
+        <h2>{{ 'OWNER.INQUIRIES_MODAL.TITLE' | translate }}</h2>
+        <p class="modal-sub">{{ property.title }}</p>
+      </div>
+      <button class="modal-close" (click)="closed.emit()"><i class="fa-solid fa-xmark"></i></button>
+    </div>
+
+    <div class="modal-body">
+      @if (loading()) {
+        @for (i of [1,2,3]; track i) {
+          <div class="skeleton-row">
+            <div class="skeleton avatar-sk"></div>
+            <div style="flex:1">
+              <div class="skeleton" style="height:13px;width:40%;margin-bottom:6px;border-radius:4px"></div>
+              <div class="skeleton" style="height:12px;width:70%;border-radius:4px"></div>
+            </div>
+          </div>
+        }
+      } @else if (inquiries().length === 0) {
+        <div class="empty">
+          <i class="fa-solid fa-envelope-open empty-icon"></i>
+          <p>{{ 'OWNER.INQUIRIES_MODAL.EMPTY' | translate }}</p>
+        </div>
+      } @else {
+        @for (inq of inquiries(); track inq.id) {
+          <button class="inquiry-row" (click)="openChat.emit(inq)">
+            <div class="inq-avatar">{{ inq.tenantName.charAt(0).toUpperCase() }}</div>
+            <div class="inq-info">
+              <div class="inq-top">
+                <span class="inq-name">{{ inq.tenantName }}</span>
+                <span class="inq-time">{{ timeAgo(inq.createdAt) }}</span>
+              </div>
+              <p class="inq-msg">{{ inq.message }}</p>
+            </div>
+            @switch (inq.status) {
+              @case ('new')       { <span class="badge badge-new">{{ 'OWNER.INQUIRIES_MODAL.NEW_BADGE' | translate }}</span> }
+              @case ('replied')   { <span class="badge badge-replied">{{ 'OWNER.INQUIRIES_MODAL.REPLIED_BADGE' | translate }}</span> }
+              @case ('converted') { <span class="badge badge-converted">{{ 'OWNER.INQUIRIES_MODAL.CONVERTED_BADGE' | translate }}</span> }
+            }
+            <i class="fa-solid fa-chevron-right arrow"></i>
+          </button>
+        }
+      }
+    </div>
+  </div>
+</div>

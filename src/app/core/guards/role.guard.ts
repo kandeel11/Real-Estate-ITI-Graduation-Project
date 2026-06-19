@@ -22,10 +22,10 @@ export const guestGuard: CanActivateFn = () => {
 };
 
 /**
- * Sends signed-in dashboard roles (admin, company, broker, maintenance)
+ * Sends signed-in dashboard roles (admin, company, broker, maintenance, owner)
  * straight to their dashboard when they hit the public home page.
- * Tenants and owners keep browsing the public site — that IS their surface
- * (tenants use the navbar avatar menu; owners list properties from here).
+ * Only tenants keep browsing the public site from here — that IS their surface
+ * (they use the navbar avatar menu).
  */
 export const dashboardRedirectGuard: CanActivateFn = () => {
   const authService = inject(AuthService);
@@ -35,10 +35,25 @@ export const dashboardRedirectGuard: CanActivateFn = () => {
   if (
     authService.authenticated() &&
     role &&
-    role !== 'tenant' &&
-    role !== 'owner'
+    role !== 'tenant'
   ) {
     return router.parseUrl(authService.dashboardRouteFor(role));
+  }
+  return true;
+};
+
+/**
+ * Owners live entirely inside their dashboard — they should never land on the
+ * public marketplace pages (browse, services, contact, my-listings).
+ * A signed-in owner hitting any of those is bounced to /dashboard/owner.
+ * Every other role (and guests) passes through untouched.
+ */
+export const ownerLockGuard: CanActivateFn = () => {
+  const authService = inject(AuthService);
+  const router = inject(Router);
+
+  if (authService.authenticated() && authService.userRole() === 'owner') {
+    return router.parseUrl(authService.dashboardRouteFor('owner'));
   }
   return true;
 };

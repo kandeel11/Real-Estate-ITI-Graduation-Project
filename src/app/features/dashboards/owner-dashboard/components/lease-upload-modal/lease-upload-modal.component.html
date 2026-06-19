@@ -1,0 +1,148 @@
+<div class="modal-backdrop" (click)="closed.emit()">
+  <div class="lease-dialog" (click)="$event.stopPropagation()">
+
+    <!-- Step indicator -->
+    <div class="steps">
+      @for (s of [1,2,3]; track s) {
+        <div class="step" [class.active]="step() === s" [class.done]="step() > s">
+          <span class="step-dot">{{ step() > s ? '✓' : s }}</span>
+        </div>
+        @if (s < 3) { <div class="step-line" [class.done]="step() > s"></div> }
+      }
+    </div>
+
+    <!-- ── Step 1: Upload ──────────────────────────────────── -->
+    @if (step() === 1) {
+      <div class="modal-header">
+        <div>
+          <h2>{{ 'OWNER.LEASE_UPLOAD.TITLE' | translate }}</h2>
+          <p class="modal-sub">{{ lead.propertyTitle }} — {{ lead.tenantName }}</p>
+        </div>
+        <button class="modal-close" (click)="closed.emit()"><i class="fa-solid fa-xmark"></i></button>
+      </div>
+      <div class="modal-body">
+        <p class="step-hint">{{ 'OWNER.LEASE_UPLOAD.STEP1_HINT' | translate }}</p>
+
+        <div class="form-group">
+          <label>{{ 'OWNER.LEASE_UPLOAD.TENANT_EMAIL' | translate }}</label>
+          <input class="form-control" type="email" readonly
+            [value]="tenantEmail()"
+            [placeholder]="'OWNER.LEASE_UPLOAD.TENANT_EMAIL' | translate" />
+          <small class="field-hint">
+            <i class="fa-solid fa-circle-info"></i>
+            {{ 'OWNER.LEASE_UPLOAD.TENANT_EMAIL_HINT' | translate: { name: lead.tenantName } }}
+          </small>
+        </div>
+
+        <label class="drop-zone" [class.has-file]="!!fileName()">
+          <input type="file" accept=".pdf" (change)="onFileChange($event)" hidden />
+          @if (fileName()) {
+            <i class="fa-solid fa-file-pdf file-icon"></i>
+            <span class="file-name">{{ fileName() }}</span>
+            <span class="change-hint">{{ 'OWNER.LEASE_UPLOAD.CHANGE_FILE' | translate }}</span>
+          } @else {
+            <i class="fa-solid fa-cloud-arrow-up upload-icon"></i>
+            <span class="upload-text">{{ 'OWNER.LEASE_UPLOAD.CHOOSE_FILE' | translate }}</span>
+            <span class="upload-sub">PDF only</span>
+          }
+        </label>
+
+        @if (uploadError()) {
+          <p class="err">{{ uploadError()! | translate }}</p>
+        }
+      </div>
+      <div class="modal-footer">
+        <button class="btn btn-outline" (click)="closed.emit()">{{ 'COMMON.CANCEL' | translate }}</button>
+        <button class="btn btn-primary" (click)="upload()" [disabled]="uploading() || !file">
+          @if (uploading()) {
+            <i class="fa-solid fa-spinner fa-spin"></i>
+            {{ 'OWNER.LEASE_UPLOAD.UPLOADING' | translate }}
+          } @else {
+            <i class="fa-solid fa-magnifying-glass"></i>
+            {{ 'OWNER.LEASE_UPLOAD.UPLOAD_BTN' | translate }}
+          }
+        </button>
+      </div>
+    }
+
+    <!-- ── Step 2: Review AI extraction ──────────────────── -->
+    @if (step() === 2 && extraction()) {
+      <div class="modal-header">
+        <h2>{{ 'OWNER.LEASE_UPLOAD.STEP2_TITLE' | translate }}</h2>
+        <button class="modal-close" (click)="closed.emit()"><i class="fa-solid fa-xmark"></i></button>
+      </div>
+      <div class="modal-body">
+        @if (extractionFailed()) {
+          <div class="ai-badge ai-badge--warn">
+            <i class="fa-solid fa-triangle-exclamation"></i>
+            {{ 'OWNER.LEASE_UPLOAD.AI_FAILED_WARN' | translate }}
+          </div>
+        } @else {
+          <div class="ai-badge">
+            <i class="fa-solid fa-robot"></i>
+            {{ 'OWNER.LEASE_UPLOAD.AI_EXTRACTED' | translate }}
+            <span class="confidence">{{ (extraction()!.confidence * 100).toFixed(0) }}%</span>
+          </div>
+        }
+        <p class="step-hint">{{ 'OWNER.LEASE_UPLOAD.STEP2_HINT' | translate }}</p>
+
+        <div class="form-grid">
+          <div class="form-group">
+            <label>{{ 'OWNER.LEASE_UPLOAD.TENANT_NAME' | translate }}</label>
+            <input class="form-control" [value]="extraction()!.tenantName"
+              (input)="updateField('tenantName', $any($event.target).value)" />
+          </div>
+          <div class="form-group">
+            <label>{{ 'OWNER.LEASE_UPLOAD.TENANT_EMAIL_LABEL' | translate }}</label>
+            <input class="form-control" type="email" [value]="extraction()!.tenantEmail"
+              (input)="updateField('tenantEmail', $any($event.target).value)" />
+          </div>
+          <div class="form-group">
+            <label>{{ 'OWNER.LEASE_UPLOAD.START_DATE' | translate }}</label>
+            <input class="form-control" type="date" [value]="extraction()!.startDate"
+              (input)="updateField('startDate', $any($event.target).value)" />
+          </div>
+          <div class="form-group">
+            <label>{{ 'OWNER.LEASE_UPLOAD.END_DATE' | translate }}</label>
+            <input class="form-control" type="date" [value]="extraction()!.endDate"
+              (input)="updateField('endDate', $any($event.target).value)" />
+          </div>
+          <div class="form-group">
+            <label>{{ 'OWNER.LEASE_UPLOAD.MONTHLY_RENT' | translate }}</label>
+            <input class="form-control" type="number" [value]="extraction()!.monthlyRent"
+              (input)="updateField('monthlyRent', +$any($event.target).value)" />
+          </div>
+          <div class="form-group">
+            <label>{{ 'OWNER.LEASE_UPLOAD.DEPOSIT' | translate }}</label>
+            <input class="form-control" type="number" [value]="extraction()!.deposit"
+              (input)="updateField('deposit', +$any($event.target).value)" />
+          </div>
+        </div>
+      </div>
+      <div class="modal-footer">
+        <button class="btn btn-outline" (click)="step.set(1)">{{ 'COMMON.BACK' | translate }}</button>
+        <button class="btn btn-primary" (click)="sendToTenant()" [disabled]="sending()">
+          @if (sending()) { <i class="fa-solid fa-spinner fa-spin"></i> {{ 'OWNER.LEASE_UPLOAD.SENDING_TENANT' | translate }} }
+          @else { <i class="fa-solid fa-paper-plane"></i> {{ 'OWNER.LEASE_UPLOAD.SEND_TENANT' | translate }} }
+        </button>
+      </div>
+    }
+
+    <!-- ── Step 3: Waiting for tenant ────────────────────── -->
+    @if (step() === 3) {
+      <div class="modal-header">
+        <h2>{{ 'OWNER.LEASE_UPLOAD.STEP3_TITLE' | translate }}</h2>
+        <button class="modal-close" (click)="closed.emit()"><i class="fa-solid fa-xmark"></i></button>
+      </div>
+      <div class="modal-body modal-body--center">
+        <div class="success-icon"><i class="fa-solid fa-envelope-circle-check"></i></div>
+        <p class="success-title">{{ 'OWNER.LEASE_UPLOAD.STEP3_HINT' | translate }}</p>
+        <p class="success-sub">{{ extraction()?.tenantName }} &lt;{{ extraction()?.tenantEmail }}&gt;</p>
+      </div>
+      <div class="modal-footer">
+        <button class="btn btn-primary" (click)="done()">{{ 'OWNER.LEASE_UPLOAD.DONE' | translate }}</button>
+      </div>
+    }
+
+  </div>
+</div>

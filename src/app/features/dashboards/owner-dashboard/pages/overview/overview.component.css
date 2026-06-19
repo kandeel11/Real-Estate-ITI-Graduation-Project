@@ -1,0 +1,52 @@
+.page { max-width: 1100px; margin: 0 auto; }
+
+.page-header { display: flex; align-items: flex-start; justify-content: space-between; flex-wrap: wrap; gap: 1rem; margin-bottom: 1.75rem; }
+.welcome { font-size: 1.5rem; font-weight: 700; color: var(--color-on-surface); margin: 0 0 .5rem; }
+.role-badge { display: inline-flex; align-items: center; gap: 6px; font-size: 12px; font-weight: 600; padding: 4px 12px; border-radius: var(--radius-full); background: var(--color-surface-container-low); color: var(--color-on-surface-variant); }
+.role-badge.company { background: var(--color-primary-fixed); color: var(--color-on-primary-fixed); }
+
+.header-actions { display: flex; gap: .75rem; }
+.btn { display: inline-flex; align-items: center; gap: 6px; padding: 9px 18px; border-radius: var(--radius-md); font-size: 14px; font-weight: 600; cursor: pointer; border: none; text-decoration: none; transition: background .15s; }
+.btn-primary { background: var(--color-primary-container); color: var(--color-on-primary); }
+.btn-primary:hover { background: var(--color-primary); color: #fff; }
+
+.stats-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 1rem; margin-bottom: 1.75rem; }
+.stat-card { background: var(--color-surface-container-lowest); border: 1px solid var(--color-outline-variant); border-radius: 12px; padding: 1.25rem 1.5rem; }
+.stat-icon { width: 40px; height: 40px; border-radius: 10px; display: flex; align-items: center; justify-content: center; font-size: 18px; margin-bottom: .75rem; }
+.stat-icon.blue { background: #dbeafe; color: #1d4ed8; }
+.stat-icon.amber { background: #fef3c7; color: #d97706; }
+.stat-icon.green { background: #d1fae5; color: #059669; }
+.stat-icon.purple { background: #ede9fe; color: #7c3aed; }
+.stat-value { font-size: 2rem; font-weight: 700; color: var(--color-on-surface); line-height: 1; }
+.stat-label { font-size: 13px; color: var(--color-on-surface-variant); margin-top: 4px; }
+.stat-sub { font-size: 11px; color: var(--color-on-surface-variant); margin-top: 4px; }
+
+.two-col { display: grid; grid-template-columns: 1fr 1fr; gap: 1rem; margin-bottom: 1rem; }
+@media (max-width: 768px) { .two-col { grid-template-columns: 1fr; } }
+
+.card { background: var(--color-surface-container-lowest); border: 1px solid var(--color-outline-variant); border-radius: 12px; padding: 1.25rem; }
+.card-title { font-size: 15px; font-weight: 600; color: var(--color-on-surface); margin: 0 0 1rem; display: flex; align-items: center; gap: 8px; }
+.card-title i { color: var(--color-primary); }
+.empty-hint { font-size: 13px; color: var(--color-on-surface-variant); }
+
+.task-list { list-style: none; padding: 0; margin: 0; display: flex; flex-direction: column; gap: 8px; }
+.task-item { display: flex; align-items: center; gap: 10px; cursor: pointer; padding: 8px; border-radius: var(--radius-sm); transition: background .12s; }
+.task-item:hover { background: var(--color-surface-container-low); }
+.task-item.done .task-text { text-decoration: line-through; color: var(--color-on-surface-variant); }
+.task-check { font-size: 18px; flex-shrink: 0; color: var(--color-primary); }
+.task-item.done .task-check { color: var(--color-on-surface-variant); }
+.task-text { font-size: 13.5px; color: var(--color-on-surface); }
+
+.activity-list { list-style: none; padding: 0; margin: 0; display: flex; flex-direction: column; gap: 12px; }
+.activity-item { display: flex; align-items: flex-start; gap: 10px; }
+.activity-dot { width: 8px; height: 8px; border-radius: 50%; background: var(--color-primary); margin-top: 5px; flex-shrink: 0; }
+.activity-text { font-size: 13.5px; color: var(--color-on-surface); margin: 0 0 2px; }
+.activity-time { font-size: 11px; color: var(--color-on-surface-variant); }
+
+.quick-links { display: flex; gap: .75rem; flex-wrap: wrap; }
+.quick-link { display: inline-flex; align-items: center; gap: 6px; padding: 8px 16px; border-radius: var(--radius-md); background: var(--color-surface-container-low); color: var(--color-on-surface-variant); font-size: 13px; font-weight: 500; text-decoration: none; transition: background .15s, color .15s; }
+.quick-link:hover { background: var(--color-primary-fixed); color: var(--color-on-primary-fixed); }
+
+.skeleton-wrap { }
+.skeleton { background: linear-gradient(90deg,#f0f0f0 25%,#e0e0e0 50%,#f0f0f0 75%); background-size: 200% 100%; animation: shimmer 1.5s infinite; border-radius: 8px; }
+@keyframes shimmer { 0%{background-position:200% 0} 100%{background-position:-200% 0} }
