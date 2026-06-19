@@ -267,6 +267,7 @@
     "RATINGS": "Ratings",
     "PROFILE": "Profile",
     "AI_ASSISTANT": "AI Assistant",
+    "PAYMENTS": "Payments",
     "ROLE": "Tenant",
     "LOGOUT": "Logout"
   },
@@ -284,7 +285,8 @@
     "ROLE_INDEPENDENT": "Independent Broker",
     "ROLE_COMPANY": "Company Broker",
     "LOGOUT": "Logout",
-    "MESSAGES": "Messages"
+    "MESSAGES": "Messages",
+    "PAYMENTS": "Payments"
   },
   "BROKER": {
     "OVERVIEW": {
@@ -544,7 +546,8 @@
     "MAINTENANCE": "Maintenance",
     "ROLE": "Property Owner",
     "SETTINGS": "Settings",
-    "MESSAGES": "Messages"
+    "MESSAGES": "Messages",
+    "WALLET": "Wallet"
   },
   "OWNER": {
     "OVERVIEW": {
@@ -1514,7 +1517,9 @@
     "ANALYTICS": "Analytics",
     "SETTINGS": "Settings",
     "MAINTENANCE": "Maintenance",
-    "TICKETS": "Tickets"
+    "TICKETS": "Tickets",
+    "PAYMENTS": "Payments",
+    "WITHDRAWALS": "Withdrawals"
   },
   "ADMIN": {
     "SIDEBAR": {

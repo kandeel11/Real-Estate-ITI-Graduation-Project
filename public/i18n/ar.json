@@ -267,6 +267,7 @@
     "RATINGS": "التقييمات",
     "PROFILE": "الملف الشخصي",
     "AI_ASSISTANT": "مساعد الذكاء الاصطناعي",
+    "PAYMENTS": "جدول الدفعات",
     "ROLE": "مستأجر",
     "LOGOUT": "تسجيل الخروج"
   },
@@ -284,7 +285,8 @@
     "ROLE_INDEPENDENT": "وسيط مستقل",
     "ROLE_COMPANY": "وسيط شركة",
     "LOGOUT": "تسجيل الخروج",
-    "MESSAGES": "الرسائل"
+    "MESSAGES": "الرسائل",
+    "PAYMENTS": "مدفوعات الإيجار"
   },
   "BROKER": {
     "OVERVIEW": {
@@ -544,7 +546,8 @@
     "MAINTENANCE": "الصيانة",
     "ROLE": "مالك العقار",
     "SETTINGS": "الإعدادات",
-    "MESSAGES": "الرسائل"
+    "MESSAGES": "الرسائل",
+    "WALLET": "المحفظة"
   },
   "OWNER": {
     "OVERVIEW": {
@@ -1514,7 +1517,9 @@
     "ANALYTICS": "التحليلات",
     "SETTINGS": "الإعدادات",
     "MAINTENANCE": "الصيانة",
-    "TICKETS": "التذاكر"
+    "TICKETS": "التذاكر",
+    "PAYMENTS": "المدفوعات",
+    "WITHDRAWALS": "طلبات السحب"
   },
   "ADMIN": {
     "SIDEBAR": {

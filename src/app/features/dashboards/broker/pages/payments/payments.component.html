@@ -1,0 +1,159 @@
+<div class="bp-page">
+
+  <div class="page-head">
+    <div>
+      <h1><i class="fa-solid fa-credit-card"></i> Lease Payments</h1>
+      <p>Read-only view of payment schedules for your managed leases.</p>
+    </div>
+  </div>
+
+  @if (leasesLoading()) {
+    <div class="loading-state">
+      <i class="fa-solid fa-spinner fa-spin"></i>
+      <p>Loading leases...</p>
+    </div>
+  } @else if (leases().length === 0) {
+    <div class="empty-state">
+      <i class="fa-solid fa-file-contract"></i>
+      <p>No leases found. Payment schedules will appear here once leases are created.</p>
+    </div>
+  } @else {
+
+    <!-- Lease Selector -->
+    <div class="lease-selector">
+      @for (lease of leases(); track lease.id) {
+        <button class="lease-card" [class.active]="selectedLeaseId() === lease.id"
+          (click)="selectLease(lease.id)">
+          <div class="lc-top">
+            <span class="lc-title">{{ lease.propertyTitle }}</span>
+            <span class="badge" [attr.data-color]="leaseStatusColor(lease.status)">{{ lease.status }}</span>
+          </div>
+          <div class="lc-meta">
+            <span><i class="fa-solid fa-user"></i> {{ lease.tenantName }}</span>
+            <span><i class="fa-solid fa-coins"></i> {{ formatCurrency(lease.monthlyRent) }}/mo</span>
+          </div>
+          <div class="lc-dates">
+            {{ formatDate(lease.startDate) }} — {{ formatDate(lease.endDate) }}
+          </div>
+        </button>
+      }
+    </div>
+
+    <!-- Schedule Panel -->
+    @if (scheduleLoading()) {
+      <div class="loading-state">
+        <i class="fa-solid fa-spinner fa-spin"></i>
+        <p>Loading payment schedule...</p>
+      </div>
+    } @else if (scheduleError()) {
+      <div class="empty-state">
+        <i class="fa-solid fa-calendar-xmark"></i>
+        <p>{{ scheduleError() }}</p>
+      </div>
+    } @else if (schedule(); as s) {
+
+      <!-- Summary Cards -->
+      <div class="summary-grid">
+        <div class="summary-card primary">
+          <div class="sc-icon"><i class="fa-solid fa-money-bill-wave"></i></div>
+          <div>
+            <span>Monthly Installment</span>
+            <strong>{{ formatCurrency(s.installmentAmount) }}</strong>
+          </div>
+        </div>
+        <div class="summary-card">
+          <div class="sc-icon green"><i class="fa-solid fa-check-circle"></i></div>
+          <div>
+            <span>Paid So Far</span>
+            <strong>{{ formatCurrency(s.summary.amountDueSoFar) }}</strong>
+            <small>{{ s.summary.pastInstallments }} / {{ s.summary.totalInstallments }} installments</small>
+          </div>
+        </div>
+        <div class="summary-card">
+          <div class="sc-icon amber"><i class="fa-solid fa-hourglass-half"></i></div>
+          <div>
+            <span>Remaining</span>
+            <strong>{{ formatCurrency(s.summary.amountRemaining) }}</strong>
+            <small>{{ s.summary.totalInstallments - s.summary.pastInstallments }} left</small>
+          </div>
+        </div>
+        <div class="summary-card">
+          <div class="sc-icon blue"><i class="fa-solid fa-coins"></i></div>
+          <div>
+            <span>Total Rent</span>
+            <strong>{{ formatCurrency(s.summary.totalAmount) }}</strong>
+            <small>{{ s.durationInMonths }} months</small>
+          </div>
+        </div>
+      </div>
+
+      <!-- Progress -->
+      <div class="progress-card">
+        <div class="progress-head">
+          <span>Lease Progress</span>
+          <strong>{{ progressPercent(s) }}% complete</strong>
+        </div>
+        <div class="progress-bar">
+          <div class="progress-fill" [style.width.%]="progressPercent(s)"></div>
+        </div>
+        <div class="progress-dates">
+          <span>{{ formatDate(s.startDate) }}</span>
+          <span>{{ formatDate(s.endDate) }}</span>
+        </div>
+      </div>
+
+      <!-- Schedule Table -->
+      <div class="schedule-card">
+        <div class="schedule-head">
+          <h3><i class="fa-solid fa-table-list"></i> Full Schedule</h3>
+          <span class="record-count">{{ s.summary.totalInstallments }} installments · Read-only</span>
+        </div>
+        <div class="table-wrap">
+          <table class="data-table">
+            <thead>
+              <tr>
+                <th>#</th>
+                <th>Period</th>
+                <th>Due Date</th>
+                <th>Amount</th>
+                <th>Status</th>
+              </tr>
+            </thead>
+            <tbody>
+              @for (p of visiblePeriods(); track p.periodNumber) {
+                <tr [class.row-current]="p.isCurrent" [class.row-past]="p.isPast">
+                  <td class="num-cell">{{ p.periodNumber }}</td>
+                  <td class="period-cell">
+                    {{ formatDate(p.periodStart) }} — {{ formatDate(p.periodEnd) }}
+                  </td>
+                  <td>{{ formatDate(p.dueDate) }}</td>
+                  <td><strong>{{ formatCurrency(p.amount) }}</strong></td>
+                  <td>
+                    <span class="badge" [attr.data-color]="periodColor(p)">
+                      @if (p.isPast) { <i class="fa-solid fa-check"></i> }
+                      @if (p.isCurrent) { <i class="fa-solid fa-circle-dot"></i> }
+                      @if (p.isNext) { <i class="fa-solid fa-clock"></i> }
+                      @if (!p.isPast && !p.isCurrent && !p.isNext) { <i class="fa-solid fa-calendar"></i> }
+                      {{ periodStatusLabel(p) }}
+                    </span>
+                  </td>
+                </tr>
+              }
+            </tbody>
+          </table>
+        </div>
+        @if (!showAll() && s.allPeriods.length > 6) {
+          <div class="show-more">
+            <button class="btn-outline" (click)="showAll.set(true)">
+              <i class="fa-solid fa-chevron-down"></i>
+              Show all {{ s.allPeriods.length }} installments
+            </button>
+          </div>
+        }
+      </div>
+
+    }
+
+  }
+
+</div>

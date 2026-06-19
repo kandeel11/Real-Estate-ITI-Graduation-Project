@@ -150,12 +150,38 @@ export const API_ENDPOINTS = {
 
   // ==================== PAYMENTS MODULE ====================
   PAYMENTS: {
+    // Rent payment management (admin)
+    GENERATE_MONTHLY: '/payments/generate-monthly',
+    GET_ALL: '/payments',
+    GET_BY_ID: (id: string) => `/payments/${id}`,
+    PROCESS: (id: string) => `/payments/${id}/process`,
+    GET_OVERDUE: '/payments/overdue',
+    APPLY_LATE_FEE: (id: string) => `/payments/${id}/late-fee`,
+    GET_RECEIPT: (id: string) => `/payments/${id}/receipt`,
+    STRIPE_WEBHOOK: '/payments/webhook/stripe',
+    // Legacy / other payment types
     CREATE_INTENT: '/payments/create-intent',
     CONFIRM_PAYMENT: '/payments/confirm',
     GET_PAYMENT_HISTORY: '/payments/history',
     GET_INVOICE: (invoiceId: string) => `/payments/invoice/${invoiceId}`,
     DOWNLOAD_INVOICE: (invoiceId: string) => `/payments/invoice/${invoiceId}/download`,
     PROCESS_REFUND: (paymentId: string) => `/payments/${paymentId}/refund`,
+  },
+
+  // ==================== WALLET MODULE ====================
+  WALLET: {
+    BALANCE: '/wallet/balance',
+    LEDGER: '/wallet/ledger',
+    WITHDRAW: '/wallet/withdrawals',
+    MY_WITHDRAWALS: '/wallet/withdrawals',
+    ALL_WITHDRAWALS: '/wallet/withdrawals/all',
+    APPROVE_WITHDRAWAL: (id: string) => `/wallet/withdrawals/${id}/approve`,
+    REJECT_WITHDRAWAL: (id: string) => `/wallet/withdrawals/${id}/reject`,
+  },
+
+  // ==================== LEASE PAYMENT SCHEDULE ====================
+  LEASE_SCHEDULE: {
+    GET: (leaseId: string) => `/leases/${leaseId}/payment-schedule`,
   },
 
   // ==================== SMART SEARCH MODULE ====================

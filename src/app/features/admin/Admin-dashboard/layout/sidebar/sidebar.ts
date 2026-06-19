@@ -44,6 +44,8 @@ export class SidebarComponent {
       icon: 'fa-solid fa-ticket',
       route: 'tickets',
     },
+    { labelKey: 'ADMIN_NAV.PAYMENTS', icon: 'fa-solid fa-credit-card', route: 'payments' },
+    { labelKey: 'ADMIN_NAV.WITHDRAWALS', icon: 'fa-solid fa-arrow-up-from-bracket', route: 'withdrawals' },
     { labelKey: 'ADMIN_NAV.SETTINGS', icon: 'fa-solid fa-gear', route: 'settings' },
   ];
 }

@@ -72,6 +72,11 @@ export const dashboardRoutes: Routes = [
             m => m.SubscriptionPlansComponent
           ),
       },
+      {
+        path: 'payments',
+        loadComponent: () =>
+          import('./pages/my-payments/my-payments.component').then(m => m.MyPaymentsComponent),
+      },
     ],
   },
 ];

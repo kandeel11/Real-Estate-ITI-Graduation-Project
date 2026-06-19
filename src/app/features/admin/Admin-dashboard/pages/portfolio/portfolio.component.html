@@ -642,19 +642,18 @@
                     placeholder="e.g. Incomplete information, duplicate listing, photos don't match description...">
                 </textarea>
 
-                @if (rejectReason().trim().length > 0 && rejectReason().trim().length < 5) {
-                <small class="pf-err">
+                @if (rejectReason().trim().length > 0 && rejectReason().trim().length < 5) { <small class="pf-err">
                     <i class="fa-solid fa-triangle-exclamation"></i>
                     Minimum 5 characters required ({{ rejectReason().trim().length }}/5)
-                </small>
-                } @else {
-                <small class="pf-hint">
-                    The owner will be notified with this reason.
-                    @if (rejectReason().trim().length === 0) {
-                    <span style="color:#94a3b8"> — min 5 characters</span>
+                    </small>
+                    } @else {
+                    <small class="pf-hint">
+                        The owner will be notified with this reason.
+                        @if (rejectReason().trim().length === 0) {
+                        <span style="color:#94a3b8"> — min 5 characters</span>
+                        }
+                    </small>
                     }
-                </small>
-                }
             </div>
 
             <div class="pf-mfooter">

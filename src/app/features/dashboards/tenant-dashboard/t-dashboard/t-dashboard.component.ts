@@ -50,6 +50,7 @@ export class TDashboardComponent implements OnInit, OnDestroy {
     { id: 'subscription',  label: 'TENANT_NAV.SUBSCRIPTION',  icon: 'fa-solid fa-crown',              route: '/dashboard/subscription' },
     { id: 'ratings',       label: 'TENANT_NAV.RATINGS',       icon: 'fa-regular fa-star',             route: '/dashboard/ratings' },
     { id: 'profile',       label: 'TENANT_NAV.PROFILE',       icon: 'fa-regular fa-circle-user',      route: '/dashboard/profile' },
+    { id: 'payments',      label: 'TENANT_NAV.PAYMENTS',      icon: 'fa-solid fa-calendar-check',     route: '/dashboard/payments' },
     { id: 'ai',            label: 'TENANT_NAV.AI_ASSISTANT',  icon: 'fa-solid fa-robot',              route: '/dashboard/ai' },
   ];
 

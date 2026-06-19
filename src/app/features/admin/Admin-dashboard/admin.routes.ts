@@ -55,6 +55,16 @@ export const adminRoutes: Routes = [
         loadComponent: () =>
           import('./pages/tickets/tickets.component').then((m) => m.AdminTicketsComponent),
       },
+      {
+        path: 'payments',
+        loadComponent: () =>
+          import('./pages/payments/payments.component').then((m) => m.AdminPaymentsComponent),
+      },
+      {
+        path: 'withdrawals',
+        loadComponent: () =>
+          import('./pages/withdrawals/withdrawals.component').then((m) => m.AdminWithdrawalsComponent),
+      },
       // Placeholder redirects until pages are built
       { path: 'approvals', redirectTo: 'overview', pathMatch: 'full' },
       { path: 'reports', redirectTo: 'overview', pathMatch: 'full' },

@@ -323,6 +323,13 @@ export const routes: Routes = [
                 (m) => m.ProfileComponent,
               ),
           },
+          {
+            path: 'payments',
+            loadComponent: () =>
+              import('./features/dashboards/broker/pages/payments/payments.component').then(
+                (m) => m.BrokerPaymentsComponent,
+              ),
+          },
         ],
       },
 
@@ -412,6 +419,13 @@ export const routes: Routes = [
             loadComponent: () =>
               import('./features/dashboards/owner-dashboard/pages/profile/profile.component').then(
                 (m) => m.ProfileComponent,
+              ),
+          },
+          {
+            path: 'wallet',
+            loadComponent: () =>
+              import('./features/dashboards/owner-dashboard/pages/wallet/wallet.component').then(
+                (m) => m.OwnerWalletComponent,
               ),
           },
         ],

@@ -53,6 +53,7 @@ export class OwnerDashboardComponent implements OnInit {
     { id: 'notifications', labelKey: 'OWNER_NAV.NOTIFICATIONS', icon: 'fa-regular fa-bell',       route: '/dashboard/owner/notifications',
       badge: () => this.notifications.unreadCount() },
     { id: 'subscription', labelKey: 'OWNER_NAV.SUBSCRIPTION', icon: 'fa-solid fa-crown',         route: '/dashboard/owner/subscription' },
+    { id: 'wallet',       labelKey: 'OWNER_NAV.WALLET',        icon: 'fa-solid fa-wallet',        route: '/dashboard/owner/wallet' },
     { id: 'profile',      labelKey: 'OWNER_NAV.SETTINGS',      icon: 'fa-solid fa-gear',          route: '/dashboard/owner/profile' },
   ];
 
