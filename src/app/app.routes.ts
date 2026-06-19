@@ -282,6 +282,13 @@ export const routes: Routes = [
               ),
           },
           {
+            path: 'messages',
+            loadComponent: () =>
+              import('./features/dashboards/broker/pages/messages/messages.component').then(
+                (m) => m.MessagesComponent,
+              ),
+          },
+          {
             path: 'performance',
             loadComponent: () =>
               import('./features/dashboards/broker/pages/performance/performance.component').then(
@@ -356,6 +363,13 @@ export const routes: Routes = [
             loadComponent: () =>
               import('./features/dashboards/owner-dashboard/pages/inquiries/inquiries.component').then(
                 (m) => m.InquiriesComponent,
+              ),
+          },
+          {
+            path: 'messages',
+            loadComponent: () =>
+              import('./features/dashboards/owner-dashboard/pages/messages/messages.component').then(
+                (m) => m.MessagesComponent,
               ),
           },
           {

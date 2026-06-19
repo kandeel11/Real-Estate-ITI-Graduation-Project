@@ -3,6 +3,7 @@ import {
 } from '@angular/core';
 import { DatePipe } from '@angular/common';
 import { FormsModule } from '@angular/forms';
+import { ActivatedRoute } from '@angular/router';
 import { TenantMessagesService, TenantInquiry, ChatMessage } from '../../services/messages.service';
 
 @Component({
@@ -14,6 +15,7 @@ import { TenantMessagesService, TenantInquiry, ChatMessage } from '../../service
 })
 export class TenantMessagesComponent implements OnInit, AfterViewChecked {
   private readonly svc = inject(TenantMessagesService);
+  private readonly route = inject(ActivatedRoute);
   @ViewChild('msgList') msgListRef!: ElementRef<HTMLElement>;
 
   inquiries = signal<TenantInquiry[]>([]);
@@ -28,7 +30,16 @@ export class TenantMessagesComponent implements OnInit, AfterViewChecked {
 
   ngOnInit(): void {
     this.svc.getInquiries().subscribe({
-      next: inqs => { this.inquiries.set(this.sortByLatest(inqs)); this.loadingInquiries.set(false); },
+      next: inqs => {
+        this.inquiries.set(this.sortByLatest(inqs));
+        this.loadingInquiries.set(false);
+        // Deep-link from a notification: ?inquiry=<id> opens that conversation.
+        const id = this.route.snapshot.queryParamMap.get('inquiry');
+        if (id) {
+          const target = this.inquiries().find(i => i.id === id);
+          if (target) this.selectInquiry(target);
+        }
+      },
       error: () => this.loadingInquiries.set(false),
     });
   }

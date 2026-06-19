@@ -46,6 +46,7 @@ export class OwnerDashboardComponent implements OnInit {
     { id: 'properties',  labelKey: 'OWNER_NAV.PROPERTIES',   icon: 'fa-solid fa-building',      route: '/dashboard/owner/properties' },
     { id: 'leads',       labelKey: 'OWNER_NAV.LEADS',        icon: 'fa-solid fa-filter',        route: '/dashboard/owner/leads' },
     { id: 'inquiries',   labelKey: 'OWNER_NAV.INQUIRIES',    icon: 'fa-regular fa-envelope',    route: '/dashboard/owner/inquiries' },
+    { id: 'messages',    labelKey: 'OWNER_NAV.MESSAGES',     icon: 'fa-regular fa-comments',    route: '/dashboard/owner/messages' },
     { id: 'performance', labelKey: 'OWNER_NAV.PERFORMANCE',  icon: 'fa-solid fa-chart-line',    route: '/dashboard/owner/performance' },
     { id: 'leases',        labelKey: 'OWNER_NAV.LEASES',        icon: 'fa-solid fa-file-contract', route: '/dashboard/owner/leases' },
     { id: 'maintenance',   labelKey: 'OWNER_NAV.MAINTENANCE',   icon: 'fa-solid fa-screwdriver-wrench', route: '/dashboard/owner/maintenance' },

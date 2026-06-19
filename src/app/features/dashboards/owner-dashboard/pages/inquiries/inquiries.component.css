@@ -64,3 +64,20 @@
 .chat-thread-prop { display: block; font-size: 12px; color: var(--color-primary); margin: 1px 0 3px; }
 .chat-thread-preview { margin: 0; font-size: 13px; color: var(--color-on-surface-variant); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
 .chat-thread-chevron { color: var(--color-on-surface-variant); font-size: 13px; flex-shrink: 0; }
+
+/* ── Property groups (collapsible) ─────────────────── */
+.prop-groups { display: flex; flex-direction: column; gap: 14px; }
+.prop-group { border: 1px solid var(--color-outline-variant); border-radius: 12px; overflow: hidden; background: var(--color-surface-container-lowest); }
+.prop-group-header {
+  width: 100%; display: flex; align-items: center; gap: 10px;
+  padding: 14px 16px; background: var(--color-surface-container);
+  border: none; cursor: pointer; text-align: start; transition: background .15s;
+}
+.prop-group-header:hover { background: var(--color-surface-container-high); }
+.chevron { font-size: 12px; color: var(--color-on-surface-variant); transition: transform .18s ease; flex-shrink: 0; }
+.chevron.open { transform: rotate(90deg); }
+.prop-icon { color: var(--color-primary); font-size: 14px; flex-shrink: 0; }
+.prop-group-title { font-size: 14px; font-weight: 700; color: var(--color-on-surface); flex: 1; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.prop-count { background: var(--color-surface-container-highest); color: var(--color-on-surface-variant); font-size: 12px; font-weight: 700; padding: 2px 9px; border-radius: var(--radius-full); flex-shrink: 0; }
+.prop-new-count { background: var(--color-primary); color: var(--color-on-primary); font-size: 11px; font-weight: 700; padding: 2px 9px; border-radius: var(--radius-full); flex-shrink: 0; }
+.prop-group .inbox { padding: 12px; }

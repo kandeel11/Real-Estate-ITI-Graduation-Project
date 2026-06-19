@@ -283,7 +283,8 @@
     "PROFILE": "Profile",
     "ROLE_INDEPENDENT": "Independent Broker",
     "ROLE_COMPANY": "Company Broker",
-    "LOGOUT": "Logout"
+    "LOGOUT": "Logout",
+    "MESSAGES": "Messages"
   },
   "BROKER": {
     "OVERVIEW": {
@@ -514,6 +515,16 @@
       "CONFIRM_PASSWORD": "Confirm New Password",
       "CHANGE_PASSWORD": "Change Password",
       "CHANGING": "Changing…"
+    },
+    "MESSAGES": {
+      "TITLE": "Messages",
+      "SUBTITLE": "Chat with tenants",
+      "EMPTY_TITLE": "No conversations yet.",
+      "EMPTY_SUB": "Inquiries from tenants will appear here.",
+      "SELECT_TITLE": "Select a conversation",
+      "SELECT_SUB": "Your chats with tenants appear here",
+      "NO_MESSAGES": "No messages yet — start the conversation below.",
+      "PLACEHOLDER": "Type a message… (Enter to send)"
     }
   },
   "OWNER_NAV": {
@@ -532,7 +543,8 @@
     "LOGOUT": "Logout",
     "MAINTENANCE": "Maintenance",
     "ROLE": "Property Owner",
-    "SETTINGS": "Settings"
+    "SETTINGS": "Settings",
+    "MESSAGES": "Messages"
   },
   "OWNER": {
     "OVERVIEW": {
@@ -784,6 +796,16 @@
       "STATUS_OPEN": "Open",
       "STATUS_IN_PROGRESS": "In Progress",
       "STATUS_RESOLVED": "Resolved"
+    },
+    "MESSAGES": {
+      "TITLE": "Messages",
+      "SUBTITLE": "Chat with tenants",
+      "EMPTY_TITLE": "No conversations yet.",
+      "EMPTY_SUB": "Inquiries from tenants will appear here.",
+      "SELECT_TITLE": "Select a conversation",
+      "SELECT_SUB": "Your chats with tenants appear here",
+      "NO_MESSAGES": "No messages yet — start the conversation below.",
+      "PLACEHOLDER": "Type a message… (Enter to send)"
     }
   },
   "COMPANY_NAV": {

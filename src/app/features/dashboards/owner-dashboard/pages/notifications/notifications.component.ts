@@ -130,7 +130,12 @@ export class OwnerNotificationsComponent implements OnInit {
     if (!notif.relatedEntityType) return;
     switch (notif.relatedEntityType.toLowerCase()) {
       case 'inquiry':
-        this.router.navigate(['/dashboard/owner/inquiries']);
+        // Open the related conversation in Messages.
+        if (notif.relatedEntityId) {
+          this.router.navigate(['/dashboard/owner/messages'], { queryParams: { inquiry: notif.relatedEntityId } });
+        } else {
+          this.router.navigate(['/dashboard/owner/inquiries']);
+        }
         break;
       case 'lease':
         this.router.navigate(['/dashboard/owner/leases']);

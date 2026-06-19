@@ -1,32 +1,35 @@
 import { Component, OnInit, inject, signal, computed } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
+import { Router } from '@angular/router';
 import { TranslatePipe } from '@ngx-translate/core';
 import { BrokerDataService } from '../../services/broker-data.service';
-import { Inquiry, InquiryDetail } from '../../models/broker.models';
+import { Inquiry } from '../../models/broker.models';
 import { ToastService } from '../../../../../shared/components/toast/toast.service';
-import { ChatModalComponent } from '../../components/chat-modal/chat-modal.component';
 
 @Component({
   selector: 'app-broker-inquiries',
   standalone: true,
-  imports: [CommonModule, FormsModule, TranslatePipe, ChatModalComponent],
+  imports: [CommonModule, FormsModule, TranslatePipe],
   templateUrl: './inquiries.component.html',
   styleUrl: './inquiries.component.css',
 })
 export class InquiriesComponent implements OnInit {
   private readonly dataService = inject(BrokerDataService);
   private readonly toast = inject(ToastService);
+  private readonly router = inject(Router);
+
+  /** Where the "Chat" button sends the user (overridden in the owner copy). */
+  protected readonly messagesRoute = '/dashboard/broker/messages';
 
   readonly inquiries = signal<Inquiry[]>([]);
-  /** Full details kept alongside the compact list so the chat modal has the rich shape. */
-  private readonly details = signal<InquiryDetail[]>([]);
-  readonly chatInquiry = signal<InquiryDetail | null>(null);
   readonly loading = signal(true);
-  readonly filter = signal<'all' | 'new' | 'replied' | 'chat'>('all');
+  readonly filter = signal<'all' | 'new' | 'replied'>('all');
   readonly search = signal('');
   readonly sendingId = signal<string | null>(null);
   readonly convertingId = signal<string | null>(null);
+  /** Property titles whose group is collapsed (all expanded by default). */
+  readonly collapsed = signal<Set<string>>(new Set());
   replyText: Record<string, string> = {};
 
   readonly filtered = computed(() => {
@@ -41,23 +44,33 @@ export class InquiriesComponent implements OnInit {
     });
   });
 
-  /** Conversations for the Chat tab — newest activity first. */
-  readonly chatList = computed(() => {
-    const q = this.search().toLowerCase();
-    return [...this.details()]
-      .filter(d => !q ||
-        d.tenantName.toLowerCase().includes(q) ||
-        d.propertyTitle.toLowerCase().includes(q))
-      .sort((a, b) =>
-        new Date(b.lastMessageAt ?? b.createdAt).getTime() -
-        new Date(a.lastMessageAt ?? a.createdAt).getTime());
+  /** Inquiries grouped under their property — each property is a collapsible section. */
+  readonly groups = computed(() => {
+    const map = new Map<string, Inquiry[]>();
+    for (const i of this.filtered()) {
+      const key = i.property || '—';
+      const arr = map.get(key);
+      if (arr) arr.push(i); else map.set(key, [i]);
+    }
+    return [...map.entries()]
+      .map(([property, items]) => ({
+        property,
+        items,
+        newCount: items.filter(x => x.status === 'new').length,
+      }))
+      .sort((a, b) => b.items.length - a.items.length);
   });
 
-  openChatDetail(detail: InquiryDetail): void { this.chatInquiry.set(detail); }
+  isOpen(property: string): boolean {
+    return !this.collapsed().has(property);
+  }
 
-  chatPreview(d: InquiryDetail): string {
-    const text = d.lastMessage ?? d.message;
-    return text.length > 60 ? text.slice(0, 60) + '…' : text;
+  toggleGroup(property: string): void {
+    this.collapsed.update(set => {
+      const next = new Set(set);
+      next.has(property) ? next.delete(property) : next.add(property);
+      return next;
+    });
   }
 
   initials(name: string): string {
@@ -67,7 +80,6 @@ export class InquiriesComponent implements OnInit {
   ngOnInit(): void {
     this.dataService.getInquiryDetails().subscribe({
       next: list => {
-        this.details.set(list);
         this.inquiries.set(list.map(i => ({
           id: i.id,
           from: i.tenantName,
@@ -82,26 +94,9 @@ export class InquiriesComponent implements OnInit {
     });
   }
 
+  /** Open the full conversation in the Messages tab, pre-selected. */
   openChat(inquiry: Inquiry): void {
-    const detail = this.details().find(d => d.id === inquiry.id);
-    if (detail) this.chatInquiry.set(detail);
-  }
-
-  closeChat(): void {
-    this.chatInquiry.set(null);
-    // Refresh so the Chat list shows the newest message + reorders to the top.
-    this.dataService.getInquiryDetails().subscribe({
-      next: list => this.details.set(list),
-    });
-  }
-
-  onChatLeadConverted(): void {
-    const id = this.chatInquiry()?.id;
-    this.chatInquiry.set(null);
-    if (id) {
-      this.inquiries.update(list => list.filter(i => i.id !== id));
-      this.toast.success('Converted to lead.');
-    }
+    this.router.navigate([this.messagesRoute], { queryParams: { inquiry: inquiry.id } });
   }
 
   sendReply(inquiry: Inquiry): void {

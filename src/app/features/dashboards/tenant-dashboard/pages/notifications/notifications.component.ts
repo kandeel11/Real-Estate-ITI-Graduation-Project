@@ -128,14 +128,18 @@ export class NotificationsComponent implements OnInit {
 
   private navigateToEntity(notif: AppNotification): void {
     if (!notif.relatedEntityType || !notif.relatedEntityId) return;
-    switch (notif.relatedEntityType) {
-      case 'Ticket':
+    switch (notif.relatedEntityType.toLowerCase()) {
+      case 'inquiry':
+        // Open the related conversation in Messages.
+        this.router.navigate(['/dashboard/messages'], { queryParams: { inquiry: notif.relatedEntityId } });
+        break;
+      case 'ticket':
         this.router.navigate(['/dashboard/maintenance', notif.relatedEntityId]);
         break;
-      case 'Lease':
+      case 'lease':
         this.router.navigate(['/dashboard/lease']);
         break;
-      case 'Payment':
+      case 'payment':
         this.router.navigate(['/dashboard/maintenance', notif.relatedEntityId]);
         break;
     }

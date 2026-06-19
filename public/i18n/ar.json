@@ -283,7 +283,8 @@
     "PROFILE": "الملف الشخصي",
     "ROLE_INDEPENDENT": "وسيط مستقل",
     "ROLE_COMPANY": "وسيط شركة",
-    "LOGOUT": "تسجيل الخروج"
+    "LOGOUT": "تسجيل الخروج",
+    "MESSAGES": "الرسائل"
   },
   "BROKER": {
     "OVERVIEW": {
@@ -514,6 +515,16 @@
       "CONFIRM_PASSWORD": "تأكيد كلمة المرور الجديدة",
       "CHANGE_PASSWORD": "تغيير كلمة المرور",
       "CHANGING": "جارٍ التغيير…"
+    },
+    "MESSAGES": {
+      "TITLE": "الرسائل",
+      "SUBTITLE": "الدردشة مع المستأجرين",
+      "EMPTY_TITLE": "لا توجد محادثات بعد.",
+      "EMPTY_SUB": "ستظهر استفسارات المستأجرين هنا.",
+      "SELECT_TITLE": "اختر محادثة",
+      "SELECT_SUB": "تظهر محادثاتك مع المستأجرين هنا",
+      "NO_MESSAGES": "لا توجد رسائل بعد — ابدأ المحادثة أدناه.",
+      "PLACEHOLDER": "اكتب رسالة… (Enter للإرسال)"
     }
   },
   "OWNER_NAV": {
@@ -532,7 +543,8 @@
     "LOGOUT": "تسجيل الخروج",
     "MAINTENANCE": "الصيانة",
     "ROLE": "مالك العقار",
-    "SETTINGS": "الإعدادات"
+    "SETTINGS": "الإعدادات",
+    "MESSAGES": "الرسائل"
   },
   "OWNER": {
     "OVERVIEW": {
@@ -784,6 +796,16 @@
       "STATUS_OPEN": "مفتوحة",
       "STATUS_IN_PROGRESS": "قيد التنفيذ",
       "STATUS_RESOLVED": "تم الحل"
+    },
+    "MESSAGES": {
+      "TITLE": "الرسائل",
+      "SUBTITLE": "الدردشة مع المستأجرين",
+      "EMPTY_TITLE": "لا توجد محادثات بعد.",
+      "EMPTY_SUB": "ستظهر استفسارات المستأجرين هنا.",
+      "SELECT_TITLE": "اختر محادثة",
+      "SELECT_SUB": "تظهر محادثاتك مع المستأجرين هنا",
+      "NO_MESSAGES": "لا توجد رسائل بعد — ابدأ المحادثة أدناه.",
+      "PLACEHOLDER": "اكتب رسالة… (Enter للإرسال)"
     }
   },
   "COMPANY_NAV": {

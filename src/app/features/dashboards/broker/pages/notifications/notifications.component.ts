@@ -130,7 +130,12 @@ export class BrokerNotificationsComponent implements OnInit {
     if (!notif.relatedEntityType) return;
     switch (notif.relatedEntityType.toLowerCase()) {
       case 'inquiry':
-        this.router.navigate(['/dashboard/broker/inquiries']);
+        // Open the related conversation in Messages.
+        if (notif.relatedEntityId) {
+          this.router.navigate(['/dashboard/broker/messages'], { queryParams: { inquiry: notif.relatedEntityId } });
+        } else {
+          this.router.navigate(['/dashboard/broker/inquiries']);
+        }
         break;
       case 'lease':
         this.router.navigate(['/dashboard/broker/leases']);
