@@ -272,33 +272,19 @@ No request body needed.
 
 ---
 
-## Step 6 — Generate Monthly Payments
+## Step 6 — Payments Are Auto-Generated (No Action Needed)
 
-> **Switch back: Login as Broker (or Admin)**
+When the tenant accepts the lease (Step 4.2), **all installment payment records are created automatically**.
 
-**`POST /api/payments/generate-monthly`** *(no request body needed)*
+For a 12-month monthly lease starting 2026-07-01, you will immediately have 12 `Pending` payment records (one per month) without any manual step.
 
-Optionally pass a target month as query param:
-
-```
-POST /api/payments/generate-monthly?targetMonth=2026-07-01
-```
-
-**Expected Response (200):**
-```json
-{
-  "generatedCount": 1,
-  "skippedCount": 0,
-  "errors": []
-}
-```
-
-> This creates one `Payment` record per active lease for the target month.  
-> If you run it again for the same month, `skippedCount` will increment (idempotent).
+> **Optional — generate-monthly (manual fallback):**  
+> `POST /api/payments/generate-monthly?targetMonth=2026-07-01`  
+> Only needed if you want to manually trigger generation for a specific month (e.g. for leases activated before this feature was deployed).
 
 ---
 
-## Step 7 — Find the Generated Payment
+## Step 7 — Find the Generated Payments
 
 **`GET /api/payments?leaseId={leaseId}`**
 
@@ -534,11 +520,12 @@ No body needed.
 
 [Tenant] GET  /api/tenant/leases/pending-offer      → see the offer
 [Tenant] POST /api/tenant/leases/{id}/accept        → lease is now Active
+                                                      ↓ LeaseActivatedPaymentHandler fires
+                                                      ↓ ALL installment records created automatically
 
 [Any]    GET  /api/leases/{id}/payment-schedule     → full installment schedule
+[Any]    GET  /api/payments?leaseId={id}            → see all auto-generated payments
 
-[Admin]  POST /api/payments/generate-monthly        → creates Pending payment records
-[Admin]  GET  /api/payments?leaseId={id}            → find the paymentId
 [Admin]  POST /api/payments/{id}/process            → marks Paid + 1% commission + outbox event
 
 (async)  OutboxPublisherJob fires RentPaymentSucceededEvent
