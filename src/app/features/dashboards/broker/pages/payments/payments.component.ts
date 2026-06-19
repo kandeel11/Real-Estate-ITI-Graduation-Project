@@ -1,8 +1,9 @@
 import { Component, inject, signal, computed, OnInit } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { PaymentService } from '../../../../../core/services/payment.service';
-import { BrokerDataService, BrokerLease } from '../../services/broker-data.service';
-import { PaymentSchedule, PaymentPeriod } from '../../../../../core/models/payment.model';
+import { RentPayment, BrokerLeaseSchedule, PaymentPeriod } from '../../../../../core/models/payment.model';
+
+type ActiveTab = 'payments' | 'schedule';
 
 @Component({
   selector: 'app-broker-payments',
@@ -13,55 +14,72 @@ import { PaymentSchedule, PaymentPeriod } from '../../../../../core/models/payme
 })
 export class BrokerPaymentsComponent implements OnInit {
   private paymentService = inject(PaymentService);
-  private brokerService = inject(BrokerDataService);
 
-  leasesLoading = signal(true);
+  activeTab = signal<ActiveTab>('payments');
+
+  // Payments tab
+  paymentsLoading = signal(false);
+  paymentsError = signal<string | null>(null);
+  payments = signal<RentPayment[]>([]);
+
+  // Schedule tab
   scheduleLoading = signal(false);
-  leases = signal<BrokerLease[]>([]);
-  selectedLeaseId = signal<string | null>(null);
-  schedule = signal<PaymentSchedule | null>(null);
   scheduleError = signal<string | null>(null);
+  leaseSchedules = signal<BrokerLeaseSchedule[]>([]);
+  selectedLeaseId = signal<string | null>(null);
   showAll = signal(false);
 
-  selectedLease = computed(() =>
-    this.leases().find(l => l.id === this.selectedLeaseId()) ?? null
+  selectedLeaseSchedule = computed(() =>
+    this.leaseSchedules().find(ls => ls.leaseId === this.selectedLeaseId()) ?? null
   );
 
   visiblePeriods = computed(() => {
-    const all = this.schedule()?.allPeriods ?? [];
+    const all = this.selectedLeaseSchedule()?.schedule.allPeriods ?? [];
     return this.showAll() ? all : all.slice(0, 6);
   });
 
-  activeLeases = computed(() =>
-    this.leases().filter(l => l.status === 'active' || l.status === 'expiring')
-  );
+  paymentStats = computed(() => {
+    const all = this.payments();
+    return {
+      total: all.length,
+      paid: all.filter(p => p.status === 'Paid').length,
+      pending: all.filter(p => p.status === 'Pending').length,
+      overdue: all.filter(p => p.status === 'Overdue' || p.status === 'Late').length,
+      totalAmount: all.reduce((s, p) => s + p.amount, 0),
+    };
+  });
 
   ngOnInit() {
-    this.brokerService.getLeases().subscribe({
-      next: (ls) => {
-        this.leases.set(ls);
-        this.leasesLoading.set(false);
-        const first = ls.find(l => l.status === 'active' || l.status === 'expiring');
-        if (first) this.selectLease(first.id);
-      },
-      error: () => this.leasesLoading.set(false),
+    this.loadPayments();
+    this.loadSchedules();
+  }
+
+  loadPayments() {
+    this.paymentsLoading.set(true);
+    this.paymentsError.set(null);
+    this.paymentService.getBrokerPayments().subscribe({
+      next: (list) => { this.payments.set(list ?? []); this.paymentsLoading.set(false); },
+      error: () => { this.paymentsError.set('Could not load payments.'); this.paymentsLoading.set(false); },
     });
   }
 
-  selectLease(id: string) {
-    if (this.selectedLeaseId() === id) return;
-    this.selectedLeaseId.set(id);
-    this.schedule.set(null);
-    this.scheduleError.set(null);
-    this.showAll.set(false);
+  loadSchedules() {
     this.scheduleLoading.set(true);
-    this.paymentService.getPaymentSchedule(id).subscribe({
-      next: (s) => { this.schedule.set(s); this.scheduleLoading.set(false); },
-      error: () => {
-        this.scheduleError.set('Payment schedule is not available for this lease yet.');
+    this.scheduleError.set(null);
+    this.paymentService.getBrokerPaymentSchedules().subscribe({
+      next: (list) => {
+        this.leaseSchedules.set(list ?? []);
+        if (list?.length) this.selectedLeaseId.set(list[0].leaseId);
         this.scheduleLoading.set(false);
       },
+      error: () => { this.scheduleError.set('Could not load schedules.'); this.scheduleLoading.set(false); },
     });
+  }
+
+  selectLease(leaseId: string) {
+    if (this.selectedLeaseId() === leaseId) return;
+    this.selectedLeaseId.set(leaseId);
+    this.showAll.set(false);
   }
 
   periodColor(p: PaymentPeriod): string {
@@ -78,24 +96,22 @@ export class BrokerPaymentsComponent implements OnInit {
     return 'Upcoming';
   }
 
-  progressPercent(s: PaymentSchedule): number {
-    const total = s.summary.totalInstallments;
-    const past = s.summary.pastInstallments;
+  statusColor(s: string): string {
+    return ({ Pending: 'amber', Paid: 'green', Late: 'orange', Overdue: 'red', Refunded: 'blue' } as Record<string, string>)[s] ?? 'gray';
+  }
+
+  progressPercent(ls: BrokerLeaseSchedule): number {
+    const total = ls.schedule.summary.totalInstallments;
+    const past = ls.schedule.summary.pastInstallments;
     return total > 0 ? Math.round((past / total) * 100) : 0;
   }
 
   formatCurrency(n: number) {
-    return `${(n ?? 0).toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })} AED`;
+    return `${(n ?? 0).toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })} EGP`;
   }
 
   formatDate(iso: string) {
     if (!iso) return '—';
     return new Date(iso).toLocaleDateString('en-US', { year: 'numeric', month: 'short', day: 'numeric' });
-  }
-
-  leaseStatusColor(status: string): string {
-    if (status === 'active') return 'green';
-    if (status === 'expiring') return 'amber';
-    return 'gray';
   }
 }

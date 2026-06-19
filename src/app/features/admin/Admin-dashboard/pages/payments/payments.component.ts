@@ -93,7 +93,7 @@ export class AdminPaymentsComponent implements OnInit {
 
   processPayment(p: RentPayment) {
     this.processing.set(p.id);
-    this.paymentService.processPayment(p.id, { paymentMethod: 'cash' }).subscribe({
+    this.paymentService.processPayment(p.id, { paymentMethod: 'Other' }).subscribe({
       next: (res) => {
         this.processing.set(null);
         if (res.isSuccess) {
@@ -126,11 +126,11 @@ export class AdminPaymentsComponent implements OnInit {
   }
 
   statusColor(s: PaymentStatus): string {
-    return { Pending: 'amber', Paid: 'green', Overdue: 'red', Failed: 'red', Refunded: 'blue' }[s] ?? 'gray';
+    return ({ Pending: 'amber', Paid: 'green', Late: 'orange', Overdue: 'red', Refunded: 'blue' } as Record<string, string>)[s] ?? 'gray';
   }
 
   formatCurrency(n: number) {
-    return `${(n ?? 0).toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })} AED`;
+    return `${(n ?? 0).toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })} EGP`;
   }
 
   formatDate(iso: string) {

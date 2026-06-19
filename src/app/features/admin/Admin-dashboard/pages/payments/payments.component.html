@@ -102,7 +102,7 @@
                 <th>Tenant</th>
                 <th>Property</th>
                 <th>Amount</th>
-                <th>Commission</th>
+                <th>Late Fee</th>
                 <th>Due Date</th>
                 <th>Status</th>
                 <th>Action</th>
@@ -119,7 +119,7 @@
                   </td>
                   <td class="muted">{{ p.propertyTitle || '—' }}</td>
                   <td><strong>{{ formatCurrency(p.amount) }}</strong></td>
-                  <td class="muted">{{ formatCurrency(p.commissionAmount) }}</td>
+                  <td class="muted">{{ p.lateFee ? formatCurrency(p.lateFee) : '—' }}</td>
                   <td class="muted">{{ formatDate(p.dueDate) }}</td>
                   <td>
                     <span class="badge" [attr.data-color]="statusColor(p.status)">{{ p.status }}</span>

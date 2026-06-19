@@ -11,8 +11,10 @@ interface LeaseView {
   id: string;
   propertyId: string;
   propertyAddress: string;
-  rentAmount: number;
-  securityDeposit: number;
+  installmentAmount: number;
+  totalRentAmount?: number | null;
+  paymentFrequency?: string | null;
+  securityDeposit?: number | null;
   startDate: string;
   endDate: string;
   paymentDayOfMonth: number;
@@ -53,6 +55,8 @@ export class MyLeaseComponent implements OnInit {
   protected chatInput = '';
   protected chatLoading = signal(false);
 
+  protected contractLoading = signal<boolean>(false);
+
   ngOnInit(): void {
     this.loadData();
     this.leaseService.getPendingOffer().subscribe(offer => this.pendingOffer.set(offer));
@@ -89,11 +93,12 @@ export class MyLeaseComponent implements OnInit {
     const end = new Date(lease.endDate).getTime();
     const daysUntilExpiry = Math.max(0, Math.ceil((end - Date.now()) / 86_400_000));
 
-    // A lease the broker sent but the tenant hasn't accepted yet is "extracted" & not active —
-    // that's pending review, not ended.
+    // Active flag is authoritative; non-active leases that haven't ended yet are pending.
+    const now = Date.now();
+    const endTime = new Date(lease.endDate).getTime();
     const status: 'active' | 'pending' | 'ended' = lease.isActive
       ? 'active'
-      : lease.extractionStatus === 'extracted'
+      : endTime > now
         ? 'pending'
         : 'ended';
 
@@ -101,7 +106,9 @@ export class MyLeaseComponent implements OnInit {
       id: lease.id,
       propertyId: lease.propertyId,
       propertyAddress: address ?? `Property ${lease.propertyId.slice(-6)}`,
-      rentAmount: lease.rentAmount,
+      installmentAmount: lease.installmentAmount,
+      totalRentAmount: lease.totalRentAmount,
+      paymentFrequency: lease.paymentFrequency,
       securityDeposit: lease.securityDeposit,
       startDate: lease.startDate,
       endDate: lease.endDate,
@@ -145,7 +152,14 @@ export class MyLeaseComponent implements OnInit {
   }
 
   downloadContract(lease: LeaseView): void {
-    window.open(this.leaseService.contractUrl(lease.contractFileUrl), '_blank');
+    this.contractLoading.set(true);
+    this.leaseService.getContractUrl(lease.id).subscribe({
+      next: ({ contractFileUrl }) => {
+        window.open(contractFileUrl, '_blank', 'noopener');
+        this.contractLoading.set(false);
+      },
+      error: () => this.contractLoading.set(false),
+    });
   }
 
   toggleExpand(id: string): void {

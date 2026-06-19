@@ -402,6 +402,64 @@
   background: var(--color-surface-container-low);
 }
 
+/* ── CONTRACT PDF VIEWER ───────────────────────── */
+.contract-overlay {
+  position: fixed; inset: 0;
+  background: rgba(0, 0, 0, .6);
+  z-index: 1000;
+  display: flex; align-items: center; justify-content: center;
+  padding: 1rem;
+}
+
+.contract-modal {
+  background: var(--color-surface-container-lowest);
+  border-radius: 16px;
+  width: 100%; max-width: 980px;
+  height: 90vh;
+  display: flex; flex-direction: column;
+  overflow: hidden;
+  box-shadow: 0 24px 60px rgba(0,0,0,.3);
+}
+
+.contract-modal-header {
+  display: flex; align-items: center; justify-content: space-between;
+  padding: .875rem 1.25rem;
+  border-bottom: 1px solid var(--color-outline-variant);
+  font-weight: 600; font-size: 15px; flex-shrink: 0;
+  gap: .75rem;
+}
+
+.contract-modal-actions { display: flex; align-items: center; gap: .5rem; }
+
+.contract-dl-btn {
+  display: inline-flex; align-items: center; justify-content: center;
+  width: 34px; height: 34px; border-radius: var(--radius-sm);
+  color: var(--color-primary);
+  text-decoration: none; transition: background .12s;
+}
+.contract-dl-btn:hover { background: var(--color-primary-fixed); }
+
+.contract-close-btn {
+  background: none; border: none; cursor: pointer;
+  width: 34px; height: 34px; border-radius: var(--radius-sm);
+  font-size: 18px; color: var(--color-on-surface-variant);
+  display: flex; align-items: center; justify-content: center;
+  transition: background .12s;
+}
+.contract-close-btn:hover { background: var(--color-surface-container); }
+
+.contract-embed {
+  flex: 1; width: 100%; border: none;
+}
+
+.contract-body-state {
+  flex: 1; display: flex; flex-direction: column;
+  align-items: center; justify-content: center;
+  gap: 1rem; color: var(--color-on-surface-variant);
+  padding: 2rem;
+}
+.contract-body-state p { margin: 0; font-size: 14px; }
+
 /* ── RESPONSIVE ────────────────────────────────── */
 @media (max-width: 576px) {
   .my-lease-page { padding: 16px; }

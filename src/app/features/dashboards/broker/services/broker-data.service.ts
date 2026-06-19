@@ -177,4 +177,8 @@ export class BrokerDataService {
     return this.http.get<BrokerLease[]>(`${this.api}${API_ENDPOINTS.LEASES.GET_ALL}`)
       .pipe(timeout(10000), catchError(() => of([])));
   }
+
+  getContractUrl(leaseId: string): Observable<{ contractFileUrl: string }> {
+    return this.http.get<{ contractFileUrl: string }>(`${this.api}/leases/${leaseId}/download`);
+  }
 }

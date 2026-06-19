@@ -46,6 +46,7 @@ export class CompanyDashboardComponent {
     { id: 'overview',      label: 'COMPANY_NAV.OVERVIEW',      icon: 'fa-solid fa-gauge-high',    route: '/dashboard/company/overview' },
     { id: 'properties',    label: 'COMPANY_NAV.PROPERTIES',    icon: 'fa-solid fa-building',      route: '/dashboard/company/properties' },
     { id: 'brokers',       label: 'COMPANY_NAV.BROKERS',       icon: 'fa-solid fa-users',         route: '/dashboard/company/brokers' },
+    { id: 'payments',      label: 'COMPANY_NAV.PAYMENTS',      icon: 'fa-solid fa-credit-card',   route: '/dashboard/company/payments' },
     { id: 'performance',   label: 'COMPANY_NAV.PERFORMANCE',   icon: 'fa-solid fa-chart-line',    route: '/dashboard/company/performance' },
     { id: 'inquiries',     label: 'COMPANY_NAV.INQUIRIES',     icon: 'fa-regular fa-envelope',    route: '/dashboard/company/inquiries' },
     { id: 'ai',            label: 'COMPANY_NAV.AI_ASSISTANT',  icon: 'fa-solid fa-robot',         route: '/dashboard/company/ai' },

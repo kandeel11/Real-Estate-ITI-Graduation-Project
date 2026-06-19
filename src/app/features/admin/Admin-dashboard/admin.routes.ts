@@ -63,7 +63,9 @@ export const adminRoutes: Routes = [
       {
         path: 'withdrawals',
         loadComponent: () =>
-          import('./pages/withdrawals/withdrawals.component').then((m) => m.AdminWithdrawalsComponent),
+          import('./pages/withdrawals/withdrawals.component').then(
+            (m) => m.AdminWithdrawalsComponent,
+          ),
       },
       // Placeholder redirects until pages are built
       { path: 'approvals', redirectTo: 'overview', pathMatch: 'full' },

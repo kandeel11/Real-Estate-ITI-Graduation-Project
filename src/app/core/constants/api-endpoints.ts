@@ -150,22 +150,43 @@ export const API_ENDPOINTS = {
 
   // ==================== PAYMENTS MODULE ====================
   PAYMENTS: {
-    // Rent payment management (admin)
-    GENERATE_MONTHLY: '/payments/generate-monthly',
     GET_ALL: '/payments',
+    GET_MY: '/payments/my',
     GET_BY_ID: (id: string) => `/payments/${id}`,
     PROCESS: (id: string) => `/payments/${id}/process`,
     GET_OVERDUE: '/payments/overdue',
+    GET_SUMMARY: '/payments/summary',
+    GET_BY_STATUS: (status: string) => `/payments/status/${status}`,
     APPLY_LATE_FEE: (id: string) => `/payments/${id}/late-fee`,
     GET_RECEIPT: (id: string) => `/payments/${id}/receipt`,
+    REFUND: (id: string) => `/payments/${id}/refund`,
+    GENERATE_MONTHLY: '/payments/generate-monthly',
+    GENERATE_FOR_LEASE: (leaseId: string) => `/payments/generate-for-lease/${leaseId}`,
+    SUBSCRIPTIONS_CHECKOUT: '/payments/subscriptions/checkout',
     STRIPE_WEBHOOK: '/payments/webhook/stripe',
-    // Legacy / other payment types
-    CREATE_INTENT: '/payments/create-intent',
-    CONFIRM_PAYMENT: '/payments/confirm',
-    GET_PAYMENT_HISTORY: '/payments/history',
-    GET_INVOICE: (invoiceId: string) => `/payments/invoice/${invoiceId}`,
-    DOWNLOAD_INVOICE: (invoiceId: string) => `/payments/invoice/${invoiceId}/download`,
-    PROCESS_REFUND: (paymentId: string) => `/payments/${paymentId}/refund`,
+  },
+
+  // ==================== TENANT PAYMENTS ====================
+  TENANT_PAYMENTS: {
+    GET_ALL: '/tenant/payments',
+    GET_SCHEDULE: '/tenant/payments/schedule',
+  },
+
+  // ==================== OWNER PAYMENTS ====================
+  OWNER_PAYMENTS: {
+    GET_ALL: '/owners/me/payments',
+  },
+
+  // ==================== BROKER PAYMENTS ====================
+  BROKER_PAYMENTS: {
+    GET_ALL: '/brokers/me/payments',
+    GET_SCHEDULE: '/brokers/me/payments/schedule',
+  },
+
+  // ==================== COMPANY PAYMENTS ====================
+  COMPANY_PAYMENTS: {
+    GET_ALL: '/companies/mine/payments',
+    GET_SCHEDULE: '/companies/mine/payments/schedule',
   },
 
   // ==================== WALLET MODULE ====================

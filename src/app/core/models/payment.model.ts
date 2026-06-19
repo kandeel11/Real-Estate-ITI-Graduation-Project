@@ -1,17 +1,25 @@
-export type PaymentStatus = 'Pending' | 'Paid' | 'Overdue' | 'Failed' | 'Refunded';
-export type PaymentMethod = 'cash' | 'card' | 'banktransfer' | 'wallet' | 'stripe';
+export type PaymentStatus = 'Pending' | 'Paid' | 'Late' | 'Overdue' | 'Refunded';
+export type PaymentMethod = 'BankTransfer' | 'Stripe' | 'Other';
 
 export interface RentPayment {
   id: string;
-  amount: number;
-  commissionAmount: number;
-  status: PaymentStatus;
-  dueDate: string;
-  paidAt?: string;
-  paymentType: string;
   leaseId: string;
-  tenantId: string;
-  landlordId: string;
+  amount: number;
+  dueDate: string;
+  paidAt?: string | null;
+  status: PaymentStatus;
+  paymentMethod?: PaymentMethod | null;
+  transactionId?: string | null;
+  lateFee?: number;
+  aiPredictedLate?: boolean;
+  receiptUrl?: string | null;
+  notes?: string | null;
+  createdAt?: string;
+  updatedAt?: string;
+  // enrichment fields — now returned by all endpoints
+  propertyId?: string;
+  tenantId?: string;
+  landlordId?: string;
   tenantName?: string;
   landlordName?: string;
   propertyTitle?: string;
@@ -19,7 +27,7 @@ export interface RentPayment {
 
 export interface ProcessPaymentRequest {
   paymentMethod: PaymentMethod;
-  cardToken?: string;
+  cardToken?: string | null;
 }
 
 export interface ProcessPaymentResponse {
@@ -55,6 +63,17 @@ export interface PaymentScheduleSummary {
   totalAmount: number;
   amountDueSoFar: number;
   amountRemaining: number;
+}
+
+/** Shape returned by GET /api/brokers/me/payments/schedule and GET /api/companies/mine/payments/schedule */
+export interface BrokerLeaseSchedule {
+  leaseId: string;
+  propertyId: string;
+  propertyTitle: string;
+  tenantId: string;
+  startDate: string;
+  endDate: string;
+  schedule: PaymentSchedule;
 }
 
 export interface PaymentSchedule {

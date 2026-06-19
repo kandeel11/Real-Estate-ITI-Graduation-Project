@@ -141,7 +141,7 @@ export class OwnerWalletComponent implements OnInit {
     Math.max(1, Math.ceil(this.ledgerTotal() / this.ledgerPageSize)),
   );
 
-  formatCurrency(n: number, currency = 'AED') {
+  formatCurrency(n: number, currency = 'EGP') {
     return `${n.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })} ${currency}`;
   }
 

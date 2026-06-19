@@ -226,6 +226,13 @@ export const routes: Routes = [
               ),
           },
           {
+            path: 'payments',
+            loadComponent: () =>
+              import('./features/dashboards/company/pages/payments/payments.component').then(
+                (m) => m.CompanyPaymentsComponent,
+              ),
+          },
+          {
             path: 'subscriptions',
             loadComponent: () =>
               import('./features/dashboards/company/pages/subscriptions/subscriptions.component').then(

@@ -195,6 +195,10 @@ export class OwnerDataService {
       .pipe(timeout(10000), catchError(() => of([])));
   }
 
+  getContractUrl(leaseId: string): Observable<{ contractFileUrl: string }> {
+    return this.http.get<{ contractFileUrl: string }>(`${this.api}/leases/${leaseId}/download`);
+  }
+
   // ── Maintenance Tickets ──────────────────────────────────────────────────────
   // GET /api/maintenance/tickets auto-scopes to the owner's properties via JWT.
 

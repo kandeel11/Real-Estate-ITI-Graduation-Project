@@ -104,19 +104,24 @@
               {{ (lease.status === 'active' ? 'MY_LEASE.ACTIVE' : lease.status === 'pending' ? 'MY_LEASE.PENDING' : 'MY_LEASE.ENDED') | translate }}
             </span>
           </div>
-          <button class="btn btn-primary btn-sm" (click)="downloadContract(lease)">
-            <i class="fa-solid fa-download me-1"></i>{{ 'MY_LEASE.DOWNLOAD' | translate }}
+          <button class="btn btn-primary btn-sm" (click)="downloadContract(lease)" [disabled]="contractLoading()">
+            @if (contractLoading()) {
+              <i class="fa-solid fa-spinner fa-spin me-1"></i>
+            } @else {
+              <i class="fa-solid fa-eye me-1"></i>
+            }
+            {{ 'MY_LEASE.DOWNLOAD' | translate }}
           </button>
         </div>
 
         <div class="lease-details-grid">
           <div class="detail-item">
             <span class="detail-label">{{ 'MY_LEASE.MONTHLY_RENT' | translate }}</span>
-            <span class="detail-value rent">{{ lease.rentAmount | currency:'EGP':'symbol':'1.0-0' }}</span>
+            <span class="detail-value rent">{{ lease.installmentAmount | currency:'EGP':'symbol':'1.0-0' }}</span>
           </div>
           <div class="detail-item">
             <span class="detail-label">{{ 'MY_LEASE.SECURITY_DEPOSIT' | translate }}</span>
-            <span class="detail-value">{{ lease.securityDeposit | currency:'EGP':'symbol':'1.0-0' }}</span>
+            <span class="detail-value">{{ (lease.securityDeposit ?? 0) | currency:'EGP':'symbol':'1.0-0' }}</span>
           </div>
           <div class="detail-item">
             <span class="detail-label">{{ 'MY_LEASE.LEASE_START' | translate }}</span>
@@ -223,7 +228,7 @@
                       [class.badge-ended]="lease.status === 'ended'">
                   {{ (lease.status === 'active' ? 'MY_LEASE.ACTIVE' : lease.status === 'pending' ? 'MY_LEASE.PENDING' : 'MY_LEASE.ENDED') | translate }}
                 </span>
-                <span class="rent-tag">{{ lease.rentAmount | currency:'EGP':'symbol':'1.0-0' }}/mo</span>
+                <span class="rent-tag">{{ lease.installmentAmount | currency:'EGP':'symbol':'1.0-0' }}/mo</span>
                 <i class="fa-solid" [class.fa-chevron-down]="expandedLeaseId() !== lease.id"
                    [class.fa-chevron-up]="expandedLeaseId() === lease.id"></i>
               </div>
@@ -234,11 +239,11 @@
                 <div class="lease-details-grid">
                   <div class="detail-item">
                     <span class="detail-label">{{ 'MY_LEASE.MONTHLY_RENT' | translate }}</span>
-                    <span class="detail-value rent">{{ lease.rentAmount | currency:'EGP':'symbol':'1.0-0' }}</span>
+                    <span class="detail-value rent">{{ lease.installmentAmount | currency:'EGP':'symbol':'1.0-0' }}</span>
                   </div>
                   <div class="detail-item">
                     <span class="detail-label">{{ 'MY_LEASE.SECURITY_DEPOSIT' | translate }}</span>
-                    <span class="detail-value">{{ lease.securityDeposit | currency:'EGP':'symbol':'1.0-0' }}</span>
+                    <span class="detail-value">{{ (lease.securityDeposit ?? 0) | currency:'EGP':'symbol':'1.0-0' }}</span>
                   </div>
                   <div class="detail-item">
                     <span class="detail-label">{{ 'MY_LEASE.START_DATE' | translate }}</span>
@@ -255,7 +260,7 @@
                 </div>
                 @if (lease.contractFileUrl) {
                   <button class="btn btn-outline-primary btn-sm mt-3" (click)="downloadContract(lease)">
-                    <i class="fa-solid fa-download me-1"></i>{{ 'MY_LEASE.DOWNLOAD' | translate }}
+                    <i class="fa-solid fa-eye me-1"></i>{{ 'MY_LEASE.DOWNLOAD' | translate }}
                   </button>
                 }
               </div>
@@ -266,3 +271,4 @@
     }
   }
 </div>
+

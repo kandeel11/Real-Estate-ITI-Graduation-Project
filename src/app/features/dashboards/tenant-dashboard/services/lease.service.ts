@@ -116,6 +116,10 @@ export class LeaseService {
     return this.http.post<void>(`${this.base}/tenant/leases/${offerId}/decline`, {});
   }
 
+  getContractUrl(leaseId: string): Observable<{ contractFileUrl: string }> {
+    return this.http.get<{ contractFileUrl: string }>(`${this.base}/leases/${leaseId}/download`);
+  }
+
   contractUrl(relativePath: string): string {
     return `${this.base.replace('/api', '')}/${relativePath}`;
   }
