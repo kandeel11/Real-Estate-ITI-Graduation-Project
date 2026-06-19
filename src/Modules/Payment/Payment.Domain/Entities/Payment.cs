@@ -279,9 +279,12 @@ public class Payment
     }
 
     /// <summary>
-    /// مفتاح وصول مختصر إلى LeaseId — موجود فقط لو PaymentType=Rent
+    /// مفاتيح وصول مختصرة إلى RentDetails — موجودة فقط لو PaymentType=Rent
     /// </summary>
-    public Guid LeaseId => RentDetails?.LeaseId ?? Guid.Empty;
+    public Guid LeaseId    => RentDetails?.LeaseId    ?? Guid.Empty;
+    public Guid PropertyId => RentDetails?.PropertyId ?? Guid.Empty;
+    public Guid TenantId   => RentDetails?.TenantId   ?? Guid.Empty;
+    public Guid LandlordId => RentDetails?.LandlordId ?? Guid.Empty;
 
     private static PaymentMethod ParsePaymentMethod(string method) =>
         method.ToLowerInvariant() switch

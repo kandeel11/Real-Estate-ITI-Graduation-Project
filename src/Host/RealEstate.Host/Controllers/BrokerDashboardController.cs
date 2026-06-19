@@ -1,6 +1,8 @@
 using Document.Application.Queries.Inquiry;
 using Document.Application.Queries.Lead.GetLeadsByBroker;
 using Document.Application.Queries.Lead.GetLeadsByProperties;
+using Document.Application.Queries.Lease;
+using Document.Application.Queries.Lease.GetLeasePaymentSchedule;
 using Document.Application.Queries.Lease.GetLeadsWithLeases;
 using Document.Application.Queries.Message.GetInquiriesWithReply;
 using Document.Application.Queries.Message.GetInquiryLastMessages;
@@ -9,8 +11,10 @@ using Identity.Application.Interfaces;
 using MediatR;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
+using Payment.Application.Features.Queries.GetRentPaymentsByLeaseIds;
 using Property.Application.DTOs;
 using Property.Application.Features.Queries.GetPropertiesByBroker;
+using Property.Application.Features.Queries.GetPropertyById;
 using RealEstate.Host.Services;
 
 namespace RealEstate.Host.Controllers;
@@ -228,6 +232,60 @@ public class BrokerDashboardController(
                 // Latest activity for the chat list (falls back to the inquiry itself).
                 lastMessage = last?.Text ?? i.Message,
                 lastMessageAt = last?.At ?? i.CreatedAt
+            });
+        }
+
+        return Ok(result);
+    }
+
+    // ── Payments ─────────────────────────────────────────────────────────────────
+
+    /// <summary>
+    /// All rent payments for leases managed by this broker (where Lease.BrokerId == UserId).
+    /// Returns RentPaymentDto[] enriched with propertyId/tenantId/landlordId.
+    /// </summary>
+    [HttpGet("payments")]
+    public async Task<IActionResult> GetPayments(CancellationToken ct)
+    {
+        var leases = await sender.Send(new GetLeasesByBrokerQuery(UserId), ct);
+        if (leases.Count == 0) return Ok(Array.Empty<object>());
+
+        var leaseIds = leases.Select(l => l.Id).ToList();
+        var payments = await sender.Send(new GetRentPaymentsByLeaseIdsQuery(leaseIds), ct);
+        return Ok(payments);
+    }
+
+    /// <summary>
+    /// Payment schedule for every active lease managed by this broker.
+    /// Returns one schedule entry per lease, enriched with property title.
+    /// </summary>
+    [HttpGet("payments/schedule")]
+    public async Task<IActionResult> GetPaymentsSchedule(CancellationToken ct)
+    {
+        var leases = await sender.Send(new GetLeasesByBrokerQuery(UserId), ct);
+        var activeLeases = leases.Where(l => l.IsActive).ToList();
+        if (activeLeases.Count == 0) return Ok(Array.Empty<object>());
+
+        var propertyTitles = new Dictionary<Guid, string>();
+        foreach (var pid in activeLeases.Select(l => l.PropertyId).Distinct())
+        {
+            var prop = await sender.Send(new GetPropertyByIdQuery(pid), ct);
+            if (prop is not null) propertyTitles[pid] = prop.Title;
+        }
+
+        var result = new List<object>(activeLeases.Count);
+        foreach (var lease in activeLeases)
+        {
+            var schedule = await sender.Send(new GetLeasePaymentScheduleQuery(lease.Id), ct);
+            result.Add(new
+            {
+                leaseId = lease.Id,
+                propertyId = lease.PropertyId,
+                propertyTitle = propertyTitles.GetValueOrDefault(lease.PropertyId, string.Empty),
+                tenantId = lease.TenantId,
+                startDate = lease.StartDate,
+                endDate = lease.EndDate,
+                schedule
             });
         }
 

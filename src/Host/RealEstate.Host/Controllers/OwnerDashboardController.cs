@@ -9,6 +9,7 @@ using Identity.Application.Interfaces;
 using MediatR;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
+using Payment.Application.Features.Queries.GetMyRentPayments;
 using Property.Application.DTOs;
 using Property.Application.Features.Queries.GetPropertiesByOwner;
 using RealEstate.Host.Services;
@@ -294,6 +295,19 @@ public class OwnerDashboardController(
             tasks.Add(new { id = "negotiating", text = $"Follow up on {negotiating} lead{(negotiating == 1 ? "" : "s")} in negotiation", done = false });
 
         return Ok(tasks);
+    }
+
+    // ── Rent payments received for owner's properties ───────────────────────────
+
+    /// <summary>
+    /// All rent payments for the logged-in owner's properties.
+    /// Includes pending, paid, and overdue installments across all active leases.
+    /// </summary>
+    [HttpGet("payments")]
+    public async Task<IActionResult> GetPayments(CancellationToken ct)
+    {
+        var result = await sender.Send(new GetMyRentPaymentsQuery(UserId, "owner"), ct);
+        return Ok(result);
     }
 
     // ── Ratings (owners have no per-broker review feed) ──────────────────────────

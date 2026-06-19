@@ -22,7 +22,8 @@ namespace Payment.Application.Features.Queries.GetOverduePayments
 
             return overduePayments
                 .Select(p => new RentPaymentDto(
-                    p.Id, p.LeaseId, p.Amount, p.DueDate, p.PaidAt,
+                    p.Id, p.LeaseId, p.PropertyId, p.TenantId, p.LandlordId,
+                    p.Amount, p.DueDate, p.PaidAt,
                     p.Status.ToString(), p.PaymentMethod.ToString(), p.TransactionId,
                     p.LateFee, p.AiPredictedLate, p.ReceiptUrl, p.Notes,
                     p.CreatedAt, p.UpdatedAt))

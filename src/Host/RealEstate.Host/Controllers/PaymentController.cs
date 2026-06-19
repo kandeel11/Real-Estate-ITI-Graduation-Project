@@ -1,7 +1,9 @@
 using Identity.Application.Interfaces;
 using MediatR;
+using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using Payment.Application.Exceptions;
+using Property.Application.Features.Queries.GetPropertyById;
 using Payment.Application.Features.Commands.ApplyLateFee;
 using Payment.Application.Features.Commands.CreateSubscriptionPayment;
 using Payment.Application.Features.Commands.GenerateLeasePayment;
@@ -21,15 +23,18 @@ namespace RealEstate.Host.Controllers;
 
 [ApiController]
 [Route("api/payments")]
+[Authorize]
 public sealed class PaymentController : ControllerBase
 {
     private readonly IMediator _mediator;
     private readonly ICurrentUserService _currentUser;
+    private readonly IUserRepository _userRepo;
 
-    public PaymentController(IMediator mediator, ICurrentUserService currentUser)
+    public PaymentController(IMediator mediator, ICurrentUserService currentUser, IUserRepository userRepo)
     {
         _mediator = mediator;
         _currentUser = currentUser;
+        _userRepo = userRepo;
     }
 
     // ── Subscription Payments ───────────────────────────────────
@@ -61,11 +66,37 @@ public sealed class PaymentController : ControllerBase
     // ── Rent Payments ────────────────────────────────────────────
 
     [HttpGet]
+    [Authorize(Roles = "admin")]
     public async Task<ActionResult> GetAllRentPayments(
         [FromQuery] Guid? leaseId,
         CancellationToken cancellationToken)
     {
-        var result = await _mediator.Send(new GetAllRentPaymentsQuery(leaseId), cancellationToken);
+        var payments = await _mediator.Send(new GetAllRentPaymentsQuery(leaseId), cancellationToken);
+
+        // Enrich with property title and tenant name — batch lookups to avoid N+1.
+        var propertyIds = payments.Select(p => p.PropertyId).Distinct().ToList();
+        var tenantIds   = payments.Select(p => p.TenantId).Distinct().ToList();
+
+        var propertyTitles = new Dictionary<Guid, string>();
+        foreach (var pid in propertyIds)
+        {
+            var prop = await _mediator.Send(new GetPropertyByIdQuery(pid), cancellationToken);
+            if (prop is not null) propertyTitles[pid] = prop.Title;
+        }
+
+        var tenantNames = await _userRepo.GetFullNamesByIdsAsync(tenantIds, cancellationToken);
+
+        var result = payments.Select(p => new
+        {
+            p.Id, p.LeaseId, p.PropertyId, p.TenantId, p.LandlordId,
+            propertyTitle = propertyTitles.GetValueOrDefault(p.PropertyId, string.Empty),
+            tenantName    = tenantNames.GetValueOrDefault(p.TenantId, string.Empty),
+            p.Amount, p.DueDate, p.PaidAt, p.Status,
+            p.PaymentMethod, p.TransactionId, p.LateFee,
+            p.AiPredictedLate, p.ReceiptUrl, p.Notes,
+            p.CreatedAt, p.UpdatedAt
+        });
+
         return Ok(result);
     }
 
@@ -91,6 +122,7 @@ public sealed class PaymentController : ControllerBase
     }
 
     [HttpGet("status/{status}")]
+    [Authorize(Roles = "admin")]
     public async Task<ActionResult> GetByStatus(string status, CancellationToken cancellationToken)
     {
         var result = await _mediator.Send(new GetPaymentsByStatusQuery(status), cancellationToken);
@@ -98,6 +130,7 @@ public sealed class PaymentController : ControllerBase
     }
 
     [HttpGet("overdue")]
+    [Authorize(Roles = "admin")]
     public async Task<ActionResult> GetOverdue(CancellationToken cancellationToken)
     {
         var result = await _mediator.Send(new GetOverduePaymentsQuery(), cancellationToken);
@@ -119,6 +152,7 @@ public sealed class PaymentController : ControllerBase
     }
 
     [HttpGet("summary")]
+    [Authorize(Roles = "admin")]
     public async Task<ActionResult> GetFinancialSummary(CancellationToken cancellationToken)
     {
         var result = await _mediator.Send(new GetFinancialSummaryQuery(), cancellationToken);
@@ -139,6 +173,7 @@ public sealed class PaymentController : ControllerBase
     }
 
     [HttpPost("{id:guid}/refund")]
+    [Authorize(Roles = "admin")]
     public async Task<ActionResult> Refund(
         Guid id,
         [FromBody] RefundPaymentRequestBody body,
@@ -149,6 +184,7 @@ public sealed class PaymentController : ControllerBase
     }
 
     [HttpPost("{id:guid}/late-fee")]
+    [Authorize(Roles = "admin")]
     public async Task<ActionResult> ApplyLateFee(
         Guid id,
         [FromBody] ApplyLateFeeRequestBody body,
@@ -159,6 +195,7 @@ public sealed class PaymentController : ControllerBase
     }
 
     [HttpPost("{id:guid}/ai-prediction")]
+    [Authorize(Roles = "admin")]
     public async Task<ActionResult> UpdateAiPrediction(
         Guid id,
         [FromBody] UpdateAiPredictionRequestBody body,
@@ -175,6 +212,7 @@ public sealed class PaymentController : ControllerBase
     /// (Hosted Service) لكنه متاح هنا كـ manual trigger للأدمن
     /// </summary>
     [HttpPost("generate-monthly")]
+    [Authorize(Roles = "admin")]
     public async Task<ActionResult<GenerateMonthlyPaymentsResult>> GenerateMonthlyPayments(
         [FromQuery] DateOnly? targetMonth,
         CancellationToken cancellationToken)
@@ -188,6 +226,7 @@ public sealed class PaymentController : ControllerBase
     /// يُستخدم لو الدفعة مش اتولدت تلقائياً — بيجيب بيانات الـ lease من الـ DB الحقيقية.
     /// </summary>
     [HttpPost("generate-for-lease/{leaseId:guid}")]
+    [Authorize(Roles = "admin")]
     public async Task<ActionResult<GenerateLeasePaymentResult>> GenerateForLease(
         Guid leaseId,
         CancellationToken cancellationToken)
