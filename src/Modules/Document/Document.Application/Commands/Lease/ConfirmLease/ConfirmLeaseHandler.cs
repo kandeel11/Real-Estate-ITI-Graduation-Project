@@ -2,6 +2,7 @@ using Document.Application.Interfaces;
 using Document.Domain.Enums;
 using Document.Domain.Events;
 using MediatR;
+using RealEstate.Shared.Kernel.Shared.IntegrationEvents;
 using PaymentFrequencyEnum = Document.Domain.Enums.PaymentFrequency;
 
 namespace Document.Application.Commands.Lease.ConfirmLease;
@@ -68,6 +69,20 @@ public class ConfirmLeaseHandler : IRequestHandler<ConfirmLeaseCommand, ConfirmL
                     lease.StartDate ?? DateOnly.FromDateTime(DateTime.UtcNow),
                     lease.EndDate ?? DateOnly.FromDateTime(DateTime.UtcNow.AddYears(1)),
                     lease.ContractFileUrl
+                ), ct);
+
+            await _publisher.Publish(
+                new LeaseActivatedIntegrationEvent(
+                    LeaseId: lease.Id,
+                    PropertyId: lease.PropertyId,
+                    OwnerId: lease.OwnerId,
+                    TenantId: lease.TenantId,
+                    InstallmentAmount: lease.InstallmentAmount ?? 0,
+                    PaymentFrequency: lease.PaymentFrequency?.ToString() ?? "Monthly",
+                    DurationInMonths: lease.DurationInMonths ?? 12,
+                    PaymentDayOfMonth: lease.PaymentDayOfMonth ?? 1,
+                    StartDate: lease.StartDate ?? DateOnly.FromDateTime(DateTime.UtcNow),
+                    EndDate: lease.EndDate ?? DateOnly.FromDateTime(DateTime.UtcNow.AddYears(1))
                 ), ct);
         }
 

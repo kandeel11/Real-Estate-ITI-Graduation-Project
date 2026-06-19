@@ -56,7 +56,6 @@ public static class PaymentModuleExtensions
         services.AddHostedService<OverduePaymentsJob>();
         services.AddHostedService<MonthlyPaymentGenerationJob>();
 
-        services.TryAddScoped<ILeaseService, MockLeaseService>();
         services.TryAddScoped<INotificationService, MockNotificationService>();
 
         // ISubscriptionPlanService مش بيتسجل هنا — التسجيل الحقيقي موجود في

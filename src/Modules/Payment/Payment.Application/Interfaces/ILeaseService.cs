@@ -30,5 +30,7 @@ public sealed record ActiveLeaseDto(
     string? TenantPhone,
     Guid PropertyId = default,
     Guid TenantId = default,
-    Guid LandlordId = default
+    Guid LandlordId = default,
+    DateOnly StartDate = default,
+    DateOnly EndDate = default
 );

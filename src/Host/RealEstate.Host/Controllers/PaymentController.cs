@@ -3,6 +3,7 @@ using Microsoft.AspNetCore.Mvc;
 using Payment.Application.Exceptions;
 using Payment.Application.Features.Commands.ApplyLateFee;
 using Payment.Application.Features.Commands.CreateSubscriptionPayment;
+using Payment.Application.Features.Commands.GenerateLeasePayment;
 using Payment.Application.Features.Commands.GenerateMonthlyPayments;
 using Payment.Application.Features.Commands.ProcessPayment;
 using Payment.Application.Features.Commands.RefundPayment;
@@ -162,6 +163,26 @@ public sealed class PaymentController : ControllerBase
     {
         var result = await _mediator.Send(new GenerateMonthlyPaymentsCommand(targetMonth), cancellationToken);
         return Ok(result);
+    }
+
+    /// <summary>
+    /// يولّد دفعة الفترة الحالية لـ lease معين من قاعدة البيانات.
+    /// يُستخدم لو الدفعة مش اتولدت تلقائياً — بيجيب بيانات الـ lease من الـ DB الحقيقية.
+    /// </summary>
+    [HttpPost("generate-for-lease/{leaseId:guid}")]
+    public async Task<ActionResult<GenerateLeasePaymentResult>> GenerateForLease(
+        Guid leaseId,
+        CancellationToken cancellationToken)
+    {
+        try
+        {
+            var result = await _mediator.Send(new GenerateLeasePaymentCommand(leaseId), cancellationToken);
+            return result.Generated ? Ok(result) : Conflict(result);
+        }
+        catch (KeyNotFoundException ex)
+        {
+            return NotFound(new { error = ex.Message });
+        }
     }
 }
 
