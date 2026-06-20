@@ -32,7 +32,27 @@ export interface BrokerActiveSubscription {
   endDate: string;
   isAutoRenew: boolean;
   maxProperties: number;
+  maxBrokers: number;
   maxAiRequestsPerMonth: number;
+  maxStorageGb: number;
+  // Feature flags — for a company broker, /subscriptions/mine resolves to the
+  // COMPANY plan, so these reflect the features the broker inherits.
+  hasAdvancedAnalytics: boolean;
+  hasFeaturedListings: boolean;
+  hasAiPriceEstimation: boolean;
+  hasAiChatbot: boolean;
+  hasAiLeadPrioritization: boolean;
+  hasAiDescriptionGenerator: boolean;
+}
+
+/** Matches the backend's usage DTO (GET /api/subscriptions/mine/usage). */
+export interface BrokerUsage {
+  propertiesUsed: number;
+  brokersUsed: number;
+  aiRequestsUsed: number;
+  storageUsedGb: number;
+  periodStart: string;
+  periodEnd: string;
 }
 
 @Injectable({ providedIn: 'root' })
@@ -49,6 +69,13 @@ export class BrokerSubscriptionService {
   getActive(): Observable<BrokerActiveSubscription | null> {
     return this.http
       .get<BrokerActiveSubscription>(`${this.base}/subscriptions/mine`)
+      .pipe(timeout(10000), catchError(() => of(null)));
+  }
+
+  /** Shared usage for the resolved subscription (company pool for company brokers). */
+  getUsage(): Observable<BrokerUsage | null> {
+    return this.http
+      .get<BrokerUsage>(`${this.base}/subscriptions/mine/usage`)
       .pipe(timeout(10000), catchError(() => of(null)));
   }
 }

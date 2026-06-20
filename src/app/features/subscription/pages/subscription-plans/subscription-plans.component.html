@@ -6,6 +6,20 @@
     <p class="plans-subtitle">Choose the plan that fits your needs</p>
   </div>
 
+  <!-- ── CHECKOUT FEEDBACK ─────────────────────────────── -->
+  @if (checkoutSuccess()) {
+    <div class="alert alert-success d-flex align-items-center gap-2">
+      <i class="fa-solid fa-circle-check"></i>
+      <span>{{ checkoutSuccess() }}</span>
+    </div>
+  }
+  @if (checkoutError()) {
+    <div class="alert alert-danger d-flex align-items-center gap-2">
+      <i class="fa-solid fa-triangle-exclamation"></i>
+      <span>{{ checkoutError() }}</span>
+    </div>
+  }
+
   <!-- ── LOADING SKELETON ─────────────────────────────── -->
   @if (loading()) {
     <div class="skeleton billing-skeleton mb-5"></div>
@@ -59,10 +73,14 @@
       <!-- Free Plan -->
       @if (freePlan(); as free) {
         <div class="col-12 col-md-6">
-          <div class="plan-card">
-            <span class="plan-badge badge-current">
-              <i class="fa-solid fa-circle-check me-1"></i>Current Plan
-            </span>
+          <div class="plan-card" [class.plan-card--current]="isCurrent(free)">
+            @if (isCurrent(free)) {
+              <span class="plan-badge badge-current">
+                <i class="fa-solid fa-circle-check me-1"></i>Current Plan
+              </span>
+            } @else {
+              <span class="plan-badge badge-free">Free</span>
+            }
             <h2 class="plan-name">Free</h2>
             <div class="price-area" [style.opacity]="priceOpacity()">
               <p class="plan-price">Free</p>
@@ -103,7 +121,7 @@
               </li>
             </ul>
             <button class="btn plan-btn plan-btn-current" disabled>
-              <i class="fa-solid fa-circle-check me-1"></i>Current Plan
+              <i class="fa-solid fa-circle-check me-1"></i>{{ isCurrent(free) ? 'Current Plan' : 'Free Plan' }}
             </button>
           </div>
         </div>
@@ -112,10 +130,16 @@
       <!-- Premium Plan -->
       @if (premiumPlan(); as premium) {
         <div class="col-12 col-md-6">
-          <div class="plan-card plan-card--premium">
-            <span class="plan-badge badge-popular">
-              <i class="fa-solid fa-star me-1"></i>Most Popular
-            </span>
+          <div class="plan-card plan-card--premium" [class.plan-card--current]="isCurrent(premium)">
+            @if (isCurrent(premium)) {
+              <span class="plan-badge badge-current">
+                <i class="fa-solid fa-circle-check me-1"></i>Current Plan
+              </span>
+            } @else {
+              <span class="plan-badge badge-popular">
+                <i class="fa-solid fa-star me-1"></i>Most Popular
+              </span>
+            }
             <h2 class="plan-name">Premium</h2>
             <div class="price-area" [style.opacity]="priceOpacity()">
               @if (billingCycle() === 'monthly') {
@@ -160,9 +184,21 @@
                 <span>Priority broker response</span>
               </li>
             </ul>
-            <button class="btn plan-btn plan-btn-upgrade" (click)="openModal()">
-              <i class="fa-solid fa-crown me-1"></i>Upgrade to Premium
-            </button>
+            @if (isCurrent(premium)) {
+              <button class="btn plan-btn plan-btn-current" disabled>
+                <i class="fa-solid fa-circle-check me-1"></i>Current Plan
+              </button>
+            } @else {
+              <button class="btn plan-btn plan-btn-upgrade"
+                      [disabled]="checkingOut()"
+                      (click)="upgradeTo(premium)">
+                @if (checkingOut()) {
+                  <i class="fa-solid fa-spinner fa-spin me-1"></i>Redirecting to checkout…
+                } @else {
+                  <i class="fa-solid fa-crown me-1"></i>Upgrade to Premium
+                }
+              </button>
+            }
           </div>
         </div>
       }
@@ -236,33 +272,3 @@
 
   }
 </div>
-
-<!-- ── UPGRADE MODAL ────────────────────────────────── -->
-@if (showModal()) {
-  <div class="modal-overlay" (click)="closeModal()">
-    <div class="modal-box" (click)="$event.stopPropagation()">
-      <div class="modal-icon-wrap">
-        <i class="fa-solid fa-crown"></i>
-      </div>
-      <h3 class="modal-title">Upgrade Coming Soon</h3>
-      <p class="modal-desc">
-        Online upgrade is not available yet. Please contact our support team to upgrade to
-        <strong>Premium</strong> and unlock all features.
-      </p>
-      @if (premiumPlan(); as premium) {
-        <div class="modal-plan-info">
-          <span class="modal-plan-badge">
-            <i class="fa-solid fa-crown me-1"></i>Premium
-          </span>
-          <span class="modal-plan-price">EGP {{ premium.priceMonthly }} / month</span>
-        </div>
-      }
-      <div class="modal-actions">
-        <a href="mailto:support@estatein.com" class="btn plan-btn plan-btn-upgrade w-100">
-          <i class="fa-solid fa-envelope me-2"></i>Contact Support
-        </a>
-        <button class="btn btn-outline-secondary w-100" (click)="closeModal()">Close</button>
-      </div>
-    </div>
-  </div>
-}

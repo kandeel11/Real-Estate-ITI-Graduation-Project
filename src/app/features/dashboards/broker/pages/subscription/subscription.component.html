@@ -12,12 +12,18 @@
       <i class="fa-solid fa-building-user notice-icon"></i>
       <div>
         <p class="notice-title">Managed by your company</p>
-        <p class="notice-sub">Your subscription is managed by your company admin.</p>
+        <p class="notice-sub">You share your company's plan and resources. The features below are inherited from your company subscription — your admin manages billing.</p>
       </div>
     </div>
   }
 
-  <!-- ── CHECKOUT ERROR ────────────────────────────────── -->
+  <!-- ── CHECKOUT FEEDBACK ─────────────────────────────── -->
+  @if (checkoutSuccess()) {
+    <div class="alert-success-bar">
+      <i class="fa-solid fa-circle-check"></i>
+      {{ checkoutSuccess() }}
+    </div>
+  }
   @if (checkoutError()) {
     <div class="alert-error-bar">
       <i class="fa-solid fa-triangle-exclamation"></i>
@@ -55,8 +61,71 @@
     </div>
   }
 
-  <!-- ── CONTENT ───────────────────────────────────────── -->
-  @if (!loading() && !error()) {
+  <!-- ── COMPANY BROKER: INHERITED PLAN VIEW ───────────── -->
+  @if (!loading() && !error() && isCompanyBroker()) {
+    @if (active(); as sub) {
+      <div class="row g-4 mb-5">
+        <div class="col-12 col-lg-7">
+          <div class="plan-card plan-card--premium plan-card--current">
+            <span class="plan-badge badge-current">
+              <i class="fa-solid fa-building me-1"></i>{{ sub.planName }}
+            </span>
+            <h2 class="plan-name">Your Company Plan</h2>
+            <div class="price-area">
+              <p class="plan-price">Inherited</p>
+              <p class="price-sub">Shared across your company's brokers</p>
+            </div>
+            <ul class="feature-list">
+              <li class="feature-item">
+                <i class="fa-solid fa-check feature-icon-yes"></i>
+                <span>{{ formatValue(sub.maxProperties) }} properties</span>
+              </li>
+              <li class="feature-item">
+                <i class="fa-solid fa-check feature-icon-yes"></i>
+                <span>{{ formatValue(sub.maxAiRequestsPerMonth) }} AI requests / month</span>
+              </li>
+              @for (f of inheritedFeatures(); track f.label) {
+                <li class="feature-item">
+                  <i [class]="f.on ? 'fa-solid fa-check feature-icon-yes' : 'fa-solid fa-xmark feature-icon-no'"></i>
+                  <span [class.feature-text-muted]="!f.on">{{ f.label }}</span>
+                </li>
+              }
+            </ul>
+          </div>
+        </div>
+
+        <!-- Shared usage -->
+        <div class="col-12 col-lg-5">
+          <div class="section-card h-100">
+            <h2 class="section-title mb-4">
+              <i class="fa-solid fa-chart-pie me-2"></i>Shared Company Usage
+            </h2>
+            @if (usage(); as u) {
+              <div class="row g-3">
+                <div class="col-6">
+                  <app-usage-meter label="Properties" [used]="u.propertiesUsed" [max]="sub.maxProperties" />
+                </div>
+                <div class="col-6">
+                  <app-usage-meter label="AI Requests" [used]="u.aiRequestsUsed" [max]="sub.maxAiRequestsPerMonth" />
+                </div>
+                <div class="col-6">
+                  <app-usage-meter label="Broker Seats" [used]="u.brokersUsed" [max]="sub.maxBrokers" />
+                </div>
+                <div class="col-6">
+                  <app-usage-meter label="Storage (GB)" [used]="u.storageUsedGb" [max]="sub.maxStorageGb" />
+                </div>
+              </div>
+            } @else {
+              <p class="price-sub">Usage data is unavailable right now.</p>
+            }
+          </div>
+        </div>
+      </div>
+    }
+  }
+
+  <!-- ── CONTENT (independent brokers) ─────────────────── -->
+  @if (!loading() && !error() && !isCompanyBroker()) {
 
     <!-- Billing Toggle -->
     <div class="billing-toggle-wrap mb-5">
@@ -173,7 +242,7 @@
             } @else {
               <button class="btn plan-btn plan-btn-upgrade"
                       [disabled]="checkingOut()"
-                      (click)="checkout(premium)">
+                      (click)="upgradeTo(premium)">
                 @if (checkingOut()) {
                   <i class="fa-solid fa-spinner fa-spin me-1"></i>Redirecting to checkout…
                 } @else {

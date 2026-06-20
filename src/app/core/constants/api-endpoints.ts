@@ -146,6 +146,7 @@ export const API_ENDPOINTS = {
     MINE_PAYMENTS: '/subscriptions/mine/payments',
     MINE_UPGRADE: '/subscriptions/mine/upgrade',
     MINE_CANCEL: '/subscriptions/mine/cancel',
+    SELECT_PLAN: '/subscriptions/select-plan',
   },
 
   // ==================== PAYMENTS MODULE ====================

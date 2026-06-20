@@ -1,6 +1,6 @@
 import { Injectable, inject } from '@angular/core';
 import { HttpClient, HttpParams } from '@angular/common/http';
-import { Observable } from 'rxjs';
+import { Observable, switchMap } from 'rxjs';
 import { environment } from '../../../environments/environment';
 import { API_ENDPOINTS } from '../constants/api-endpoints';
 import {
@@ -12,6 +12,9 @@ import {
   BrokerLeaseSchedule,
   SubscriptionCheckoutRequest,
   SubscriptionCheckoutResponse,
+  SelectPlanRequest,
+  SelectPlanResponse,
+  StartCheckoutOptions,
 } from '../models/payment.model';
 
 @Injectable({ providedIn: 'root' })
@@ -121,11 +124,56 @@ export class PaymentService {
     return this.http.get<BrokerLeaseSchedule[]>(`${this.base}${API_ENDPOINTS.COMPANY_PAYMENTS.GET_SCHEDULE}`);
   }
 
-  /** Initiate Stripe checkout for a subscription plan — POST /api/payments/subscriptions/checkout */
+  /** Step 1 — create a PendingPayment subscription for the chosen plan. */
+  selectPlan(body: SelectPlanRequest): Observable<SelectPlanResponse> {
+    return this.http.post<SelectPlanResponse>(
+      `${this.base}${API_ENDPOINTS.SUBSCRIPTIONS.SELECT_PLAN}`,
+      body,
+    );
+  }
+
+  /**
+   * Confirm a subscription checkout on the success redirect — finalizes the
+   * upgrade without depending on the Stripe webhook being forwarded locally.
+   * POST /api/payments/subscriptions/confirm
+   */
+  confirmSubscription(sessionId: string): Observable<{ paymentStatus: string | null }> {
+    return this.http.post<{ paymentStatus: string | null }>(
+      `${this.base}/payments/subscriptions/confirm`,
+      { sessionId },
+    );
+  }
+
+  /** Step 2 — initiate Stripe checkout — POST /api/payments/subscriptions/checkout */
   checkoutSubscription(body: SubscriptionCheckoutRequest): Observable<SubscriptionCheckoutResponse> {
     return this.http.post<SubscriptionCheckoutResponse>(
       `${this.base}${API_ENDPOINTS.PAYMENTS.SUBSCRIPTIONS_CHECKOUT}`,
       body,
+    );
+  }
+
+  /**
+   * Full subscription payment flow: SelectPlan (creates a PendingPayment
+   * subscription with the chosen plan) → checkout (Stripe session for that
+   * subscription). The Stripe webhook activates the subscription on success.
+   */
+  startSubscriptionCheckout(opts: StartCheckoutOptions): Observable<SubscriptionCheckoutResponse> {
+    return this.selectPlan({
+      userId: opts.userId,
+      companyId: opts.companyId ?? null,
+      planId: opts.planId,
+      billingCycle: opts.billingCycle,
+    }).pipe(
+      switchMap((sel) =>
+        this.checkoutSubscription({
+          userId: opts.userId,
+          subscriptionId: sel.subscriptionId,
+          planId: opts.planId,
+          billingCycle: opts.billingCycle,
+          successRedirectUrl: opts.successRedirectUrl,
+          cancelRedirectUrl: opts.cancelRedirectUrl,
+        }),
+      ),
     );
   }
 }

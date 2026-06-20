@@ -406,6 +406,8 @@
 .home-properties__card-img { position: relative; height: 220px; overflow: hidden; }
 .home-properties__card-img img { width: 100%; height: 100%; object-fit: cover; transition: transform .5s ease; }
 .home-properties__card:hover .home-properties__card-img img { transform: scale(1.04); }
+.home-properties__card { cursor: pointer; }
+.home-properties__card-img-placeholder { width: 100%; height: 100%; display: flex; align-items: center; justify-content: center; background: linear-gradient(135deg, #eef2ff, #e0e7ff); color: rgba(79,70,229,.45); font-size: 42px; }
 .home-properties__card-badge { position: absolute; top: 14px; left: 14px; background: rgba(79,70,229,.12); border: 1px solid rgba(79,70,229,.2); color: var(--color-primary); padding: 4px 12px; border-radius: var(--radius-full); font-size: var(--font-label-sm-size); font-weight: 600; backdrop-filter: blur(8px); }
 .home-properties__card-body { padding: 20px; flex: 1; display: flex; flex-direction: column; }
 .home-properties__card-name { font-size: 18px; font-weight: 700; color: var(--color-on-surface); margin-bottom: 8px; }

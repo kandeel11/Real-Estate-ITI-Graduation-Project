@@ -129,6 +129,10 @@
   box-shadow: var(--shadow-hover);
 }
 
+.plan-card--current {
+  border-color: var(--color-primary);
+}
+
 /* ── BADGE ──────────────────────────────────────── */
 .plan-badge {
   display: inline-flex;
@@ -149,6 +153,11 @@
 .badge-popular {
   background: var(--color-primary-fixed);
   color: var(--color-primary);
+}
+
+.badge-free {
+  background: var(--color-surface-container);
+  color: var(--color-on-surface-variant);
 }
 
 /* ── PLAN NAME & PRICE ──────────────────────────── */

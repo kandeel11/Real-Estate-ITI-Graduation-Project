@@ -95,7 +95,8 @@
       "BATHS": "Baths",
       "PRICE": "Price",
       "VIEW_DETAILS": "View Details",
-      "FOR_SALE": "For Sale"
+      "FOR_SALE": "For Sale",
+      "EMPTY": "No featured properties available right now."
     },
     "CTA": {
       "TITLE": "Start Your Real Estate Journey Today",

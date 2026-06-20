@@ -8,7 +8,7 @@
 
 import { Injectable, inject } from '@angular/core';
 import { HttpClient } from '@angular/common/http';
-import { Observable, of, delay } from 'rxjs';
+import { Observable, of, delay, map } from 'rxjs';
 import { environment } from '../../../../environments/environment';
 import { API_ENDPOINTS } from '../../../core/constants/api-endpoints';
 import {
@@ -180,9 +180,10 @@ export class PropertyService {
   }
 
   getAmenities(): Observable<Amenity[]> {
-    return this.http.get<Amenity[]>(
-      `${this.baseUrl}${API_ENDPOINTS.AMENITIES.GET_ALL}`
-    );
+    return this.http
+      .get<Amenity[]>(`${this.baseUrl}${API_ENDPOINTS.AMENITIES.GET_ALL}`)
+      // "Pet Friendly" is dropped — it duplicates the PetsAllowed property field.
+      .pipe(map((list) => list.filter((a) => a.name !== 'Pet Friendly')));
   }
 
   addAmenity(propertyId: string, amenityId: string): Observable<void> {

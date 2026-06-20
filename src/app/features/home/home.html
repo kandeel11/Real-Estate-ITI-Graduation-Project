@@ -245,39 +245,49 @@
       </div>
 
       <div class="row g-4">
-        @for (p of properties; track p.nameKey; let i = $index) {
+        @for (p of properties(); track p.id; let i = $index) {
         <div class="col-12 col-md-6 col-lg-4" inView [inViewDelay]="i * 120">
-          <div class="home-properties__card hover-lift">
+          <div class="home-properties__card hover-lift" (click)="openProperty(p.id)" role="button" tabindex="0">
             <div class="home-properties__card-img">
-              <img [src]="p.image" [alt]="p.nameKey | translate" />
+              @if (p.primaryImageUrl) {
+                <img [src]="p.primaryImageUrl" [alt]="p.title" />
+              } @else {
+                <div class="home-properties__card-img-placeholder"><i class="fa-regular fa-image"></i></div>
+              }
               <span class="home-properties__card-badge">
-                <i class="fa-solid fa-tag fa-xs"></i>&nbsp;{{ p.badgeKey | translate }}
+                <i class="fa-solid fa-tag fa-xs"></i>&nbsp;{{ 'HOME.FEATURED.FOR_SALE' | translate }}
               </span>
             </div>
             <div class="home-properties__card-body">
-              <h3 class="home-properties__card-name">{{ p.nameKey | translate }}</h3>
-              <p class="home-properties__card-desc">{{ p.descKey | translate }}</p>
+              <h3 class="home-properties__card-name">{{ p.title }}</h3>
+              <p class="home-properties__card-desc">{{ p.district }}, {{ p.city }}</p>
               <div class="home-properties__chips">
                 <span class="home-properties__chip">
-                  <i class="fa-solid fa-bed fa-xs"></i>&nbsp;{{ p.beds }} {{ 'HOME.FEATURED.BEDS' | translate }}
+                  <i class="fa-solid fa-bed fa-xs"></i>&nbsp;{{ p.bedrooms }} {{ 'HOME.FEATURED.BEDS' | translate }}
                 </span>
                 <span class="home-properties__chip">
-                  <i class="fa-solid fa-bath fa-xs"></i>&nbsp;{{ p.baths }} {{ 'HOME.FEATURED.BATHS' | translate }}
+                  <i class="fa-solid fa-bath fa-xs"></i>&nbsp;{{ p.bathrooms }} {{ 'HOME.FEATURED.BATHS' | translate }}
                 </span>
                 <span class="home-properties__chip">
-                  <i [class]="p.typeIcon + ' fa-xs'"></i>&nbsp;{{ p.type }}
+                  <i [class]="typeIcon(p.propertyType) + ' fa-xs'"></i>&nbsp;{{ p.propertyType }}
                 </span>
               </div>
               <div class="home-properties__card-footer">
                 <div>
                   <p class="home-properties__price-label">{{ 'HOME.FEATURED.PRICE' | translate }}</p>
-                  <p class="home-properties__price">{{ p.price }}</p>
+                  <p class="home-properties__price">{{ formatPrice(p.price) }}</p>
                 </div>
                 <button class="btn btn-primary home-properties__details-btn">{{ 'HOME.FEATURED.VIEW_DETAILS' | translate }}</button>
               </div>
             </div>
           </div>
         </div>
+        } @empty {
+          @if (!propertiesLoading()) {
+          <div class="col-12 text-center text-muted py-5">
+            {{ 'HOME.FEATURED.EMPTY' | translate }}
+          </div>
+          }
         }
       </div>
 
