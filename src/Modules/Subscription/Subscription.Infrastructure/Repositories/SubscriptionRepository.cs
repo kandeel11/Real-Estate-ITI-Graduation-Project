@@ -20,11 +20,13 @@ public class SubscriptionRepository : ISubscriptionRepository
     public async Task<Domain.Entities.Subscription?> GetActiveByUserAsync(Guid userId, CancellationToken ct = default)
         => await _context.Subscriptions
             .Where(s => s.UserId == userId && (s.Status == SubscriptionStatus.Active || s.Status == SubscriptionStatus.Trial))
+            .OrderByDescending(s => s.StartDate).ThenByDescending(s => s.CreatedAt)
             .FirstOrDefaultAsync(ct);
 
     public async Task<Domain.Entities.Subscription?> GetActiveByCompanyAsync(Guid companyId, CancellationToken ct = default)
         => await _context.Subscriptions
             .Where(s => s.CompanyId == companyId && (s.Status == SubscriptionStatus.Active || s.Status == SubscriptionStatus.Trial))
+            .OrderByDescending(s => s.StartDate).ThenByDescending(s => s.CreatedAt)
             .FirstOrDefaultAsync(ct);
 
     public async Task<Guid> CreateAsync(Domain.Entities.Subscription subscription, CancellationToken ct = default)

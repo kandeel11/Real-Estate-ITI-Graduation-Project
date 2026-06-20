@@ -1,3 +1,4 @@
+using MediatR;
 using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.Options;
 using Payment.Application.Interfaces;
@@ -30,6 +31,7 @@ public sealed class StripeWebhookService
     private readonly INotificationService _notificationService;
     private readonly ILeaseService _leaseService;
     private readonly IOutboxWriter _outboxWriter;
+    private readonly IPublisher _publisher;
     private readonly StripeSettings _settings;
     private readonly ILogger<StripeWebhookService> _logger;
 
@@ -38,6 +40,7 @@ public sealed class StripeWebhookService
         INotificationService notificationService,
         ILeaseService leaseService,
         IOutboxWriter outboxWriter,
+        IPublisher publisher,
         IOptions<StripeSettings> settings,
         ILogger<StripeWebhookService> logger)
     {
@@ -45,6 +48,7 @@ public sealed class StripeWebhookService
         _notificationService = notificationService;
         _leaseService = leaseService;
         _outboxWriter = outboxWriter;
+        _publisher = publisher;
         _settings = settings.Value;
         _logger = logger;
     }
@@ -177,31 +181,73 @@ public sealed class StripeWebhookService
             return;
         }
 
+        await ProcessPaidCheckoutSessionAsync(session, ct);
+    }
+
+    /// <summary>
+    /// Confirms a Checkout Session directly from Stripe (no webhook needed) and
+    /// runs the same activation path. Called from the success-redirect return so
+    /// the subscription updates even when the local Stripe webhook isn't running.
+    /// Safe to call repeatedly — already-paid payments are skipped (idempotent).
+    /// </summary>
+    public async Task<string?> ConfirmCheckoutSessionAsync(string sessionId, CancellationToken ct = default)
+    {
+        StripeConfiguration.ApiKey = _settings.SecretKey;
+
+        Session session;
+        try
+        {
+            session = await new SessionService().GetAsync(sessionId, cancellationToken: ct);
+        }
+        catch (StripeException ex)
+        {
+            _logger.LogWarning(ex, "ConfirmCheckoutSession: could not retrieve session {SessionId}.", sessionId);
+            throw new InvalidOperationException("Could not retrieve the checkout session from Stripe.", ex);
+        }
+
+        var activationEvent = await ProcessPaidCheckoutSessionAsync(session, ct);
+
+        // Publish synchronously (in addition to the outbox) so the subscription
+        // is activated within this request and the UI reflects it on reload —
+        // the outbox copy is an idempotent retry safety net.
+        if (activationEvent is not null)
+            await _publisher.Publish(activationEvent, ct);
+
+        return session.PaymentStatus;
+    }
+
+    // Shared by the webhook and the success-redirect confirmation. Marks the
+    // payment Paid and queues the SubscriptionPaymentSucceededEvent (which
+    // activates the subscription) in the outbox. Returns that event so the
+    // confirm path can also publish it synchronously. No-ops (returns null) if
+    // the session isn't paid yet or the payment is already Paid.
+    private async Task<SubscriptionPaymentSucceededEvent?> ProcessPaidCheckoutSessionAsync(Session session, CancellationToken ct)
+    {
         if (!session.Metadata.TryGetValue("payment_id", out var paymentIdStr)
             || !Guid.TryParse(paymentIdStr, out var paymentId))
         {
             _logger.LogWarning("checkout.session.completed: missing payment_id. SessionId={Id}", session.Id);
-            return;
+            return null;
         }
 
         var payment = await _repository.GetByIdAsync(paymentId, ct);
         if (payment is null)
         {
             _logger.LogWarning("checkout.session.completed: Payment {PaymentId} not found.", paymentId);
-            return;
+            return null;
         }
 
         if (payment.Status == PaymentStatus.Paid)
         {
             _logger.LogInformation("Payment {PaymentId} already Paid. Skipping.", paymentId);
-            return;
+            return null;
         }
 
         if (session.PaymentStatus != "paid")
         {
             _logger.LogWarning("checkout.session.completed: PaymentStatus={Status} for SessionId={SessionId}",
                 session.PaymentStatus, session.Id);
-            return;
+            return null;
         }
 
         var paymentIntentId = session.PaymentIntentId ?? session.Id;
@@ -229,15 +275,14 @@ public sealed class StripeWebhookService
                 ? parsedUserId
                 : Guid.Empty;
 
-            await _outboxWriter.AddAsync(
-                new SubscriptionPaymentSucceededEvent(
-                    SubscriptionId: details.SubscriptionId,
-                    PaymentId: payment.Id,
-                    UserId: userId,
-                    PlanId: details.PlanId,
-                    Amount: payment.Amount
-                ),
-                ct);
+            var activationEvent = new SubscriptionPaymentSucceededEvent(
+                SubscriptionId: details.SubscriptionId,
+                PaymentId: payment.Id,
+                UserId: userId,
+                PlanId: details.PlanId,
+                Amount: payment.Amount);
+
+            await _outboxWriter.AddAsync(activationEvent, ct);
 
             // الـ outbox message محتاجة SaveChanges منفصل (نفس DbContext، نفس الـ scope)
             // عشان تُحفظ كصف فعلي في الجدول
@@ -246,7 +291,11 @@ public sealed class StripeWebhookService
             _logger.LogInformation(
                 "SubscriptionPaymentSucceededEvent queued in outbox for Payment {PaymentId}, Subscription {SubscriptionId}",
                 payment.Id, details.SubscriptionId);
+
+            return activationEvent;
         }
+
+        return null;
     }
 
     // ── checkout.session.expired (Subscription — abandoned checkout) ──

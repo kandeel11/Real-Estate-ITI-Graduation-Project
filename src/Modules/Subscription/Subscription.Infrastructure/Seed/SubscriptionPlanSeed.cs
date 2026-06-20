@@ -144,8 +144,8 @@ public static class SubscriptionPlanSeed
             SubscriptionPlan.Create(
                 name: "Premium Tenant",
                 tier: SubscriptionTier.PremiumTenant,
-                priceMonthly: 9m,
-                priceAnnual: 90m,
+                priceMonthly: 29m,
+                priceAnnual: 290m,
                 maxProperties: 0,
                 maxBrokers: 0,
                 maxAiRequestsPerMonth: 500,

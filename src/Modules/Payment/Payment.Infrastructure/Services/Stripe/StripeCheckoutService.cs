@@ -57,7 +57,10 @@ public sealed class StripeCheckoutService : IStripeCheckoutService
                     Quantity = 1
                 }
             },
-            SuccessUrl = $"{request.SuccessUrl}?session_id={{CHECKOUT_SESSION_ID}}",
+            // Stripe substitutes {CHECKOUT_SESSION_ID} on redirect. Use the right
+            // separator so session_id is a real query param even when SuccessUrl
+            // already carries one (e.g. ?checkout=success).
+            SuccessUrl = $"{request.SuccessUrl}{(request.SuccessUrl.Contains('?') ? "&" : "?")}session_id={{CHECKOUT_SESSION_ID}}",
             CancelUrl = request.CancelUrl,
             Metadata = request.Metadata,
 
