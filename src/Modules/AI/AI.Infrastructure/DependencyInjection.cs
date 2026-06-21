@@ -65,19 +65,26 @@ public static class DependencyInjection
            ;
 
         // ====================================================================
-        // 1. Register OpenAI Embeddings as a Standalone Service
+        // 1. Register Azure OpenAI Embeddings (text-embedding-ada-002)
+        //    CHANGED: was OpenAI "text-embedding-3-small" — OpenAI quota ended
         // ====================================================================
-#pragma warning disable SKEXP0011
         services.AddSingleton<ITextEmbeddingGenerationService>(sp =>
         {
             var aiSettings = sp.GetRequiredService<IOptions<AiOptions>>().Value;
 
-            return new Microsoft.SemanticKernel.Connectors.OpenAI.OpenAITextEmbeddingGenerationService(
-                aiSettings.EmbeddingModelVersion, // e.g., "text-embedding-3-small"
-                aiSettings.OpenAiApiKey
+            // CHANGED: Azure embedding — replaced OpenAITextEmbeddingGenerationService
+            return new Microsoft.SemanticKernel.Connectors.AzureOpenAI.AzureOpenAITextEmbeddingGenerationService(
+                deploymentName: aiSettings.AzureEmbeddingDeploymentName, // "text-embedding-ada-002"
+                endpoint: aiSettings.AzureEmbeddingEndpoint,
+                apiKey: aiSettings.AzureEmbeddingApiKey
             );
+
+            // OLD (OpenAI — quota ended):
+            // return new Microsoft.SemanticKernel.Connectors.OpenAI.OpenAITextEmbeddingGenerationService(
+            //     aiSettings.EmbeddingModelVersion,
+            //     aiSettings.OpenAiApiKey
+            // );
         });
-#pragma warning restore SKEXP0011
 
         // ====================================================================
         // 2. Register Semantic Kernel Plugins
@@ -89,19 +96,31 @@ public static class DependencyInjection
         //services.AddScoped<IOwnershipAiService, OwnershipAiService>();
 
         // ====================================================================
-        // 3. Build Semantic Kernel (Configured for OpenAI Chat)
+        // 3. Build Semantic Kernel (Configured for Groq Chat via OpenAI-compatible API)
+        //    CHANGED: was OpenAI gpt-4o-mini — OpenAI quota ended, switched to Groq
         // ====================================================================
         services.AddScoped(sp =>
         {
             var aiSettings = sp.GetRequiredService<IOptions<AiOptions>>().Value;
             var builder = Kernel.CreateBuilder();
 
-
-            // Register OpenAI Chat Completion Service
-            builder.AddOpenAIChatCompletion(
-                modelId: aiSettings.ModelVersion, // e.g., "gpt-4o-mini"
-                apiKey: aiSettings.OpenAiApiKey
+            // CHANGED: Groq chat model — replaced OpenAI chat completion
+            // Groq exposes an OpenAI-compatible API, so we reuse the OpenAI connector
+            // with a custom endpoint and the Groq API key from secrets.
+            var groqClient = new OpenAI.OpenAIClient(
+                new System.ClientModel.ApiKeyCredential(aiSettings.GroqApiKey),
+                new OpenAI.OpenAIClientOptions { Endpoint = new Uri("https://api.groq.com/openai/v1/") }
             );
+            builder.AddOpenAIChatCompletion(
+                modelId: aiSettings.GroqModelId, // e.g., "llama-3.3-70b-versatile"
+                openAIClient: groqClient
+            );
+
+            // OLD (OpenAI — quota ended):
+            // builder.AddOpenAIChatCompletion(
+            //     modelId: aiSettings.ModelVersion, // "gpt-4o-mini"
+            //     apiKey: aiSettings.OpenAiApiKey
+            // );
 
             // Inject the standalone Embeddings service into the Kernel
             builder.Services.AddSingleton(sp.GetRequiredService<ITextEmbeddingGenerationService>());
