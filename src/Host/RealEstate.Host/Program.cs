@@ -27,6 +27,7 @@ using Subscription.Infrastructure.Persistence;
 using Subscription.Infrastructure.Seed;
 using Wallet.Infrastructure;
 using Wallet.Infrastructure.Persistence;
+using Azure.Storage.Blobs;
 using System.IdentityModel.Tokens.Jwt;
 using System.Text;
 using MaintenanceCompanies.Infrastructure;
@@ -195,6 +196,11 @@ public class Program
             await identityDb.Database.MigrateAsync();
             var hasher = scope.ServiceProvider.GetRequiredService<Identity.Application.Interfaces.IPasswordHasher>();
             await AdminSeed.SeedAsync(identityDb, hasher);
+
+            var blobServiceClient = scope.ServiceProvider.GetService<BlobServiceClient>();
+            await RealEstate.Host.Seeds.PropertyDataSeed.SeedAsync(
+                propertyDb, identityDb, hasher, blobServiceClient,
+                app.Environment.WebRootPath);
 
             var paymentDb = scope.ServiceProvider.GetRequiredService<PaymentDbContext>();
             await paymentDb.Database.MigrateAsync();
