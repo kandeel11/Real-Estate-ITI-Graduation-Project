@@ -12,6 +12,7 @@ public class PropertyDbContext : DbContext
     public DbSet<Amenity> Amenities => Set<Amenity>();
     public DbSet<PropertyAmenity> PropertyAmenities => Set<PropertyAmenity>();
     public DbSet<PropertyAnalytics> PropertyAnalytics => Set<PropertyAnalytics>();
+    public DbSet<SavedProperty> SavedProperties => Set<SavedProperty>();
 
     protected override void OnModelCreating(ModelBuilder modelBuilder)
     {

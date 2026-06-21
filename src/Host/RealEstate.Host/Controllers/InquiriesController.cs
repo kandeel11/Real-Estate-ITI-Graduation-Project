@@ -23,10 +23,21 @@ public class InquiriesController(
 {
     private Guid UserId => currentUser.UserId ?? throw new UnauthorizedAccessException();
 
+    /// <summary>Returns a 403 result if the caller hasn't verified their email, else null.</summary>
+    private IActionResult? RequireVerified() =>
+        currentUser.IsEmailVerified
+            ? null
+            : StatusCode(StatusCodes.Status403Forbidden,
+                new { error = "Please verify your email to manage inquiries." });
+
     [HttpPost]
     [Authorize(Roles = "tenant")]
     public async Task<IActionResult> Create([FromBody] CreateInquiryBodyRequest req, CancellationToken ct)
     {
+        if (!currentUser.IsEmailVerified)
+            return StatusCode(StatusCodes.Status403Forbidden,
+                new { error = "Please verify your email to send inquiries." });
+
         try
         {
             // Route the inquiry to the property's listing broker (if any) so it
@@ -105,6 +116,7 @@ public class InquiriesController(
     [Authorize(Roles = "owner,broker,company_manager")]
     public async Task<IActionResult> Accept(Guid id, CancellationToken ct)
     {
+        if (RequireVerified() is { } forbid) return forbid;
         try { return Ok(await mediator.Send(new AcceptInquiryCommand(id, UserId), ct)); }
         catch (KeyNotFoundException ex) { return NotFound(ex.Message); }
         catch (InvalidOperationException ex) { return BadRequest(ex.Message); }
@@ -115,6 +127,7 @@ public class InquiriesController(
     [Authorize(Roles = "owner,broker,company_manager")]
     public async Task<IActionResult> ConvertToLead(Guid id, CancellationToken ct)
     {
+        if (RequireVerified() is { } forbid) return forbid;
         try
         {
             var result = await mediator.Send(new AcceptInquiryCommand(id, UserId), ct);
@@ -136,6 +149,7 @@ public class InquiriesController(
     [Authorize(Roles = "owner,broker,company_manager")]
     public async Task<IActionResult> Reply(Guid id, [FromBody] ReplyInquiryBodyRequest req, CancellationToken ct)
     {
+        if (RequireVerified() is { } forbid) return forbid;
         try
         {
             await mediator.Send(new ReplyToInquiryCommand(id, UserId, req.Text), ct);

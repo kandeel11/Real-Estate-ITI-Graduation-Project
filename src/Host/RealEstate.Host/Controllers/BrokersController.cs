@@ -109,6 +109,11 @@ public class BrokersController(IMediator mediator, ICurrentUserService currentUs
 
     private async Task<IActionResult> CreateBrokerAsync(Guid companyId, AddBrokerRequest request, CancellationToken ct)
     {
+        // Admins are auto-verified, so this only gates unverified company managers.
+        if (!currentUser.IsEmailVerified)
+            return StatusCode(StatusCodes.Status403Forbidden,
+                new { error = "Please verify your email before adding brokers." });
+
         try
         {
             var cmd = new AddBrokerCommand(

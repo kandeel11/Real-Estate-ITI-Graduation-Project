@@ -27,6 +27,13 @@ public interface ISubscriptionLimitChecker
     Task<(bool Allowed, string Reason)> CheckInquiryLimitAsync(Guid userId, CancellationToken ct = default);
     Task IncrementInquiryUsageAsync(Guid userId, CancellationToken ct = default);
 
+    /// <summary>
+    /// Saved listings (tenant wishlist) are a standing count, not a monthly quota,
+    /// so the caller supplies how many the tenant currently has saved and we compare
+    /// it against the plan's MaxSavedListings. No usage counter is maintained.
+    /// </summary>
+    Task<(bool Allowed, string Reason)> CheckSavedListingLimitAsync(Guid userId, int currentSavedCount, CancellationToken ct = default);
+
     Task<(bool Allowed, string Reason)> CheckStorageLimitAsync(Guid userId, Guid? companyId, decimal additionalGb, CancellationToken ct = default);
     Task AddStorageUsageAsync(Guid userId, Guid? companyId, decimal gb, CancellationToken ct = default);
 

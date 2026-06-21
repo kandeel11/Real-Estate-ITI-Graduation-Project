@@ -113,6 +113,10 @@ public class CompaniesController(
         var userId = currentUser.UserId;
         if (userId is null) return Unauthorized(new { error = "User not authenticated." });
 
+        if (!currentUser.IsEmailVerified)
+            return StatusCode(StatusCodes.Status403Forbidden,
+                new { error = "Please verify your email to update your company profile." });
+
         var companyId = currentUser.CompanyId;
         if (companyId is null) return BadRequest(new { error = "No company is associated with your account." });
 
