@@ -118,10 +118,14 @@
               (input)="updateField('deposit', +$any($event.target).value)" />
           </div>
         </div>
+
+        @if (dateError()) {
+          <p class="err"><i class="fa-solid fa-triangle-exclamation"></i> {{ dateError()! | translate }}</p>
+        }
       </div>
       <div class="modal-footer">
         <button class="btn btn-outline" (click)="step.set(1)">{{ 'COMMON.BACK' | translate }}</button>
-        <button class="btn btn-primary" (click)="sendToTenant()" [disabled]="sending()">
+        <button class="btn btn-primary" (click)="sendToTenant()" [disabled]="sending() || !!dateError()">
           @if (sending()) { <i class="fa-solid fa-spinner fa-spin"></i> {{ 'BROKER.LEASE_UPLOAD.SENDING_TENANT' | translate }} }
           @else { <i class="fa-solid fa-paper-plane"></i> {{ 'BROKER.LEASE_UPLOAD.SEND_TENANT' | translate }} }
         </button>

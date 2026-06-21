@@ -433,6 +433,8 @@
       "DONE": "Done",
       "ERR_NO_FILE": "Please choose a PDF file first.",
       "ERR_NO_EMAIL": "Please enter the tenant's email address.",
+      "ERR_DATES_REQUIRED": "Please enter both the lease start and end dates before sending.",
+      "ERR_DATES_ORDER": "The lease end date must be after the start date.",
       "UPLOAD_ERROR": "Upload failed. Please try again."
     },
     "INQUIRIES": {
@@ -694,6 +696,8 @@
       "DONE": "Done",
       "ERR_NO_FILE": "Please choose a PDF file first.",
       "ERR_NO_EMAIL": "Please enter the tenant's email address.",
+      "ERR_DATES_REQUIRED": "Please enter both the lease start and end dates before sending.",
+      "ERR_DATES_ORDER": "The lease end date must be after the start date.",
       "UPLOAD_ERROR": "Upload failed. Please try again."
     },
     "INQUIRIES": {

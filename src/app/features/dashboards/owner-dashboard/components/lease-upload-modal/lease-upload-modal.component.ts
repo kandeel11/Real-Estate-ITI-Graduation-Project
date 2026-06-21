@@ -1,4 +1,4 @@
-import { Component, Input, Output, EventEmitter, OnInit, OnDestroy, inject, signal } from '@angular/core';
+import { Component, Input, Output, EventEmitter, OnInit, OnDestroy, inject, signal, computed } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
 import { TranslatePipe } from '@ngx-translate/core';
@@ -34,6 +34,19 @@ export class LeaseUploadModalComponent implements OnInit, OnDestroy {
   sending = signal(false);
 
   leaseId = signal<string | null>(null);
+
+  /**
+   * Validates the editable lease dates before sending. Returns an i18n key for
+   * the problem, or null when valid. The lease can't be sent without both dates
+   * (and the end must be after the start).
+   */
+  readonly dateError = computed<string | null>(() => {
+    const e = this.extraction();
+    if (!e) return null;
+    if (!e.startDate || !e.endDate) return 'OWNER.LEASE_UPLOAD.ERR_DATES_REQUIRED';
+    if (new Date(e.endDate) <= new Date(e.startDate)) return 'OWNER.LEASE_UPLOAD.ERR_DATES_ORDER';
+    return null;
+  });
 
   ngOnInit(): void {
     // The tenant's email comes from their account (resolved via the lead's TenantId),
@@ -100,7 +113,7 @@ export class LeaseUploadModalComponent implements OnInit, OnDestroy {
   sendToTenant(): void {
     const ext = this.extraction();
     const id = this.leaseId();
-    if (!ext || !id || this.sending()) return;
+    if (!ext || !id || this.sending() || this.dateError()) return;
     this.sending.set(true);
     this.svc.sendLeaseToTenant(id, ext).subscribe({
       next: () => { this.sending.set(false); this.step.set(3); },
