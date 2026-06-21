@@ -11,6 +11,7 @@ export const API_ENDPOINTS = {
     REGISTER: '/auth/register',
     REGISTER_COMPANY: '/auth/register-company',
     VERIFY_EMAIL: '/auth/verify-email',
+    RESEND_VERIFICATION: '/auth/resend-verification',
     SEND_OTP: '/auth/send-otp',
     VERIFY_OTP: '/auth/verify-otp',
     REFRESH_TOKEN: '/auth/refresh',
@@ -44,6 +45,10 @@ export const API_ENDPOINTS = {
     SEARCH: '/properties/search',
     SET_FEATURED: (id: string) => `/properties/${id}/feature`,
     MARK_RENTED: (id: string) => `/properties/${id}/rented`,
+    // Saved properties (tenant wishlist)
+    SAVED: '/properties/saved',
+    SAVED_IDS: '/properties/saved/ids',
+    SAVE: (id: string) => `/properties/${id}/save`,
   },
 
   // ==================== AMENITIES CATALOG ====================

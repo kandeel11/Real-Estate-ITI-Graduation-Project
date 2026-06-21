@@ -1,3 +1,13 @@
+@if (savedSvc.lastError(); as err) {
+  <div class="saved-toast" role="alert">
+    <i class="fa-solid fa-circle-exclamation me-2"></i>
+    <span>{{ err }}</span>
+    <button type="button" class="saved-toast__x" (click)="savedSvc.clearError()" aria-label="Dismiss">
+      <i class="fa-solid fa-xmark"></i>
+    </button>
+  </div>
+}
+
 <main class="detail">
   <div class="container-xl py-4">
 
@@ -116,6 +126,15 @@
             <div class="text-end">
               <span class="detail__price">{{ p.price | number }} EGP</span>
               <span class="detail__price-label d-block">{{ 'DETAIL.PER_MONTH' | translate }}</span>
+              @if (isTenant()) {
+                <button type="button" class="detail__save mt-2"
+                        [class.saved]="savedSvc.isSaved(p.id)"
+                        (click)="toggleSave()"
+                        [attr.aria-pressed]="savedSvc.isSaved(p.id)">
+                  <i [class]="savedSvc.isSaved(p.id) ? 'fa-solid fa-heart' : 'fa-regular fa-heart'"></i>
+                  <span>{{ (savedSvc.isSaved(p.id) ? 'DETAIL.SAVED' : 'DETAIL.SAVE') | translate }}</span>
+                </button>
+              }
             </div>
           </div>
 

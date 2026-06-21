@@ -14,6 +14,7 @@ import { TranslatePipe } from '@ngx-translate/core';
 import { PropertyService } from '../../services/property.service';
 import { PropertyDetail, PropertyMedia } from '../../models/property.model';
 import { AuthService } from '../../../../core/services/auth.service';
+import { SavedPropertyService } from '../../../../core/services/saved-property.service';
 
 @Component({
   selector: 'app-property-detail',
@@ -26,6 +27,7 @@ export class DetailComponent implements OnInit {
   private route = inject(ActivatedRoute);
   private propertySvc = inject(PropertyService);
   private auth = inject(AuthService);
+  protected savedSvc = inject(SavedPropertyService);
 
   property = signal<PropertyDetail | null>(null);
   loading = signal(true);
@@ -96,6 +98,12 @@ export class DetailComponent implements OnInit {
     if (!p || p.media.length < 2) return;
     const i = this.activeIndex();
     this.activeImage.set(p.media[(i + 1) % p.media.length].mediaUrl);
+  }
+
+  /** Wishlist toggle for the listing being viewed. */
+  toggleSave(): void {
+    const p = this.property();
+    if (p) this.savedSvc.toggle(p);
   }
 
   typeIcon(type: string): string {

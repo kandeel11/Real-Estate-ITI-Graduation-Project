@@ -11,6 +11,8 @@ import { RouterLink } from '@angular/router';
 import { TranslatePipe } from '@ngx-translate/core';
 import { PropertyService } from '../../services/property.service';
 import { Property, Amenity } from '../../models/property.model';
+import { SavedPropertyService } from '../../../../core/services/saved-property.service';
+import { AuthService } from '../../../../core/services/auth.service';
 
 const PAGE_SIZE = 9;
 
@@ -29,6 +31,11 @@ interface Chip {
 })
 export class BrowseComponent implements OnInit {
   private propertySvc = inject(PropertyService);
+  protected savedSvc = inject(SavedPropertyService);
+  private auth = inject(AuthService);
+
+  /** Only tenants get the wishlist toggle. */
+  isTenant = computed(() => this.auth.userRole() === 'tenant');
 
   all = signal<Property[]>([]);
   amenities = signal<Amenity[]>([]);
@@ -224,5 +231,12 @@ export class BrowseComponent implements OnInit {
       case 'House': return 'fa-solid fa-house-user';
       default: return 'fa-solid fa-building';
     }
+  }
+
+  /** Wishlist toggle — card is a link, so swallow the navigation. */
+  toggleSave(p: Property, event: Event): void {
+    event.preventDefault();
+    event.stopPropagation();
+    this.savedSvc.toggle(p);
   }
 }

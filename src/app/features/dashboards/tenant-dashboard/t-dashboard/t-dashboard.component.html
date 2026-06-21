@@ -18,6 +18,9 @@
                 @if (item.id === 'notifications' && notificationService.unreadCount() > 0) {
                 <span class="badge-count">{{ notificationService.unreadCount() }}</span>
                 }
+                @if (item.id === 'saved' && savedService.count() > 0) {
+                <span class="badge-count">{{ savedService.count() }}</span>
+                }
             </a>
             }
         </nav>
@@ -54,6 +57,9 @@
             <i [class]="item.icon"></i>
             @if (item.id === 'notifications' && notificationService.unreadCount() > 0) {
             <span class="tab-badge">{{ notificationService.unreadCount() }}</span>
+            }
+            @if (item.id === 'saved' && savedService.count() > 0) {
+            <span class="tab-badge">{{ savedService.count() }}</span>
             }
         </span>
         <span class="tab-label">{{ item.label | translate }}</span>

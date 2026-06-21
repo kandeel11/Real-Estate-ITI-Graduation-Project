@@ -1,3 +1,13 @@
+@if (savedSvc.lastError(); as err) {
+  <div class="saved-toast" role="alert">
+    <i class="fa-solid fa-circle-exclamation me-2"></i>
+    <span>{{ err }}</span>
+    <button type="button" class="saved-toast__x" (click)="savedSvc.clearError()" aria-label="Dismiss">
+      <i class="fa-solid fa-xmark"></i>
+    </button>
+  </div>
+}
+
 <main class="browse">
   <!-- Header -->
   <section class="browse-head">
@@ -184,6 +194,16 @@
                       </span>
                       @if (p.isFeatured) {
                         <span class="browse-card__featured"><i class="fa-solid fa-star fa-xs"></i>&nbsp;{{ 'BROWSE.FEATURED' | translate }}</span>
+                      }
+                      @if (isTenant()) {
+                        <button type="button" class="browse-card__save"
+                                [class.saved]="savedSvc.isSaved(p.id)"
+                                (click)="toggleSave(p, $event)"
+                                [attr.aria-pressed]="savedSvc.isSaved(p.id)"
+                                [attr.aria-label]="(savedSvc.isSaved(p.id) ? 'BROWSE.UNSAVE' : 'BROWSE.SAVE') | translate"
+                                [title]="(savedSvc.isSaved(p.id) ? 'BROWSE.UNSAVE' : 'BROWSE.SAVE') | translate">
+                          <i [class]="savedSvc.isSaved(p.id) ? 'fa-solid fa-heart' : 'fa-regular fa-heart'"></i>
+                        </button>
                       }
                     </div>
                     <div class="browse-card__body">

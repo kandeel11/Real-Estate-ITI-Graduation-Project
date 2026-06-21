@@ -250,6 +250,8 @@
     "AREA": "m²",
     "VIEW": "View",
     "FEATURED": "Featured",
+    "SAVE": "Save to wishlist",
+    "UNSAVE": "Remove from wishlist",
     "PRICE_MIN": "Min",
     "PRICE_MAX": "Max",
     "NO_AMENITIES": "No amenities available.",
@@ -261,6 +263,7 @@
     "OVERVIEW": "Overview",
     "MY_PROPERTY": "My Property",
     "MY_LEASE": "My Lease",
+    "SAVED": "Saved",
     "MAINTENANCE": "Maintenance",
     "MESSAGES": "Messages",
     "NOTIFICATIONS": "Notifications",
@@ -271,6 +274,16 @@
     "PAYMENTS": "Payments",
     "ROLE": "Tenant",
     "LOGOUT": "Logout"
+  },
+  "TENANT_SAVED": {
+    "TITLE": "Saved Properties",
+    "SUBTITLE": "Listings you've added to your wishlist.",
+    "EMPTY_TITLE": "No saved properties yet",
+    "EMPTY_DESC": "Tap the heart on any listing to save it here for later.",
+    "BROWSE": "Browse Properties",
+    "REMOVE": "Remove from saved",
+    "MONTHLY": "Monthly",
+    "VIEW": "View"
   },
   "BROKER_NAV": {
     "BRAND": "Broker Hub",
@@ -829,6 +842,8 @@
   "DETAIL": {
     "BACK": "Back to listings",
     "FEATURED": "Featured",
+    "SAVE": "Save",
+    "SAVED": "Saved",
     "PER_MONTH": "per month",
     "BEDROOMS": "Bedrooms",
     "BATHROOMS": "Bathrooms",
@@ -883,6 +898,16 @@
     "ACCEPTED": "Accepted",
     "CLOSED": "Closed",
     "EXPIRED": "Expired"
+  },
+  "VERIFY_BAR": {
+    "MESSAGE": "Please verify your email to unlock all features. We sent a link to",
+    "SEND": "Send verification email",
+    "RESEND": "Resend email",
+    "SENDING": "Sending…",
+    "SENT": "Email sent",
+    "RESEND_IN": "Resend in {{n}}s",
+    "ALREADY_VERIFIED": "I've verified",
+    "CHECKING": "Checking…"
   },
   "COMMON": {
     "TYPE": "Type",

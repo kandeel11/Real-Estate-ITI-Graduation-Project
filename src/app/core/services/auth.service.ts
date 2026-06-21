@@ -218,6 +218,14 @@ export class AuthService {
     );
   }
 
+  /** Resend the email-verification link to the given address (no-op if already verified). */
+  resendVerification(email: string): Observable<void> {
+    return this.http.post<void>(
+      `${environment.apiUrl}${API_ENDPOINTS.AUTH.RESEND_VERIFICATION}`,
+      { email }
+    );
+  }
+
   /** Change the signed-in user's password. */
   changePassword(currentPassword: string, newPassword: string): Observable<void> {
     return this.http.post<void>(
