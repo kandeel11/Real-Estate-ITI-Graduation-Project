@@ -175,6 +175,11 @@
   line-height: 1.5;
 }
 
+.sidebar-plan-badge--premium {
+  background: var(--color-primary);
+  color: #fff;
+}
+
 .btn-logout {
   background: none;
   border: none;

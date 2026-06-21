@@ -31,7 +31,8 @@
                 <span class="user-name">{{ userName }}</span>
                 <div class="user-role-row">
                   <span class="user-role">{{ 'TENANT_NAV.ROLE' | translate }}</span>
-                  <span class="sidebar-plan-badge">Free</span>
+                  <span class="sidebar-plan-badge"
+                        [class.sidebar-plan-badge--premium]="planBadge() === 'Premium'">{{ planBadge() }}</span>
                 </div>
             </div>
             <button class="btn-logout" (click)="logout()" [title]="'TENANT_NAV.LOGOUT' | translate" aria-label="Sign out">

@@ -23,4 +23,9 @@ export class SubscriptionService {
       .get<ActiveSubscription>(`${this.base}/subscriptions/mine`)
       .pipe(catchError(() => of(null)));
   }
+
+  /** Cancel the premium subscription — drops back to the Free tier. */
+  cancel(reason: string): Observable<void> {
+    return this.http.post<void>(`${this.base}/subscriptions/mine/cancel`, { reason });
+  }
 }

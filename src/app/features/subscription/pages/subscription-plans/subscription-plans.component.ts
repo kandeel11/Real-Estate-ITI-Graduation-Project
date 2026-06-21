@@ -5,11 +5,12 @@ import { SubscriptionPlan, ActiveSubscription } from '../../models/subscription.
 import { PaymentService } from '../../../../core/services/payment.service';
 import { AuthService } from '../../../../core/services/auth.service';
 import { BILLING_MONTHLY, BILLING_ANNUAL } from '../../../../core/models/payment.model';
+import { ConfirmModalComponent } from '../../../../shared/components/modal/confirm-modal.component';
 
 @Component({
   selector: 'app-subscription-plans',
   standalone: true,
-  imports: [],
+  imports: [ConfirmModalComponent],
   templateUrl: './subscription-plans.component.html',
   styleUrl: './subscription-plans.component.css',
 })
@@ -27,10 +28,16 @@ export class SubscriptionPlansComponent implements OnInit {
   protected checkingOut = signal(false);
   protected checkoutError = signal<string | null>(null);
   protected checkoutSuccess = signal<string | null>(null);
+  protected showCancelConfirm = signal(false);
+  protected cancelling = signal(false);
 
-  /** True when the given plan is the caller's current active plan. */
+  /**
+   * True when the given plan is the caller's current active plan. Compared by
+   * name, not tier: `/subscription-plans` serializes tier as a number while
+   * `/subscriptions/mine` returns it as a string, so tiers never match.
+   */
   protected isCurrent(plan: SubscriptionPlan): boolean {
-    return this.active()?.tier === plan.tier;
+    return !!this.active() && this.active()!.planName === plan.name;
   }
 
   protected readonly freePlan = computed(() =>
@@ -137,6 +144,26 @@ export class SubscriptionPlansComponent implements OnInit {
 
   annualMonthly(plan: SubscriptionPlan): string {
     return (plan.priceAnnual / 12).toFixed(2);
+  }
+
+  /** Cancel the premium subscription — backend downgrades to the Free tier. */
+  confirmCancel(): void {
+    if (this.cancelling()) return;
+    this.cancelling.set(true);
+    this.subService.cancel('Cancelled from the dashboard').subscribe({
+      next: () => {
+        this.cancelling.set(false);
+        this.showCancelConfirm.set(false);
+        this.checkoutSuccess.set('Subscription cancelled — you are back on the Free plan.');
+        setTimeout(() => this.checkoutSuccess.set(null), 5000);
+        this.loadPlans();
+      },
+      error: (err) => {
+        this.cancelling.set(false);
+        this.showCancelConfirm.set(false);
+        this.checkoutError.set(err?.error?.error ?? 'Failed to cancel the subscription.');
+      },
+    });
   }
 
   readonly skeletonRows = [1, 2, 3, 4, 5, 6, 7, 8];

@@ -6,6 +6,7 @@ import { TranslatePipe } from '@ngx-translate/core';
 import { NotificationService } from '../services/notification.service';
 import { AuthService } from '../../../../core/services/auth.service';
 import { SavedPropertyService } from '../../../../core/services/saved-property.service';
+import { SubscriptionService } from '../../../subscription/services/subscription.service';
 import { NavbarComponent } from '../../../../layout/navbar/navbar.component';
 
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
@@ -37,9 +38,12 @@ export class TDashboardComponent implements OnInit, OnDestroy {
   protected readonly auth = inject(AuthService);
   protected readonly notificationService = inject(NotificationService);
   protected readonly savedService = inject(SavedPropertyService);
+  private readonly subService = inject(SubscriptionService);
   private readonly router = inject(Router);
 
   protected readonly routeAnimState = signal('');
+  /** Live plan label for the sidebar badge ('Free' or 'Premium'). */
+  protected readonly planBadge = signal('Free');
   private _routerSub: Subscription | null = null;
 
   readonly navItems: NavItem[] = [
@@ -60,6 +64,9 @@ export class TDashboardComponent implements OnInit, OnDestroy {
   ngOnInit(): void {
     this.notificationService.fetchUnreadCount();
     this.notificationService.startPolling();
+    this.subService.getMine().subscribe(sub =>
+      this.planBadge.set(sub?.tier?.startsWith('Premium') ? 'Premium' : 'Free'),
+    );
     this._routerSub = this.router.events.pipe(
       filter(e => e instanceof NavigationEnd)
     ).subscribe(() => {

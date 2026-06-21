@@ -188,6 +188,9 @@
               <button class="btn plan-btn plan-btn-current" disabled>
                 <i class="fa-solid fa-circle-check me-1"></i>Current Plan
               </button>
+              <button class="btn plan-btn-cancel" (click)="showCancelConfirm.set(true)">
+                Cancel subscription
+              </button>
             } @else {
               <button class="btn plan-btn plan-btn-upgrade"
                       [disabled]="checkingOut()"
@@ -272,3 +275,15 @@
 
   }
 </div>
+
+<!-- ── CANCEL CONFIRMATION ───────────────────────────── -->
+<app-confirm-modal
+  [show]="showCancelConfirm()"
+  title="Cancel subscription"
+  message="Cancel your Premium plan? You'll drop back to the Free tier and lose premium features at the end of your billing access."
+  confirmLabel="Cancel subscription"
+  confirmClass="btn-danger"
+  [loading]="cancelling()"
+  (confirmed)="confirmCancel()"
+  (cancelled)="showCancelConfirm.set(false)"
+/>
