@@ -104,6 +104,10 @@
               <input type="checkbox" [checked]="petsAllowed()" (change)="petsAllowed.set(!petsAllowed())" />
               <span><i class="fa-solid fa-paw fa-xs me-1"></i>{{ 'BROWSE.PETS_ALLOWED' | translate }}</span>
             </label>
+            <label class="browse-check">
+              <input type="checkbox" [checked]="featured()" (change)="featured.set(!featured())" />
+              <span><i class="fa-solid fa-star fa-xs me-1"></i>{{ 'BROWSE.FEATURED_ONLY' | translate }}</span>
+            </label>
           </div>
 
           <!-- Amenities (dropdown menu) -->

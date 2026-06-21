@@ -419,6 +419,28 @@
 .home-properties__price { font-size: 18px; font-weight: 700; color: var(--color-primary); margin: 0; }
 .home-properties__details-btn { border-radius: var(--radius-md) !important; padding: 8px 18px; font-size: var(--font-label-md-size); }
 
+/* ── Featured carousel ─────────────────────────────────────────── */
+.home-properties__carousel { position: relative; }
+.home-properties__viewport { overflow: hidden; }
+.home-properties__track { display: flex; transition: transform .5s ease; }
+.home-properties__slide { padding: 0 12px; box-sizing: border-box; min-width: 0; }
+.home-properties__nav {
+  position: absolute; top: 40%; transform: translateY(-50%); z-index: 2;
+  width: 44px; height: 44px; border-radius: var(--radius-full); border: 1px solid var(--color-outline-variant);
+  background: #fff; color: var(--color-on-surface); box-shadow: var(--shadow-soft);
+  display: flex; align-items: center; justify-content: center; cursor: pointer; transition: background .2s ease, color .2s ease;
+}
+.home-properties__nav:hover { background: var(--color-primary); color: #fff; border-color: var(--color-primary); }
+.home-properties__nav--prev { left: -10px; }
+.home-properties__nav--next { right: -10px; }
+.home-properties__dots { display: flex; justify-content: center; gap: 8px; margin-top: 28px; }
+.home-properties__dot { width: 9px; height: 9px; padding: 0; border: none; border-radius: var(--radius-full); background: var(--color-outline-variant); cursor: pointer; transition: width .25s ease, background .25s ease; }
+.home-properties__dot.active { width: 26px; background: var(--color-primary); }
+@media (max-width: 991px) {
+  .home-properties__nav--prev { left: 2px; }
+  .home-properties__nav--next { right: 2px; }
+}
+
 .home-cta { padding: 80px 0; background: var(--color-inverse-surface); position: relative; overflow: hidden; }
 .home-cta::before { content: ''; position: absolute; top: 0; right: 0; width: 50%; height: 100%; background: linear-gradient(to left, rgba(79,70,229,.18), transparent); pointer-events: none; }
 .home-cta__inner { display: flex; flex-wrap: wrap; align-items: center; justify-content: space-between; gap: 32px; position: relative; z-index: 1; }

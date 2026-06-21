@@ -1,4 +1,4 @@
-import { Component, inject, signal, OnInit } from '@angular/core';
+import { Component, inject, signal, computed, OnInit, OnDestroy, HostListener } from '@angular/core';
 import { Router, RouterLink } from '@angular/router';
 import { TranslatePipe } from '@ngx-translate/core';
 import { InViewDirective } from '../../shared/directives/in-view.directive';
@@ -9,13 +9,16 @@ import { Property } from '../../features/properties/models/property.model';
 
 type SearchMode = 'regular' | 'smart';
 
+/** Cap on how many featured listings the home carousel will cycle through. */
+const MAX_FEATURED = 15;
+
 @Component({
   selector: 'app-home',
   imports: [InViewDirective, RouterLink, TranslatePipe],
   templateUrl: './home.html',
   styleUrl: './home.scss',
 })
-export class HomeComponent implements OnInit {
+export class HomeComponent implements OnInit, OnDestroy {
   // ============================================================
   // 🔎 SEARCH STATE (NEW)
   // ============================================================
@@ -43,9 +46,28 @@ export class HomeComponent implements OnInit {
     { icon: 'fa-solid fa-chart-line',  titleKey: 'HOME.SERVICES.INVESTMENTS.TITLE',  descKey: 'HOME.SERVICES.INVESTMENTS.DESC' },
   ];
 
-  /** Featured listings pulled from the public active feed. */
+  /** Featured listings pulled from the public active feed (up to {@link MAX_FEATURED}). */
   properties = signal<Property[]>([]);
   propertiesLoading = signal(true);
+
+  // ── Featured carousel state ─────────────────────────────────────
+  /** Index of the left-most visible card. */
+  slide = signal(0);
+  /** Cards visible at once — responsive (1 mobile / 2 tablet / 3 desktop). */
+  cardsPerView = signal(3);
+  private autoplayId: ReturnType<typeof setInterval> | null = null;
+
+  /** Highest slide index that still fills the viewport. */
+  maxSlide = computed(() => Math.max(0, this.properties().length - this.cardsPerView()));
+
+  /** How far the track is shifted, as a percentage of one viewport width. */
+  trackOffset = computed(() => -(this.slide() * (100 / this.cardsPerView())));
+
+  /** Whether the carousel has more cards than fit on screen. */
+  hasCarousel = computed(() => this.properties().length > this.cardsPerView());
+
+  /** One dot per slide position. */
+  slideDots = computed(() => Array.from({ length: this.maxSlide() + 1 }, (_, i) => i));
 
   faqs = [
     { qKey: 'HOME.FAQ.Q1', aKey: 'HOME.FAQ.A1' },
@@ -57,13 +79,18 @@ export class HomeComponent implements OnInit {
   ];
 
   ngOnInit(): void {
+    this.updateCardsPerView();
     this.loadFeatured();
+  }
+
+  ngOnDestroy(): void {
+    this.stopAutoplay();
   }
 
   /**
    * Load featured listings for the home page. Prefers properties flagged
    * `isFeatured`; falls back to the most recent active listings so the
-   * section is never empty.
+   * section is never empty. Caps the carousel at {@link MAX_FEATURED}.
    */
   private loadFeatured(): void {
     this.propertiesLoading.set(true);
@@ -71,14 +98,59 @@ export class HomeComponent implements OnInit {
       next: (list) => {
         const featured = list.filter((p) => p.isFeatured);
         const pool = featured.length ? featured : list;
-        this.properties.set(pool.slice(0, 3));
+        this.properties.set(pool.slice(0, MAX_FEATURED));
         this.propertiesLoading.set(false);
+        this.startAutoplay();
       },
       error: () => {
         this.properties.set([]);
         this.propertiesLoading.set(false);
       },
     });
+  }
+
+  // ── Carousel controls ───────────────────────────────────────────
+
+  /** Advance one slide, wrapping back to the start at the end. */
+  nextSlide(): void {
+    this.slide.set(this.slide() >= this.maxSlide() ? 0 : this.slide() + 1);
+  }
+
+  /** Go back one slide, wrapping to the end at the start. */
+  prevSlide(): void {
+    this.slide.set(this.slide() <= 0 ? this.maxSlide() : this.slide() - 1);
+  }
+
+  goToSlide(i: number): void {
+    this.slide.set(Math.min(Math.max(i, 0), this.maxSlide()));
+  }
+
+  /** Pause autoplay while the user hovers/interacts. */
+  pauseAutoplay(): void { this.stopAutoplay(); }
+  resumeAutoplay(): void { this.startAutoplay(); }
+
+  private startAutoplay(): void {
+    this.stopAutoplay();
+    if (!this.hasCarousel()) return;
+    this.autoplayId = setInterval(() => this.nextSlide(), 4000);
+  }
+
+  private stopAutoplay(): void {
+    if (this.autoplayId !== null) {
+      clearInterval(this.autoplayId);
+      this.autoplayId = null;
+    }
+  }
+
+  /** Keep cards-per-view in step with the viewport, clamping the slide index. */
+  @HostListener('window:resize')
+  updateCardsPerView(): void {
+    const w = window.innerWidth;
+    const next = w < 768 ? 1 : w < 992 ? 2 : 3;
+    if (next !== this.cardsPerView()) {
+      this.cardsPerView.set(next);
+      if (this.slide() > this.maxSlide()) this.slide.set(this.maxSlide());
+    }
   }
 
   /** Font Awesome icon for a property type. */
