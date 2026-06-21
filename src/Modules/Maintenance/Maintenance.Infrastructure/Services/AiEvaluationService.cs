@@ -8,7 +8,7 @@ namespace Maintenance.Infrastructure.Services;
 public class AiEvaluationService(IHttpClientFactory httpClientFactory) : IAiEvaluationService
 {
     private const string WebhookUrl =
-        "https://mohamedkhaleed8080.app.n8n.cloud/webhook/ticket-evaluate";
+        "https://mkhaled2626.app.n8n.cloud/webhook/ticket-evaluate";
 
     public async Task<AiEvaluationResultDto> EvaluateAsync(
         string ticketNumber, string leaseId,
