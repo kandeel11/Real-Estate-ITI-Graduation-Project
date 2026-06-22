@@ -5,10 +5,12 @@ using Document.Application.Queries.Lead.GetLeadByInquiry;
 using Document.Application.Queries.Message.GetInquiryLastMessages;
 using Document.Application.Queries.Message.GetMessagesByConversation;
 using Document.Application.Queries.Message.GetMessagesByInquiry;
+using Document.Infrastructure.Hubs;
 using Identity.Application.Interfaces;
 using MediatR;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
+using Microsoft.AspNetCore.SignalR;
 using Property.Application.Features.Queries.GetPropertyById;
 
 namespace RealEstate.Host.Controllers;
@@ -19,7 +21,8 @@ namespace RealEstate.Host.Controllers;
 public class InquiriesController(
     IMediator mediator,
     ICurrentUserService currentUser,
-    IUserRepository userRepo) : ControllerBase
+    IUserRepository userRepo,
+    IHubContext<DocumentChatHub> chatHub) : ControllerBase
 {
     private Guid UserId => currentUser.UserId ?? throw new UnauthorizedAccessException();
 
@@ -204,6 +207,13 @@ public class InquiriesController(
             var saved = await mediator.Send(new PostInquiryMessageCommand(id, UserId, req.Text), ct);
             var inquiry = await mediator.Send(new GetInquiryByIdQuery(id), ct);
             var mapped = (await ToChatMessages([saved], inquiry!, ct)).Single();
+
+            // Push the new message live to everyone viewing this inquiry thread.
+            // The sender also receives this echo and dedupes it by message id.
+            await chatHub.Clients
+                .Group(DocumentChatHub.InquiryGroup(id))
+                .SendAsync("ReceiveMessage", new { inquiryId = id, message = mapped }, ct);
+
             return Ok(mapped);
         }
         catch (KeyNotFoundException ex) { return NotFound(new { error = ex.Message }); }

@@ -20,6 +20,19 @@ public class DocumentChatHub : Hub
         await Groups.RemoveFromGroupAsync(Context.ConnectionId, conversationId.ToString());
     }
 
+    /// <summary>
+    /// Inquiry-scoped chat groups. The app's chat threads are keyed by inquiry id
+    /// (not conversation id), so clients join here and the HTTP message endpoints
+    /// broadcast <c>ReceiveMessage</c> to the matching <c>inquiry-{id}</c> group.
+    /// </summary>
+    public static string InquiryGroup(Guid inquiryId) => $"inquiry-{inquiryId}";
+
+    public Task JoinInquiry(Guid inquiryId) =>
+        Groups.AddToGroupAsync(Context.ConnectionId, InquiryGroup(inquiryId));
+
+    public Task LeaveInquiry(Guid inquiryId) =>
+        Groups.RemoveFromGroupAsync(Context.ConnectionId, InquiryGroup(inquiryId));
+
     public async Task SendMessage(SendMessageDto dto)
     {
         var messageId = await _mediator.Send(new SendMessageCommand(
