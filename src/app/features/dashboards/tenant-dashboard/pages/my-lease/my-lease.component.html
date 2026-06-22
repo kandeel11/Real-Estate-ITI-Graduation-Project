@@ -245,6 +245,13 @@
           <i class="fa-solid fa-robot text-primary me-2"></i>
           <span>{{ 'MY_LEASE.ASK_LEASE' | translate }}</span>
           <span class="chat-badge">{{ 'MY_LEASE.AI_POWERED' | translate }}</span>
+          @if (chatMessages().length > 0) {
+            <button class="btn btn-outline-secondary btn-sm ms-auto"
+                    (click)="newChat()"
+                    [disabled]="chatLoading()">
+              <i class="fa-solid fa-plus me-1"></i>New Chat
+            </button>
+          }
         </div>
 
         @if (chatMessages().length > 0) {
@@ -253,6 +260,9 @@
               <div class="chat-bubble" [class.bubble-user]="msg.role === 'user'"
                    [class.bubble-ai]="msg.role === 'assistant'">
                 {{ msg.content }}
+                @if (msg.role === 'assistant' && $last && isTyping()) {
+                  <span class="chat-cursor">|</span>
+                }
               </div>
             }
             @if (chatLoading()) {
@@ -270,11 +280,11 @@
             [placeholder]="'MY_LEASE.CHAT_PLACEHOLDER' | translate"
             [(ngModel)]="chatInput"
             (keyup.enter)="sendChatMessage()"
-            [disabled]="chatLoading()"
+            [disabled]="chatLoading() || isTyping()"
           />
           <button class="btn btn-primary btn-sm chat-send"
                   (click)="sendChatMessage()"
-                  [disabled]="!chatInput.trim() || chatLoading()">
+                  [disabled]="!chatInput.trim() || chatLoading() || isTyping()">
             <i class="fa-solid fa-paper-plane"></i>
           </button>
         </div>

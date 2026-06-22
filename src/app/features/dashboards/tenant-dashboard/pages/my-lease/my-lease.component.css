@@ -325,6 +325,18 @@
   30%           { transform: translateY(-5px); opacity: 1; }
 }
 
+.chat-cursor {
+  display: inline-block;
+  margin-left: 1px;
+  font-weight: 400;
+  animation: cursor-blink 0.7s step-end infinite;
+}
+
+@keyframes cursor-blink {
+  0%, 100% { opacity: 1; }
+  50%       { opacity: 0; }
+}
+
 .chat-input-row {
   display: flex;
   gap: 8px;
