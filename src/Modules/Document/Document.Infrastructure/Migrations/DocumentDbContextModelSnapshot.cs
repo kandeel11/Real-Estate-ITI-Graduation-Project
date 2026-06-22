@@ -259,6 +259,12 @@ namespace Document.Infrastructure.Migrations
                     b.Property<string>("RejectionReason")
                         .HasColumnType("nvarchar(max)");
 
+                    b.Property<DateTime?>("RenewalRequestedAt")
+                        .HasColumnType("datetime2");
+
+                    b.Property<Guid?>("RenewedFromLeaseId")
+                        .HasColumnType("uniqueidentifier");
+
                     b.Property<decimal?>("SecurityDeposit")
                         .HasColumnType("decimal(12,2)");
 
@@ -277,8 +283,17 @@ namespace Document.Infrastructure.Migrations
                     b.Property<DateTime?>("TerminatedAt")
                         .HasColumnType("datetime2");
 
+                    b.Property<DateOnly?>("TerminationEffectiveDate")
+                        .HasColumnType("date");
+
                     b.Property<string>("TerminationReason")
                         .HasColumnType("nvarchar(max)");
+
+                    b.Property<DateTime?>("TerminationRequestedAt")
+                        .HasColumnType("datetime2");
+
+                    b.Property<Guid?>("TerminationRequestedById")
+                        .HasColumnType("uniqueidentifier");
 
                     b.Property<decimal?>("TotalRentAmount")
                         .HasColumnType("decimal(12,2)");

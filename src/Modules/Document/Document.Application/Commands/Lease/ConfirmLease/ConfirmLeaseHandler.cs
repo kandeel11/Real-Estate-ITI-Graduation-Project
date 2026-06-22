@@ -59,17 +59,34 @@ public class ConfirmLeaseHandler : IRequestHandler<ConfirmLeaseCommand, ConfirmL
             lease.IsActive = true;
             lease.ExtractionStatus = LeaseExtractionStatus.Confirmed;
 
-            await _publisher.Publish(
-                new LeaseActivatedEvent(
-                    lease.Id,
-                    lease.PropertyId,
-                    lease.OwnerId,
-                    lease.InstallmentAmount ?? 0,
-                    lease.PaymentDayOfMonth ?? 1,
-                    lease.StartDate ?? DateOnly.FromDateTime(DateTime.UtcNow),
-                    lease.EndDate ?? DateOnly.FromDateTime(DateTime.UtcNow.AddYears(1)),
-                    lease.ContractFileUrl
-                ), ct);
+            bool isRenewal = lease.RenewedFromLeaseId is { } prevId;
+
+            // A renewal keeps the SAME tenant in the SAME unit, so the property stays
+            // Rented and the usage slot stays consumed — supersede the predecessor
+            // quietly (no LeaseEndedEvent) and skip the property-facing activation event.
+            if (isRenewal)
+            {
+                var previous = await _db.Leases.FindAsync(new object[] { lease.RenewedFromLeaseId! }, ct);
+                if (previous is not null && previous.IsActive)
+                {
+                    previous.IsActive = false;
+                    previous.UpdatedAt = DateTime.UtcNow;
+                }
+            }
+            else
+            {
+                await _publisher.Publish(
+                    new LeaseActivatedEvent(
+                        lease.Id,
+                        lease.PropertyId,
+                        lease.OwnerId,
+                        lease.InstallmentAmount ?? 0,
+                        lease.PaymentDayOfMonth ?? 1,
+                        lease.StartDate ?? DateOnly.FromDateTime(DateTime.UtcNow),
+                        lease.EndDate ?? DateOnly.FromDateTime(DateTime.UtcNow.AddYears(1)),
+                        lease.ContractFileUrl
+                    ), ct);
+            }
 
             await _publisher.Publish(
                 new LeaseActivatedIntegrationEvent(

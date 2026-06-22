@@ -191,6 +191,87 @@ public class BrokerDashboardController(
         return Ok(result);
     }
 
+    // ── Leases I manage (Lease.BrokerId == me) ──────────────────────────────────
+
+    [HttpGet("leases")]
+    public async Task<IActionResult> GetLeases(CancellationToken ct)
+    {
+        // A broker is tied to leases through the properties they list (Lease has no
+        // reliable BrokerId), mirroring how GetLeads resolves the broker's pipeline.
+        var properties = await sender.Send(new GetPropertiesByBrokerQuery(UserId), ct);
+        if (properties.Count == 0) return Ok(Array.Empty<object>());
+
+        var leases = await sender.Send(
+            new GetLeasesByPropertyIdsQuery(properties.Select(p => p.Id).ToList()), ct);
+        if (leases.Count == 0) return Ok(Array.Empty<object>());
+
+        var propertyTitles = properties.ToDictionary(p => p.Id, p => p.Title);
+
+        var tenantNames = await userRepo.GetFullNamesByIdsAsync(
+            leases.Select(l => l.TenantId).Distinct(), ct);
+
+        // Predecessors that have an in-progress renewal draft (a non-terminal child lease).
+        var renewalParents = LeasesWithRenewalDraft(leases);
+
+        var today = DateOnly.FromDateTime(DateTime.UtcNow);
+        var result = new List<object>(leases.Count);
+        foreach (var l in leases)
+        {
+            var tenant = await userRepo.GetByIdAsync(l.TenantId, ct);
+            result.Add(new
+            {
+                id = l.Id,
+                propertyId = l.PropertyId,
+                propertyTitle = propertyTitles.GetValueOrDefault(l.PropertyId, string.Empty),
+                tenantName = tenantNames.GetValueOrDefault(l.TenantId, string.Empty),
+                tenantEmail = tenant?.Email ?? string.Empty,
+                startDate = l.StartDate?.ToString("yyyy-MM-dd") ?? string.Empty,
+                endDate = l.EndDate?.ToString("yyyy-MM-dd") ?? string.Empty,
+                installmentAmount = l.InstallmentAmount ?? 0m,
+                totalRentAmount = l.TotalRentAmount,
+                paymentFrequency = l.PaymentFrequency,
+                durationInMonths = l.DurationInMonths,
+                securityDeposit = l.SecurityDeposit ?? 0m,
+                status = MapBrokerLeaseStatus(l, today),
+                lifecycleStatus = l.Status,
+                renewalRequestedAt = l.RenewalRequestedAt,
+                renewalInProgress = renewalParents.Contains(l.Id),
+                terminationRequestedAt = l.TerminationRequestedAt,
+                terminationRequestedByTenant = l.TerminationRequestedById == l.TenantId,
+                contractFileUrl = l.ContractFileUrl,
+                extractionStatus = l.ExtractionStatus
+            });
+        }
+
+        return Ok(result);
+    }
+
+    /// <summary>
+    /// Ids of leases that have an in-progress renewal draft — a child lease
+    /// (RenewedFromLeaseId == parent) that is not yet active and not rejected. Used so the
+    /// UI can offer "Resume Renewal" and avoid spawning a duplicate draft.
+    /// </summary>
+    internal static HashSet<Guid> LeasesWithRenewalDraft(
+        IEnumerable<Document.Application.Queries.Lease.GetLeaseById.LeaseDto> leases) =>
+        leases
+            .Where(c => c.RenewedFromLeaseId is not null
+                        && !c.IsActive
+                        && !string.Equals(c.ExtractionStatus, "rejected", StringComparison.OrdinalIgnoreCase))
+            .Select(c => c.RenewedFromLeaseId!.Value)
+            .ToHashSet();
+
+    /// <summary>Legacy list-filter status (active/expiring/ended) the leases page chips use.</summary>
+    private static string MapBrokerLeaseStatus(
+        Document.Application.Queries.Lease.GetLeaseById.LeaseDto l, DateOnly today)
+    {
+        if (l.EndDate is DateOnly end)
+        {
+            if (end < today) return "ended";
+            if (end <= today.AddDays(30)) return "expiring";
+        }
+        return "active";
+    }
+
     // ── Inquiries assigned to me ────────────────────────────────────────────────
 
     [HttpGet("inquiries")]

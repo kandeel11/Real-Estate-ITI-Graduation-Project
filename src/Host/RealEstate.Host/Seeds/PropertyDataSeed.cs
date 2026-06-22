@@ -116,7 +116,7 @@ public static class PropertyDataSeed
 
         // P3 — Company, Heliopolis, 2BR, 10,000/mo
         await AddPropertyAsync(propertyDb, blobServiceClient, webRootPath, propertyIndex: 3,
-            managerCairo.Id, companyCairo.Id, broker1.Id,
+            managerCairo.Id, companyCairo.Id, brokerUser1.Id,
             "Modern Apartment for Rent in Heliopolis", "شقة عصرية للإيجار في مصر الجديدة",
             "Well-maintained 2-bedroom apartment in Heliopolis. Open-plan living and dining, modern kitchen, balcony. Close to City Stars Mall and metro station.",
             "شقة ذات غرفتي نوم في شارع هادئ بمصر الجديدة. صالة وسفرة مفتوحة، مطبخ عصري، شرفة. قريبة من سيتي ستارز ومحطة المترو.",
@@ -127,7 +127,7 @@ public static class PropertyDataSeed
 
         // P4 — Company, Maadi, 3BR, 14,000/mo — FEATURED
         await AddPropertyAsync(propertyDb, blobServiceClient, webRootPath, propertyIndex: 4,
-            managerCairo.Id, companyCairo.Id, broker2.Id,
+            managerCairo.Id, companyCairo.Id, brokerUser2.Id,
             "Bright Apartment for Rent in Maadi", "شقة مشرقة للإيجار في المعادي",
             "Charming 3-bedroom apartment in a lush garden building in Maadi. High ceilings, parquet floors, large balcony. Walking distance to Maadi Corniche and international schools.",
             "شقة ساحرة ذات 3 غرف نوم في مبنى ذو حديقة بالمعادي. أسقف عالية، باركيه، شرفة كبيرة. قريبة من كورنيش المعادي والمدارس الدولية.",
@@ -164,7 +164,7 @@ public static class PropertyDataSeed
 
         // P7 — Company, Smouha, 2BR, 10,500/mo
         await AddPropertyAsync(propertyDb, blobServiceClient, webRootPath, propertyIndex: 7,
-            managerAlex.Id, companyAlex.Id, broker3.Id,
+            managerAlex.Id, companyAlex.Id, brokerUser3.Id,
             "Modern Apartment for Rent in Smouha", "شقة عصرية للإيجار في سموحة",
             "Well-designed 2-bedroom apartment in the vibrant Smouha district. Modern fixtures, split ACs in all rooms, and a covered balcony. Near Sporting Club.",
             "شقة ذات غرفتي نوم في حي سموحة الحيوي. أدوات عصرية، تكييف في جميع الغرف وشرفة مسقوفة. قريبة من النادي الرياضي.",
@@ -175,7 +175,7 @@ public static class PropertyDataSeed
 
         // P8 — Company, Gleem, 3BR, 17,000/mo
         await AddPropertyAsync(propertyDb, blobServiceClient, webRootPath, propertyIndex: 8,
-            managerAlex.Id, companyAlex.Id, broker3.Id,
+            managerAlex.Id, companyAlex.Id, brokerUser3.Id,
             "Luxury Apartment for Rent in Gleem", "شقة فاخرة للإيجار في جليم",
             "Prestigious 3-bedroom apartment in the upscale Gleem district. European-style kitchen, en-suite master bedroom, two balconies with sea glimpse, 24-hr concierge.",
             "شقة فاخرة ذات 3 غرف نوم في حي جليم الراقي. مطبخ أوروبي، غرفة رئيسية مع حمام داخلي، شرفتان مع لمحة بحرية، كونسيرج 24 ساعة.",
@@ -212,7 +212,7 @@ public static class PropertyDataSeed
 
         // P11 — Company, City Center, 2BR, 10,000/mo
         await AddPropertyAsync(propertyDb, blobServiceClient, webRootPath, propertyIndex: 11,
-            managerCairo.Id, companyCairo.Id, broker1.Id,
+            managerCairo.Id, companyCairo.Id, brokerUser1.Id,
             "Affordable Apartment for Rent in Downtown Tanta", "شقة بسعر مناسب للإيجار في وسط طنطا",
             "Good-value 2-bedroom apartment in Tanta's commercial core. Building security, close to major banks, government offices, and public transport. Ideal for working professionals.",
             "شقة ذات غرفتي نوم بقيمة جيدة في قلب المنطقة التجارية بطنطا. أمن مبنى وقريبة من البنوك والمصالح الحكومية والمواصلات. مثالية للمهنيين.",
@@ -223,7 +223,7 @@ public static class PropertyDataSeed
 
         // P12 — Company, El Geish, 3BR, 14,000/mo
         await AddPropertyAsync(propertyDb, blobServiceClient, webRootPath, propertyIndex: 12,
-            managerCairo.Id, companyCairo.Id, broker2.Id,
+            managerCairo.Id, companyCairo.Id, brokerUser2.Id,
             "Semi-Furnished Apartment for Rent in Tanta", "شقة نصف مفروشة للإيجار في طنطا",
             "Modern 3-bedroom semi-furnished apartment in a recently completed tower. Italian-finish tiles, fitted kitchen with appliances, ACs in all rooms, covered parking.",
             "شقة نصف مفروشة حديثة ذات 3 غرف نوم في برج اكتمل مؤخراً. بلاط إيطالي، مطبخ مجهز، تكييف في جميع الغرف وموقف مسقوف.",

@@ -1,4 +1,5 @@
 ﻿using Document.Application.Commands.Lease.ConfirmLease;
+using Document.Application.Commands.Lease.RequestRenewal;
 using Document.Application.Queries.Lease.GetLeaseById;
 using Document.Application.Queries.Lease;
 using Document.Application.Queries.Lease.GetLeasePaymentSchedule;
@@ -179,6 +180,20 @@ public class TenantController(
         var result = await sender.Send(
             new RejectLeaseCommand(id, UserId, req.Reason ?? "Declined by tenant"), ct);
         return Ok(result);
+    }
+
+    /// <summary>Tenant asks the landlord to renew an active lease nearing its end.</summary>
+    [HttpPost("leases/{id}/renew-request")]
+    public async Task<IActionResult> RequestRenewal(Guid id, CancellationToken ct)
+    {
+        try
+        {
+            await sender.Send(new RequestLeaseRenewalCommand(id, UserId), ct);
+            return NoContent();
+        }
+        catch (KeyNotFoundException ex) { return NotFound(new { error = ex.Message }); }
+        catch (UnauthorizedAccessException) { return Forbid(); }
+        catch (InvalidOperationException ex) { return BadRequest(new { error = ex.Message }); }
     }
 }
 

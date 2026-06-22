@@ -46,6 +46,20 @@ public class SendLeaseToTenantCommandHandler : IRequestHandler<SendLeaseToTenant
         lease.RejectionReason = null;
         lease.UpdatedAt = DateTime.UtcNow;
 
+        // If this is a renewal being offered, the predecessor's pending renewal request is
+        // now fulfilled — clear it here (not on upload) so a mid-flow reload keeps the
+        // "renewal requested" state until the offer actually reaches the tenant.
+        if (lease.RenewedFromLeaseId is { } prevId)
+        {
+            var predecessor = await _db.Leases
+                .FirstOrDefaultAsync(l => l.Id == prevId && l.DeletedAt == null, ct);
+            if (predecessor?.RenewalRequestedAt is not null)
+            {
+                predecessor.RenewalRequestedAt = null;
+                predecessor.UpdatedAt = DateTime.UtcNow;
+            }
+        }
+
         await _db.SaveChangesAsync(ct);
 
         await _notifications.CreateInAppAsync(

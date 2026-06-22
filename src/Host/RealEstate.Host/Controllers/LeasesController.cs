@@ -1,4 +1,7 @@
 using Document.Application.Commands.Lease.ConfirmLease;
+using Document.Application.Commands.Lease.RenewLease;
+using Document.Application.Commands.Lease.RequestTermination;
+using Document.Application.Commands.Lease.RespondToTermination;
 using Document.Application.Commands.Lease.SendLeaseToTenant;
 using Document.Application.Commands.Lease.TerminateLease;
 using Document.Application.Commands.Lease.UploadLeaseContract;
@@ -7,6 +10,7 @@ using Document.Application.Queries.Lease.GetLeaseById;
 using Document.Application.Queries.Lease.GetLeasePaymentSchedule;
 using Identity.Application.Interfaces;
 using MediatR;
+using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using Property.Application.Features.Queries.GetPropertyById;
 
@@ -18,11 +22,15 @@ public class LeasesController : ControllerBase
 {
     private readonly IMediator _mediator;
     private readonly IUserRepository _userRepo;
-    public LeasesController(IMediator mediator, IUserRepository userRepo)
+    private readonly ICurrentUserService _currentUser;
+    public LeasesController(IMediator mediator, IUserRepository userRepo, ICurrentUserService currentUser)
     {
         _mediator = mediator;
         _userRepo = userRepo;
+        _currentUser = currentUser;
     }
+
+    private Guid CurrentUserId => _currentUser.UserId ?? throw new UnauthorizedAccessException();
 
     [HttpPost("upload")]
     public async Task<IActionResult> Upload([FromForm] Guid leadId, IFormFile file)
@@ -104,6 +112,78 @@ public class LeasesController : ControllerBase
         return NoContent();
     }
 
+    // ── Early termination (mutual consent) ──────────────────────────────────
+
+    /// <summary>Either party proposes ending the lease early; the other party must approve.</summary>
+    [HttpPost("{id}/terminate-request")]
+    [Authorize]
+    public async Task<IActionResult> RequestTermination(Guid id, [FromBody] TerminationRequestBody body, CancellationToken ct)
+    {
+        if (string.IsNullOrWhiteSpace(body.Reason))
+            return BadRequest(new { error = "A reason is required." });
+        try
+        {
+            await _mediator.Send(new RequestLeaseTerminationCommand(
+                id, CurrentUserId, body.Reason,
+                DateOnly.TryParse(body.EffectiveDate, out var d) ? d : null), ct);
+            return NoContent();
+        }
+        catch (KeyNotFoundException ex) { return NotFound(new { error = ex.Message }); }
+        catch (UnauthorizedAccessException ex) { return StatusCode(403, new { error = ex.Message }); }
+        catch (InvalidOperationException ex) { return BadRequest(new { error = ex.Message }); }
+    }
+
+    /// <summary>The counterparty approves a pending termination request — ends the lease.</summary>
+    [HttpPost("{id}/terminate-approve")]
+    [Authorize]
+    public async Task<IActionResult> ApproveTermination(Guid id, [FromBody] TerminationResponseBody? body, CancellationToken ct)
+    {
+        try
+        {
+            await _mediator.Send(new RespondToLeaseTerminationCommand(id, CurrentUserId, true, body?.Note), ct);
+            return NoContent();
+        }
+        catch (KeyNotFoundException ex) { return NotFound(new { error = ex.Message }); }
+        catch (UnauthorizedAccessException ex) { return StatusCode(403, new { error = ex.Message }); }
+        catch (InvalidOperationException ex) { return BadRequest(new { error = ex.Message }); }
+    }
+
+    /// <summary>The counterparty rejects a pending termination request — lease continues.</summary>
+    [HttpPost("{id}/terminate-reject")]
+    [Authorize]
+    public async Task<IActionResult> RejectTermination(Guid id, [FromBody] TerminationResponseBody? body, CancellationToken ct)
+    {
+        try
+        {
+            await _mediator.Send(new RespondToLeaseTerminationCommand(id, CurrentUserId, false, body?.Note), ct);
+            return NoContent();
+        }
+        catch (KeyNotFoundException ex) { return NotFound(new { error = ex.Message }); }
+        catch (UnauthorizedAccessException ex) { return StatusCode(403, new { error = ex.Message }); }
+        catch (InvalidOperationException ex) { return BadRequest(new { error = ex.Message }); }
+    }
+
+    // ── Renewal (landlord uploads a new contract, same AI cycle) ─────────────
+
+    /// <summary>
+    /// Owner/broker uploads a fresh contract to renew an existing lease. Returns the
+    /// new lease id + extraction status; the caller then polls {newId}/ai-extraction
+    /// and finishes with {newId}/send-to-tenant — identical to a first-time upload.
+    /// </summary>
+    [HttpPost("{id}/renew-upload")]
+    [Authorize]
+    public async Task<IActionResult> RenewUpload(Guid id, IFormFile file, CancellationToken ct)
+    {
+        if (file is null || file.Length == 0) return BadRequest(new { error = "A PDF file is required." });
+        try
+        {
+            var result = await _mediator.Send(new RenewLeaseUploadCommand(id, CurrentUserId, file), ct);
+            return Ok(result);
+        }
+        catch (KeyNotFoundException ex) { return NotFound(new { error = ex.Message }); }
+        catch (UnauthorizedAccessException ex) { return StatusCode(403, new { error = ex.Message }); }
+    }
+
     [HttpPost("{id}/confirm")]
     public async Task<IActionResult> Confirm(Guid id, [FromBody] ConfirmLeaseRequest req)
     {
@@ -166,6 +246,9 @@ public record ConfirmLeaseRequest(
     int? PaymentDayOfMonth);
 
 public record RejectLeaseRequest(Guid TenantId, string Reason);
+
+public record TerminationRequestBody(string Reason, string? EffectiveDate);
+public record TerminationResponseBody(string? Note);
 
 public record SendLeaseToTenantRequest(
     decimal? InstallmentAmount = null,

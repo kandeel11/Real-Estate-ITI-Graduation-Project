@@ -17,6 +17,11 @@ namespace Document.Domain.Enums
         ContractSigned,
         PaymentReceived,
         DuplicateDetected,
-        LeaseRejected
+        LeaseRejected,
+        LeaseRenewalRequested,
+        LeaseRenewalOffer,
+        LeaseTerminationRequested,
+        LeaseTerminationApproved,
+        LeaseTerminationRejected
     }
 }

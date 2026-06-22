@@ -223,13 +223,21 @@ public class OwnerDashboardController(
     [HttpGet("leases")]
     public async Task<IActionResult> GetLeases(CancellationToken ct)
     {
-        var leases = await sender.Send(new GetLeasesByOwnerQuery(UserId), ct);
+        // Resolve leases through the owner's properties so renewals (new leases on the
+        // same property) and any lease on an owned property are always included.
+        var properties = await sender.Send(new GetPropertiesByOwnerQuery(UserId), ct);
+        if (properties.Count == 0) return Ok(Array.Empty<object>());
+
+        var leases = await sender.Send(
+            new GetLeasesByPropertyIdsQuery(properties.Select(p => p.Id).ToList()), ct);
         if (leases.Count == 0) return Ok(Array.Empty<object>());
 
-        var properties = await sender.Send(new GetPropertiesByOwnerQuery(UserId), ct);
         var propertyTitles = properties.ToDictionary(p => p.Id, p => p.Title);
         var tenantNames = await userRepo.GetFullNamesByIdsAsync(
             leases.Select(l => l.TenantId).Distinct(), ct);
+
+        // Predecessors that have an in-progress renewal draft (a non-terminal child lease).
+        var renewalParents = BrokerDashboardController.LeasesWithRenewalDraft(leases);
 
         var today = DateOnly.FromDateTime(DateTime.UtcNow);
 
@@ -249,6 +257,11 @@ public class OwnerDashboardController(
                 monthlyRent = l.InstallmentAmount ?? 0m,
                 deposit = l.SecurityDeposit ?? 0m,
                 status = MapLeaseStatus(l, today),
+                lifecycleStatus = l.Status,
+                renewalRequestedAt = l.RenewalRequestedAt,
+                renewalInProgress = renewalParents.Contains(l.Id),
+                terminationRequestedAt = l.TerminationRequestedAt,
+                terminationRequestedByTenant = l.TerminationRequestedById == l.TenantId,
                 pdfUrl = l.ContractFileUrl,
                 aiStatus = MapExtractionStatus(l.ExtractionStatus)
             });
