@@ -6,6 +6,8 @@ using Document.Application.Queries.Message.GetInquiriesWithReply;
 using Document.Application.Queries.Message.GetInquiryLastMessages;
 using Document.Application.Queries.Notification;
 using Identity.Application.Interfaces;
+using Maintenance.Application.Features.Queries.GetOwnerDecisionQueue;
+using Maintenance.Application.Features.Queries.GetOwnerTicketStatistics;
 using MediatR;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
@@ -307,6 +309,30 @@ public class OwnerDashboardController(
     public async Task<IActionResult> GetPayments(CancellationToken ct)
     {
         var result = await sender.Send(new GetMyRentPaymentsQuery(UserId, "owner"), ct);
+        return Ok(result);
+    }
+
+    // ── Maintenance ───────────────────────────────────────────────────────────────
+
+    /// <summary>
+    /// Returns tickets awaiting this owner's resolution decision (PlatformVendor or ExternalTechnician).
+    /// Filtered server-side to Status == WaitingForOwnerDecision and OwnerId == caller.
+    /// Full ticket detail is included so the decision UI can render AI evaluation, attachments, etc.
+    /// </summary>
+    [HttpGet("maintenance/decision-queue")]
+    public async Task<IActionResult> GetMaintenanceDecisionQueue(CancellationToken ct)
+    {
+        var result = await sender.Send(new GetOwnerDecisionQueueQuery(UserId), ct);
+        return Ok(result);
+    }
+
+    /// <summary>
+    /// Returns ticket counts by status for the logged-in owner, used to populate dashboard stat cards.
+    /// </summary>
+    [HttpGet("maintenance/stats")]
+    public async Task<IActionResult> GetMaintenanceStats(CancellationToken ct)
+    {
+        var result = await sender.Send(new GetOwnerTicketStatisticsQuery(UserId), ct);
         return Ok(result);
     }
 
