@@ -43,6 +43,7 @@ export interface MaintenanceTicket {
 
 interface PagedTickets {
   items: MaintenanceTicket[];
+  total?: number;
   totalCount?: number;
 }
 
@@ -200,17 +201,16 @@ export class OwnerDataService {
   }
 
   // ── Maintenance Tickets ──────────────────────────────────────────────────────
-  // GET /api/maintenance/tickets auto-scopes to the owner's properties via JWT.
 
-  getMaintenanceTickets(): Observable<MaintenanceTicket[]> {
+  getMaintenanceTickets(status = '', page = 1, pageSize = 10): Observable<{ items: MaintenanceTicket[]; total: number }> {
+    const params: Record<string, string | number> = { page, pageSize };
+    if (status) params['status'] = status;
     return this.http
-      .get<PagedTickets>(`${this.api}${API_ENDPOINTS.MAINTENANCE.TICKETS.GET_ALL}`, {
-        params: { page: 1, pageSize: 100 },
-      })
+      .get<PagedTickets>(`${this.api}/maintenance/tickets`, { params })
       .pipe(
         timeout(10000),
-        map((res) => res?.items ?? []),
-        catchError(() => of([])),
+        map(res => ({ items: res?.items ?? [], total: res?.total ?? res?.totalCount ?? 0 })),
+        catchError(() => of({ items: [], total: 0 })),
       );
   }
 }

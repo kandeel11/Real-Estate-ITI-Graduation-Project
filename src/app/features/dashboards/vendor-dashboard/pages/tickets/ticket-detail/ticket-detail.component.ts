@@ -157,12 +157,10 @@ export class TicketDetailComponent implements OnInit {
     if (!t || this.priceAmount() <= 0) return;
     this.busyId.set(t.id);
     this.service.setPrice(t.id, this.priceAmount(), this.priceCurrency()).subscribe({
-      next: (updated) => {
-        this.ticket.set(updated);
-        this.busyId.set(null);
+      next: () => {
         this.closePriceModal();
         this.showToast('success', 'Price set successfully');
-        this.cdr.markForCheck();
+        this.loadTicket(t.id);
       },
       error: () => {
         this.busyId.set(null);
