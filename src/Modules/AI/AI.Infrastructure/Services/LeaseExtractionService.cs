@@ -153,7 +153,7 @@ public sealed class LeaseExtractionService : ILeaseExtractionService
                     return new ExtractedLeaseField(null, 0, true);
 
                 var value = el.TryGetProperty("value", out var v)
-                    ? (v.ValueKind == JsonValueKind.Null ? null : v.GetString())
+                    ? (v.ValueKind == JsonValueKind.Null ? null : v.ToString())
                     : null;
                 var confidence = el.TryGetProperty("confidence", out var c) ? c.GetDecimal() : 0m;
 
