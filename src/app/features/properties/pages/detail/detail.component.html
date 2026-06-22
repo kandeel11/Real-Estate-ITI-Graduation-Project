@@ -219,7 +219,7 @@
             <h5 class="mb-1">{{ 'DETAIL.INTERESTED' | translate }}</h5>
             <p class="text-muted small mb-3">
               {{ 'DETAIL.LISTED_BY' | translate }}
-              <strong>{{ p.listingBrokerName || p.listingDisplayName || 'the owner' }}</strong>.
+              <strong>{{ p.companyId ? (p.listingDisplayName || 'the company') : (p.listingBrokerName || p.listingDisplayName || 'the owner') }}</strong>.
               {{ 'DETAIL.INQUIRY_HINT' | translate }}
             </p>
 

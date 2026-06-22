@@ -16,8 +16,12 @@ type Step = 1 | 2 | 3;
 })
 export class LeaseUploadModalComponent implements OnInit, OnDestroy {
   @Input({ required: true }) lead!: Lead;
+  /** When set, runs in renewal mode: uploads against this lease via /leases/{id}/renew-upload. */
+  @Input() renewLeaseId: string | null = null;
   @Output() closed = new EventEmitter<void>();
   @Output() leaseCreated = new EventEmitter<void>();
+
+  get isRenewal(): boolean { return !!this.renewLeaseId; }
 
   private readonly svc = inject(OwnerDataService);
   private pollId: ReturnType<typeof setInterval> | null = null;
@@ -75,12 +79,16 @@ export class LeaseUploadModalComponent implements OnInit, OnDestroy {
   upload(): void {
     if (!this.file) { this.uploadError.set('OWNER.LEASE_UPLOAD.ERR_NO_FILE'); return; }
     const email = this.tenantEmail().trim();
-    if (!email) { this.uploadError.set('OWNER.LEASE_UPLOAD.ERR_NO_EMAIL'); return; }
+    if (!email && !this.isRenewal) { this.uploadError.set('OWNER.LEASE_UPLOAD.ERR_NO_EMAIL'); return; }
 
     this.uploading.set(true);
     this.uploadError.set(null);
 
-    this.svc.uploadLeasePdf(this.lead.id, email, this.file).subscribe({
+    const upload$ = this.isRenewal
+      ? this.svc.renewLeaseUpload(this.renewLeaseId!, this.file)
+      : this.svc.uploadLeasePdf(this.lead.id, email, this.file);
+
+    upload$.subscribe({
       next: ({ leaseId }) => {
         this.leaseId.set(leaseId);
         const doCheck = () => {

@@ -4,8 +4,11 @@ import { FormsModule } from '@angular/forms';
 import { TranslatePipe } from '@ngx-translate/core';
 import { forkJoin } from 'rxjs';
 import { finalize } from 'rxjs';
-import { LeaseService, ApiLease, LeaseOffer } from '../../services/lease.service';
+import { LeaseService, ApiLease, LeaseOffer, LeaseLifecycleStatus } from '../../services/lease.service';
 import { AiService } from '../../services/ai.service';
+
+/** Show the renewal CTA once the lease is within this many days of its end. */
+const RENEWAL_WINDOW_DAYS = 30;
 
 interface LeaseView {
   id: string;
@@ -19,10 +22,12 @@ interface LeaseView {
   endDate: string;
   paymentDayOfMonth: number;
   isActive: boolean;
-  /** 'active' = signed & running, 'pending' = awaiting tenant acceptance, 'ended' = expired/declined. */
-  status: 'active' | 'pending' | 'ended';
+  /** Lifecycle status as derived by the backend. */
+  status: LeaseLifecycleStatus;
   contractFileUrl: string;
   daysUntilExpiry: number;
+  /** True when the pending termination request was raised by the tenant (this side). */
+  terminationRequestedByTenant: boolean;
 }
 
 interface ChatEntry {
@@ -56,6 +61,13 @@ export class MyLeaseComponent implements OnInit {
   protected chatLoading = signal(false);
 
   protected contractLoading = signal<boolean>(false);
+
+  // ── Renewal / termination actions ──────────────────────────────────────────
+  protected actionInProgress = signal(false);
+  protected actionError = signal<string | null>(null);
+  protected showTerminationForm = signal(false);
+  protected terminationReason = '';
+  protected terminationEffectiveDate = '';
 
   ngOnInit(): void {
     this.loadData();
@@ -93,15 +105,6 @@ export class MyLeaseComponent implements OnInit {
     const end = new Date(lease.endDate).getTime();
     const daysUntilExpiry = Math.max(0, Math.ceil((end - Date.now()) / 86_400_000));
 
-    // Active flag is authoritative; non-active leases that haven't ended yet are pending.
-    const now = Date.now();
-    const endTime = new Date(lease.endDate).getTime();
-    const status: 'active' | 'pending' | 'ended' = lease.isActive
-      ? 'active'
-      : endTime > now
-        ? 'pending'
-        : 'ended';
-
     return {
       id: lease.id,
       propertyId: lease.propertyId,
@@ -114,10 +117,35 @@ export class MyLeaseComponent implements OnInit {
       endDate: lease.endDate,
       paymentDayOfMonth: lease.paymentDayOfMonth,
       isActive: lease.isActive,
-      status,
+      // Trust the backend's derived status; fall back to isActive for older payloads.
+      status: lease.status ?? (lease.isActive ? 'active' : 'ended'),
       contractFileUrl: lease.contractFileUrl,
       daysUntilExpiry,
+      terminationRequestedByTenant: lease.terminationRequestedById === lease.tenantId,
     };
+  }
+
+  /** The renewal CTA shows for an active lease within the renewal window with no request pending. */
+  canRequestRenewal(lease: LeaseView): boolean {
+    return lease.status === 'active' && lease.daysUntilExpiry <= RENEWAL_WINDOW_DAYS;
+  }
+
+  statusLabelKey(status: LeaseLifecycleStatus): string {
+    switch (status) {
+      case 'active': return 'MY_LEASE.ACTIVE';
+      case 'pending': return 'MY_LEASE.PENDING';
+      case 'renewal_requested': return 'MY_LEASE.STATUS_RENEWAL_REQUESTED';
+      case 'termination_requested': return 'MY_LEASE.STATUS_TERMINATION_REQUESTED';
+      case 'terminated': return 'MY_LEASE.STATUS_TERMINATED';
+      default: return 'MY_LEASE.ENDED';
+    }
+  }
+
+  /** 'active' | 'pending' | 'ended' — drives the existing badge colour classes. */
+  badgeTone(status: LeaseLifecycleStatus): 'active' | 'pending' | 'ended' {
+    if (status === 'pending') return 'pending';
+    if (status === 'terminated' || status === 'ended') return 'ended';
+    return 'active';
   }
 
   leaseElapsedPercent(lease: LeaseView): number {
@@ -164,6 +192,61 @@ export class MyLeaseComponent implements OnInit {
 
   toggleExpand(id: string): void {
     this.expandedLeaseId.update(cur => (cur === id ? null : id));
+  }
+
+  // ── Renewal ─────────────────────────────────────────────────────────────────
+
+  requestRenewal(lease: LeaseView): void {
+    if (this.actionInProgress()) return;
+    this.actionInProgress.set(true);
+    this.actionError.set(null);
+    this.leaseService.requestRenewal(lease.id)
+      .pipe(finalize(() => this.actionInProgress.set(false)))
+      .subscribe({
+        next: () => this.loadData(),
+        error: err => this.actionError.set(err?.error?.error ?? 'Could not send renewal request.'),
+      });
+  }
+
+  // ── Termination (mutual consent) ─────────────────────────────────────────────
+
+  openTerminationForm(): void {
+    this.terminationReason = '';
+    this.terminationEffectiveDate = '';
+    this.actionError.set(null);
+    this.showTerminationForm.set(true);
+  }
+
+  cancelTerminationForm(): void {
+    this.showTerminationForm.set(false);
+  }
+
+  submitTermination(lease: LeaseView): void {
+    const reason = this.terminationReason.trim();
+    if (!reason || this.actionInProgress()) {
+      if (!reason) this.actionError.set('Please provide a reason.');
+      return;
+    }
+    this.actionInProgress.set(true);
+    this.actionError.set(null);
+    this.leaseService.requestTermination(lease.id, reason, this.terminationEffectiveDate || undefined)
+      .pipe(finalize(() => this.actionInProgress.set(false)))
+      .subscribe({
+        next: () => { this.showTerminationForm.set(false); this.loadData(); },
+        error: err => this.actionError.set(err?.error?.error ?? 'Could not send termination request.'),
+      });
+  }
+
+  respondTermination(lease: LeaseView, approve: boolean): void {
+    if (this.actionInProgress()) return;
+    this.actionInProgress.set(true);
+    this.actionError.set(null);
+    this.leaseService.respondTermination(lease.id, approve)
+      .pipe(finalize(() => this.actionInProgress.set(false)))
+      .subscribe({
+        next: () => this.loadData(),
+        error: err => this.actionError.set(err?.error?.error ?? 'Could not submit your response.'),
+      });
   }
 
   sendChatMessage(): void {

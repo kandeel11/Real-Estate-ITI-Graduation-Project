@@ -27,7 +27,22 @@ export interface BrokerLease {
   contractFileUrl?: string;
   extractionStatus?: string;
   tenantStatus?: 'pending_tenant' | 'accepted' | 'declined';
+  // ── Renewal / termination lifecycle (from backend LeaseDto.Status) ───────────
+  lifecycleStatus?: LeaseLifecycleStatus;
+  renewalRequestedAt?: string | null;
+  /** A renewal contract has been uploaded but not yet sent to the tenant — offer "Resume". */
+  renewalInProgress?: boolean;
+  terminationRequestedAt?: string | null;
+  terminationRequestedByTenant?: boolean;
 }
+
+export type LeaseLifecycleStatus =
+  | 'pending'
+  | 'active'
+  | 'renewal_requested'
+  | 'termination_requested'
+  | 'terminated'
+  | 'ended';
 
 /**
  * All read endpoints are served by the backend BrokerDashboardController
@@ -174,11 +189,33 @@ export class BrokerDataService {
   // ── Leases List ──────────────────────────────────────────────────────────────
 
   getLeases(): Observable<BrokerLease[]> {
-    return this.http.get<BrokerLease[]>(`${this.api}${API_ENDPOINTS.LEASES.GET_ALL}`)
+    // Broker-scoped enriched leases (Lease.BrokerId == me), served by BrokerDashboardController.
+    return this.http.get<BrokerLease[]>(`${this.me}/leases`)
       .pipe(timeout(10000), catchError(() => of([])));
   }
 
   getContractUrl(leaseId: string): Observable<{ contractFileUrl: string }> {
     return this.http.get<{ contractFileUrl: string }>(`${this.api}/leases/${leaseId}/download`);
+  }
+
+  // ── Renewal / termination (landlord side) ────────────────────────────────────
+
+  /** Upload a fresh contract to renew an existing lease — same AI cycle as a new upload. */
+  renewLeaseUpload(leaseId: string, file: File): Observable<{ leaseId: string }> {
+    const fd = new FormData();
+    fd.append('file', file);
+    return this.http.post<{ leaseId: string }>(`${this.api}/leases/${leaseId}/renew-upload`, fd);
+  }
+
+  requestTermination(leaseId: string, reason: string, effectiveDate?: string): Observable<void> {
+    return this.http.post<void>(`${this.api}/leases/${leaseId}/terminate-request`, {
+      reason,
+      effectiveDate: effectiveDate ?? null,
+    });
+  }
+
+  respondTermination(leaseId: string, approve: boolean, note?: string): Observable<void> {
+    const action = approve ? 'terminate-approve' : 'terminate-reject';
+    return this.http.post<void>(`${this.api}/leases/${leaseId}/${action}`, { note: note ?? null });
   }
 }

@@ -98,10 +98,10 @@
           <div>
             <h2 class="lease-property">{{ lease.propertyAddress }}</h2>
             <span class="status-badge"
-                  [class.badge-active]="lease.status === 'active'"
-                  [class.badge-pending]="lease.status === 'pending'"
-                  [class.badge-ended]="lease.status === 'ended'">
-              {{ (lease.status === 'active' ? 'MY_LEASE.ACTIVE' : lease.status === 'pending' ? 'MY_LEASE.PENDING' : 'MY_LEASE.ENDED') | translate }}
+                  [class.badge-active]="badgeTone(lease.status) === 'active'"
+                  [class.badge-pending]="badgeTone(lease.status) === 'pending'"
+                  [class.badge-ended]="badgeTone(lease.status) === 'ended'">
+              {{ statusLabelKey(lease.status) | translate }}
             </span>
           </div>
           <button class="btn btn-primary btn-sm" (click)="downloadContract(lease)" [disabled]="contractLoading()">
@@ -155,6 +155,88 @@
             <div class="progress-fill" [style.width]="leaseElapsedPercent(lease) + '%'"></div>
           </div>
         </div>
+      </div>
+
+      <!-- ── Renewal / termination actions ──────────────────────── -->
+      <div class="lease-actions-card mb-4">
+        @if (actionError()) {
+          <div class="alert alert-danger py-2 px-3 mb-3">{{ actionError() }}</div>
+        }
+
+        <!-- Renewal -->
+        @if (lease.status === 'renewal_requested') {
+          <div class="action-note">
+            <i class="fa-solid fa-hourglass-half me-2"></i>
+            {{ 'MY_LEASE.RENEWAL_PENDING' | translate }}
+          </div>
+        } @else if (canRequestRenewal(lease)) {
+          <div class="action-row">
+            <div>
+              <h4 class="action-title">{{ 'MY_LEASE.RENEW_TITLE' | translate }}</h4>
+              <p class="action-desc">{{ 'MY_LEASE.RENEW_DESC' | translate }}</p>
+            </div>
+            <button class="btn btn-success btn-sm" (click)="requestRenewal(lease)" [disabled]="actionInProgress()">
+              @if (actionInProgress()) { <i class="fa-solid fa-spinner fa-spin me-1"></i> }
+              @else { <i class="fa-solid fa-rotate me-1"></i> }
+              {{ 'MY_LEASE.RENEW_REQUEST' | translate }}
+            </button>
+          </div>
+        }
+
+        <!-- Termination -->
+        @if (lease.status === 'termination_requested') {
+          @if (lease.terminationRequestedByTenant) {
+            <div class="action-note">
+              <i class="fa-solid fa-hourglass-half me-2"></i>
+              {{ 'MY_LEASE.TERMINATION_PENDING_YOURS' | translate }}
+            </div>
+          } @else {
+            <div class="action-row">
+              <div>
+                <h4 class="action-title">{{ 'MY_LEASE.TERMINATION_REQUESTED_TITLE' | translate }}</h4>
+                <p class="action-desc">{{ 'MY_LEASE.TERMINATION_REQUESTED_DESC' | translate }}</p>
+              </div>
+              <div class="d-flex gap-2">
+                <button class="btn btn-outline-secondary btn-sm" (click)="respondTermination(lease, false)" [disabled]="actionInProgress()">
+                  <i class="fa-solid fa-xmark me-1"></i>{{ 'MY_LEASE.TERMINATION_REJECT' | translate }}
+                </button>
+                <button class="btn btn-danger btn-sm" (click)="respondTermination(lease, true)" [disabled]="actionInProgress()">
+                  <i class="fa-solid fa-check me-1"></i>{{ 'MY_LEASE.TERMINATION_APPROVE' | translate }}
+                </button>
+              </div>
+            </div>
+          }
+        } @else if (lease.status === 'active' || lease.status === 'renewal_requested') {
+          @if (!showTerminationForm()) {
+            <div class="action-row mt-2">
+              <div>
+                <h4 class="action-title">{{ 'MY_LEASE.TERMINATE_TITLE' | translate }}</h4>
+                <p class="action-desc">{{ 'MY_LEASE.TERMINATE_DESC' | translate }}</p>
+              </div>
+              <button class="btn btn-outline-danger btn-sm" (click)="openTerminationForm()">
+                <i class="fa-solid fa-file-circle-xmark me-1"></i>{{ 'MY_LEASE.TERMINATE_REQUEST' | translate }}
+              </button>
+            </div>
+          } @else {
+            <div class="termination-form mt-2">
+              <h4 class="action-title">{{ 'MY_LEASE.TERMINATE_TITLE' | translate }}</h4>
+              <label class="form-label small mt-2">{{ 'MY_LEASE.TERMINATE_REASON' | translate }}</label>
+              <textarea class="form-control" rows="2" [(ngModel)]="terminationReason"
+                        [placeholder]="'MY_LEASE.TERMINATE_REASON_PH' | translate"></textarea>
+              <label class="form-label small mt-2">{{ 'MY_LEASE.TERMINATE_EFFECTIVE' | translate }}</label>
+              <input type="date" class="form-control" [(ngModel)]="terminationEffectiveDate" />
+              <div class="d-flex gap-2 mt-3">
+                <button class="btn btn-outline-secondary btn-sm" (click)="cancelTerminationForm()" [disabled]="actionInProgress()">
+                  {{ 'MY_LEASE.CANCEL' | translate }}
+                </button>
+                <button class="btn btn-danger btn-sm" (click)="submitTermination(lease)" [disabled]="actionInProgress()">
+                  @if (actionInProgress()) { <i class="fa-solid fa-spinner fa-spin me-1"></i> }
+                  {{ 'MY_LEASE.TERMINATE_SUBMIT' | translate }}
+                </button>
+              </div>
+            </div>
+          }
+        }
       </div>
 
       <!-- AI Chat Panel -->
@@ -223,10 +305,10 @@
               </div>
               <div class="d-flex align-items-center gap-3">
                 <span class="status-badge"
-                      [class.badge-active]="lease.status === 'active'"
-                      [class.badge-pending]="lease.status === 'pending'"
-                      [class.badge-ended]="lease.status === 'ended'">
-                  {{ (lease.status === 'active' ? 'MY_LEASE.ACTIVE' : lease.status === 'pending' ? 'MY_LEASE.PENDING' : 'MY_LEASE.ENDED') | translate }}
+                      [class.badge-active]="badgeTone(lease.status) === 'active'"
+                      [class.badge-pending]="badgeTone(lease.status) === 'pending'"
+                      [class.badge-ended]="badgeTone(lease.status) === 'ended'">
+                  {{ statusLabelKey(lease.status) | translate }}
                 </span>
                 <span class="rent-tag">{{ lease.installmentAmount | currency:'EGP':'symbol':'1.0-0' }}/mo</span>
                 <i class="fa-solid" [class.fa-chevron-down]="expandedLeaseId() !== lease.id"

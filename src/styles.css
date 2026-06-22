@@ -139,6 +139,13 @@
   box-sizing: border-box;
 }
 
+/* Kill horizontal page scroll on BOTH html and body. body alone isn't enough:
+   if a child stretches past the viewport, the html element still scrolls sideways. */
+html {
+  overflow-x: hidden;
+  max-width: 100%;
+}
+
 body {
   font-family:      var(--font-family);
   font-size:        var(--font-body-md-size);
@@ -147,6 +154,7 @@ body {
   color:            var(--color-on-surface);
   background-color: var(--color-background);
   overflow-x:       hidden;
+  max-width:        100%;
   -webkit-font-smoothing: antialiased;
 }
 
@@ -202,4 +210,146 @@ body.lang-ar {
 .in-view.visible {
   opacity: 1;
   transform: none;
+}
+
+/* ================================================
+   SHARED DASHBOARD UTILITIES  (polish + responsive)
+   Opt-in classes reused across broker / owner / company
+   dashboards so status chips, actions, empty states and
+   data tables look consistent and reflow on small screens.
+   ================================================ */
+
+/* --- Status chips --------------------------------------------------------- */
+.ui-badge {
+  display: inline-flex;
+  align-items: center;
+  gap: .35rem;
+  padding: .22rem .6rem;
+  border-radius: 999px;
+  font-size: .75rem;
+  font-weight: 600;
+  line-height: 1;
+  white-space: nowrap;
+}
+.ui-badge--active     { background: #dcfce7; color: #166534; }
+.ui-badge--expiring   { background: #fef9c3; color: #854d0e; }
+.ui-badge--ended      { background: #e5e7eb; color: #374151; }
+.ui-badge--terminated { background: #fee2e2; color: #991b1b; }
+.ui-badge--pending    { background: #e0e7ff; color: #3730a3; }
+.ui-badge--info       { background: #e0f2fe; color: #075985; }
+
+/* --- Compact action links in table rows ----------------------------------- */
+.ui-action {
+  display: inline-flex;
+  align-items: center;
+  gap: .35rem;
+  background: none;
+  border: 0;
+  padding: .25rem .4rem;
+  border-radius: 8px;
+  font: inherit;
+  font-size: .82rem;
+  font-weight: 600;
+  cursor: pointer;
+  color: var(--color-primary);
+  transition: background var(--transition-default), opacity var(--transition-default);
+}
+.ui-action:hover { background: var(--color-surface-container); }
+.ui-action:disabled { opacity: .5; cursor: not-allowed; }
+.ui-action--danger  { color: #dc2626; }
+.ui-action--success { color: #16a34a; }
+
+/* --- Empty state ---------------------------------------------------------- */
+.ui-empty {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  text-align: center;
+  gap: .35rem;
+  padding: 3rem 1rem;
+  color: var(--color-on-surface-variant);
+}
+.ui-empty .ui-empty__icon { font-size: 2.5rem; opacity: .4; margin-bottom: .5rem; }
+.ui-empty .ui-empty__title { font-weight: 700; color: var(--color-on-surface); }
+
+/* --- Loading skeleton ----------------------------------------------------- */
+.ui-skeleton {
+  border-radius: 10px;
+  background: linear-gradient(90deg,
+    var(--color-surface-container) 25%,
+    var(--color-surface-container-high) 37%,
+    var(--color-surface-container) 63%);
+  background-size: 400% 100%;
+  animation: ui-shimmer 1.3s ease-in-out infinite;
+}
+@keyframes ui-shimmer { 0% { background-position: 100% 0; } 100% { background-position: 0 0; } }
+
+/* --- Data table that reflows to cards on phones --------------------------- */
+/* Wrapper gives any wide table a horizontal-scroll floor on small screens. */
+.ui-table-wrap { width: 100%; overflow-x: auto; -webkit-overflow-scrolling: touch; }
+
+/* Add .ui-cards-sm to a <table> and data-label="…" to each <td>. Below 768px the
+   table rows become stacked cards with the label shown beside each value. */
+@media (max-width: 768px) {
+  table.ui-cards-sm,
+  table.ui-cards-sm thead,
+  table.ui-cards-sm tbody,
+  table.ui-cards-sm tr,
+  table.ui-cards-sm td { display: block; width: 100%; }
+
+  table.ui-cards-sm thead { display: none; }
+
+  table.ui-cards-sm tr {
+    margin-bottom: .85rem;
+    border: 1px solid var(--color-surface-container-high);
+    border-radius: 12px;
+    background: var(--color-surface-container-lowest);
+    padding: .35rem .25rem;
+    box-shadow: var(--shadow-1, 0 1px 3px rgba(0,0,0,.08));
+  }
+
+  table.ui-cards-sm td {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    gap: 1rem;
+    padding: .5rem .9rem;
+    border: 0;
+    text-align: right;
+  }
+
+  table.ui-cards-sm td::before {
+    content: attr(data-label);
+    font-size: .72rem;
+    font-weight: 700;
+    text-transform: uppercase;
+    letter-spacing: .03em;
+    color: var(--color-on-surface-variant);
+    text-align: left;
+    flex: 0 0 auto;
+  }
+
+  /* The actions cell stacks its buttons full-width for easy tapping. */
+  table.ui-cards-sm td.actions-cell {
+    flex-wrap: wrap;
+    justify-content: flex-start;
+  }
+}
+
+[dir="rtl"] table.ui-cards-sm td { text-align: left; }
+[dir="rtl"] table.ui-cards-sm td::before { text-align: right; }
+
+/* Global safety net: never let content force horizontal page scroll. */
+img, svg, video, canvas { max-width: 100%; height: auto; }
+
+/* Any wide table that isn't using the card-reflow scrolls inside its own box on
+   phones instead of stretching the page — prevents a site-wide side scroller. */
+@media (max-width: 768px) {
+  table:not(.ui-cards-sm) {
+    display: block;
+    max-width: 100%;
+    overflow-x: auto;
+    -webkit-overflow-scrolling: touch;
+  }
 }
