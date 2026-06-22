@@ -32,7 +32,7 @@ export interface SavedSearch {
 
 export interface ChatRagRequest {
   message: string;
-  conversationId?: string;
+  sessionId?: string;
   leaseId?: string;
 }
 
@@ -45,6 +45,9 @@ export class AiService {
   // { sessionId, replyText }; the user comes from the JWT. The session id is
   // tracked here so the page can keep passing the whole message list.
   private chatSessionId: string | null = null;
+
+  // ChatRag requires SessionId on every call — generate one per conversation.
+  private chatRagSessionId: string = crypto.randomUUID();
 
   chat(messages: AiChatMessage[]): Observable<AiChatResponse> {
     const lastUserMessage =
@@ -64,7 +67,22 @@ export class AiService {
   }
 
   chatRag(data: ChatRagRequest): Observable<AiChatResponse> {
-    return this.http.post<AiChatResponse>(`${this.base}/ChatRag/message`, data);
+    return this.http
+      .post<Record<string, string>>(`${this.base}/ChatRag/message`, {
+        ...data,
+        sessionId: this.chatRagSessionId,
+      })
+      .pipe(
+        map((res) => ({
+          // Backend may return message / replyText / response / answer
+          message: res['message'] ?? res['replyText'] ?? res['response'] ?? res['answer'] ?? '',
+        }))
+      );
+  }
+
+  /** Call before opening a new chat conversation to get a fresh session. */
+  resetChatRagSession(): void {
+    this.chatRagSessionId = crypto.randomUUID();
   }
 
   smartSearch(query: string, filters?: Record<string, unknown>): Observable<SmartSearchResult[]> {

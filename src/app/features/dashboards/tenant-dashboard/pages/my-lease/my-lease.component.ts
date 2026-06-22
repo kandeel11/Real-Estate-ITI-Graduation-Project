@@ -4,7 +4,12 @@ import { FormsModule } from '@angular/forms';
 import { TranslatePipe } from '@ngx-translate/core';
 import { forkJoin } from 'rxjs';
 import { finalize } from 'rxjs';
-import { LeaseService, ApiLease, LeaseOffer, LeaseLifecycleStatus } from '../../services/lease.service';
+import {
+  LeaseService,
+  ApiLease,
+  LeaseOffer,
+  LeaseLifecycleStatus,
+} from '../../services/lease.service';
 import { AiService } from '../../services/ai.service';
 
 /** Show the renewal CTA once the lease is within this many days of its end. */
@@ -59,6 +64,7 @@ export class MyLeaseComponent implements OnInit {
   protected chatMessages = signal<ChatEntry[]>([]);
   protected chatInput = '';
   protected chatLoading = signal(false);
+  protected isTyping = signal(false);
 
   protected contractLoading = signal<boolean>(false);
 
@@ -71,7 +77,7 @@ export class MyLeaseComponent implements OnInit {
 
   ngOnInit(): void {
     this.loadData();
-    this.leaseService.getPendingOffer().subscribe(offer => this.pendingOffer.set(offer));
+    this.leaseService.getPendingOffer().subscribe((offer) => this.pendingOffer.set(offer));
   }
 
   loadData(): void {
@@ -87,15 +93,17 @@ export class MyLeaseComponent implements OnInit {
         next: ({ leases, properties }) => {
           // Build leaseId → address map from rented-properties
           const addressMap = new Map<string, string>(
-            properties.map(p => {
-              const parts = [p.property.address, p.property.district, p.property.city].filter(Boolean);
+            properties.map((p) => {
+              const parts = [p.property.address, p.property.district, p.property.city].filter(
+                Boolean,
+              );
               return [p.leaseId, parts.join(', ')];
-            })
+            }),
           );
 
-          const views = leases.map(l => this.toView(l, addressMap.get(l.id)));
+          const views = leases.map((l) => this.toView(l, addressMap.get(l.id)));
           this.leaseHistory.set(views);
-          this.activeLease.set(views.find(l => l.isActive) ?? null);
+          this.activeLease.set(views.find((l) => l.isActive) ?? null);
         },
         error: () => this.error.set('Failed to load lease data. Please try again.'),
       });
@@ -132,12 +140,18 @@ export class MyLeaseComponent implements OnInit {
 
   statusLabelKey(status: LeaseLifecycleStatus): string {
     switch (status) {
-      case 'active': return 'MY_LEASE.ACTIVE';
-      case 'pending': return 'MY_LEASE.PENDING';
-      case 'renewal_requested': return 'MY_LEASE.STATUS_RENEWAL_REQUESTED';
-      case 'termination_requested': return 'MY_LEASE.STATUS_TERMINATION_REQUESTED';
-      case 'terminated': return 'MY_LEASE.STATUS_TERMINATED';
-      default: return 'MY_LEASE.ENDED';
+      case 'active':
+        return 'MY_LEASE.ACTIVE';
+      case 'pending':
+        return 'MY_LEASE.PENDING';
+      case 'renewal_requested':
+        return 'MY_LEASE.STATUS_RENEWAL_REQUESTED';
+      case 'termination_requested':
+        return 'MY_LEASE.STATUS_TERMINATION_REQUESTED';
+      case 'terminated':
+        return 'MY_LEASE.STATUS_TERMINATED';
+      default:
+        return 'MY_LEASE.ENDED';
     }
   }
 
@@ -165,16 +179,23 @@ export class MyLeaseComponent implements OnInit {
     const offer = this.pendingOffer();
     if (!offer || this.offerActionInProgress()) return;
     this.offerActionInProgress.set(true);
-    this.leaseService.acceptOffer(offer.id)
+    this.leaseService
+      .acceptOffer(offer.id)
       .pipe(finalize(() => this.offerActionInProgress.set(false)))
-      .subscribe({ next: () => { this.pendingOffer.set(null); this.loadData(); } });
+      .subscribe({
+        next: () => {
+          this.pendingOffer.set(null);
+          this.loadData();
+        },
+      });
   }
 
   declineOffer(): void {
     const offer = this.pendingOffer();
     if (!offer || this.offerActionInProgress()) return;
     this.offerActionInProgress.set(true);
-    this.leaseService.declineOffer(offer.id)
+    this.leaseService
+      .declineOffer(offer.id)
       .pipe(finalize(() => this.offerActionInProgress.set(false)))
       .subscribe({ next: () => this.pendingOffer.set(null) });
   }
@@ -191,7 +212,7 @@ export class MyLeaseComponent implements OnInit {
   }
 
   toggleExpand(id: string): void {
-    this.expandedLeaseId.update(cur => (cur === id ? null : id));
+    this.expandedLeaseId.update((cur) => (cur === id ? null : id));
   }
 
   // ── Renewal ─────────────────────────────────────────────────────────────────
@@ -200,11 +221,13 @@ export class MyLeaseComponent implements OnInit {
     if (this.actionInProgress()) return;
     this.actionInProgress.set(true);
     this.actionError.set(null);
-    this.leaseService.requestRenewal(lease.id)
+    this.leaseService
+      .requestRenewal(lease.id)
       .pipe(finalize(() => this.actionInProgress.set(false)))
       .subscribe({
         next: () => this.loadData(),
-        error: err => this.actionError.set(err?.error?.error ?? 'Could not send renewal request.'),
+        error: (err) =>
+          this.actionError.set(err?.error?.error ?? 'Could not send renewal request.'),
       });
   }
 
@@ -229,11 +252,16 @@ export class MyLeaseComponent implements OnInit {
     }
     this.actionInProgress.set(true);
     this.actionError.set(null);
-    this.leaseService.requestTermination(lease.id, reason, this.terminationEffectiveDate || undefined)
+    this.leaseService
+      .requestTermination(lease.id, reason, this.terminationEffectiveDate || undefined)
       .pipe(finalize(() => this.actionInProgress.set(false)))
       .subscribe({
-        next: () => { this.showTerminationForm.set(false); this.loadData(); },
-        error: err => this.actionError.set(err?.error?.error ?? 'Could not send termination request.'),
+        next: () => {
+          this.showTerminationForm.set(false);
+          this.loadData();
+        },
+        error: (err) =>
+          this.actionError.set(err?.error?.error ?? 'Could not send termination request.'),
       });
   }
 
@@ -241,33 +269,77 @@ export class MyLeaseComponent implements OnInit {
     if (this.actionInProgress()) return;
     this.actionInProgress.set(true);
     this.actionError.set(null);
-    this.leaseService.respondTermination(lease.id, approve)
+    this.leaseService
+      .respondTermination(lease.id, approve)
       .pipe(finalize(() => this.actionInProgress.set(false)))
       .subscribe({
         next: () => this.loadData(),
-        error: err => this.actionError.set(err?.error?.error ?? 'Could not submit your response.'),
+        error: (err) =>
+          this.actionError.set(err?.error?.error ?? 'Could not submit your response.'),
       });
+  }
+
+  private typingTimer: ReturnType<typeof setInterval> | null = null;
+
+  newChat(): void {
+    this.stopTyping();
+    this.chatMessages.set([]);
+    this.chatInput = '';
+    this.aiService.resetChatRagSession();
   }
 
   sendChatMessage(): void {
     const text = this.chatInput.trim();
-    if (!text || this.chatLoading()) return;
+    if (!text || this.chatLoading() || this.isTyping()) return;
 
-    this.chatMessages.update(msgs => [...msgs, { role: 'user', content: text }]);
+    this.chatMessages.update((msgs) => [...msgs, { role: 'user', content: text }]);
     this.chatInput = '';
     this.chatLoading.set(true);
 
     const lease = this.activeLease();
+    console.log('Sending chat message:', { text, leaseId: lease?.id });
     this.aiService
       .chatRag({ message: text, leaseId: lease?.id })
       .pipe(finalize(() => this.chatLoading.set(false)))
       .subscribe({
-        next: res => this.chatMessages.update(msgs => [...msgs, { role: 'assistant', content: res.message }]),
-        error: () =>
-          this.chatMessages.update(msgs => [
-            ...msgs,
-            { role: 'assistant', content: 'Sorry, I could not process your request. Please try again.' },
-          ]),
+        next: (res) => this.typeMessage(res.message),
+        error: () => this.typeMessage('Sorry, I could not process your request. Please try again.'),
       });
+  }
+
+  private typeMessage(fullText: string | undefined | null): void {
+    const text = fullText ?? '';
+    this.chatMessages.update((msgs) => [...msgs, { role: 'assistant', content: '' }]);
+
+    if (!text) {
+      this.chatMessages.update((msgs) => {
+        const copy = [...msgs];
+        copy[copy.length - 1] = { role: 'assistant', content: '(No response received)' };
+        return copy;
+      });
+      return;
+    }
+
+    this.isTyping.set(true);
+    let i = 0;
+    this.typingTimer = setInterval(() => {
+      i++;
+      this.chatMessages.update((msgs) => {
+        const copy = [...msgs];
+        copy[copy.length - 1] = { role: 'assistant', content: text.slice(0, i) };
+        return copy;
+      });
+      if (i >= text.length) {
+        this.stopTyping();
+      }
+    }, 18);
+  }
+
+  private stopTyping(): void {
+    if (this.typingTimer !== null) {
+      clearInterval(this.typingTimer);
+      this.typingTimer = null;
+    }
+    this.isTyping.set(false);
   }
 }
