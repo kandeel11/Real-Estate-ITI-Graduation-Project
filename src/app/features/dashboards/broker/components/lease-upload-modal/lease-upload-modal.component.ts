@@ -4,6 +4,7 @@ import { FormsModule } from '@angular/forms';
 import { TranslatePipe } from '@ngx-translate/core';
 import { BrokerDataService } from '../../services/broker-data.service';
 import { Lead, LeaseAiExtraction } from '../../models/broker.models';
+import { AuthService } from '../../../../../core/services/auth.service';
 
 type Step = 1 | 2 | 3;
 
@@ -36,6 +37,7 @@ export class LeaseUploadModalComponent implements OnInit, OnDestroy {
   get isResume(): boolean { return !!this.resumeLeaseId; }
 
   private readonly svc = inject(BrokerDataService);
+  private readonly auth = inject(AuthService);
   private pollId: ReturnType<typeof setInterval> | null = null;
 
   step = signal<Step>(1);
@@ -91,7 +93,12 @@ export class LeaseUploadModalComponent implements OnInit, OnDestroy {
    */
   private beginExtractionPolling(leaseId: string, onSettled?: () => void): void {
     const openReview = (ext: LeaseAiExtraction, failed: boolean, diagnosis?: string) => {
-      this.extraction.set({ ...ext, tenantEmail: this.lead.tenantEmail ?? '' });
+      const userName = this.auth.user()?.fullName ?? '';
+      this.extraction.set({
+        ...ext,
+        tenantEmail: this.lead.tenantEmail ?? '',
+        ownerName: ext.ownerName || userName,
+      });
       this.extractionFailed.set(failed);
       this.extractionDiagnosis.set(diagnosis ?? null);
       this.uploading.set(false);

@@ -193,48 +193,57 @@ export class OwnerDataService {
   }
 
   getLeaseAiExtraction(leaseId: string): Observable<LeaseAiExtraction> {
-    interface Field { value: string; confidence: number; }
-    interface Raw {
-      installment_amount?: Field; payment_frequency?: Field; total_rent_amount?: Field;
-      duration_in_months?: Field; security_deposit?: Field; start_date?: Field; end_date?: Field;
-      payment_day_of_month?: Field; tenant_name?: Field; owner_name?: Field;
-      overall_confidence?: number; confidence?: number;
-      extractionStatus?: string; extraction_status?: string;
-    }
+    // Handles both response shapes the backend may return:
+    //   Shape A — { value, confidence } objects (snake_case or camelCase keys)
+    //   Shape B — flat values (camelCase, original format)
     const mapStatus = (s?: string): LeaseAiExtraction['extractionStatus'] => {
-      if (!s) return 'pending';
-      const low = s.toLowerCase();
+      const low = (s ?? '').toLowerCase();
       if (low === 'extracted' || low === 'done') return 'done';
       if (low === 'failed') return 'failed';
       return 'pending';
     };
-    return this.http.get<Raw>(`${this.api}/leases/${leaseId}/ai-extraction`).pipe(
+    const v = (f: any): string => {
+      if (f === null || f === undefined) return '';
+      if (typeof f === 'object' && 'value' in f) return String(f.value ?? '');
+      return String(f);
+    };
+    const n = (f: any): number => {
+      const s = v(f).replace(/,/g, '');
+      return s ? Number(s) : 0;
+    };
+    const c = (f: any): number | undefined =>
+      f && typeof f === 'object' && 'confidence' in f ? (f as any).confidence : undefined;
+
+    return this.http.get<any>(`${this.api}/leases/${leaseId}/ai-extraction`).pipe(
       timeout(10000),
       map((r): LeaseAiExtraction => ({
-        tenantName: r.tenant_name?.value ?? '',
-        tenantEmail: '',
-        ownerName: r.owner_name?.value ?? '',
-        propertyTitle: '',
-        startDate: r.start_date?.value ?? '',
-        endDate: r.end_date?.value ?? '',
-        installmentAmount: Number(r.installment_amount?.value ?? 0),
-        paymentFrequency: (r.payment_frequency?.value ?? 'Monthly') as LeaseAiExtraction['paymentFrequency'],
-        totalRentAmount: r.total_rent_amount ? Number(r.total_rent_amount.value) : null,
-        durationInMonths: r.duration_in_months ? Number(r.duration_in_months.value) : null,
-        deposit: Number(r.security_deposit?.value ?? 0),
-        paymentDayOfMonth: r.payment_day_of_month ? Number(r.payment_day_of_month.value) : null,
-        extractionStatus: mapStatus(r.extractionStatus ?? r.extraction_status),
-        confidence: r.overall_confidence ?? r.confidence ?? 0,
+        tenantName:        v(r.tenant_name       ?? r.tenantName),
+        tenantEmail:       '',
+        ownerName:         v(r.owner_name        ?? r.ownerName),
+        propertyTitle:     '',
+        startDate:         v(r.start_date        ?? r.startDate),
+        endDate:           v(r.end_date          ?? r.endDate),
+        installmentAmount: n(r.installment_amount ?? r.installmentAmount),
+        paymentFrequency:  (v(r.payment_frequency ?? r.paymentFrequency) || 'Monthly') as LeaseAiExtraction['paymentFrequency'],
+        totalRentAmount:   (r.total_rent_amount ?? r.totalRentAmount)
+                             ? n(r.total_rent_amount ?? r.totalRentAmount) : null,
+        durationInMonths:  (r.duration_in_months ?? r.durationInMonths)
+                             ? n(r.duration_in_months ?? r.durationInMonths) : null,
+        deposit:           n(r.security_deposit  ?? r.securityDeposit ?? r.deposit),
+        paymentDayOfMonth: (r.payment_day_of_month ?? r.paymentDayOfMonth)
+                             ? n(r.payment_day_of_month ?? r.paymentDayOfMonth) : null,
+        extractionStatus:  mapStatus(r.extractionStatus ?? r.extraction_status),
+        confidence:        r.overall_confidence ?? r.overallConfidence ?? r.confidence ?? r.extractionConfidence ?? 0,
         fieldConfidence: {
-          tenantName: r.tenant_name?.confidence,
-          ownerName: r.owner_name?.confidence,
-          startDate: r.start_date?.confidence,
-          endDate: r.end_date?.confidence,
-          installmentAmount: r.installment_amount?.confidence,
-          paymentFrequency: r.payment_frequency?.confidence,
-          totalRentAmount: r.total_rent_amount?.confidence,
-          deposit: r.security_deposit?.confidence,
-          paymentDayOfMonth: r.payment_day_of_month?.confidence,
+          tenantName:        c(r.tenant_name)        ?? c(r.tenantName),
+          ownerName:         c(r.owner_name)         ?? c(r.ownerName),
+          startDate:         c(r.start_date)         ?? c(r.startDate),
+          endDate:           c(r.end_date)           ?? c(r.endDate),
+          installmentAmount: c(r.installment_amount) ?? c(r.installmentAmount),
+          paymentFrequency:  c(r.payment_frequency)  ?? c(r.paymentFrequency),
+          totalRentAmount:   c(r.total_rent_amount)  ?? c(r.totalRentAmount),
+          deposit:           c(r.security_deposit)   ?? c(r.securityDeposit),
+          paymentDayOfMonth: c(r.payment_day_of_month) ?? c(r.paymentDayOfMonth),
         },
       })),
     );
