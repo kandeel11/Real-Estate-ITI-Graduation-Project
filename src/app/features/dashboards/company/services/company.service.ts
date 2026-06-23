@@ -122,6 +122,16 @@ export interface PendingLeaseApproval {
   uploadedAt: string;
 }
 
+/** Lease the manager already approved — now waiting for the tenant to accept. */
+export interface AwaitingTenantLease {
+  id: string;
+  propertyTitle: string;
+  tenantName: string;
+  brokerName: string;
+  managementOptions: string[];
+  approvedAt: string;
+}
+
 @Injectable({ providedIn: 'root' })
 export class CompanyService {
   private http = inject(HttpClient);
@@ -266,6 +276,13 @@ export class CompanyService {
   getPendingApprovals(): Observable<PendingLeaseApproval[]> {
     return this.http.get<PendingLeaseApproval[]>(
       `${this.baseUrl}/companies/mine/leases/pending-approval`,
+    );
+  }
+
+  /** GET /api/companies/mine/leases/awaiting-tenant — approved by manager, pending tenant accept. */
+  getAwaitingTenantLeases(): Observable<AwaitingTenantLease[]> {
+    return this.http.get<AwaitingTenantLease[]>(
+      `${this.baseUrl}/companies/mine/leases/awaiting-tenant`,
     );
   }
 

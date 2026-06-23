@@ -4,7 +4,7 @@
   <div class="page-header">
     <div>
       <h1 class="page-title">Lease Approvals</h1>
-      <p class="page-subtitle">Review partial-management lease requests from your brokers</p>
+      <p class="page-subtitle">Review lease requests and track tenant confirmations</p>
     </div>
     <button class="btn-refresh" (click)="load()" [disabled]="loading()">
       <i class="fa-solid fa-rotate-right" [class.fa-spin]="loading()"></i>
@@ -24,45 +24,112 @@
       {{ error() }}
       <button class="btn-retry" (click)="load()">Retry</button>
     </div>
-  } @else if (pending().length === 0) {
-    <div class="empty-state">
-      <i class="fa-solid fa-circle-check"></i>
-      <p>No pending approvals — you're all caught up.</p>
-    </div>
   } @else {
-    <div class="approval-list">
-      @for (lease of pending(); track lease.id) {
-        <div class="approval-card">
-          <div class="card-body">
-            <div class="card-icon">
-              <i class="fa-solid fa-file-contract"></i>
-            </div>
-            <div class="card-info">
-              <div class="card-title">{{ lease.propertyTitle }}</div>
-              <div class="card-meta">
-                <span><i class="fa-solid fa-user"></i> {{ lease.tenantName }}</span>
-                <span><i class="fa-solid fa-user-tie"></i> {{ lease.brokerName }}</span>
-                <span><i class="fa-regular fa-clock"></i> {{ lease.uploadedAt | date:'d MMM yyyy' }}</span>
-              </div>
-              <div class="options-row">
-                @for (opt of lease.managementOptions; track opt) {
-                  <span class="option-badge">
-                    <i class="fa-solid fa-circle-check"></i>
-                    {{ opt }}
-                  </span>
-                }
-              </div>
-            </div>
-          </div>
-          <div class="card-actions">
-            <button class="btn btn-review" (click)="openReview(lease)">
-              <i class="fa-solid fa-eye"></i>
-              Review
-            </button>
-          </div>
-        </div>
+
+    <!-- ── Section 1: Pending manager approval ──────────────────────── -->
+    <div class="section-header">
+      <div class="section-label">
+        <i class="fa-solid fa-hourglass-half label-icon label-icon--pending"></i>
+        Pending Your Approval
+      </div>
+      @if (pending().length > 0) {
+        <span class="section-count">{{ pending().length }}</span>
       }
     </div>
+
+    @if (pending().length === 0) {
+      <div class="empty-state empty-state--sm">
+        <i class="fa-solid fa-circle-check"></i>
+        <p>No pending approvals — you're all caught up.</p>
+      </div>
+    } @else {
+      <div class="approval-list">
+        @for (lease of pending(); track lease.id) {
+          <div class="approval-card">
+            <div class="card-body">
+              <div class="card-icon">
+                <i class="fa-solid fa-file-contract"></i>
+              </div>
+              <div class="card-info">
+                <div class="card-title">{{ lease.propertyTitle }}</div>
+                <div class="card-meta">
+                  <span><i class="fa-solid fa-user"></i> {{ lease.tenantName }}</span>
+                  <span><i class="fa-solid fa-user-tie"></i> {{ lease.brokerName }}</span>
+                  <span><i class="fa-regular fa-clock"></i> {{ lease.uploadedAt | date:'d MMM yyyy' }}</span>
+                </div>
+                <div class="options-row">
+                  @for (opt of lease.managementOptions; track opt) {
+                    <span class="option-badge">
+                      <i class="fa-solid fa-circle-check"></i>
+                      {{ opt }}
+                    </span>
+                  }
+                </div>
+              </div>
+            </div>
+            <div class="card-actions">
+              <button class="btn btn-review" (click)="openReview(lease)">
+                <i class="fa-solid fa-eye"></i>
+                Review
+              </button>
+            </div>
+          </div>
+        }
+      </div>
+    }
+
+    <!-- ── Section 2: Awaiting tenant confirmation ──────────────────── -->
+    <div class="section-header section-header--mt">
+      <div class="section-label">
+        <i class="fa-solid fa-paper-plane label-icon label-icon--awaiting"></i>
+        Awaiting Tenant Confirmation
+      </div>
+      @if (awaitingTenant().length > 0) {
+        <span class="section-count section-count--awaiting">{{ awaitingTenant().length }}</span>
+      }
+    </div>
+
+    @if (awaitingTenant().length === 0) {
+      <div class="empty-state empty-state--sm">
+        <i class="fa-solid fa-inbox" style="color: #94a3b8"></i>
+        <p>No leases awaiting tenant response.</p>
+      </div>
+    } @else {
+      <div class="approval-list">
+        @for (lease of awaitingTenant(); track lease.id) {
+          <div class="approval-card approval-card--awaiting">
+            <div class="card-body">
+              <div class="card-icon card-icon--awaiting">
+                <i class="fa-solid fa-paper-plane"></i>
+              </div>
+              <div class="card-info">
+                <div class="card-title">{{ lease.propertyTitle }}</div>
+                <div class="card-meta">
+                  <span><i class="fa-solid fa-user"></i> {{ lease.tenantName }}</span>
+                  <span><i class="fa-solid fa-user-tie"></i> {{ lease.brokerName }}</span>
+                  <span><i class="fa-regular fa-clock"></i> Approved {{ lease.approvedAt | date:'d MMM yyyy' }}</span>
+                </div>
+                <div class="options-row">
+                  @for (opt of lease.managementOptions; track opt) {
+                    <span class="option-badge">
+                      <i class="fa-solid fa-circle-check"></i>
+                      {{ opt }}
+                    </span>
+                  }
+                </div>
+              </div>
+            </div>
+            <div class="card-actions">
+              <span class="awaiting-badge">
+                <i class="fa-solid fa-hourglass-half fa-spin-pulse"></i>
+                Waiting for tenant
+              </span>
+            </div>
+          </div>
+        }
+      </div>
+    }
+
   }
 
 </div>
@@ -104,6 +171,11 @@
           </div>
         </div>
 
+        <div class="approval-flow-hint">
+          <i class="fa-solid fa-circle-info"></i>
+          If approved, the lease offer will be sent to <strong>{{ lease.tenantName }}</strong> for final acceptance.
+        </div>
+
         <label class="notes-label">Notes (optional — shown to broker on rejection)</label>
         <textarea class="notes-input" [(ngModel)]="reviewNotes" rows="3"
                   placeholder="Add a note for the broker…"></textarea>
@@ -128,7 +200,7 @@
         <button class="btn btn-approve" (click)="decide(true)" [disabled]="actionInProgress()">
           @if (actionInProgress()) { <i class="fa-solid fa-spinner fa-spin"></i> }
           @else { <i class="fa-solid fa-check"></i> }
-          Approve
+          Approve &amp; Send to Tenant
         </button>
       </div>
     </div>

@@ -1,8 +1,13 @@
 import { Component, OnInit, inject, signal } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
-import { CompanyService, PendingLeaseApproval } from '../../services/company.service';
-import { finalize } from 'rxjs';
+import { forkJoin } from 'rxjs';
+import { finalize } from 'rxjs/operators';
+import {
+  CompanyService,
+  PendingLeaseApproval,
+  AwaitingTenantLease,
+} from '../../services/company.service';
 
 @Component({
   selector: 'app-company-leases',
@@ -16,9 +21,13 @@ export class LeasesComponent implements OnInit {
 
   readonly loading = signal(true);
   readonly error = signal<string | null>(null);
+
+  /** Leases waiting for manager review. */
   readonly pending = signal<PendingLeaseApproval[]>([]);
 
-  /** Which lease's approval dialog is open. */
+  /** Leases the manager approved — now waiting for tenant to accept. */
+  readonly awaitingTenant = signal<AwaitingTenantLease[]>([]);
+
   readonly reviewingId = signal<string | null>(null);
   readonly actionInProgress = signal(false);
   readonly actionError = signal<string | null>(null);
@@ -31,10 +40,17 @@ export class LeasesComponent implements OnInit {
   load(): void {
     this.loading.set(true);
     this.error.set(null);
-    this.svc.getPendingApprovals().subscribe({
-      next:  items => { this.pending.set(items); this.loading.set(false); },
-      error: ()    => { this.error.set('Could not load pending approvals.'); this.loading.set(false); },
-    });
+    forkJoin({
+      pending:        this.svc.getPendingApprovals(),
+      awaitingTenant: this.svc.getAwaitingTenantLeases(),
+    }).pipe(finalize(() => this.loading.set(false)))
+      .subscribe({
+        next: ({ pending, awaitingTenant }) => {
+          this.pending.set(pending);
+          this.awaitingTenant.set(awaitingTenant);
+        },
+        error: () => this.error.set('Could not load lease data. Please try again.'),
+      });
   }
 
   openReview(lease: PendingLeaseApproval): void {
@@ -64,9 +80,17 @@ export class LeasesComponent implements OnInit {
         next: () => {
           this.pending.update(list => list.filter(l => l.id !== id));
           this.reviewingId.set(null);
+          // Reload awaiting-tenant list so the newly approved lease appears there.
+          if (isApproved) {
+            this.svc.getAwaitingTenantLeases().subscribe({
+              next: list => this.awaitingTenant.set(list),
+            });
+          }
         },
         error: (err) =>
-          this.actionError.set(err?.error?.error ?? (isApproved ? 'Could not approve.' : 'Could not reject.')),
+          this.actionError.set(
+            err?.error?.error ?? (isApproved ? 'Could not approve.' : 'Could not reject.'),
+          ),
       });
   }
 }
