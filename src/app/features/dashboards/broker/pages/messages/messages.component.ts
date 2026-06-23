@@ -3,7 +3,7 @@ import {
 } from '@angular/core';
 import { DatePipe } from '@angular/common';
 import { FormsModule } from '@angular/forms';
-import { ActivatedRoute } from '@angular/router';
+import { ActivatedRoute, Router } from '@angular/router';
 import { TranslatePipe } from '@ngx-translate/core';
 import { Subscription } from 'rxjs';
 import { BrokerDataService } from '../../services/broker-data.service';
@@ -20,6 +20,7 @@ import { ChatRealtimeService } from '../../../../../core/services/chat-realtime.
 export class MessagesComponent implements OnInit, OnDestroy {
   private readonly svc = inject(BrokerDataService);
   private readonly route = inject(ActivatedRoute);
+  private readonly router = inject(Router);
   private readonly realtime = inject(ChatRealtimeService);
   @ViewChild('msgList') msgListRef!: ElementRef<HTMLElement>;
 
@@ -98,6 +99,8 @@ export class MessagesComponent implements OnInit, OnDestroy {
     this.selected.set(inq);
     this.messages.set([]);
     this.loadingMessages.set(true);
+    // Keep the selected conversation in the URL so a page refresh re-opens it.
+    this.router.navigate([], { queryParams: { inquiry: inq.id }, replaceUrl: true });
     this.svc.getMessages(inq.id).subscribe({
       next: msgs => { this.messages.set(msgs); this.loadingMessages.set(false); this.scrollToBottom(); },
       error: () => this.loadingMessages.set(false),

@@ -175,7 +175,43 @@ export class BrokerDataService {
   }
 
   getLeaseAiExtraction(leaseId: string): Observable<LeaseAiExtraction> {
-    return this.http.get<LeaseAiExtraction>(`${this.api}/leases/${leaseId}/ai-extraction`).pipe(timeout(10000));
+    interface Field { value: string; confidence: number; }
+    interface Raw {
+      installment_amount?: Field; payment_frequency?: Field; total_rent_amount?: Field;
+      duration_in_months?: Field; security_deposit?: Field; start_date?: Field; end_date?: Field;
+      payment_day_of_month?: Field; tenant_name?: Field; owner_name?: Field;
+      overall_confidence?: number; extractionStatus?: 'pending' | 'done' | 'failed';
+    }
+    return this.http.get<Raw>(`${this.api}/leases/${leaseId}/ai-extraction`).pipe(
+      timeout(10000),
+      map((r): LeaseAiExtraction => ({
+        tenantName: r.tenant_name?.value ?? '',
+        tenantEmail: '',
+        ownerName: r.owner_name?.value ?? '',
+        propertyTitle: '',
+        startDate: r.start_date?.value ?? '',
+        endDate: r.end_date?.value ?? '',
+        installmentAmount: Number(r.installment_amount?.value ?? 0),
+        paymentFrequency: (r.payment_frequency?.value ?? 'Monthly') as LeaseAiExtraction['paymentFrequency'],
+        totalRentAmount: r.total_rent_amount ? Number(r.total_rent_amount.value) : null,
+        durationInMonths: r.duration_in_months ? Number(r.duration_in_months.value) : null,
+        deposit: Number(r.security_deposit?.value ?? 0),
+        paymentDayOfMonth: r.payment_day_of_month ? Number(r.payment_day_of_month.value) : null,
+        extractionStatus: r.extractionStatus ?? 'pending',
+        confidence: r.overall_confidence ?? 0,
+        fieldConfidence: {
+          tenantName: r.tenant_name?.confidence,
+          ownerName: r.owner_name?.confidence,
+          startDate: r.start_date?.confidence,
+          endDate: r.end_date?.confidence,
+          installmentAmount: r.installment_amount?.confidence,
+          paymentFrequency: r.payment_frequency?.confidence,
+          totalRentAmount: r.total_rent_amount?.confidence,
+          deposit: r.security_deposit?.confidence,
+          paymentDayOfMonth: r.payment_day_of_month?.confidence,
+        },
+      })),
+    );
   }
 
   sendLeaseToTenant(leaseId: string, data: Partial<LeaseAiExtraction>): Observable<void> {

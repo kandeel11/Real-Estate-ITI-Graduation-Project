@@ -100,7 +100,11 @@
 
         <div class="form-grid">
           <div class="form-group">
-            <label>{{ 'OWNER.LEASE_UPLOAD.TENANT_NAME' | translate }}</label>
+            <label>{{ 'OWNER.LEASE_UPLOAD.TENANT_NAME' | translate }}
+              @if (fieldConf('tenantName') !== undefined) {
+                <span [class]="confBadgeClass(fieldConf('tenantName'))">{{ fieldConf('tenantName') }}%</span>
+              }
+            </label>
             <input class="form-control" [value]="extraction()!.tenantName"
               (input)="updateField('tenantName', $any($event.target).value)" />
           </div>
@@ -110,22 +114,47 @@
               (input)="updateField('tenantEmail', $any($event.target).value)" />
           </div>
           <div class="form-group">
-            <label>{{ 'OWNER.LEASE_UPLOAD.START_DATE' | translate }}</label>
+            <label>Owner Name
+              @if (fieldConf('ownerName') !== undefined) {
+                <span [class]="confBadgeClass(fieldConf('ownerName'))">{{ fieldConf('ownerName') }}%</span>
+              }
+            </label>
+            <input class="form-control" [value]="extraction()!.ownerName"
+              (input)="updateField('ownerName', $any($event.target).value)" />
+          </div>
+          <div class="form-group">
+            <label>{{ 'OWNER.LEASE_UPLOAD.START_DATE' | translate }}
+              @if (fieldConf('startDate') !== undefined) {
+                <span [class]="confBadgeClass(fieldConf('startDate'))">{{ fieldConf('startDate') }}%</span>
+              }
+            </label>
             <input class="form-control" type="date" [value]="extraction()!.startDate"
               (input)="updateField('startDate', $any($event.target).value)" />
           </div>
           <div class="form-group">
-            <label>{{ 'OWNER.LEASE_UPLOAD.END_DATE' | translate }}</label>
+            <label>{{ 'OWNER.LEASE_UPLOAD.END_DATE' | translate }}
+              @if (fieldConf('endDate') !== undefined) {
+                <span [class]="confBadgeClass(fieldConf('endDate'))">{{ fieldConf('endDate') }}%</span>
+              }
+            </label>
             <input class="form-control" type="date" [value]="extraction()!.endDate"
               (input)="updateField('endDate', $any($event.target).value)" />
           </div>
           <div class="form-group">
-            <label>{{ 'OWNER.LEASE_UPLOAD.INSTALLMENT_AMOUNT' | translate }}</label>
+            <label>{{ 'OWNER.LEASE_UPLOAD.INSTALLMENT_AMOUNT' | translate }}
+              @if (fieldConf('installmentAmount') !== undefined) {
+                <span [class]="confBadgeClass(fieldConf('installmentAmount'))">{{ fieldConf('installmentAmount') }}%</span>
+              }
+            </label>
             <input class="form-control" type="number" [value]="extraction()!.installmentAmount"
               (input)="updateField('installmentAmount', +$any($event.target).value)" />
           </div>
           <div class="form-group">
-            <label>{{ 'OWNER.LEASE_UPLOAD.PAYMENT_FREQUENCY' | translate }}</label>
+            <label>{{ 'OWNER.LEASE_UPLOAD.PAYMENT_FREQUENCY' | translate }}
+              @if (fieldConf('paymentFrequency') !== undefined) {
+                <span [class]="confBadgeClass(fieldConf('paymentFrequency'))">{{ fieldConf('paymentFrequency') }}%</span>
+              }
+            </label>
             <select class="form-control" [value]="extraction()!.paymentFrequency"
               (change)="updateField('paymentFrequency', $any($event.target).value)">
               <option value="Monthly">{{ 'OWNER.LEASE_UPLOAD.FREQ_MONTHLY' | translate }}</option>
@@ -136,10 +165,26 @@
             </select>
           </div>
           <div class="form-group">
-            <label>{{ 'OWNER.LEASE_UPLOAD.DEPOSIT' | translate }}</label>
+            <label>{{ 'OWNER.LEASE_UPLOAD.DEPOSIT' | translate }}
+              @if (fieldConf('deposit') !== undefined) {
+                <span [class]="confBadgeClass(fieldConf('deposit'))">{{ fieldConf('deposit') }}%</span>
+              }
+            </label>
             <input class="form-control" type="number" [value]="extraction()!.deposit"
               (input)="updateField('deposit', +$any($event.target).value)" />
           </div>
+          @if (extraction()!.paymentDayOfMonth !== null && extraction()!.paymentDayOfMonth !== undefined) {
+            <div class="form-group">
+              <label>Payment Day of Month
+                @if (fieldConf('paymentDayOfMonth') !== undefined) {
+                  <span [class]="confBadgeClass(fieldConf('paymentDayOfMonth'))">{{ fieldConf('paymentDayOfMonth') }}%</span>
+                }
+              </label>
+              <input class="form-control" type="number" min="1" max="31"
+                [value]="extraction()!.paymentDayOfMonth"
+                (input)="updateField('paymentDayOfMonth', +$any($event.target).value)" />
+            </div>
+          }
         </div>
 
         @if (dateError()) {

@@ -93,7 +93,8 @@ export class LeaseUploadModalComponent implements OnInit, OnDestroy {
           if (ext.extractionStatus !== 'pending') {
             this.stopPolling();
             this.extractionFailed.set(ext.extractionStatus === 'failed');
-            this.extraction.set(ext);
+            // API no longer returns tenantEmail — fill it from the lead.
+            this.extraction.set({ ...ext, tenantEmail: this.lead.tenantEmail ?? '' });
             this.uploading.set(false);
             onSettled?.();
             this.step.set(2);
@@ -170,5 +171,16 @@ export class LeaseUploadModalComponent implements OnInit, OnDestroy {
   updateField(field: keyof LeaseAiExtraction, value: string | number): void {
     const ext = this.extraction();
     if (ext) this.extraction.set({ ...ext, [field]: value });
+  }
+
+  fieldConf(field: keyof NonNullable<LeaseAiExtraction['fieldConfidence']>): number | undefined {
+    return this.extraction()?.fieldConfidence?.[field];
+  }
+
+  confBadgeClass(score: number | undefined): string {
+    if (score === undefined) return 'conf-badge conf-na';
+    if (score >= 85) return 'conf-badge conf-high';
+    if (score >= 70) return 'conf-badge conf-med';
+    return 'conf-badge conf-low';
   }
 }

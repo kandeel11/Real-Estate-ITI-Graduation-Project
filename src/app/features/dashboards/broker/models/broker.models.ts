@@ -84,19 +84,26 @@ export type PaymentFrequency = 'Monthly' | 'Bimonthly' | 'Quarterly' | 'SemiAnnu
 export interface LeaseAiExtraction {
   tenantName: string;
   tenantEmail: string;
+  ownerName: string;
   propertyTitle: string;
   startDate: string;
   endDate: string;
-  /** Value of ONE installment (key name matches the backend's `installmentAmount`). */
   installmentAmount: number;
-  /** How often `installmentAmount` is paid. */
   paymentFrequency: PaymentFrequency;
-  /** Total contract value, when the AI could derive it. */
   totalRentAmount?: number | null;
   durationInMonths?: number | null;
   deposit: number;
+  paymentDayOfMonth?: number | null;
   extractionStatus: 'pending' | 'done' | 'failed';
+  /** Overall confidence score (0–100). */
   confidence: number;
+  /** Per-field confidence scores returned by the AI for each extracted value. */
+  fieldConfidence?: Partial<{
+    tenantName: number; ownerName: number;
+    startDate: number; endDate: number;
+    installmentAmount: number; paymentFrequency: number;
+    totalRentAmount: number; deposit: number; paymentDayOfMonth: number;
+  }>;
 }
 
 export interface LeaseOffer {
@@ -124,6 +131,7 @@ export interface Inquiry {
   status: 'new' | 'replied' | 'converted';
   timeAgo: string;
   reply?: string;
+  leadId?: string;
 }
 
 export interface PerformanceStats {

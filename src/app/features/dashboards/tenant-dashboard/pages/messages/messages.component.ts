@@ -3,7 +3,7 @@ import {
 } from '@angular/core';
 import { DatePipe } from '@angular/common';
 import { FormsModule } from '@angular/forms';
-import { ActivatedRoute } from '@angular/router';
+import { ActivatedRoute, Router } from '@angular/router';
 import { Subscription } from 'rxjs';
 import { TenantMessagesService, TenantInquiry, ChatMessage } from '../../services/messages.service';
 import { ChatRealtimeService } from '../../../../../core/services/chat-realtime.service';
@@ -18,6 +18,7 @@ import { ChatRealtimeService } from '../../../../../core/services/chat-realtime.
 export class TenantMessagesComponent implements OnInit, OnDestroy {
   private readonly svc = inject(TenantMessagesService);
   private readonly route = inject(ActivatedRoute);
+  private readonly router = inject(Router);
   private readonly realtime = inject(ChatRealtimeService);
   @ViewChild('msgList') msgListRef!: ElementRef<HTMLElement>;
 
@@ -96,6 +97,7 @@ export class TenantMessagesComponent implements OnInit, OnDestroy {
     this.selected.set(inq);
     this.messages.set([]);
     this.loadingMessages.set(true);
+    this.router.navigate([], { queryParams: { inquiry: inq.id }, replaceUrl: true });
     this.svc.getMessages(inq.id).subscribe({
       next: msgs => { this.messages.set(msgs); this.loadingMessages.set(false); this.scrollToBottom(); },
       error: () => this.loadingMessages.set(false),
