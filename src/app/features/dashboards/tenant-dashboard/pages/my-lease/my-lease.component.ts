@@ -1,8 +1,8 @@
-import { Component, OnInit, inject, signal } from '@angular/core';
+import { Component, OnInit, OnDestroy, inject, signal } from '@angular/core';
 import { DatePipe, CurrencyPipe } from '@angular/common';
 import { FormsModule } from '@angular/forms';
 import { TranslatePipe } from '@ngx-translate/core';
-import { forkJoin } from 'rxjs';
+import { forkJoin, Subscription } from 'rxjs';
 import { finalize } from 'rxjs';
 import {
   LeaseService,
@@ -47,7 +47,7 @@ interface ChatEntry {
   templateUrl: './my-lease.component.html',
   styleUrl: './my-lease.component.css',
 })
-export class MyLeaseComponent implements OnInit {
+export class MyLeaseComponent implements OnInit, OnDestroy {
   private readonly leaseService = inject(LeaseService);
   private readonly aiService = inject(AiService);
 
@@ -70,6 +70,8 @@ export class MyLeaseComponent implements OnInit {
 
   protected contractLoading = signal<boolean>(false);
 
+  private offerSub?: Subscription;
+
   // ── Renewal / termination actions ──────────────────────────────────────────
   protected actionInProgress = signal(false);
   protected actionError = signal<string | null>(null);
@@ -79,7 +81,11 @@ export class MyLeaseComponent implements OnInit {
 
   ngOnInit(): void {
     this.loadData();
-    this.leaseService.getPendingOffer().subscribe((offer) => this.pendingOffer.set(offer));
+    this.offerSub = this.leaseService.getPendingOffer().subscribe((offer) => this.pendingOffer.set(offer));
+  }
+
+  ngOnDestroy(): void {
+    this.offerSub?.unsubscribe();
   }
 
   loadData(): void {
@@ -206,6 +212,7 @@ export class MyLeaseComponent implements OnInit {
       .pipe(finalize(() => this.offerActionInProgress.set(false)))
       .subscribe({
         next: () => {
+          this.offerSub?.unsubscribe();
           this.pendingOffer.set(null);
           this.loadData();
         },
@@ -225,6 +232,7 @@ export class MyLeaseComponent implements OnInit {
       .pipe(finalize(() => this.offerActionInProgress.set(false)))
       .subscribe({
         next: () => {
+          this.offerSub?.unsubscribe();
           this.pendingOffer.set(null);
           // Refresh history so the declined lease drops out of "Pending Review".
           this.loadData();
