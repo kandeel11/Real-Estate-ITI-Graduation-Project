@@ -30,11 +30,16 @@ export interface ProcessPaymentRequest {
   cardToken?: string | null;
 }
 
+/** Matches the backend BillingCycle enum (Monthly=0, Quarterly=1, Annual=2). */
+export type BillingCycle = 0 | 1 | 2;
+export const BILLING_MONTHLY: BillingCycle = 0;
+export const BILLING_ANNUAL: BillingCycle = 2;
+
 export interface SubscriptionCheckoutRequest {
   userId: string;
   subscriptionId?: string | null;
   planId: string;
-  billingCycle: 0 | 1; // 0 = monthly, 1 = annual
+  billingCycle: BillingCycle;
   successRedirectUrl: string;
   cancelRedirectUrl: string;
 }
@@ -43,6 +48,32 @@ export interface SubscriptionCheckoutResponse {
   paymentId: string;
   checkoutUrl: string;
   checkoutSessionId: string;
+}
+
+/** Body for POST /api/subscriptions/select-plan (step 1 of the payment flow). */
+export interface SelectPlanRequest {
+  userId: string;
+  companyId?: string | null;
+  planId: string;
+  billingCycle: BillingCycle;
+}
+
+/** Result of select-plan — carries the new PendingPayment subscription id. */
+export interface SelectPlanResponse {
+  subscriptionId: string;
+  planId: string;
+  billingCycle: string;
+  status: string;
+}
+
+/** Options for the full two-step subscription checkout flow. */
+export interface StartCheckoutOptions {
+  userId: string;
+  companyId?: string | null;
+  planId: string;
+  billingCycle: BillingCycle;
+  successRedirectUrl: string;
+  cancelRedirectUrl: string;
 }
 
 export interface ProcessPaymentResponse {

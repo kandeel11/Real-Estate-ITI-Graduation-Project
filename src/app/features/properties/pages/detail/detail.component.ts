@@ -7,25 +7,33 @@
  */
 
 import { Component, inject, signal, computed, OnInit } from '@angular/core';
-import { DecimalPipe } from '@angular/common';
+import { DecimalPipe, DatePipe } from '@angular/common';
 import { ActivatedRoute, RouterLink } from '@angular/router';
 import { FormsModule } from '@angular/forms';
 import { TranslatePipe } from '@ngx-translate/core';
 import { PropertyService } from '../../services/property.service';
 import { PropertyDetail, PropertyMedia } from '../../models/property.model';
 import { AuthService } from '../../../../core/services/auth.service';
+import { SavedPropertyService } from '../../../../core/services/saved-property.service';
+import {
+  RatingService,
+  RatingResponse,
+} from '../../../dashboards/tenant-dashboard/services/rating.service';
+import { StarRatingComponent } from '../../../../shared/components/star-rating/star-rating.component';
 
 @Component({
   selector: 'app-property-detail',
   standalone: true,
-  imports: [DecimalPipe, RouterLink, FormsModule, TranslatePipe],
+  imports: [DecimalPipe, DatePipe, RouterLink, FormsModule, TranslatePipe, StarRatingComponent],
   templateUrl: './detail.component.html',
   styleUrl: './detail.component.css',
 })
 export class DetailComponent implements OnInit {
   private route = inject(ActivatedRoute);
   private propertySvc = inject(PropertyService);
+  private ratingSvc = inject(RatingService);
   private auth = inject(AuthService);
+  protected savedSvc = inject(SavedPropertyService);
 
   property = signal<PropertyDetail | null>(null);
   loading = signal(true);
@@ -47,10 +55,20 @@ export class DetailComponent implements OnInit {
   sending = signal(false);
   inquirySent = signal(false);
   inquiryError = signal<string | null>(null);
+  /** One engagement at a time: null until checked, then whether a new inquiry is allowed. */
+  canInquire = signal<boolean | null>(null);
+  /** Backend's reason the tenant can't inquire right now (shown when canInquire is false). */
+  inquiryBlockReason = signal<string | null>(null);
 
   // ── Owner photo management ───────────────────────────────────────
   uploadingPhotos = signal(false);
   photoUploadError = signal<string | null>(null);
+
+  // ── Reviews ──────────────────────────────────────────────────────
+  reviews = signal<RatingResponse[]>([]);
+  reviewsAverage = signal(0);
+  reviewsCount = signal(0);
+  reviewsLoading = signal(true);
 
   ngOnInit(): void {
     const id = this.route.snapshot.paramMap.get('id');
@@ -60,6 +78,33 @@ export class DetailComponent implements OnInit {
       return;
     }
     this.loadProperty(id);
+    this.loadReviews(id);
+    if (this.isTenant()) this.loadInquiryGate();
+  }
+
+  /** Ask the backend whether this tenant may send a new inquiry right now. */
+  private loadInquiryGate(): void {
+    this.propertySvc.canCreateInquiry().subscribe({
+      next: (res) => {
+        this.canInquire.set(res.allowed);
+        this.inquiryBlockReason.set(res.allowed ? null : res.reason);
+      },
+      // On error, don't block the UI — the create call still enforces the rule server-side.
+      error: () => this.canInquire.set(true),
+    });
+  }
+
+  private loadReviews(id: string): void {
+    this.reviewsLoading.set(true);
+    this.ratingSvc.getPropertyRatings(id).subscribe({
+      next: (res) => {
+        this.reviews.set(res.items);
+        this.reviewsAverage.set(res.averageRating);
+        this.reviewsCount.set(res.totalCount);
+        this.reviewsLoading.set(false);
+      },
+      error: () => this.reviewsLoading.set(false),
+    });
   }
 
   private loadProperty(id: string): void {
@@ -96,6 +141,12 @@ export class DetailComponent implements OnInit {
     if (!p || p.media.length < 2) return;
     const i = this.activeIndex();
     this.activeImage.set(p.media[(i + 1) % p.media.length].mediaUrl);
+  }
+
+  /** Wishlist toggle for the listing being viewed. */
+  toggleSave(): void {
+    const p = this.property();
+    if (p) this.savedSvc.toggle(p);
   }
 
   typeIcon(type: string): string {
@@ -193,6 +244,12 @@ export class DetailComponent implements OnInit {
       },
       error: (err) => {
         this.sending.set(false);
+        // 409 = blocked by the one-engagement-at-a-time gate; switch to the blocked banner.
+        if (err?.status === 409 && err?.error?.error) {
+          this.canInquire.set(false);
+          this.inquiryBlockReason.set(err.error.error);
+          return;
+        }
         this.inquiryError.set(
           err?.error?.error ?? 'Could not send your inquiry. Please try again.',
         );

@@ -26,6 +26,11 @@ export const dashboardRoutes: Routes = [
           import('./pages/my-lease/my-lease.component').then(m => m.MyLeaseComponent),
       },
       {
+        path: 'saved',
+        loadComponent: () =>
+          import('./pages/saved/saved.component').then(m => m.SavedComponent),
+      },
+      {
         path: 'maintenance-requests',
         loadComponent: () =>
           import('./pages/maintenance/maintenance.component').then(m => m.MaintenanceComponent),

@@ -129,6 +129,28 @@
   box-shadow: var(--shadow-hover);
 }
 
+.plan-btn-cancel {
+  width: 100%;
+  margin-top: 8px;
+  padding: 8px 12px;
+  border-radius: var(--radius-md);
+  font-size: 13px;
+  font-weight: 500;
+  cursor: pointer;
+  border: 1px solid var(--color-outline-variant);
+  background: transparent;
+  color: #dc2626;
+  transition: background 0.15s;
+}
+
+.plan-btn-cancel:hover {
+  background: #fef2f2;
+}
+
+.plan-card--current {
+  border-color: var(--color-primary);
+}
+
 /* ── BADGE ──────────────────────────────────────── */
 .plan-badge {
   display: inline-flex;
@@ -149,6 +171,11 @@
 .badge-popular {
   background: var(--color-primary-fixed);
   color: var(--color-primary);
+}
+
+.badge-free {
+  background: var(--color-surface-container);
+  color: var(--color-on-surface-variant);
 }
 
 /* ── PLAN NAME & PRICE ──────────────────────────── */

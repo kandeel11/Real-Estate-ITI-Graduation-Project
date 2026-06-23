@@ -48,8 +48,10 @@ export interface Lead {
   stageEnteredAt: number;
   dealValue?: string;
   notes?: string;
-  /** True once a lease has been created from this lead (persisted across reloads). */
+  /** True once a lease has been sent to the tenant from this lead (persisted across reloads). */
   hasLease?: boolean;
+  /** An uploaded-but-not-yet-sent lease for this lead — offer "Resume" to finish it. */
+  draftLeaseId?: string | null;
 }
 
 export interface ChatMessage {
@@ -76,16 +78,30 @@ export interface InquiryDetail {
   lastMessageAt?: string;
 }
 
+/** Payment cadence — mirrors the backend Document.Domain.Enums.PaymentFrequency. */
+export type PaymentFrequency = 'Monthly' | 'Bimonthly' | 'Quarterly' | 'SemiAnnually' | 'Annually';
+
 export interface LeaseAiExtraction {
   tenantName: string;
   tenantEmail: string;
+  ownerName: string;
   propertyTitle: string;
   startDate: string;
   endDate: string;
-  monthlyRent: number;
+  installmentAmount: number;
+  paymentFrequency: PaymentFrequency;
+  totalRentAmount?: number | null;
+  durationInMonths?: number | null;
   deposit: number;
+  paymentDayOfMonth?: number | null;
   extractionStatus: 'pending' | 'done' | 'failed';
   confidence: number;
+  fieldConfidence?: Partial<{
+    tenantName: number; ownerName: number;
+    startDate: number; endDate: number;
+    installmentAmount: number; paymentFrequency: number;
+    totalRentAmount: number; deposit: number; paymentDayOfMonth: number;
+  }>;
 }
 
 export interface LeaseOffer {
@@ -110,9 +126,10 @@ export interface Inquiry {
   from: string;
   property: string;
   message: string;
-  status: 'new' | 'replied';
+  status: 'new' | 'replied' | 'converted';
   timeAgo: string;
   reply?: string;
+  leadId?: string;
 }
 
 export interface PerformanceStats {

@@ -24,7 +24,7 @@ export class InquiriesComponent implements OnInit {
 
   readonly inquiries = signal<Inquiry[]>([]);
   readonly loading = signal(true);
-  readonly filter = signal<'all' | 'new' | 'replied'>('all');
+  readonly filter = signal<'all' | 'new' | 'replied' | 'converted'>('all');
   readonly search = signal('');
   readonly sendingId = signal<string | null>(null);
   readonly convertingId = signal<string | null>(null);
@@ -85,7 +85,7 @@ export class InquiriesComponent implements OnInit {
           from: i.tenantName,
           property: i.propertyTitle,
           message: i.message,
-          status: i.status === 'new' ? 'new' as const : 'replied' as const,
+          status: (i.status === 'converted' ? 'converted' : i.status === 'new' ? 'new' : 'replied') as Inquiry['status'],
           timeAgo: i.createdAt,
         })));
         this.loading.set(false);
@@ -115,17 +115,25 @@ export class InquiriesComponent implements OnInit {
   }
 
   convertToLead(inquiry: Inquiry): void {
+    if (inquiry.status === 'converted') return;
     this.convertingId.set(inquiry.id);
     this.dataService.convertToLead(inquiry.id).subscribe({
-      next: () => {
-        this.inquiries.update(list => list.filter(i => i.id !== inquiry.id));
+      next: ({ leadId }) => {
+        this.inquiries.update(list =>
+          list.map(i => i.id === inquiry.id ? { ...i, status: 'converted' as const, leadId } : i));
         this.convertingId.set(null);
-        this.toast.success('Converted to lead.');
+        this.toast.success('Converted to lead successfully.');
       },
       error: (err) => {
         this.convertingId.set(null);
         this.toast.error(err?.error?.error || 'Could not convert this inquiry to a lead.');
       },
     });
+  }
+
+  viewLead(inquiry: Inquiry): void {
+    this.router.navigate(['/dashboard/owner/leads'], inquiry.leadId
+      ? { queryParams: { lead: inquiry.leadId } }
+      : {});
   }
 }

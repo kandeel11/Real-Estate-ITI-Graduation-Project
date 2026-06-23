@@ -1,10 +1,12 @@
 import {
-  Component, OnInit, AfterViewChecked, inject, signal, ViewChild, ElementRef,
+  Component, OnInit, OnDestroy, inject, signal, ViewChild, ElementRef,
 } from '@angular/core';
 import { DatePipe } from '@angular/common';
 import { FormsModule } from '@angular/forms';
-import { ActivatedRoute } from '@angular/router';
+import { ActivatedRoute, Router } from '@angular/router';
+import { Subscription } from 'rxjs';
 import { TenantMessagesService, TenantInquiry, ChatMessage } from '../../services/messages.service';
+import { ChatRealtimeService } from '../../../../../core/services/chat-realtime.service';
 
 @Component({
   selector: 'app-tenant-messages',
@@ -13,10 +15,14 @@ import { TenantMessagesService, TenantInquiry, ChatMessage } from '../../service
   templateUrl: './messages.component.html',
   styleUrl: './messages.component.css',
 })
-export class TenantMessagesComponent implements OnInit, AfterViewChecked {
+export class TenantMessagesComponent implements OnInit, OnDestroy {
   private readonly svc = inject(TenantMessagesService);
   private readonly route = inject(ActivatedRoute);
+  private readonly router = inject(Router);
+  private readonly realtime = inject(ChatRealtimeService);
   @ViewChild('msgList') msgListRef!: ElementRef<HTMLElement>;
+
+  private liveSub?: Subscription;
 
   inquiries = signal<TenantInquiry[]>([]);
   selected = signal<TenantInquiry | null>(null);
@@ -26,13 +32,13 @@ export class TenantMessagesComponent implements OnInit, AfterViewChecked {
   loadingMessages = signal(false);
   sending = signal(false);
   text = '';
-  private shouldScroll = false;
 
   ngOnInit(): void {
     this.svc.getInquiries().subscribe({
       next: inqs => {
         this.inquiries.set(this.sortByLatest(inqs));
         this.loadingInquiries.set(false);
+        this.startRealtime(inqs.map(i => i.id));
         // Deep-link from a notification: ?inquiry=<id> opens that conversation.
         const id = this.route.snapshot.queryParamMap.get('inquiry');
         if (id) {
@@ -44,6 +50,33 @@ export class TenantMessagesComponent implements OnInit, AfterViewChecked {
     });
   }
 
+  /** Join every thread so the list (preview + ordering) updates live, not just the open chat. */
+  private startRealtime(ids: string[]): void {
+    this.realtime.joinMany(ids);
+    this.liveSub = this.realtime.onAny().subscribe(({ inquiryId, message }) =>
+      this.onIncoming(inquiryId, message));
+  }
+
+  private onIncoming(inquiryId: string, msg: ChatMessage): void {
+    this.bumpInquiry(inquiryId, msg);
+    if (this.selected()?.id === inquiryId) this.appendToOpen(msg);
+  }
+
+  /** Refresh a thread's list preview + timestamp and float it to the top. */
+  private bumpInquiry(inquiryId: string, msg: ChatMessage): void {
+    this.inquiries.update(list => this.sortByLatest(list.map(i =>
+      i.id === inquiryId
+        ? { ...i, lastMessage: msg.text, lastMessageAt: msg.sentAt }
+        : i)));
+  }
+
+  /** Append to the open conversation once (dedup by id) and scroll to the bottom. */
+  private appendToOpen(msg: ChatMessage): void {
+    if (this.messages().some(m => m.id === msg.id)) return;
+    this.messages.update(m => [...m, msg]);
+    this.scrollToBottom();
+  }
+
   /** Newest activity first. */
   private sortByLatest(list: TenantInquiry[]): TenantInquiry[] {
     return [...list].sort((a, b) =>
@@ -51,12 +84,12 @@ export class TenantMessagesComponent implements OnInit, AfterViewChecked {
       new Date(a.lastMessageAt ?? a.createdAt).getTime());
   }
 
-  ngAfterViewChecked(): void {
-    if (this.shouldScroll && this.msgListRef) {
-      const el = this.msgListRef.nativeElement;
-      el.scrollTop = el.scrollHeight;
-      this.shouldScroll = false;
-    }
+  /** Defer to the next frame so the new message is in the DOM before we scroll. */
+  private scrollToBottom(): void {
+    setTimeout(() => {
+      const el = this.msgListRef?.nativeElement;
+      if (el) el.scrollTop = el.scrollHeight;
+    });
   }
 
   selectInquiry(inq: TenantInquiry): void {
@@ -64,10 +97,16 @@ export class TenantMessagesComponent implements OnInit, AfterViewChecked {
     this.selected.set(inq);
     this.messages.set([]);
     this.loadingMessages.set(true);
+    this.router.navigate([], { queryParams: { inquiry: inq.id }, replaceUrl: true });
     this.svc.getMessages(inq.id).subscribe({
-      next: msgs => { this.messages.set(msgs); this.loadingMessages.set(false); this.shouldScroll = true; },
+      next: msgs => { this.messages.set(msgs); this.loadingMessages.set(false); this.scrollToBottom(); },
       error: () => this.loadingMessages.set(false),
     });
+  }
+
+  ngOnDestroy(): void {
+    this.liveSub?.unsubscribe();
+    this.realtime.leaveAll();
   }
 
   send(): void {
@@ -78,14 +117,10 @@ export class TenantMessagesComponent implements OnInit, AfterViewChecked {
     this.text = '';
     this.svc.sendMessage(inq.id, t).subscribe({
       next: msg => {
-        this.messages.update(m => [...m, msg]);
-        // Reflect the new last message in the list and float this chat to the top.
-        this.inquiries.update(list => this.sortByLatest(list.map(i =>
-          i.id === inq.id
-            ? { ...i, lastMessage: msg.text, lastMessageAt: msg.sentAt, status: 'replied' as const }
-            : i)));
+        // The realtime echo may have appended this already — appendToOpen/bump dedupe.
+        this.appendToOpen(msg);
+        this.bumpInquiry(inq.id, msg);
         this.sending.set(false);
-        this.shouldScroll = true;
       },
       error: () => this.sending.set(false),
     });

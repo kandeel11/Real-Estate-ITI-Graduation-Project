@@ -179,10 +179,10 @@
         <div class="col-12 col-lg-6" inView [inViewDelay]="150">
           <div class="home-hero__imgs">
             <div class="home-hero__img-main">
-              <img src="https://lh3.googleusercontent.com/aida/AP1WRLukLyxl9WcfVyOvlOyseW4y3LMr7-yKuQxOVUz-4Sz5oYPSByZhVTJ8sKs2avFlUSCOAqwjvj2XbxZgnKu7x0gKUhZgiAdVccvmkLGzZ1CuvGjbmYqqU_ljYjnOAyoF1MH8lWBqzalkL8TbsDspzAKlpUSH3zaPXqSSgluEnbKWhoNWilXep_1cynekwoBzm1J93Asqaatg8WGU1G8wpqZYQJBjtrLx8FJHaQjrPlrf59PPVO_BA7dXj8Hk" alt="Modern luxury house" />
+              <img src="https://images.unsplash.com/photo-1600596542815-ffad4c1539a9?auto=format&fit=crop&w=900&q=80" alt="Modern luxury house" />
             </div>
             <div class="home-hero__img-secondary">
-              <img src="https://lh3.googleusercontent.com/aida/AP1WRLvKWCA31KrYb2oS_P9kUYMm_dXuxFs9TRhkry-yelMHVJoat0XbmpYbnaLTBpFg4H5dJNQHEH0pGWtWa5HMfdO2eDW-BdMMkYIvwqRkda_Vd2nDNN4m-6zMZ5XYyQGxZRH5cyCcvAgk1mFprnAeE16_ov8deYVLsv_KGE3b9AU8AnFOaj7qNzh3RO-uiSqH5txWDK-1yINifVEfcHtVhCHWxNYoQzFg9HIlmYOwMKQbAoYbnuXAqM91FUEk" alt="Modern living room" />
+              <img src="https://images.unsplash.com/photo-1600210492486-724fe5c67fb0?auto=format&fit=crop&w=700&q=80" alt="Modern living room" />
             </div>
             <div class="home-hero__img-float">
               <div class="home-hero__img-float-icon">
@@ -241,45 +241,81 @@
           <h2 class="home-properties__title mb-3">{{ 'HOME.FEATURED.TITLE' | translate }}</h2>
           <p class="home-properties__subtitle">{{ 'HOME.FEATURED.SUBTITLE' | translate }}</p>
         </div>
-        <a routerLink="/properties" class="btn home-properties__view-all flex-shrink-0">{{ 'HOME.FEATURED.VIEW_ALL' | translate }}</a>
+        <a routerLink="/properties" [queryParams]="{ featured: 'true' }" class="btn home-properties__view-all flex-shrink-0">{{ 'HOME.FEATURED.VIEW_ALL' | translate }}</a>
       </div>
 
-      <div class="row g-4">
-        @for (p of properties; track p.nameKey; let i = $index) {
-        <div class="col-12 col-md-6 col-lg-4" inView [inViewDelay]="i * 120">
-          <div class="home-properties__card hover-lift">
-            <div class="home-properties__card-img">
-              <img [src]="p.image" [alt]="p.nameKey | translate" />
-              <span class="home-properties__card-badge">
-                <i class="fa-solid fa-tag fa-xs"></i>&nbsp;{{ p.badgeKey | translate }}
-              </span>
-            </div>
-            <div class="home-properties__card-body">
-              <h3 class="home-properties__card-name">{{ p.nameKey | translate }}</h3>
-              <p class="home-properties__card-desc">{{ p.descKey | translate }}</p>
-              <div class="home-properties__chips">
-                <span class="home-properties__chip">
-                  <i class="fa-solid fa-bed fa-xs"></i>&nbsp;{{ p.beds }} {{ 'HOME.FEATURED.BEDS' | translate }}
-                </span>
-                <span class="home-properties__chip">
-                  <i class="fa-solid fa-bath fa-xs"></i>&nbsp;{{ p.baths }} {{ 'HOME.FEATURED.BATHS' | translate }}
-                </span>
-                <span class="home-properties__chip">
-                  <i [class]="p.typeIcon + ' fa-xs'"></i>&nbsp;{{ p.type }}
-                </span>
-              </div>
-              <div class="home-properties__card-footer">
-                <div>
-                  <p class="home-properties__price-label">{{ 'HOME.FEATURED.PRICE' | translate }}</p>
-                  <p class="home-properties__price">{{ p.price }}</p>
+      @if (properties().length) {
+      <!-- Carousel: slides through up to 15 featured listings -->
+      <div class="home-properties__carousel" (mouseenter)="pauseAutoplay()" (mouseleave)="resumeAutoplay()">
+
+        @if (hasCarousel()) {
+        <button type="button" class="home-properties__nav home-properties__nav--prev"
+                (click)="prevSlide()" aria-label="Previous">
+          <i class="fa-solid fa-chevron-left"></i>
+        </button>
+        <button type="button" class="home-properties__nav home-properties__nav--next"
+                (click)="nextSlide()" aria-label="Next">
+          <i class="fa-solid fa-chevron-right"></i>
+        </button>
+        }
+
+        <div class="home-properties__viewport">
+          <div class="home-properties__track" [style.transform]="'translateX(' + trackOffset() + '%)'">
+            @for (p of properties(); track p.id) {
+            <div class="home-properties__slide" [style.flex]="'0 0 ' + (100 / cardsPerView()) + '%'">
+              <div class="home-properties__card hover-lift" (click)="openProperty(p.id)" role="button" tabindex="0">
+                <div class="home-properties__card-img">
+                  @if (p.primaryImageUrl) {
+                    <img [src]="p.primaryImageUrl" [alt]="p.title" />
+                  } @else {
+                    <div class="home-properties__card-img-placeholder"><i class="fa-regular fa-image"></i></div>
+                  }
+                  <span class="home-properties__card-badge">
+                    <i class="fa-solid fa-tag fa-xs"></i>&nbsp;{{ 'HOME.FEATURED.FOR_SALE' | translate }}
+                  </span>
                 </div>
-                <button class="btn btn-primary home-properties__details-btn">{{ 'HOME.FEATURED.VIEW_DETAILS' | translate }}</button>
+                <div class="home-properties__card-body">
+                  <h3 class="home-properties__card-name">{{ p.title }}</h3>
+                  <p class="home-properties__card-desc">{{ p.district }}, {{ p.city }}</p>
+                  <div class="home-properties__chips">
+                    <span class="home-properties__chip">
+                      <i class="fa-solid fa-bed fa-xs"></i>&nbsp;{{ p.bedrooms }} {{ 'HOME.FEATURED.BEDS' | translate }}
+                    </span>
+                    <span class="home-properties__chip">
+                      <i class="fa-solid fa-bath fa-xs"></i>&nbsp;{{ p.bathrooms }} {{ 'HOME.FEATURED.BATHS' | translate }}
+                    </span>
+                    <span class="home-properties__chip">
+                      <i [class]="typeIcon(p.propertyType) + ' fa-xs'"></i>&nbsp;{{ p.propertyType }}
+                    </span>
+                  </div>
+                  <div class="home-properties__card-footer">
+                    <div>
+                      <p class="home-properties__price-label">{{ 'HOME.FEATURED.PRICE' | translate }}</p>
+                      <p class="home-properties__price">{{ formatPrice(p.price) }}</p>
+                    </div>
+                    <button class="btn btn-primary home-properties__details-btn">{{ 'HOME.FEATURED.VIEW_DETAILS' | translate }}</button>
+                  </div>
+                </div>
               </div>
             </div>
+            }
           </div>
+        </div>
+
+        @if (hasCarousel()) {
+        <div class="home-properties__dots">
+          @for (d of slideDots(); track d) {
+          <button type="button" class="home-properties__dot" [class.active]="d === slide()"
+                  (click)="goToSlide(d)" [attr.aria-label]="'Slide ' + (d + 1)"></button>
+          }
         </div>
         }
       </div>
+      } @else if (!propertiesLoading()) {
+      <div class="text-center text-muted py-5">
+        {{ 'HOME.FEATURED.EMPTY' | translate }}
+      </div>
+      }
 
     </div>
   </section>

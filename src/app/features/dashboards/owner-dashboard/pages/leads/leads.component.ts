@@ -25,6 +25,8 @@ export class LeadsComponent implements OnInit {
   noteText = '';
   readonly closingLeadId = signal<string | null>(null);
   readonly leaseUploadLead = signal<Lead | null>(null);
+  /** Set when resuming an un-sent lease so the modal skips upload and loads it directly. */
+  readonly resumeLeaseId = signal<string | null>(null);
 
   readonly columns = signal<KanbanColumn[]>([
     { status: 'new',          labelKey: 'OWNER.LEADS.COL_NEW',          color: '#3b82f6', leads: [] },
@@ -160,10 +162,22 @@ export class LeadsComponent implements OnInit {
   /** Leads whose lease was created this session (immediate UI, before a reload). */
   private readonly leasedIds = signal<Set<string>>(new Set());
 
+  /** Open the lease modal in resume mode for a lead with an un-sent draft lease. */
+  openResume(lead: Lead): void {
+    this.resumeLeaseId.set(lead.draftLeaseId ?? null);
+    this.leaseUploadLead.set(lead);
+  }
+
+  closeLeaseModal(): void {
+    this.leaseUploadLead.set(null);
+    this.resumeLeaseId.set(null);
+  }
+
   onLeaseCreated(): void {
     const lead = this.leaseUploadLead();
     if (lead) this.leasedIds.update(s => new Set(s).add(lead.id));
     this.leaseUploadLead.set(null);
+    this.resumeLeaseId.set(null);
   }
 
   /** A lease exists for this lead (from the backend, or created just now). */

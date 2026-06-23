@@ -11,8 +11,20 @@
       }
     </div>
 
+    <!-- ── Resume: loading the existing lease's extraction ─── -->
+    @if (resuming()) {
+      <div class="modal-header">
+        <h2>{{ 'OWNER.LEASE_UPLOAD.STEP2_TITLE' | translate }}</h2>
+        <button class="modal-close" (click)="closed.emit()"><i class="fa-solid fa-xmark"></i></button>
+      </div>
+      <div class="modal-body modal-body--center">
+        <i class="fa-solid fa-spinner fa-spin" style="font-size:24px"></i>
+        <p class="step-hint">{{ 'OWNER.LEASE_UPLOAD.UPLOADING' | translate }}</p>
+      </div>
+    }
+
     <!-- ── Step 1: Upload ──────────────────────────────────── -->
-    @if (step() === 1) {
+    @if (step() === 1 && !resuming()) {
       <div class="modal-header">
         <div>
           <h2>{{ 'OWNER.LEASE_UPLOAD.TITLE' | translate }}</h2>
@@ -77,18 +89,28 @@
             <i class="fa-solid fa-triangle-exclamation"></i>
             {{ 'OWNER.LEASE_UPLOAD.AI_FAILED_WARN' | translate }}
           </div>
+          @if (extractionDiagnosis()) {
+            <div class="extraction-diagnosis">
+              <i class="fa-solid fa-circle-info"></i>
+              {{ extractionDiagnosis() }}
+            </div>
+          }
         } @else {
           <div class="ai-badge">
             <i class="fa-solid fa-robot"></i>
             {{ 'OWNER.LEASE_UPLOAD.AI_EXTRACTED' | translate }}
-            <span class="confidence">{{ (extraction()!.confidence * 100).toFixed(0) }}%</span>
+            <span class="confidence">{{ extraction()!.confidence.toFixed(0) }}%</span>
           </div>
         }
         <p class="step-hint">{{ 'OWNER.LEASE_UPLOAD.STEP2_HINT' | translate }}</p>
 
         <div class="form-grid">
           <div class="form-group">
-            <label>{{ 'OWNER.LEASE_UPLOAD.TENANT_NAME' | translate }}</label>
+            <label>{{ 'OWNER.LEASE_UPLOAD.TENANT_NAME' | translate }}
+              @if (fieldConf('tenantName') !== undefined) {
+                <span [class]="confBadgeClass(fieldConf('tenantName'))">{{ fieldConf('tenantName') }}%</span>
+              }
+            </label>
             <input class="form-control" [value]="extraction()!.tenantName"
               (input)="updateField('tenantName', $any($event.target).value)" />
           </div>
@@ -98,30 +120,86 @@
               (input)="updateField('tenantEmail', $any($event.target).value)" />
           </div>
           <div class="form-group">
-            <label>{{ 'OWNER.LEASE_UPLOAD.START_DATE' | translate }}</label>
+            <label>Owner Name
+              @if (fieldConf('ownerName') !== undefined) {
+                <span [class]="confBadgeClass(fieldConf('ownerName'))">{{ fieldConf('ownerName') }}%</span>
+              }
+            </label>
+            <input class="form-control" [value]="extraction()!.ownerName"
+              (input)="updateField('ownerName', $any($event.target).value)" />
+          </div>
+          <div class="form-group">
+            <label>{{ 'OWNER.LEASE_UPLOAD.START_DATE' | translate }}
+              @if (fieldConf('startDate') !== undefined) {
+                <span [class]="confBadgeClass(fieldConf('startDate'))">{{ fieldConf('startDate') }}%</span>
+              }
+            </label>
             <input class="form-control" type="date" [value]="extraction()!.startDate"
               (input)="updateField('startDate', $any($event.target).value)" />
           </div>
           <div class="form-group">
-            <label>{{ 'OWNER.LEASE_UPLOAD.END_DATE' | translate }}</label>
+            <label>{{ 'OWNER.LEASE_UPLOAD.END_DATE' | translate }}
+              @if (fieldConf('endDate') !== undefined) {
+                <span [class]="confBadgeClass(fieldConf('endDate'))">{{ fieldConf('endDate') }}%</span>
+              }
+            </label>
             <input class="form-control" type="date" [value]="extraction()!.endDate"
               (input)="updateField('endDate', $any($event.target).value)" />
           </div>
           <div class="form-group">
-            <label>{{ 'OWNER.LEASE_UPLOAD.MONTHLY_RENT' | translate }}</label>
-            <input class="form-control" type="number" [value]="extraction()!.monthlyRent"
-              (input)="updateField('monthlyRent', +$any($event.target).value)" />
+            <label>{{ 'OWNER.LEASE_UPLOAD.INSTALLMENT_AMOUNT' | translate }}
+              @if (fieldConf('installmentAmount') !== undefined) {
+                <span [class]="confBadgeClass(fieldConf('installmentAmount'))">{{ fieldConf('installmentAmount') }}%</span>
+              }
+            </label>
+            <input class="form-control" type="number" [value]="extraction()!.installmentAmount"
+              (input)="updateField('installmentAmount', +$any($event.target).value)" />
           </div>
           <div class="form-group">
-            <label>{{ 'OWNER.LEASE_UPLOAD.DEPOSIT' | translate }}</label>
+            <label>{{ 'OWNER.LEASE_UPLOAD.PAYMENT_FREQUENCY' | translate }}
+              @if (fieldConf('paymentFrequency') !== undefined) {
+                <span [class]="confBadgeClass(fieldConf('paymentFrequency'))">{{ fieldConf('paymentFrequency') }}%</span>
+              }
+            </label>
+            <select class="form-control" [value]="extraction()!.paymentFrequency"
+              (change)="updateField('paymentFrequency', $any($event.target).value)">
+              <option value="Monthly">{{ 'OWNER.LEASE_UPLOAD.FREQ_MONTHLY' | translate }}</option>
+              <option value="Bimonthly">{{ 'OWNER.LEASE_UPLOAD.FREQ_BIMONTHLY' | translate }}</option>
+              <option value="Quarterly">{{ 'OWNER.LEASE_UPLOAD.FREQ_QUARTERLY' | translate }}</option>
+              <option value="SemiAnnually">{{ 'OWNER.LEASE_UPLOAD.FREQ_SEMIANNUALLY' | translate }}</option>
+              <option value="Annually">{{ 'OWNER.LEASE_UPLOAD.FREQ_ANNUALLY' | translate }}</option>
+            </select>
+          </div>
+          <div class="form-group">
+            <label>{{ 'OWNER.LEASE_UPLOAD.DEPOSIT' | translate }}
+              @if (fieldConf('deposit') !== undefined) {
+                <span [class]="confBadgeClass(fieldConf('deposit'))">{{ fieldConf('deposit') }}%</span>
+              }
+            </label>
             <input class="form-control" type="number" [value]="extraction()!.deposit"
               (input)="updateField('deposit', +$any($event.target).value)" />
           </div>
+          @if (extraction()!.paymentDayOfMonth !== null && extraction()!.paymentDayOfMonth !== undefined) {
+            <div class="form-group">
+              <label>Payment Day of Month
+                @if (fieldConf('paymentDayOfMonth') !== undefined) {
+                  <span [class]="confBadgeClass(fieldConf('paymentDayOfMonth'))">{{ fieldConf('paymentDayOfMonth') }}%</span>
+                }
+              </label>
+              <input class="form-control" type="number" min="1" max="31"
+                [value]="extraction()!.paymentDayOfMonth"
+                (input)="updateField('paymentDayOfMonth', +$any($event.target).value)" />
+            </div>
+          }
         </div>
+
+        @if (dateError()) {
+          <p class="err"><i class="fa-solid fa-triangle-exclamation"></i> {{ dateError()! | translate }}</p>
+        }
       </div>
       <div class="modal-footer">
         <button class="btn btn-outline" (click)="step.set(1)">{{ 'COMMON.BACK' | translate }}</button>
-        <button class="btn btn-primary" (click)="sendToTenant()" [disabled]="sending()">
+        <button class="btn btn-primary" (click)="sendToTenant()" [disabled]="sending() || !!dateError()">
           @if (sending()) { <i class="fa-solid fa-spinner fa-spin"></i> {{ 'OWNER.LEASE_UPLOAD.SENDING_TENANT' | translate }} }
           @else { <i class="fa-solid fa-paper-plane"></i> {{ 'OWNER.LEASE_UPLOAD.SEND_TENANT' | translate }} }
         </button>

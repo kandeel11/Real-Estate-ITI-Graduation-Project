@@ -5,6 +5,8 @@ import { filter, Subscription } from 'rxjs';
 import { TranslatePipe } from '@ngx-translate/core';
 import { NotificationService } from '../services/notification.service';
 import { AuthService } from '../../../../core/services/auth.service';
+import { SavedPropertyService } from '../../../../core/services/saved-property.service';
+import { SubscriptionService } from '../../../subscription/services/subscription.service';
 import { NavbarComponent } from '../../../../layout/navbar/navbar.component';
 
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
@@ -35,15 +37,20 @@ interface NavItem {
 export class TDashboardComponent implements OnInit, OnDestroy {
   protected readonly auth = inject(AuthService);
   protected readonly notificationService = inject(NotificationService);
+  protected readonly savedService = inject(SavedPropertyService);
+  private readonly subService = inject(SubscriptionService);
   private readonly router = inject(Router);
 
   protected readonly routeAnimState = signal('');
+  /** Live plan label for the sidebar badge ('Free' or 'Premium'). */
+  protected readonly planBadge = signal('Free');
   private _routerSub: Subscription | null = null;
 
   readonly navItems: NavItem[] = [
     { id: 'overview',      label: 'TENANT_NAV.OVERVIEW',      icon: 'fa-solid fa-gauge-high',         route: '/dashboard',               exact: true },
     { id: 'property',      label: 'TENANT_NAV.MY_PROPERTY',   icon: 'fa-solid fa-building',           route: '/dashboard/property' },
     { id: 'lease',         label: 'TENANT_NAV.MY_LEASE',      icon: 'fa-solid fa-file-contract',      route: '/dashboard/lease' },
+    { id: 'saved',         label: 'TENANT_NAV.SAVED',         icon: 'fa-solid fa-heart',              route: '/dashboard/saved' },
     { id: 'maintenance',   label: 'TENANT_NAV.MAINTENANCE',   icon: 'fa-solid fa-screwdriver-wrench', route: '/dashboard/maintenance-requests' },
     { id: 'messages',      label: 'TENANT_NAV.MESSAGES',      icon: 'fa-regular fa-comments',         route: '/dashboard/messages' },
     { id: 'notifications', label: 'TENANT_NAV.NOTIFICATIONS', icon: 'fa-regular fa-bell',             route: '/dashboard/notifications' },
@@ -57,6 +64,9 @@ export class TDashboardComponent implements OnInit, OnDestroy {
   ngOnInit(): void {
     this.notificationService.fetchUnreadCount();
     this.notificationService.startPolling();
+    this.subService.getMine().subscribe(sub =>
+      this.planBadge.set(sub?.tier?.startsWith('Premium') ? 'Premium' : 'Free'),
+    );
     this._routerSub = this.router.events.pipe(
       filter(e => e instanceof NavigationEnd)
     ).subscribe(() => {

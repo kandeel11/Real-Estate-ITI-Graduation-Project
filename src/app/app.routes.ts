@@ -408,6 +408,13 @@ export const routes: Routes = [
               ),
           },
           {
+            path: 'maintenance/:id',
+            loadComponent: () =>
+              import('./features/dashboards/owner-dashboard/pages/maintenance/ticket-detail/ticket-detail.component').then(
+                (m) => m.OwnerTicketDetailComponent,
+              ),
+          },
+          {
             path: 'notifications',
             loadComponent: () =>
               import('./features/dashboards/owner-dashboard/pages/notifications/notifications.component').then(

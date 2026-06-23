@@ -1,10 +1,20 @@
 import { Injectable, inject } from '@angular/core';
 import { HttpClient } from '@angular/common/http';
 import { Observable, of } from 'rxjs';
-import { catchError } from 'rxjs/operators';
+import { catchError, timeout } from 'rxjs/operators';
 import { environment } from '../../../../../environments/environment';
 
 // ── API lease shape ─────────────────────────────────────────────────────────
+
+/** Lifecycle status derived by the backend (LeaseDto.DeriveStatus). */
+export type LeaseLifecycleStatus =
+  | 'pending'
+  | 'active'
+  | 'renewal_requested'
+  | 'termination_requested'
+  | 'terminated'
+  | 'declined'
+  | 'ended';
 
 export interface ApiLease {
   id: string;
@@ -24,6 +34,13 @@ export interface ApiLease {
   isActive: boolean;
   contractFileUrl: string;
   createdAt?: string;
+  // ── Renewal / termination lifecycle ───────────────────────────────────────
+  renewedFromLeaseId?: string | null;
+  renewalRequestedAt?: string | null;
+  terminationRequestedById?: string | null;
+  terminationRequestedAt?: string | null;
+  terminationEffectiveDate?: string | null;
+  status: LeaseLifecycleStatus;
 }
 
 // ── Rented-properties API types ──────────────────────────────────────────────
@@ -69,7 +86,10 @@ export interface LeaseOffer {
   propertyTitle: string;
   startDate: string;
   endDate: string;
-  monthlyRent: number;
+  /** Value of ONE installment (matches the backend's `installmentAmount`). */
+  installmentAmount: number;
+  paymentFrequency?: string | null;
+  totalRentAmount?: number | null;
   deposit: number;
   pdfUrl?: string;
   status: 'pending_tenant' | 'accepted' | 'declined';
@@ -109,15 +129,43 @@ export class LeaseService {
   }
 
   acceptOffer(offerId: string): Observable<void> {
-    return this.http.post<void>(`${this.base}/tenant/leases/${offerId}/accept`, {});
+    // Accept runs lease activation + downstream event handlers synchronously, so it
+    // can take several seconds. Cap it so a hung request surfaces an error (and lets
+    // the tenant retry) instead of spinning forever.
+    return this.http
+      .post<void>(`${this.base}/tenant/leases/${offerId}/accept`, {})
+      .pipe(timeout(30000));
   }
 
   declineOffer(offerId: string): Observable<void> {
-    return this.http.post<void>(`${this.base}/tenant/leases/${offerId}/decline`, {});
+    return this.http
+      .post<void>(`${this.base}/tenant/leases/${offerId}/decline`, {})
+      .pipe(timeout(30000));
   }
 
   getContractUrl(leaseId: string): Observable<{ contractFileUrl: string }> {
     return this.http.get<{ contractFileUrl: string }>(`${this.base}/leases/${leaseId}/download`);
+  }
+
+  // ── Renewal / termination (tenant side) ─────────────────────────────────────
+
+  /** Tenant asks the landlord to renew an active lease nearing its end. */
+  requestRenewal(leaseId: string): Observable<void> {
+    return this.http.post<void>(`${this.base}/tenant/leases/${leaseId}/renew-request`, {});
+  }
+
+  /** Either party proposes early termination; the other must approve. */
+  requestTermination(leaseId: string, reason: string, effectiveDate?: string): Observable<void> {
+    return this.http.post<void>(`${this.base}/leases/${leaseId}/terminate-request`, {
+      reason,
+      effectiveDate: effectiveDate ?? null,
+    });
+  }
+
+  /** Approve or reject a pending termination request raised by the counterparty. */
+  respondTermination(leaseId: string, approve: boolean, note?: string): Observable<void> {
+    const action = approve ? 'terminate-approve' : 'terminate-reject';
+    return this.http.post<void>(`${this.base}/leases/${leaseId}/${action}`, { note: note ?? null });
   }
 
   contractUrl(relativePath: string): string {

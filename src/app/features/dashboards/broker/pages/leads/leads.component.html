@@ -51,6 +51,11 @@
                       <i class="fa-solid fa-circle-check"></i>
                       {{ 'BROKER.LEADS.LEASE_CREATED' | translate }}
                     </span>
+                  } @else if (lead.draftLeaseId) {
+                    <button class="btn-lease" (click)="$event.stopPropagation(); openResume(lead)">
+                      <i class="fa-solid fa-pen-to-square"></i>
+                      {{ 'BROKER.LEADS.RESUME_LEASE' | translate }}
+                    </button>
                   } @else {
                     <button class="btn-lease" (click)="$event.stopPropagation(); leaseUploadLead.set(lead)">
                       <i class="fa-solid fa-file-contract"></i>
@@ -123,7 +128,8 @@
 @if (leaseUploadLead()) {
   <app-lease-upload-modal
     [lead]="leaseUploadLead()!"
-    (closed)="leaseUploadLead.set(null)"
+    [resumeLeaseId]="resumeLeaseId()"
+    (closed)="closeLeaseModal()"
     (leaseCreated)="onLeaseCreated()"
   />
 }

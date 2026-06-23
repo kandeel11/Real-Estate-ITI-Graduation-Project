@@ -7,6 +7,7 @@ import {
   ModerationStatus,
 } from '../../services/rating.service';
 import { LeaseService } from '../../services/lease.service';
+import { PropertyService } from '../../../../properties/services/property.service';
 import { ToastService } from '../../../../../shared/components/toast/toast.service';
 import { StarRatingComponent } from '../../../../../shared/components/star-rating/star-rating.component';
 import { RatingModalComponent } from '../../../../../shared/components/rating-modal/rating-modal.component';
@@ -21,12 +22,15 @@ import { RatingModalComponent } from '../../../../../shared/components/rating-mo
 export class RatingsComponent implements OnInit {
   private readonly ratingService = inject(RatingService);
   private readonly leaseService = inject(LeaseService);
+  private readonly propertyService = inject(PropertyService);
   private readonly toast = inject(ToastService);
 
   protected loading = signal(true);
   protected error = signal<string | null>(null);
   protected ratings = signal<RatingResponse[]>([]);
   protected deleteLoadingId = signal<string | null>(null);
+  /** Resolved property titles keyed by propertyId, filled in lazily. */
+  protected propertyNames = signal<Record<string, string>>({});
 
   protected showModal = signal(false);
   protected modalMode = signal<'create' | 'edit'>('create');
@@ -46,9 +50,26 @@ export class RatingsComponent implements OnInit {
     this.ratingService.getMyRatings()
       .pipe(finalize(() => this.loading.set(false)))
       .subscribe({
-        next: data => this.ratings.set(data),
+        next: data => {
+          this.ratings.set(data);
+          this.resolvePropertyNames(data);
+        },
         error: () => this.error.set('Failed to load your reviews. Please try again.'),
       });
+  }
+
+  /** Fetch the title for each distinct property so cards show a name, not a GUID. */
+  private resolvePropertyNames(ratings: RatingResponse[]): void {
+    const known = this.propertyNames();
+    const ids = [...new Set(ratings.map(r => r.propertyId).filter((id): id is string => !!id))]
+      .filter(id => !(id in known));
+
+    for (const id of ids) {
+      this.propertyService.getById(id).subscribe({
+        next: p => this.propertyNames.update(cur => ({ ...cur, [id]: p.title })),
+        error: () => {/* leave it as the id fallback */},
+      });
+    }
   }
 
   protected isEditable(r: RatingResponse): boolean {
@@ -127,6 +148,12 @@ export class RatingsComponent implements OnInit {
 
   protected targetId(r: RatingResponse): string {
     return r.propertyId ?? r.maintenanceCompanyId ?? '—';
+  }
+
+  /** Human-readable target: the resolved property title, or the raw id while it loads. */
+  protected targetName(r: RatingResponse): string {
+    if (r.propertyId) return this.propertyNames()[r.propertyId] ?? r.propertyId;
+    return r.maintenanceCompanyId ?? '—';
   }
 
   readonly skeletonRows = [1, 2, 3];

@@ -127,10 +127,18 @@ export class OwnerNotificationsComponent implements OnInit {
   }
 
   private navigateToEntity(notif: AppNotification): void {
+    if (notif.type === 'NewMessage' || notif.type === 'InquiryAccepted') {
+      const id = notif.relatedEntityId;
+      this.router.navigate(['/dashboard/owner/messages'], id ? { queryParams: { inquiry: id } } : {});
+      return;
+    }
+    if (notif.type === 'LeadStatusChanged') {
+      this.router.navigate(['/dashboard/owner/leads']);
+      return;
+    }
     if (!notif.relatedEntityType) return;
     switch (notif.relatedEntityType.toLowerCase()) {
       case 'inquiry':
-        // Open the related conversation in Messages.
         if (notif.relatedEntityId) {
           this.router.navigate(['/dashboard/owner/messages'], { queryParams: { inquiry: notif.relatedEntityId } });
         } else {
@@ -158,10 +166,18 @@ export class OwnerNotificationsComponent implements OnInit {
       ContractSigned: 'fa-solid fa-file-signature',
       RentPaymentReminder: 'fa-solid fa-bell',
       NewInquiry: 'fa-solid fa-envelope',
+      NewMessage: 'fa-solid fa-message',
+      InquiryAccepted: 'fa-solid fa-envelope-circle-check',
+      LeadStatusChanged: 'fa-solid fa-user-tag',
       SubscriptionExpiration: 'fa-solid fa-calendar-xmark',
       VerificationResult: 'fa-solid fa-shield-halved',
       DuplicateDetected: 'fa-solid fa-triangle-exclamation',
       LeaseRejected: 'fa-solid fa-file-circle-xmark',
+      LeaseRenewalRequested: 'fa-solid fa-rotate',
+      LeaseRenewalOffer: 'fa-solid fa-file-circle-plus',
+      LeaseTerminationRequested: 'fa-solid fa-file-circle-xmark',
+      LeaseTerminationApproved: 'fa-solid fa-file-circle-check',
+      LeaseTerminationRejected: 'fa-solid fa-file-circle-xmark',
     };
     return map[type] ?? 'fa-regular fa-bell';
   }
@@ -174,10 +190,18 @@ export class OwnerNotificationsComponent implements OnInit {
       ContractSigned: 'notif-icon-wrap icon-success',
       RentPaymentReminder: 'notif-icon-wrap icon-warning',
       NewInquiry: 'notif-icon-wrap icon-primary',
+      NewMessage: 'notif-icon-wrap icon-info',
+      InquiryAccepted: 'notif-icon-wrap icon-success',
+      LeadStatusChanged: 'notif-icon-wrap icon-primary',
       SubscriptionExpiration: 'notif-icon-wrap icon-danger',
       VerificationResult: 'notif-icon-wrap icon-info',
       DuplicateDetected: 'notif-icon-wrap icon-warning',
       LeaseRejected: 'notif-icon-wrap icon-danger',
+      LeaseRenewalRequested: 'notif-icon-wrap icon-primary',
+      LeaseRenewalOffer: 'notif-icon-wrap icon-success',
+      LeaseTerminationRequested: 'notif-icon-wrap icon-warning',
+      LeaseTerminationApproved: 'notif-icon-wrap icon-success',
+      LeaseTerminationRejected: 'notif-icon-wrap icon-danger',
     };
     return map[type] ?? 'notif-icon-wrap icon-primary';
   }

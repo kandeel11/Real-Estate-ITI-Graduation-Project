@@ -9,12 +9,14 @@ import { RouterOutlet } from '@angular/router';
 import { AuthService } from './core/services/auth.service';
 import { NotificationService } from './core/services/notification.service';
 import { ToastComponent } from './shared/components/toast/toast.component';
+import { EmailVerificationBarComponent } from './shared/components/email-verification-bar/email-verification-bar.component';
 
 @Component({
   selector: 'app-root',
   standalone: true,
-  imports: [RouterOutlet, ToastComponent],
+  imports: [RouterOutlet, ToastComponent, EmailVerificationBarComponent],
   template: `
+    <app-email-verification-bar />
     <router-outlet />
     <app-toast />
   `,

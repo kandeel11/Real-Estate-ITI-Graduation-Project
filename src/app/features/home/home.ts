@@ -1,11 +1,16 @@
-import { Component, inject, signal } from '@angular/core';
+import { Component, inject, signal, computed, OnInit, OnDestroy, HostListener } from '@angular/core';
 import { Router, RouterLink } from '@angular/router';
 import { TranslatePipe } from '@ngx-translate/core';
 import { InViewDirective } from '../../shared/directives/in-view.directive';
 import { SearchService } from '../../features/ai/Search/Services/search-service';
 import { ParsedQuery, PropertyResult } from '../../features/ai/Search/models';
+import { PropertyService } from '../../features/properties/services/property.service';
+import { Property } from '../../features/properties/models/property.model';
 
 type SearchMode = 'regular' | 'smart';
+
+/** Cap on how many featured listings the home carousel will cycle through. */
+const MAX_FEATURED = 15;
 
 @Component({
   selector: 'app-home',
@@ -13,11 +18,12 @@ type SearchMode = 'regular' | 'smart';
   templateUrl: './home.html',
   styleUrl: './home.scss',
 })
-export class HomeComponent {
+export class HomeComponent implements OnInit, OnDestroy {
   // ============================================================
   // 🔎 SEARCH STATE (NEW)
   // ============================================================
   private searchService = inject(SearchService);
+  private propertyService = inject(PropertyService);
   private router = inject(Router);
 
   searchMode = signal<SearchMode>('regular');
@@ -40,23 +46,28 @@ export class HomeComponent {
     { icon: 'fa-solid fa-chart-line',  titleKey: 'HOME.SERVICES.INVESTMENTS.TITLE',  descKey: 'HOME.SERVICES.INVESTMENTS.DESC' },
   ];
 
-  properties = [
-    {
-      image: 'https://lh3.googleusercontent.com/aida/AP1WRLtXTqG-OryxK0IDEFhDE-rC7mkUbJfWGs-PxU1pRNe2uSE0Bx_3c-cP1F4SR7ZMhcSiRCbULkJJ1tOmGSwv7Fzt8TlqRd3pDTgij-4202Hslb__YtSs9qdb0Fs53Kase1pwHmioWuh3lovZkjDx78oMKMg1zkEJrO1qFm3XUJ9q33UDNvEhsf5tmaSfZajm7zZnYRa68Zmm1FYqdAj-HCcuoBsbv2fmoY88tkqk6Ui-ucxSVfXPbrLTF8A',
-      badgeKey: 'HOME.FEATURED.FOR_SALE', nameKey: 'HOME.PROPERTIES.VILLA.NAME', descKey: 'HOME.PROPERTIES.VILLA.DESC',
-      beds: 4, baths: '3', typeIcon: 'fa-solid fa-house-chimney', type: 'Villa', price: '$550,000',
-    },
-    {
-      image: 'https://lh3.googleusercontent.com/aida/AP1WRLtd6UB33H6m-txrdPaoya8P7oMmzNLMtgyhQQ6quatx9iK8pfDZw48sojNSK_HoGokwl8unHZW0yY-8J7BJMpshFDDLL2myoGdA3gynnj364NfrgzPia5ynkXmOspBPnTPzULhB-8eC9E4LqHUq1T5MukTkNfM7KYNl9W44BCljwqV-PHVW4_I31tGUmgEQHh8AeUgEiUNUherzbtvYMcpsxE4mqaRP6GZ8aXNPPYM2ccP2yFwZOdN1-w',
-      badgeKey: 'HOME.FEATURED.FOR_SALE', nameKey: 'HOME.PROPERTIES.APARTMENT.NAME', descKey: 'HOME.PROPERTIES.APARTMENT.DESC',
-      beds: 2, baths: '2', typeIcon: 'fa-solid fa-building', type: 'Apartment', price: '$650,000',
-    },
-    {
-      image: 'https://lh3.googleusercontent.com/aida/AP1WRLt2tMGhhSeq2ZqItXJH80ZtMP-QyYlj7uCCDmT_qDLmf0YQYDAzLBYRDeWw8J4b8Pkkk9Awqx2SGKUB8oDHoq7-kg0s3f6y1AghALZEa5Xu1eIB8EIqWKBsps6OQ7GZFzQ2R2A6noXc2d3Qc8VCRTYklAAACnrahKxVpw-FsYf3bCof9rnKESiMxD0BTjnqxDsrbxDBCp5Yptr8C6RMafRPX5cNSwISSfTlUUzqK9Aq37MohNWHxOyMzMs',
-      badgeKey: 'HOME.FEATURED.FOR_SALE', nameKey: 'HOME.PROPERTIES.TOWNHOUSE.NAME', descKey: 'HOME.PROPERTIES.TOWNHOUSE.DESC',
-      beds: 3, baths: '2.5', typeIcon: 'fa-solid fa-house-user', type: 'Townhouse', price: '$450,000',
-    },
-  ];
+  /** Featured listings pulled from the public active feed (up to {@link MAX_FEATURED}). */
+  properties = signal<Property[]>([]);
+  propertiesLoading = signal(true);
+
+  // ── Featured carousel state ─────────────────────────────────────
+  /** Index of the left-most visible card. */
+  slide = signal(0);
+  /** Cards visible at once — responsive (1 mobile / 2 tablet / 3 desktop). */
+  cardsPerView = signal(3);
+  private autoplayId: ReturnType<typeof setInterval> | null = null;
+
+  /** Highest slide index that still fills the viewport. */
+  maxSlide = computed(() => Math.max(0, this.properties().length - this.cardsPerView()));
+
+  /** How far the track is shifted, as a percentage of one viewport width. */
+  trackOffset = computed(() => -(this.slide() * (100 / this.cardsPerView())));
+
+  /** Whether the carousel has more cards than fit on screen. */
+  hasCarousel = computed(() => this.properties().length > this.cardsPerView());
+
+  /** One dot per slide position. */
+  slideDots = computed(() => Array.from({ length: this.maxSlide() + 1 }, (_, i) => i));
 
   faqs = [
     { qKey: 'HOME.FAQ.Q1', aKey: 'HOME.FAQ.A1' },
@@ -66,6 +77,95 @@ export class HomeComponent {
     { qKey: 'HOME.FAQ.Q5', aKey: 'HOME.FAQ.A5' },
     { qKey: 'HOME.FAQ.Q6', aKey: 'HOME.FAQ.A6' },
   ];
+
+  ngOnInit(): void {
+    this.updateCardsPerView();
+    this.loadFeatured();
+  }
+
+  ngOnDestroy(): void {
+    this.stopAutoplay();
+  }
+
+  /**
+   * Load featured listings for the home page. Prefers properties flagged
+   * `isFeatured`; falls back to the most recent active listings so the
+   * section is never empty. Caps the carousel at {@link MAX_FEATURED}.
+   */
+  private loadFeatured(): void {
+    this.propertiesLoading.set(true);
+    this.propertyService.getActive().subscribe({
+      next: (list) => {
+        const featured = list.filter((p) => p.isFeatured);
+        const pool = featured.length ? featured : list;
+        this.properties.set(pool.slice(0, MAX_FEATURED));
+        this.propertiesLoading.set(false);
+        this.startAutoplay();
+      },
+      error: () => {
+        this.properties.set([]);
+        this.propertiesLoading.set(false);
+      },
+    });
+  }
+
+  // ── Carousel controls ───────────────────────────────────────────
+
+  /** Advance one slide, wrapping back to the start at the end. */
+  nextSlide(): void {
+    this.slide.set(this.slide() >= this.maxSlide() ? 0 : this.slide() + 1);
+  }
+
+  /** Go back one slide, wrapping to the end at the start. */
+  prevSlide(): void {
+    this.slide.set(this.slide() <= 0 ? this.maxSlide() : this.slide() - 1);
+  }
+
+  goToSlide(i: number): void {
+    this.slide.set(Math.min(Math.max(i, 0), this.maxSlide()));
+  }
+
+  /** Pause autoplay while the user hovers/interacts. */
+  pauseAutoplay(): void { this.stopAutoplay(); }
+  resumeAutoplay(): void { this.startAutoplay(); }
+
+  private startAutoplay(): void {
+    this.stopAutoplay();
+    if (!this.hasCarousel()) return;
+    this.autoplayId = setInterval(() => this.nextSlide(), 4000);
+  }
+
+  private stopAutoplay(): void {
+    if (this.autoplayId !== null) {
+      clearInterval(this.autoplayId);
+      this.autoplayId = null;
+    }
+  }
+
+  /** Keep cards-per-view in step with the viewport, clamping the slide index. */
+  @HostListener('window:resize')
+  updateCardsPerView(): void {
+    const w = window.innerWidth;
+    const next = w < 768 ? 1 : w < 992 ? 2 : 3;
+    if (next !== this.cardsPerView()) {
+      this.cardsPerView.set(next);
+      if (this.slide() > this.maxSlide()) this.slide.set(this.maxSlide());
+    }
+  }
+
+  /** Font Awesome icon for a property type. */
+  typeIcon(type: string): string {
+    switch (type) {
+      case 'Villa': return 'fa-solid fa-house-chimney';
+      case 'House': return 'fa-solid fa-house-user';
+      default: return 'fa-solid fa-building';
+    }
+  }
+
+  /** Open a featured property's detail page. */
+  openProperty(id: string): void {
+    this.router.navigate(['/properties', id]);
+  }
 
   // ============================================================
   // 🔎 SEARCH METHODS (NEW)

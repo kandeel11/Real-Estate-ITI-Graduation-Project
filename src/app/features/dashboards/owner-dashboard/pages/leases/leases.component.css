@@ -23,7 +23,9 @@
 .tenant-name { display: block; font-weight: 500; }
 .tenant-email { display: block; font-size: 11px; color: var(--color-on-surface-variant); }
 .rent-cell { font-weight: 600; }
-.actions-cell { white-space: nowrap; }
+/* Let action buttons wrap so a 3-action row doesn't force a horizontal scrollbar. */
+.actions-cell { display: flex; flex-wrap: wrap; align-items: center; gap: 4px 8px; }
+.action-link { white-space: nowrap; }
 
 .badge { display: inline-block; padding: 3px 10px; border-radius: var(--radius-full); font-size: 12px; font-weight: 600; }
 .badge-active   { background: #d1fae5; color: #065f46; }
@@ -70,3 +72,11 @@
 .contract-embed { flex: 1; width: 100%; border: none; }
 .contract-body-state { flex: 1; display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 1rem; color: var(--color-on-surface-variant); padding: 2rem; }
 .contract-body-state p { margin: 0; font-size: 14px; }
+
+/* ── Termination request modal ──────────────────────────── */
+.termination-modal { background: var(--color-surface-container-lowest, #fff); border-radius: 16px; width: 100%; max-width: 460px; padding: 1.5rem; box-shadow: 0 24px 60px rgba(0,0,0,.3); }
+.termination-title { font-size: 1.1rem; font-weight: 700; margin: 0; }
+.termination-sub { color: var(--color-on-surface-variant, #667); font-size: .85rem; margin: .15rem 0 .75rem; }
+.action-renew { color: #0d6efd; }
+.action-terminate, .action-reject { color: #dc3545; }
+.action-approve { color: #198754; }

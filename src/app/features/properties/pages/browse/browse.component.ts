@@ -7,15 +7,17 @@
 
 import { Component, inject, signal, computed, effect, OnInit } from '@angular/core';
 import { DecimalPipe } from '@angular/common';
-import { RouterLink } from '@angular/router';
+import { ActivatedRoute, RouterLink } from '@angular/router';
 import { TranslatePipe } from '@ngx-translate/core';
 import { PropertyService } from '../../services/property.service';
 import { Property, Amenity } from '../../models/property.model';
+import { SavedPropertyService } from '../../../../core/services/saved-property.service';
+import { AuthService } from '../../../../core/services/auth.service';
 
 const PAGE_SIZE = 9;
 
 interface Chip {
-  kind: 'type' | 'city' | 'beds' | 'amenity' | 'price' | 'furnished' | 'pets';
+  kind: 'type' | 'city' | 'beds' | 'amenity' | 'price' | 'furnished' | 'pets' | 'featured';
   value: string;
   label: string;
 }
@@ -29,6 +31,12 @@ interface Chip {
 })
 export class BrowseComponent implements OnInit {
   private propertySvc = inject(PropertyService);
+  protected savedSvc = inject(SavedPropertyService);
+  private auth = inject(AuthService);
+  private route = inject(ActivatedRoute);
+
+  /** Only tenants get the wishlist toggle. */
+  isTenant = computed(() => this.auth.userRole() === 'tenant');
 
   all = signal<Property[]>([]);
   amenities = signal<Amenity[]>([]);
@@ -45,6 +53,7 @@ export class BrowseComponent implements OnInit {
   maxPrice = signal<number | null>(null);
   furnished = signal(false);
   petsAllowed = signal(false);
+  featured = signal(false);
 
   amenitiesOpen = signal(false);
   page = signal(1);
@@ -90,6 +99,7 @@ export class BrowseComponent implements OnInit {
     }
     if (this.furnished()) out.push({ kind: 'furnished' as any, value: 'furnished', label: 'Furnished' });
     if (this.petsAllowed()) out.push({ kind: 'pets' as any, value: 'pets', label: 'Pets allowed' });
+    if (this.featured()) out.push({ kind: 'featured', value: 'featured', label: 'Featured only' });
     return out;
   });
 
@@ -117,6 +127,7 @@ export class BrowseComponent implements OnInit {
       }
       if (this.furnished() && !p.isFurnished) return false;
       if (this.petsAllowed() && !p.petsAllowed) return false;
+      if (this.featured() && !p.isFeatured) return false;
       if (q) {
         const hay = `${p.title} ${p.titleAr} ${p.city} ${p.district}`.toLowerCase();
         if (!hay.includes(q)) return false;
@@ -144,12 +155,16 @@ export class BrowseComponent implements OnInit {
     effect(() => {
       this.search(); this.types(); this.cities(); this.beds();
       this.amenityFilter(); this.minPrice(); this.maxPrice();
-      this.furnished(); this.petsAllowed();
+      this.furnished(); this.petsAllowed(); this.featured();
       this.page.set(1);
     });
   }
 
   ngOnInit(): void {
+    // Deep-link from the home page's "View All" → preselect the featured filter.
+    if (this.route.snapshot.queryParamMap.get('featured') === 'true') {
+      this.featured.set(true);
+    }
     this.load();
     this.propertySvc.getAmenities().subscribe({
       next: (list) => this.amenities.set(list),
@@ -196,6 +211,7 @@ export class BrowseComponent implements OnInit {
       case 'price': this.minPrice.set(null); this.maxPrice.set(null); break;
       case 'furnished': this.furnished.set(false); break;
       case 'pets': this.petsAllowed.set(false); break;
+      case 'featured': this.featured.set(false); break;
     }
   }
 
@@ -209,6 +225,7 @@ export class BrowseComponent implements OnInit {
     this.maxPrice.set(null);
     this.furnished.set(false);
     this.petsAllowed.set(false);
+    this.featured.set(false);
   }
 
   goToPage(p: number): void {
@@ -224,5 +241,12 @@ export class BrowseComponent implements OnInit {
       case 'House': return 'fa-solid fa-house-user';
       default: return 'fa-solid fa-building';
     }
+  }
+
+  /** Wishlist toggle — card is a link, so swallow the navigation. */
+  toggleSave(p: Property, event: Event): void {
+    event.preventDefault();
+    event.stopPropagation();
+    this.savedSvc.toggle(p);
   }
 }

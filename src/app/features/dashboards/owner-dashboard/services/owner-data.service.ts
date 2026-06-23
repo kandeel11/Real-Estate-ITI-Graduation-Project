@@ -27,7 +27,22 @@ export interface BrokerLease {
   contractFileUrl?: string;
   extractionStatus?: string;
   tenantStatus?: 'pending_tenant' | 'accepted' | 'declined';
+  // ── Renewal / termination lifecycle (from backend LeaseDto.Status) ───────────
+  lifecycleStatus?: LeaseLifecycleStatus;
+  renewalRequestedAt?: string | null;
+  /** A renewal contract has been uploaded but not yet sent to the tenant — offer "Resume". */
+  renewalInProgress?: boolean;
+  terminationRequestedAt?: string | null;
+  terminationRequestedByTenant?: boolean;
 }
+
+export type LeaseLifecycleStatus =
+  | 'pending'
+  | 'active'
+  | 'renewal_requested'
+  | 'termination_requested'
+  | 'terminated'
+  | 'ended';
 
 /** Maintenance ticket as returned by GET /api/maintenance/tickets (owner-scoped via JWT). */
 export interface MaintenanceTicket {
@@ -43,6 +58,7 @@ export interface MaintenanceTicket {
 
 interface PagedTickets {
   items: MaintenanceTicket[];
+  total?: number;
   totalCount?: number;
 }
 
@@ -177,7 +193,71 @@ export class OwnerDataService {
   }
 
   getLeaseAiExtraction(leaseId: string): Observable<LeaseAiExtraction> {
-    return this.http.get<LeaseAiExtraction>(`${this.api}/leases/${leaseId}/ai-extraction`).pipe(timeout(10000));
+    // Handles both response shapes the backend may return:
+    //   Shape A — { value, confidence } objects (snake_case or camelCase keys)
+    //   Shape B — flat values (camelCase, original format)
+    const mapStatus = (s?: string): LeaseAiExtraction['extractionStatus'] => {
+      const low = (s ?? '').toLowerCase();
+      if (low === 'extracted' || low === 'done') return 'done';
+      if (low === 'failed') return 'failed';
+      return 'pending';
+    };
+    const v = (f: any): string => {
+      if (f === null || f === undefined) return '';
+      if (typeof f === 'object' && 'value' in f) return String(f.value ?? '');
+      return String(f);
+    };
+    const n = (f: any): number => {
+      const s = v(f).replace(/,/g, '');
+      return s ? Number(s) : 0;
+    };
+    const c = (f: any): number | undefined =>
+      f && typeof f === 'object' && 'confidence' in f ? (f as any).confidence : undefined;
+
+    return this.http.get<any>(`${this.api}/leases/${leaseId}/ai-extraction`).pipe(
+      timeout(10000),
+      map((r): LeaseAiExtraction => ({
+        tenantName:        v(r.tenant_name       ?? r.tenantName),
+        tenantEmail:       '',
+        ownerName:         v(r.owner_name        ?? r.ownerName),
+        propertyTitle:     '',
+        startDate:         v(r.start_date        ?? r.startDate),
+        endDate:           v(r.end_date          ?? r.endDate),
+        installmentAmount: n(r.installment_amount ?? r.installmentAmount),
+        paymentFrequency:  (v(r.payment_frequency ?? r.paymentFrequency) || 'Monthly') as LeaseAiExtraction['paymentFrequency'],
+        totalRentAmount:   (r.total_rent_amount ?? r.totalRentAmount)
+                             ? n(r.total_rent_amount ?? r.totalRentAmount) : null,
+        durationInMonths:  (r.duration_in_months ?? r.durationInMonths)
+                             ? n(r.duration_in_months ?? r.durationInMonths) : null,
+        deposit:           n(r.security_deposit  ?? r.securityDeposit ?? r.deposit),
+        paymentDayOfMonth: (r.payment_day_of_month ?? r.paymentDayOfMonth)
+                             ? n(r.payment_day_of_month ?? r.paymentDayOfMonth) : null,
+        extractionStatus:  mapStatus(r.extractionStatus ?? r.extraction_status),
+        confidence:        r.overall_confidence ?? r.overallConfidence ?? r.confidence ?? r.extractionConfidence ?? 0,
+        fieldConfidence: {
+          tenantName:        c(r.tenant_name)        ?? c(r.tenantName),
+          ownerName:         c(r.owner_name)         ?? c(r.ownerName),
+          startDate:         c(r.start_date)         ?? c(r.startDate),
+          endDate:           c(r.end_date)           ?? c(r.endDate),
+          installmentAmount: c(r.installment_amount) ?? c(r.installmentAmount),
+          paymentFrequency:  c(r.payment_frequency)  ?? c(r.paymentFrequency),
+          totalRentAmount:   c(r.total_rent_amount)  ?? c(r.totalRentAmount),
+          deposit:           c(r.security_deposit)   ?? c(r.securityDeposit),
+          paymentDayOfMonth: c(r.payment_day_of_month) ?? c(r.paymentDayOfMonth),
+        },
+      })),
+    );
+  }
+
+  getLeaseExtractionDebug(leaseId: string): Observable<{
+    leaseId: string; extractionStatus: string;
+    displayStatus: 'pending' | 'done' | 'failed';
+    confidence: number; isReadyForFrontend: boolean;
+    nullFields: string[]; diagnosis: string;
+  }> {
+    return this.http
+      .get<any>(`${this.api}/leases/${leaseId}/extraction-debug`)
+      .pipe(timeout(10000));
   }
 
   sendLeaseToTenant(leaseId: string, data: Partial<LeaseAiExtraction>): Observable<void> {
@@ -199,18 +279,38 @@ export class OwnerDataService {
     return this.http.get<{ contractFileUrl: string }>(`${this.api}/leases/${leaseId}/download`);
   }
 
-  // ── Maintenance Tickets ──────────────────────────────────────────────────────
-  // GET /api/maintenance/tickets auto-scopes to the owner's properties via JWT.
+  // ── Renewal / termination (landlord side) ────────────────────────────────────
 
-  getMaintenanceTickets(): Observable<MaintenanceTicket[]> {
+  /** Upload a fresh contract to renew an existing lease — same AI cycle as a new upload. */
+  renewLeaseUpload(leaseId: string, file: File): Observable<{ leaseId: string }> {
+    const fd = new FormData();
+    fd.append('file', file);
+    return this.http.post<{ leaseId: string }>(`${this.api}/leases/${leaseId}/renew-upload`, fd);
+  }
+
+  requestTermination(leaseId: string, reason: string, effectiveDate?: string): Observable<void> {
+    return this.http.post<void>(`${this.api}/leases/${leaseId}/terminate-request`, {
+      reason,
+      effectiveDate: effectiveDate ?? null,
+    });
+  }
+
+  respondTermination(leaseId: string, approve: boolean, note?: string): Observable<void> {
+    const action = approve ? 'terminate-approve' : 'terminate-reject';
+    return this.http.post<void>(`${this.api}/leases/${leaseId}/${action}`, { note: note ?? null });
+  }
+
+  // ── Maintenance Tickets ──────────────────────────────────────────────────────
+
+  getMaintenanceTickets(status = '', page = 1, pageSize = 10): Observable<{ items: MaintenanceTicket[]; total: number }> {
+    const params: Record<string, string | number> = { page, pageSize };
+    if (status) params['status'] = status;
     return this.http
-      .get<PagedTickets>(`${this.api}${API_ENDPOINTS.MAINTENANCE.TICKETS.GET_ALL}`, {
-        params: { page: 1, pageSize: 100 },
-      })
+      .get<PagedTickets>(`${this.api}/maintenance/tickets`, { params })
       .pipe(
         timeout(10000),
-        map((res) => res?.items ?? []),
-        catchError(() => of([])),
+        map(res => ({ items: res?.items ?? [], total: res?.total ?? res?.totalCount ?? 0 })),
+        catchError(() => of({ items: [], total: 0 })),
       );
   }
 }

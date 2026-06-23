@@ -31,8 +31,8 @@
       <p class="empty-hint">{{ 'OWNER.LEASES.EMPTY_HINT' | translate }}</p>
     </div>
   } @else {
-    <div class="table-wrap">
-      <table class="lease-table">
+    <div class="table-wrap ui-table-wrap">
+      <table class="lease-table ui-cards-sm">
         <thead>
           <tr>
             <th>{{ 'OWNER.LEASES.COL_PROPERTY' | translate }}</th>
@@ -48,17 +48,17 @@
         <tbody>
           @for (lease of filtered(); track lease.id) {
             <tr>
-              <td class="prop-cell"><span class="prop-name">{{ lease.propertyTitle }}</span></td>
-              <td>
+              <td class="prop-cell" [attr.data-label]="'OWNER.LEASES.COL_PROPERTY' | translate"><span class="prop-name">{{ lease.propertyTitle }}</span></td>
+              <td [attr.data-label]="'OWNER.LEASES.COL_TENANT' | translate">
                 <span class="tenant-name">{{ lease.tenantName }}</span>
                 <span class="tenant-email">{{ lease.tenantEmail }}</span>
               </td>
-              <td>{{ lease.startDate | date:'mediumDate' }}</td>
-              <td>{{ lease.endDate   | date:'mediumDate' }}</td>
-              <td class="rent-cell">{{ lease.installmentAmount | number }} EGP</td>
+              <td [attr.data-label]="'OWNER.LEASES.COL_START' | translate">{{ lease.startDate | date:'mediumDate' }}</td>
+              <td [attr.data-label]="'OWNER.LEASES.COL_END' | translate">{{ lease.endDate   | date:'mediumDate' }}</td>
+              <td class="rent-cell" [attr.data-label]="'OWNER.LEASES.COL_RENT' | translate">{{ lease.installmentAmount | number }} EGP</td>
 
               <!-- Tenant response status -->
-              <td>
+              <td [attr.data-label]="'OWNER.LEASES.COL_TENANT_STATUS' | translate">
                 @switch (lease.tenantStatus) {
                   @case ('pending_tenant') { <span class="badge badge-waiting">{{ 'OWNER.LEASES.TENANT_WAITING'  | translate }}</span> }
                   @case ('accepted')       { <span class="badge badge-accepted">{{ 'OWNER.LEASES.TENANT_ACCEPTED' | translate }}</span> }
@@ -68,21 +68,57 @@
               </td>
 
               <!-- Lifecycle status -->
-              <td>
+              <td [attr.data-label]="'OWNER.LEASES.COL_STATUS' | translate">
                 @switch (computedStatus(lease)) {
                   @case ('active')   { <span class="badge badge-active">{{ 'OWNER.LEASES.STATUS_ACTIVE'   | translate }}</span> }
                   @case ('expiring') { <span class="badge badge-expiring">{{ 'OWNER.LEASES.STATUS_EXPIRING' | translate }}</span> }
                   @case ('ended')    { <span class="badge badge-ended">{{ 'OWNER.LEASES.STATUS_ENDED'    | translate }}</span> }
+                  @case ('terminated') { <span class="badge badge-ended">{{ 'OWNER.LEASES.STATUS_TERMINATED' | translate }}</span> }
                 }
               </td>
 
-              <td class="actions-cell">
+              <td class="actions-cell" [attr.data-label]="'OWNER.LEASES.COL_ACTIONS' | translate">
                 @if (lease.id) {
-                  <button class="action-link" (click)="viewContract(lease)">
-                    <i class="fa-solid fa-eye"></i> {{ 'OWNER.LEASES.VIEW_PDF' | translate }}
+                  <button class="action-link" (click)="openContract(lease)"
+                          [disabled]="contractLoadingId() === lease.id">
+                    @if (contractLoadingId() === lease.id) {
+                      <i class="fa-solid fa-spinner fa-spin"></i>
+                    } @else {
+                      <i class="fa-solid fa-download"></i>
+                    }
+                    {{ 'OWNER.LEASES.DOWNLOAD_PDF' | translate }}
                   </button>
                 } @else {
                   <span class="no-pdf">{{ 'OWNER.LEASES.NO_PDF' | translate }}</span>
+                }
+
+                <!-- Renewal -->
+                @if (lease.renewalInProgress) {
+                  <button class="action-link action-renew" (click)="openRenewal(lease)">
+                    <i class="fa-solid fa-rotate"></i> {{ 'OWNER.LEASES.RESUME_RENEWAL' | translate }}
+                  </button>
+                } @else if (lease.lifecycleStatus === 'renewal_requested') {
+                  <button class="action-link action-renew" (click)="openRenewal(lease)">
+                    <i class="fa-solid fa-rotate"></i> {{ 'OWNER.LEASES.CREATE_RENEWAL' | translate }}
+                  </button>
+                }
+
+                <!-- Termination -->
+                @if (lease.lifecycleStatus === 'termination_requested') {
+                  @if (lease.terminationRequestedByTenant) {
+                    <button class="action-link action-approve" (click)="respondTermination(lease, true)" [disabled]="actionInProgress()">
+                      <i class="fa-solid fa-check"></i> {{ 'OWNER.LEASES.TERMINATION_APPROVE' | translate }}
+                    </button>
+                    <button class="action-link action-reject" (click)="respondTermination(lease, false)" [disabled]="actionInProgress()">
+                      <i class="fa-solid fa-xmark"></i> {{ 'OWNER.LEASES.TERMINATION_REJECT' | translate }}
+                    </button>
+                  } @else {
+                    <span class="badge badge-waiting">{{ 'OWNER.LEASES.TERMINATION_PENDING_TENANT' | translate }}</span>
+                  }
+                } @else if (lease.lifecycleStatus === 'active' || lease.lifecycleStatus === 'renewal_requested') {
+                  <button class="action-link action-terminate" (click)="openTermination(lease)">
+                    <i class="fa-solid fa-file-circle-xmark"></i> {{ 'OWNER.LEASES.REQUEST_TERMINATION' | translate }}
+                  </button>
                 }
               </td>
             </tr>
@@ -93,36 +129,44 @@
   }
 </div>
 
-<!-- ── CONTRACT PDF VIEWER ──────────────────────── -->
-@if (contractLoading() || contractSafeUrl() || contractViewError()) {
-  <div class="contract-overlay" (click)="closeContractViewer()">
-    <div class="contract-modal" (click)="$event.stopPropagation()">
-      <div class="contract-modal-header">
-        <span><i class="fa-solid fa-file-pdf"></i> Contract PDF</span>
-        <div class="contract-modal-actions">
-          @if (contractRawUrl()) {
-            <a class="contract-dl-btn" [href]="contractRawUrl()" target="_blank" rel="noopener">
-              <i class="fa-solid fa-download"></i>
-            </a>
-          }
-          <button class="contract-close-btn" (click)="closeContractViewer()">
-            <i class="fa-solid fa-xmark"></i>
-          </button>
-        </div>
-      </div>
-      @if (contractLoading()) {
-        <div class="contract-body-state">
-          <i class="fa-solid fa-spinner fa-spin fa-2x"></i>
-          <p>Loading contract...</p>
-        </div>
-      } @else if (contractViewError()) {
-        <div class="contract-body-state">
-          <i class="fa-solid fa-triangle-exclamation fa-2x"></i>
-          <p>{{ contractViewError() }}</p>
-        </div>
-      } @else {
-        <iframe class="contract-embed" [src]="contractSafeUrl()" title="Contract PDF"></iframe>
+<!-- ── RENEWAL UPLOAD MODAL (reuses the lease-upload flow in renew mode) ── -->
+@if (renewLease(); as rl) {
+  <app-owner-lease-upload-modal
+    [lead]="renewLead()!"
+    [renewLeaseId]="rl.id"
+    (closed)="closeRenewal()"
+    (leaseCreated)="onRenewalCreated()">
+  </app-owner-lease-upload-modal>
+}
+
+<!-- ── TERMINATION REQUEST MODAL ──────────────────────── -->
+@if (terminationLease(); as tl) {
+  <div class="contract-overlay" (click)="closeTermination()">
+    <div class="termination-modal" (click)="$event.stopPropagation()">
+      <h3 class="termination-title">{{ 'OWNER.LEASES.TERMINATE_TITLE' | translate }}</h3>
+      <p class="termination-sub">{{ tl.propertyTitle }} — {{ tl.tenantName }}</p>
+
+      @if (actionError()) {
+        <div class="alert alert-danger py-2 px-3">{{ actionError() }}</div>
       }
+
+      <label class="form-label small mt-2">{{ 'OWNER.LEASES.TERMINATE_REASON' | translate }}</label>
+      <textarea class="form-control" rows="3" [(ngModel)]="terminationReason"
+                [placeholder]="'OWNER.LEASES.TERMINATE_REASON_PH' | translate"></textarea>
+
+      <label class="form-label small mt-2">{{ 'OWNER.LEASES.TERMINATE_EFFECTIVE' | translate }}</label>
+      <input type="date" class="form-control" [(ngModel)]="terminationEffectiveDate" />
+
+      <div class="d-flex justify-content-end gap-2 mt-3">
+        <button class="btn btn-outline-secondary btn-sm" (click)="closeTermination()" [disabled]="actionInProgress()">
+          {{ 'OWNER.LEASES.CANCEL' | translate }}
+        </button>
+        <button class="btn btn-danger btn-sm" (click)="submitTermination()" [disabled]="actionInProgress()">
+          @if (actionInProgress()) { <i class="fa-solid fa-spinner fa-spin me-1"></i> }
+          {{ 'OWNER.LEASES.TERMINATE_SUBMIT' | translate }}
+        </button>
+      </div>
     </div>
   </div>
 }
+

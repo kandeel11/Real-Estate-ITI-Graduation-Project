@@ -456,6 +456,7 @@
               <div class="cp-photo-tile__overlay">
                 @switch (photo.status) {
                   @case ('uploading') { <div class="cp-spinner cp-spinner--white"></div> }
+                  @case ('removing') { <div class="cp-spinner cp-spinner--white"></div> }
                   @case ('done') { <i class="fa-solid fa-circle-check" style="color:#4ade80;font-size:20px"></i> }
                   @case ('error') { <i class="fa-solid fa-circle-xmark" style="color:#f87171;font-size:20px"></i> }
                 }
@@ -463,6 +464,12 @@
               @if (photo.status === 'done' && !photo.isPrimary) {
                 <button type="button" class="cp-photo-tile__star" (click)="setPrimaryPhoto(photo)" title="{{ 'CREATE_PROPERTY.SET_PRIMARY' | translate }}">
                   <i class="fa-regular fa-star"></i>
+                </button>
+              }
+              @if (photo.status !== 'removing' && photo.status !== 'uploading') {
+                <button type="button" class="cp-photo-tile__remove" (click)="removePhoto(photo)"
+                        title="{{ 'CREATE_PROPERTY.REMOVE_PHOTO' | translate }}">
+                  <i class="fa-solid fa-xmark"></i>
                 </button>
               }
             </div>

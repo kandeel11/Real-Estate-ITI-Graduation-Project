@@ -123,9 +123,11 @@ export class PropertiesComponent implements OnInit {
   // ── Delete (confirm modal) ────────────────────────────────────────────────────
   readonly deleteMessage = computed(() => {
     const p = this.propertyToDelete();
-    return p
-      ? `Delete "${p.title}"? Its photos are removed and the plan slot is freed. This cannot be undone.`
-      : '';
+    if (!p) return '';
+    if (p.status === 'Active') {
+      return `Delete the live listing "${p.title}"? It will be unpublished, its photos removed from storage, and the plan slot freed. This cannot be undone.`;
+    }
+    return `Delete "${p.title}"? Its photos are removed and the plan slot is freed. This cannot be undone.`;
   });
 
   confirmDelete(): void {

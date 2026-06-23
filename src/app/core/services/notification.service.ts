@@ -4,6 +4,7 @@ import { Observable, of, interval, Subscription } from 'rxjs';
 import { catchError, tap } from 'rxjs/operators';
 import { environment } from '../../../environments/environment';
 import { ToastService } from '../../shared/components/toast/toast.service';
+import { NotificationRealtimeService } from './notification-realtime.service';
 
 export interface AppNotification {
   id: string;
@@ -34,12 +35,14 @@ export interface NotificationsResponse {
 export class NotificationService {
   private readonly http = inject(HttpClient);
   private readonly toast = inject(ToastService);
+  private readonly realtime = inject(NotificationRealtimeService);
   private readonly base = environment.apiUrl;
 
   private readonly _unreadCount = signal<number>(0);
   readonly unreadCount = this._unreadCount.asReadonly();
 
   private watcherSub: Subscription | null = null;
+  private realtimeSub: Subscription | null = null;
   /** Ids already seen by the watcher — used to detect genuinely new arrivals. */
   private seenIds = new Set<string>();
   private baselineTaken = false;
@@ -80,13 +83,28 @@ export class NotificationService {
 
   startWatcher(): void {
     if (this.watcherSub) return;
-    this.poll();                                   // immediate baseline + count
-    this.watcherSub = interval(45_000).subscribe(() => this.poll());
+
+    // Take baseline count on first load (don't toast existing notifications).
+    this.poll();
+
+    // Primary: real-time push via SignalR hub.
+    this.realtimeSub = this.realtime.start().subscribe(n => {
+      if (this.seenIds.has(n.id)) return;
+      this.seenIds.add(n.id);
+      this._unreadCount.update(c => c + 1);
+      this.toast.info(n.title);
+    });
+
+    // Fallback: sync unread count every 2 min in case the hub is unavailable.
+    this.watcherSub = interval(120_000).subscribe(() => this.syncCount());
   }
 
   stopWatcher(): void {
     this.watcherSub?.unsubscribe();
     this.watcherSub = null;
+    this.realtimeSub?.unsubscribe();
+    this.realtimeSub = null;
+    this.realtime.stop();
     this.seenIds.clear();
     this.baselineTaken = false;
     this._unreadCount.set(0);
@@ -95,18 +113,16 @@ export class NotificationService {
   private poll(): void {
     this.getNotifications(1, 10, false).subscribe(res => {
       if (!this.baselineTaken) {
-        // First run after login: remember what already exists, don't toast it.
         res.items.forEach(n => this.seenIds.add(n.id));
         this.baselineTaken = true;
-        return;
       }
-
-      // Newest first; toast the unseen unread ones (cap to avoid a burst).
-      const fresh = res.items.filter(n => !this.seenIds.has(n.id));
-      fresh.slice(0, 3).reverse().forEach(n => {
-        if (!n.isRead) this.toast.info(n.title);
-      });
-      fresh.forEach(n => this.seenIds.add(n.id));
     });
+  }
+
+  private syncCount(): void {
+    this.http
+      .get<{ count: number }>(`${this.base}/notifications/unread-count`)
+      .pipe(catchError(() => of({ count: 0 })))
+      .subscribe(res => this._unreadCount.set(res.count));
   }
 }

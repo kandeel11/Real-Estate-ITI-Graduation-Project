@@ -18,6 +18,9 @@
                 @if (item.id === 'notifications' && notificationService.unreadCount() > 0) {
                 <span class="badge-count">{{ notificationService.unreadCount() }}</span>
                 }
+                @if (item.id === 'saved' && savedService.count() > 0) {
+                <span class="badge-count">{{ savedService.count() }}</span>
+                }
             </a>
             }
         </nav>
@@ -28,7 +31,8 @@
                 <span class="user-name">{{ userName }}</span>
                 <div class="user-role-row">
                   <span class="user-role">{{ 'TENANT_NAV.ROLE' | translate }}</span>
-                  <span class="sidebar-plan-badge">Free</span>
+                  <span class="sidebar-plan-badge"
+                        [class.sidebar-plan-badge--premium]="planBadge() === 'Premium'">{{ planBadge() }}</span>
                 </div>
             </div>
             <button class="btn-logout" (click)="logout()" [title]="'TENANT_NAV.LOGOUT' | translate" aria-label="Sign out">
@@ -54,6 +58,9 @@
             <i [class]="item.icon"></i>
             @if (item.id === 'notifications' && notificationService.unreadCount() > 0) {
             <span class="tab-badge">{{ notificationService.unreadCount() }}</span>
+            }
+            @if (item.id === 'saved' && savedService.count() > 0) {
+            <span class="tab-badge">{{ savedService.count() }}</span>
             }
         </span>
         <span class="tab-label">{{ item.label | translate }}</span>
