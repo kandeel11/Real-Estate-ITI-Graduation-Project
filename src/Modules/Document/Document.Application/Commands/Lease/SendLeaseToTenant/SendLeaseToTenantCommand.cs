@@ -14,7 +14,10 @@ public record SendLeaseToTenantCommand(
     decimal? InstallmentAmount,
     decimal? Deposit,
     DateOnly? StartDate,
-    DateOnly? EndDate) : IRequest;
+    DateOnly? EndDate,
+    string? PaymentFrequency = null,
+    decimal? TotalRentAmount = null,
+    int? DurationInMonths = null) : IRequest;
 
 public class SendLeaseToTenantCommandHandler : IRequestHandler<SendLeaseToTenantCommand>
 {
@@ -37,6 +40,11 @@ public class SendLeaseToTenantCommandHandler : IRequestHandler<SendLeaseToTenant
         if (cmd.Deposit.HasValue) lease.SecurityDeposit = cmd.Deposit;
         if (cmd.StartDate.HasValue) lease.StartDate = cmd.StartDate;
         if (cmd.EndDate.HasValue) lease.EndDate = cmd.EndDate;
+        if (cmd.TotalRentAmount.HasValue) lease.TotalRentAmount = cmd.TotalRentAmount;
+        if (cmd.DurationInMonths.HasValue) lease.DurationInMonths = cmd.DurationInMonths;
+        if (!string.IsNullOrWhiteSpace(cmd.PaymentFrequency) &&
+            Enum.TryParse<PaymentFrequency>(cmd.PaymentFrequency, ignoreCase: true, out var freq))
+            lease.PaymentFrequency = freq;
 
         // Sending to the tenant is the owner/broker side finalising the terms:
         //  • Mark the owner side confirmed (the tenant's later accept completes the pair → lease activates).

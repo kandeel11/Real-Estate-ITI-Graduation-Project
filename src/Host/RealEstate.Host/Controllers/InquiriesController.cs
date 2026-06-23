@@ -55,9 +55,18 @@ public class InquiriesController(
         }
         catch (InvalidOperationException ex)
         {
-            // Plan inquiry limit reached
+            // Blocked by the one-engagement-at-a-time gate or the plan inquiry limit.
             return Conflict(new { error = ex.Message });
         }
+    }
+
+    /// <summary>Tells the tenant whether they may send a new inquiry right now, and if not, why.</summary>
+    [HttpGet("can-create")]
+    [Authorize(Roles = "tenant")]
+    public async Task<IActionResult> CanCreate(CancellationToken ct)
+    {
+        var gate = await mediator.Send(new GetTenantInquiryGateQuery(UserId), ct);
+        return Ok(new { allowed = gate.Allowed, reason = gate.Message, reasonCode = gate.ReasonCode });
     }
 
     [HttpGet("{id:guid}")]
@@ -76,8 +85,10 @@ public class InquiriesController(
         var inquiries = await mediator.Send(new GetMyInquiriesQuery(UserId), ct);
         if (inquiries.Count == 0) return Ok(Array.Empty<object>());
 
-        var lastMessages = await mediator.Send(
-            new GetInquiryLastMessagesQuery(inquiries.Select(i => i.Id).ToList()), ct);
+        var inquiryIds = inquiries.Select(i => i.Id).ToList();
+        var lastMessages = await mediator.Send(new GetInquiryLastMessagesQuery(inquiryIds), ct);
+        // "Answered" = a broker/owner has replied, whether via the inquiry tab or the chat.
+        var answered = await mediator.Send(new GetAnsweredInquiriesQuery(inquiryIds), ct);
 
         var titles = new Dictionary<Guid, string>();
         foreach (var pid in inquiries.Select(i => i.PropertyId).Distinct())
@@ -92,7 +103,7 @@ public class InquiriesController(
             {
                 var last = lastMessages.GetValueOrDefault(i.Id);
                 var status = i.Status == "Accepted" ? "converted"
-                           : last is not null ? "replied"
+                           : answered.Contains(i.Id) ? "replied"
                            : "new";
                 return (object)new
                 {
