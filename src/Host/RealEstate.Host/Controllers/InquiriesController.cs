@@ -5,10 +5,12 @@ using Document.Application.Queries.Lead.GetLeadByInquiry;
 using Document.Application.Queries.Message.GetInquiryLastMessages;
 using Document.Application.Queries.Message.GetMessagesByConversation;
 using Document.Application.Queries.Message.GetMessagesByInquiry;
+using Document.Infrastructure.Hubs;
 using Identity.Application.Interfaces;
 using MediatR;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
+using Microsoft.AspNetCore.SignalR;
 using Property.Application.Features.Queries.GetPropertyById;
 
 namespace RealEstate.Host.Controllers;
@@ -19,7 +21,8 @@ namespace RealEstate.Host.Controllers;
 public class InquiriesController(
     IMediator mediator,
     ICurrentUserService currentUser,
-    IUserRepository userRepo) : ControllerBase
+    IUserRepository userRepo,
+    IHubContext<DocumentChatHub> chatHub) : ControllerBase
 {
     private Guid UserId => currentUser.UserId ?? throw new UnauthorizedAccessException();
 
@@ -52,9 +55,18 @@ public class InquiriesController(
         }
         catch (InvalidOperationException ex)
         {
-            // Plan inquiry limit reached
+            // Blocked by the one-engagement-at-a-time gate or the plan inquiry limit.
             return Conflict(new { error = ex.Message });
         }
+    }
+
+    /// <summary>Tells the tenant whether they may send a new inquiry right now, and if not, why.</summary>
+    [HttpGet("can-create")]
+    [Authorize(Roles = "tenant")]
+    public async Task<IActionResult> CanCreate(CancellationToken ct)
+    {
+        var gate = await mediator.Send(new GetTenantInquiryGateQuery(UserId), ct);
+        return Ok(new { allowed = gate.Allowed, reason = gate.Message, reasonCode = gate.ReasonCode });
     }
 
     [HttpGet("{id:guid}")]
@@ -73,8 +85,10 @@ public class InquiriesController(
         var inquiries = await mediator.Send(new GetMyInquiriesQuery(UserId), ct);
         if (inquiries.Count == 0) return Ok(Array.Empty<object>());
 
-        var lastMessages = await mediator.Send(
-            new GetInquiryLastMessagesQuery(inquiries.Select(i => i.Id).ToList()), ct);
+        var inquiryIds = inquiries.Select(i => i.Id).ToList();
+        var lastMessages = await mediator.Send(new GetInquiryLastMessagesQuery(inquiryIds), ct);
+        // "Answered" = a broker/owner has replied, whether via the inquiry tab or the chat.
+        var answered = await mediator.Send(new GetAnsweredInquiriesQuery(inquiryIds), ct);
 
         var titles = new Dictionary<Guid, string>();
         foreach (var pid in inquiries.Select(i => i.PropertyId).Distinct())
@@ -89,7 +103,7 @@ public class InquiriesController(
             {
                 var last = lastMessages.GetValueOrDefault(i.Id);
                 var status = i.Status == "Accepted" ? "converted"
-                           : last is not null ? "replied"
+                           : answered.Contains(i.Id) ? "replied"
                            : "new";
                 return (object)new
                 {
@@ -204,6 +218,13 @@ public class InquiriesController(
             var saved = await mediator.Send(new PostInquiryMessageCommand(id, UserId, req.Text), ct);
             var inquiry = await mediator.Send(new GetInquiryByIdQuery(id), ct);
             var mapped = (await ToChatMessages([saved], inquiry!, ct)).Single();
+
+            // Push the new message live to everyone viewing this inquiry thread.
+            // The sender also receives this echo and dedupes it by message id.
+            await chatHub.Clients
+                .Group(DocumentChatHub.InquiryGroup(id))
+                .SendAsync("ReceiveMessage", new { inquiryId = id, message = mapped }, ct);
+
             return Ok(mapped);
         }
         catch (KeyNotFoundException ex) { return NotFound(new { error = ex.Message }); }

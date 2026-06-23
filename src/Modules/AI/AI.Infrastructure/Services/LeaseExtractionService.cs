@@ -90,13 +90,17 @@ public sealed class LeaseExtractionService : ILeaseExtractionService
                               This could be a monthly, quarterly, semi-annual, or annual figure —
                               extract exactly what the contract states as a single payment.
     - payment_frequency     : How often payments are made. Must be exactly one of:
-                              Monthly, Quarterly, SemiAnnually, Annually.
-                              If ambiguous, infer from context (e.g. "monthly rent" → Monthly).
+                              Monthly, Bimonthly, Quarterly, SemiAnnually, Annually.
+                              Bimonthly means every 2 months. If ambiguous, infer from
+                              context (e.g. "monthly rent" → Monthly, "every two months" → Bimonthly).
     - total_rent_amount     : Total contract value if EXPLICITLY stated in the text (number only).
                               If not explicitly written, return null.
     - duration_in_months    : Lease duration in months if EXPLICITLY stated (e.g. "12-month lease" → 12).
                               If not explicitly stated, return null (backend will calculate from dates).
-    - security_deposit      : Security deposit amount (number only).
+    - security_deposit      : Security deposit / insurance amount (number only). This is a
+                              refundable guarantee, DISTINCT from the rent. Only extract it if the
+                              contract explicitly states a deposit/insurance ("تأمين" / "deposit").
+                              Never copy the rent figure here — if no deposit is stated, return null.
     - start_date            : Lease start date (YYYY-MM-DD).
     - end_date              : Lease end date (YYYY-MM-DD).
     - payment_day_of_month  : Day of month when each installment is due (1–31).

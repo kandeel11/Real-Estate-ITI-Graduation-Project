@@ -5,6 +5,7 @@ using Document.Application.Commands.Lease.RespondToTermination;
 using Document.Application.Commands.Lease.SendLeaseToTenant;
 using Document.Application.Commands.Lease.TerminateLease;
 using Document.Application.Commands.Lease.UploadLeaseContract;
+using Document.Application.Interfaces;
 using Document.Application.Queries.Lease;
 using Document.Application.Queries.Lease.GetLeaseById;
 using Document.Application.Queries.Lease.GetLeasePaymentSchedule;
@@ -23,11 +24,13 @@ public class LeasesController : ControllerBase
     private readonly IMediator _mediator;
     private readonly IUserRepository _userRepo;
     private readonly ICurrentUserService _currentUser;
-    public LeasesController(IMediator mediator, IUserRepository userRepo, ICurrentUserService currentUser)
+    private readonly IAzureBlobService _blob;
+    public LeasesController(IMediator mediator, IUserRepository userRepo, ICurrentUserService currentUser, IAzureBlobService blob)
     {
         _mediator = mediator;
         _userRepo = userRepo;
         _currentUser = currentUser;
+        _blob = blob;
     }
 
     private Guid CurrentUserId => _currentUser.UserId ?? throw new UnauthorizedAccessException();
@@ -92,7 +95,10 @@ public class LeasesController : ControllerBase
                 req.InstallmentAmount,
                 req.Deposit,
                 DateOnly.TryParse(req.StartDate, out var s) ? s : null,
-                DateOnly.TryParse(req.EndDate, out var e) ? e : null), ct);
+                DateOnly.TryParse(req.EndDate, out var e) ? e : null,
+                req.PaymentFrequency,
+                req.TotalRentAmount,
+                req.DurationInMonths), ct);
             return NoContent();
         }
         catch (KeyNotFoundException ex) { return NotFound(new { error = ex.Message }); }
@@ -207,7 +213,16 @@ public class LeasesController : ControllerBase
     {
         var lease = await _mediator.Send(new GetLeaseByIdQuery(id));
         if (lease == null) return NotFound();
-        return Ok(new { contractFileUrl = lease.ContractFileUrl });
+        if (string.IsNullOrWhiteSpace(lease.ContractFileUrl))
+            return NotFound(new { error = "No contract file is attached to this lease." });
+
+        // ContractFileUrl is stored as a blob name (e.g. "leases/abc.pdf"). Hand the
+        // browser a time-limited SAS URL it can open directly. Tolerate values that are
+        // already absolute URLs (older rows / external links).
+        var url = Uri.IsWellFormedUriString(lease.ContractFileUrl, UriKind.Absolute)
+            ? lease.ContractFileUrl
+            : _blob.GenerateSasUrl(lease.ContractFileUrl);
+        return Ok(new { contractFileUrl = url });
     }
 
     /// <summary>
@@ -255,5 +270,8 @@ public record SendLeaseToTenantRequest(
     decimal? Deposit = null,
     string? StartDate = null,
     string? EndDate = null,
+    string? PaymentFrequency = null,
+    decimal? TotalRentAmount = null,
+    int? DurationInMonths = null,
     string? TenantEmail = null,
     string? TenantName = null);

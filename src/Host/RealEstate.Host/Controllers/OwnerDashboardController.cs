@@ -2,6 +2,7 @@ using Document.Application.Queries.Inquiry;
 using Document.Application.Queries.Lead.GetLeadsByProperties;
 using Document.Application.Queries.Lease;
 using Document.Application.Queries.Lease.GetLeadsWithLeases;
+using Document.Application.Queries.Lease.GetLeadLeaseStates;
 using Document.Application.Queries.Message.GetInquiriesWithReply;
 using Document.Application.Queries.Message.GetInquiryLastMessages;
 using Document.Application.Queries.Notification;
@@ -150,24 +151,29 @@ public class OwnerDashboardController(
             if (u is not null) tenantContacts[tid] = (u.Email, u.Phone);
         }
 
-        // Which leads already have a lease → show "Lease Created" instead of "Create Lease".
-        var leadsWithLease = await sender.Send(
-            new GetLeadsWithLeasesQuery(leads.Select(l => l.Id).ToList()), ct);
+        // Per-lead lease state → "Lease Created" (sent), "Resume" (un-sent draft), or "Create Lease".
+        var leaseStates = await sender.Send(
+            new GetLeadLeaseStatesQuery(leads.Select(l => l.Id).ToList()), ct);
 
-        var result = leads.Select(l => new
+        var result = leads.Select(l =>
         {
-            id = l.Id,
-            tenantId = l.TenantId,
-            tenantName = tenantNames.GetValueOrDefault(l.TenantId, string.Empty),
-            tenantEmail = tenantContacts.GetValueOrDefault(l.TenantId).Email ?? string.Empty,
-            tenantPhone = tenantContacts.GetValueOrDefault(l.TenantId).Phone ?? string.Empty,
-            propertyId = l.PropertyId,
-            propertyTitle = propertyTitles.GetValueOrDefault(l.PropertyId, string.Empty),
-            status = MapLeadStatus(l.Status),
-            stageEnteredAt = new DateTimeOffset(DateTime.SpecifyKind(l.UpdatedAt, DateTimeKind.Utc)).ToUnixTimeMilliseconds(),
-            dealValue = l.DealValue?.ToString(),
-            notes = l.Notes,
-            hasLease = leadsWithLease.Contains(l.Id)
+            var st = leaseStates.GetValueOrDefault(l.Id);
+            return new
+            {
+                id = l.Id,
+                tenantId = l.TenantId,
+                tenantName = tenantNames.GetValueOrDefault(l.TenantId, string.Empty),
+                tenantEmail = tenantContacts.GetValueOrDefault(l.TenantId).Email ?? string.Empty,
+                tenantPhone = tenantContacts.GetValueOrDefault(l.TenantId).Phone ?? string.Empty,
+                propertyId = l.PropertyId,
+                propertyTitle = propertyTitles.GetValueOrDefault(l.PropertyId, string.Empty),
+                status = MapLeadStatus(l.Status),
+                stageEnteredAt = new DateTimeOffset(DateTime.SpecifyKind(l.UpdatedAt, DateTimeKind.Utc)).ToUnixTimeMilliseconds(),
+                dealValue = l.DealValue?.ToString(),
+                notes = l.Notes,
+                hasLease = st?.HasSentLease ?? false,
+                draftLeaseId = st?.DraftLeaseId
+            };
         });
 
         return Ok(result);
