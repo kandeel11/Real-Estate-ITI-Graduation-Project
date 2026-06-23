@@ -246,6 +246,13 @@ export const routes: Routes = [
                 (m) => m.SettingsComponent,
               ),
           },
+          {
+            path: 'pipeline',
+            loadComponent: () =>
+              import('./features/dashboards/company/pages/pipeline/pipeline.component').then(
+                (m) => m.PipelineComponent,
+              ),
+          },
         ],
       },
 

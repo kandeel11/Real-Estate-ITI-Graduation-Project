@@ -45,7 +45,7 @@
                     <span class="lead-deal">{{ lead.dealValue }}</span>
                   }
                 </div>
-                @if (col.status === 'closed_won') {
+                @if (col.status === 'closed_won' && isCompanyBroker()) {
                   @if (hasLease(lead)) {
                     <span class="lease-created">
                       <i class="fa-solid fa-circle-check"></i>

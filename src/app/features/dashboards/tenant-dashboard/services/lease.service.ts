@@ -34,6 +34,11 @@ export interface ApiLease {
   isActive: boolean;
   contractFileUrl: string;
   createdAt?: string;
+  // ── Management flags (set on the property when lease is confirmed) ─────────
+  /** False when the property is managed by an independent broker — no maintenance module. */
+  isMaintenanceEnabled?: boolean | null;
+  /** False when rent collection is handled manually rather than by the platform. */
+  isPaymentEnabled?: boolean | null;
   // ── Renewal / termination lifecycle ───────────────────────────────────────
   renewedFromLeaseId?: string | null;
   renewalRequestedAt?: string | null;
