@@ -1,0 +1,271 @@
+@if (savedSvc.lastError(); as err) {
+  <div class="saved-toast" role="alert">
+    <i class="fa-solid fa-circle-exclamation me-2"></i>
+    <span>{{ err }}</span>
+    <button type="button" class="saved-toast__x" (click)="savedSvc.clearError()" aria-label="Dismiss">
+      <i class="fa-solid fa-xmark"></i>
+    </button>
+  </div>
+}
+
+<main class="detail">
+  <div class="container-xl py-4">
+
+    <a routerLink="/properties" class="detail__back">
+      <i class="fa-solid fa-arrow-left me-1"></i>{{ 'DETAIL.BACK' | translate }}
+    </a>
+
+    @if (loading()) {
+      <div class="d-flex justify-content-center py-5">
+        <div class="spinner-border text-primary" role="status">
+          <span class="visually-hidden">Loading…</span>
+        </div>
+      </div>
+    } @else if (error()) {
+      <div class="alert alert-danger mt-3">
+        <i class="fa-solid fa-triangle-exclamation me-2"></i>{{ error() }}
+      </div>
+    } @else if (property(); as p) {
+      <div class="row g-4 mt-1">
+
+        <!-- Left: gallery + info -->
+        <div class="col-12 col-lg-8">
+
+          <!-- Gallery -->
+          <div class="detail-gallery mb-4">
+            <div class="detail-gallery__main">
+              @if (activeImage()) {
+                <img [src]="activeImage()" [alt]="p.title" />
+              } @else {
+                <div class="detail-gallery__placeholder"><i class="fa-regular fa-image"></i></div>
+              }
+              @if (p.isFeatured) {
+                <span class="detail-gallery__featured"><i class="fa-solid fa-star fa-xs"></i>&nbsp;{{ 'DETAIL.FEATURED' | translate }}</span>
+              }
+              @if (p.media.length > 1) {
+                <button type="button" class="detail-gallery__arrow detail-gallery__arrow--prev" (click)="prevImage()" aria-label="Previous">
+                  <i class="fa-solid fa-chevron-left"></i>
+                </button>
+                <button type="button" class="detail-gallery__arrow detail-gallery__arrow--next" (click)="nextImage()" aria-label="Next">
+                  <i class="fa-solid fa-chevron-right"></i>
+                </button>
+                <span class="detail-gallery__counter">{{ activeIndex() + 1 }} / {{ p.media.length }}</span>
+              }
+            </div>
+            @if (p.media.length > 1) {
+              <div class="detail-gallery__thumbs">
+                @for (m of p.media; track m.id) {
+                  <button type="button" class="detail-gallery__thumb"
+                          [class.active]="activeImage() === m.mediaUrl"
+                          (click)="activeImage.set(m.mediaUrl)">
+                    <img [src]="m.mediaUrl" alt="" />
+                    @if (m.isPrimary) {
+                      <span class="detail-gallery__thumb-primary"><i class="fa-solid fa-star fa-xs"></i></span>
+                    }
+                  </button>
+                }
+              </div>
+            }
+          </div>
+
+          <!-- Owner photo management panel -->
+          @if (isOwner()) {
+            <div class="detail-owner-photos card p-3 mb-4">
+              <div class="d-flex align-items-center justify-content-between mb-2">
+                <h6 class="mb-0 fw-semibold">
+                  <i class="fa-solid fa-images me-2 text-primary"></i>Manage Photos
+                </h6>
+                <label class="btn btn-sm btn-outline-primary mb-0" [class.disabled]="uploadingPhotos()">
+                  @if (uploadingPhotos()) {
+                    <span class="spinner-border spinner-border-sm me-1"></span>Uploading…
+                  } @else {
+                    <i class="fa-solid fa-plus me-1"></i>Add Photos
+                  }
+                  <input type="file" accept="image/*" multiple class="d-none" (change)="onOwnerPhotosSelected($event)" [disabled]="uploadingPhotos()" />
+                </label>
+              </div>
+              @if (photoUploadError()) {
+                <div class="alert alert-danger py-2 mb-2 small">{{ photoUploadError() }}</div>
+              }
+              @if (p.media.length === 0) {
+                <p class="text-muted small mb-0">No photos yet — click "Add Photos" to upload.</p>
+              } @else {
+                <div class="d-flex flex-wrap gap-2">
+                  @for (m of p.media; track m.id) {
+                    <div class="detail-owner-thumb">
+                      <img [src]="m.mediaUrl" alt="" />
+                      @if (m.isPrimary) {
+                        <span class="detail-owner-thumb__primary"><i class="fa-solid fa-star fa-xs"></i></span>
+                      }
+                      <div class="detail-owner-thumb__actions">
+                        @if (!m.isPrimary) {
+                          <button type="button" class="detail-owner-thumb__btn" title="Set as primary" (click)="setAsPrimary(m)">
+                            <i class="fa-regular fa-star"></i>
+                          </button>
+                        }
+                        <button type="button" class="detail-owner-thumb__btn detail-owner-thumb__btn--del" title="Delete" (click)="deletePhoto(m)">
+                          <i class="fa-solid fa-trash fa-xs"></i>
+                        </button>
+                      </div>
+                    </div>
+                  }
+                </div>
+              }
+            </div>
+          }
+
+          <!-- Title + price -->
+          <div class="d-flex justify-content-between align-items-start flex-wrap gap-2 mb-3">
+            <div>
+              <span class="detail__type"><i [class]="typeIcon(p.propertyType)"></i>&nbsp;{{ p.propertyType }}</span>
+              <h1 class="detail__title mt-2 mb-1">{{ p.title }}</h1>
+              <p class="detail__loc mb-0">
+                <i class="fa-solid fa-location-dot fa-xs"></i>&nbsp;{{ p.address }}, {{ p.district }}, {{ p.city }}
+              </p>
+            </div>
+            <div class="text-end">
+              <span class="detail__price">{{ p.price | number }} EGP</span>
+              <span class="detail__price-label d-block">{{ 'DETAIL.PER_MONTH' | translate }}</span>
+              @if (isTenant()) {
+                <button type="button" class="detail__save mt-2"
+                        [class.saved]="savedSvc.isSaved(p.id)"
+                        (click)="toggleSave()"
+                        [attr.aria-pressed]="savedSvc.isSaved(p.id)">
+                  <i [class]="savedSvc.isSaved(p.id) ? 'fa-solid fa-heart' : 'fa-regular fa-heart'"></i>
+                  <span>{{ (savedSvc.isSaved(p.id) ? 'DETAIL.SAVED' : 'DETAIL.SAVE') | translate }}</span>
+                </button>
+              }
+            </div>
+          </div>
+
+          <!-- Specs -->
+          <div class="detail-specs card p-3 mb-4">
+            <div class="row text-center g-2">
+              <div class="col"><i class="fa-solid fa-bed text-primary"></i><div class="fw-semibold">{{ p.bedrooms }}</div><small class="text-muted">{{ 'DETAIL.BEDROOMS' | translate }}</small></div>
+              <div class="col"><i class="fa-solid fa-bath text-primary"></i><div class="fw-semibold">{{ p.bathrooms }}</div><small class="text-muted">{{ 'DETAIL.BATHROOMS' | translate }}</small></div>
+              <div class="col"><i class="fa-solid fa-ruler-combined text-primary"></i><div class="fw-semibold">{{ p.areaSqm }}</div><small class="text-muted">{{ 'DETAIL.AREA' | translate }}</small></div>
+              <div class="col"><i class="fa-solid fa-stairs text-primary"></i><div class="fw-semibold">{{ p.floorNumber }}/{{ p.totalFloors }}</div><small class="text-muted">{{ 'DETAIL.FLOOR' | translate }}</small></div>
+              <div class="col"><i class="fa-solid fa-calendar text-primary"></i><div class="fw-semibold">{{ p.yearBuilt }}</div><small class="text-muted">{{ 'DETAIL.BUILT' | translate }}</small></div>
+            </div>
+          </div>
+
+          <!-- Description -->
+          @if (p.description) {
+            <h5 class="mb-2">{{ 'DETAIL.DESCRIPTION' | translate }}</h5>
+            <p class="detail__desc mb-2">{{ p.description }}</p>
+          }
+          @if (p.descriptionAr) {
+            <p class="detail__desc detail__desc--ar" dir="rtl">{{ p.descriptionAr }}</p>
+          }
+
+          <!-- Features -->
+          <div class="d-flex flex-wrap gap-3 mb-4">
+            @if (p.isFurnished) { <span class="detail__feature"><i class="fa-solid fa-couch me-1"></i>{{ 'DETAIL.FURNISHED' | translate }}</span> }
+            @if (p.petsAllowed) { <span class="detail__feature"><i class="fa-solid fa-paw me-1"></i>{{ 'DETAIL.PETS_ALLOWED' | translate }}</span> }
+          </div>
+
+          <!-- Amenities -->
+          @if (p.amenities.length > 0) {
+            <h5 class="mb-3">{{ 'DETAIL.AMENITIES' | translate }}</h5>
+            <div class="row g-2 mb-2">
+              @for (a of p.amenities; track a.id) {
+                <div class="col-6 col-md-4">
+                  <span class="detail__amenity"><i class="fa-solid fa-circle-check text-success me-2"></i>{{ a.name }}</span>
+                </div>
+              }
+            </div>
+          }
+
+          <!-- Reviews -->
+          <section class="detail-reviews mt-5">
+            <div class="d-flex align-items-center justify-content-between flex-wrap gap-2 mb-3">
+              <h5 class="mb-0">
+                <i class="fa-regular fa-star me-2 text-primary"></i>Reviews
+              </h5>
+              @if (reviewsCount() > 0) {
+                <div class="detail-reviews__summary">
+                  <app-star-rating [value]="reviewsAverage()" size="sm" />
+                  <span class="detail-reviews__avg">{{ reviewsAverage() | number:'1.1-1' }}</span>
+                  <span class="detail-reviews__count">({{ reviewsCount() }} review{{ reviewsCount() === 1 ? '' : 's' }})</span>
+                </div>
+              }
+            </div>
+
+            @if (reviewsLoading()) {
+              <div class="text-muted small"><span class="spinner-border spinner-border-sm me-2"></span>Loading reviews…</div>
+            } @else if (reviews().length === 0) {
+              <p class="text-muted small mb-0">No reviews yet for this property.</p>
+            } @else {
+              <div class="detail-reviews__list">
+                @for (rev of reviews(); track rev.id) {
+                  <div class="detail-review">
+                    <div class="d-flex align-items-center justify-content-between mb-1">
+                      <app-star-rating [value]="rev.ratingValue" size="sm" />
+                      <span class="detail-review__date">{{ rev.createdAt | date:'mediumDate' }}</span>
+                    </div>
+                    @if (rev.reviewText) {
+                      <p class="detail-review__text mb-0">{{ rev.reviewText }}</p>
+                    }
+                  </div>
+                }
+              </div>
+            }
+          </section>
+        </div>
+
+        <!-- Right: contact / inquiry -->
+        <div class="col-12 col-lg-4">
+          <div class="detail-aside card p-4">
+            <h5 class="mb-1">{{ 'DETAIL.INTERESTED' | translate }}</h5>
+            <p class="text-muted small mb-3">
+              {{ 'DETAIL.LISTED_BY' | translate }}
+              <strong>{{ p.companyId ? (p.listingDisplayName || 'the company') : (p.listingBrokerName || p.listingDisplayName || 'the owner') }}</strong>.
+              {{ 'DETAIL.INQUIRY_HINT' | translate }}
+            </p>
+
+            @if (inquirySent()) {
+              <div class="alert alert-success mb-0">
+                <i class="fa-solid fa-circle-check me-2"></i>
+                {{ 'DETAIL.INQUIRY_SENT' | translate }}
+              </div>
+            } @else if (isTenant()) {
+              @if (canInquire() === false) {
+                <div class="alert alert-warning mb-0">
+                  <i class="fa-solid fa-circle-info me-2"></i>
+                  {{ inquiryBlockReason() || ('DETAIL.INQUIRY_BLOCKED' | translate) }}
+                </div>
+              } @else {
+                @if (inquiryError()) {
+                  <div class="alert alert-danger py-2">{{ inquiryError() }}</div>
+                }
+                <label class="form-label small fw-semibold">{{ 'DETAIL.YOUR_MESSAGE' | translate }}</label>
+                <textarea class="form-control mb-3" rows="4" [(ngModel)]="message"
+                          [placeholder]="'DETAIL.MESSAGE_PLACEHOLDER' | translate"></textarea>
+                <button class="btn btn-primary w-100" (click)="sendInquiry()" [disabled]="sending()">
+                  @if (sending()) {
+                    <span class="spinner-border spinner-border-sm me-2"></span>{{ 'DETAIL.SENDING' | translate }}
+                  } @else {
+                    <i class="fa-regular fa-paper-plane me-2"></i>{{ 'DETAIL.SEND_INQUIRY' | translate }}
+                  }
+                </button>
+              }
+            } @else if (isAuthenticated()) {
+              <div class="alert alert-info mb-0">
+                <i class="fa-solid fa-circle-info me-2"></i>
+                {{ 'DETAIL.TENANTS_ONLY' | translate }}
+              </div>
+            } @else {
+              <a routerLink="/auth/login" [queryParams]="{ returnUrl: '/properties/' + p.id }"
+                 class="btn btn-primary w-100">
+                <i class="fa-solid fa-right-to-bracket me-2"></i>{{ 'DETAIL.SIGN_IN' | translate }}
+              </a>
+              <p class="text-center small text-muted mt-2 mb-0">
+                {{ 'DETAIL.NEW_HERE' | translate }} <a routerLink="/auth/register">{{ 'DETAIL.CREATE_ACCOUNT' | translate }}</a>
+              </p>
+            }
+          </div>
+        </div>
+      </div>
+    }
+  </div>
+</main>

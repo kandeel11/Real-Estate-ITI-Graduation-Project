@@ -9,6 +9,56 @@ import { CanActivateFn, Router, ActivatedRouteSnapshot } from '@angular/router';
 import { AuthService, UserRole } from '../services/auth.service';
 
 /**
+ * Guest-only guard for the auth pages (login/register): a user with an
+ * active session can't sign in again — they're sent to the home page, and
+ * dashboard roles chain-forward from there to their dashboard via
+ * dashboardRedirectGuard. Logging out re-opens the auth pages.
+ */
+export const guestGuard: CanActivateFn = () => {
+  const authService = inject(AuthService);
+  const router = inject(Router);
+
+  return authService.authenticated() ? router.parseUrl('/') : true;
+};
+
+/**
+ * Sends signed-in dashboard roles (admin, company, broker, maintenance, owner)
+ * straight to their dashboard when they hit the public home page.
+ * Only tenants keep browsing the public site from here — that IS their surface
+ * (they use the navbar avatar menu).
+ */
+export const dashboardRedirectGuard: CanActivateFn = () => {
+  const authService = inject(AuthService);
+  const router = inject(Router);
+  const role = authService.userRole();
+
+  if (
+    authService.authenticated() &&
+    role &&
+    role !== 'tenant'
+  ) {
+    return router.parseUrl(authService.dashboardRouteFor(role));
+  }
+  return true;
+};
+
+/**
+ * Owners live entirely inside their dashboard — they should never land on the
+ * public marketplace pages (browse, services, contact, my-listings).
+ * A signed-in owner hitting any of those is bounced to /dashboard/owner.
+ * Every other role (and guests) passes through untouched.
+ */
+export const ownerLockGuard: CanActivateFn = () => {
+  const authService = inject(AuthService);
+  const router = inject(Router);
+
+  if (authService.authenticated() && authService.userRole() === 'owner') {
+    return router.parseUrl(authService.dashboardRouteFor('owner'));
+  }
+  return true;
+};
+
+/**
  * Functional guard factory for role-based route protection
  *
  * Usage in routes:

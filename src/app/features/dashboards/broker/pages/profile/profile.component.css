@@ -1,0 +1,45 @@
+.page { max-width: 800px; margin: 0 auto; }
+.pw-error { display: flex; align-items: center; gap: 8px; background: var(--color-error-container); color: var(--color-error); padding: 10px 14px; border-radius: 10px; font-size: 13px; margin-bottom: 14px; }
+.page-title { font-size: 1.4rem; font-weight: 700; color: var(--color-on-surface); margin: 0 0 1.5rem; }
+
+.card { background: var(--color-surface-container-lowest); border: 1px solid var(--color-outline-variant); border-radius: 16px; padding: 2rem; display: flex; flex-direction: column; gap: 1.5rem; }
+
+.avatar-section { display: flex; align-items: center; gap: 1.25rem; padding-bottom: 1.5rem; border-bottom: 1px solid var(--color-outline-variant); }
+.avatar { width: 72px; height: 72px; border-radius: 50%; background: var(--color-primary); color: var(--color-on-primary); font-size: 28px; font-weight: 700; display: flex; align-items: center; justify-content: center; flex-shrink: 0; }
+.avatar-name { font-size: 1.1rem; font-weight: 700; color: var(--color-on-surface); margin: 0 0 4px; }
+.avatar-email { font-size: 13px; color: var(--color-on-surface-variant); margin: 0 0 6px; }
+.company-badge, .independent-badge { display: inline-flex; align-items: center; gap: 5px; font-size: 12px; font-weight: 600; padding: 3px 10px; border-radius: var(--radius-full); }
+.company-badge { background: var(--color-primary-fixed); color: var(--color-on-primary-fixed); }
+.independent-badge { background: var(--color-surface-container); color: var(--color-on-surface-variant); }
+
+.section-title { font-size: 13px; font-weight: 700; color: var(--color-on-surface-variant); text-transform: uppercase; letter-spacing: .06em; }
+
+.form-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 1rem; }
+@media (max-width: 600px) { .form-grid { grid-template-columns: 1fr; } }
+.form-group { display: flex; flex-direction: column; gap: 5px; }
+.form-group label { font-size: 13px; font-weight: 500; color: var(--color-on-surface); }
+.full-width { grid-column: 1 / -1; }
+.form-control { padding: 9px 12px; border: 1.5px solid var(--color-outline-variant); border-radius: var(--radius-md); font-size: 14px; background: var(--color-surface-container-lowest); color: var(--color-on-surface); outline: none; width: 100%; resize: vertical; }
+.form-control:focus { border-color: var(--color-primary); }
+
+.tags-section { display: flex; flex-direction: column; gap: 8px; }
+.tags-section label { font-size: 13px; font-weight: 500; color: var(--color-on-surface); }
+.tags { display: flex; flex-wrap: wrap; gap: 6px; align-items: center; }
+.tag { display: inline-flex; align-items: center; gap: 5px; background: var(--color-primary-fixed); color: var(--color-on-primary-fixed); font-size: 12px; font-weight: 600; padding: 4px 10px; border-radius: var(--radius-full); }
+.tag-purple { background: #ede9fe; color: #7c3aed; }
+.tag-remove { background: none; border: none; cursor: pointer; display: flex; align-items: center; color: inherit; opacity: .7; padding: 0; font-size: 11px; }
+.tag-remove:hover { opacity: 1; }
+.tag-input-wrap { display: inline-flex; }
+.tag-input { border: 1.5px dashed var(--color-outline-variant); border-radius: var(--radius-full); padding: 4px 12px; font-size: 12px; outline: none; background: transparent; color: var(--color-on-surface); width: 80px; }
+.tag-input:focus { border-color: var(--color-primary); width: 120px; }
+
+.save-bar { display: flex; align-items: center; justify-content: flex-end; gap: 1rem; padding-top: 1rem; border-top: 1px solid var(--color-outline-variant); }
+.saved-msg { font-size: 13px; color: #059669; display: flex; align-items: center; gap: 6px; }
+
+.btn { display: inline-flex; align-items: center; gap: 6px; padding: 9px 22px; border-radius: var(--radius-md); font-size: 14px; font-weight: 600; cursor: pointer; border: none; transition: background .15s; }
+.btn:disabled { opacity: .5; cursor: not-allowed; }
+.btn-primary { background: var(--color-primary-container); color: var(--color-on-primary); }
+.btn-primary:hover:not(:disabled) { background: var(--color-primary); color: #fff; }
+
+.skeleton { background: linear-gradient(90deg,#f0f0f0 25%,#e0e0e0 50%,#f0f0f0 75%); background-size: 200% 100%; animation: shimmer 1.5s infinite; border-radius: 8px; }
+@keyframes shimmer { 0%{background-position:200% 0} 100%{background-position:-200% 0} }

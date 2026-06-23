@@ -1,0 +1,219 @@
+<div class="payments-page">
+
+  <!-- Header -->
+  <div class="page-head">
+    <div>
+      <h1><i class="fa-solid fa-money-bill-wave"></i> Rent Payments</h1>
+      <p>Manage monthly rent payments, process pending, and track overdue.</p>
+    </div>
+    <div class="head-actions">
+      <button class="btn-outline" (click)="loadPayments(); loadOverdue()">
+        <i class="fa-solid fa-arrows-rotate"></i> Refresh
+      </button>
+      <button class="btn-generate" (click)="generateMonthly()" [disabled]="generating()">
+        @if (generating()) {
+          <i class="fa-solid fa-spinner fa-spin"></i> Generating...
+        } @else {
+          <i class="fa-solid fa-calendar-plus"></i> Generate Monthly
+        }
+      </button>
+    </div>
+  </div>
+
+  <!-- Generate result banner -->
+  @if (generateResult(); as r) {
+    <div class="generate-banner">
+      <i class="fa-solid fa-circle-check"></i>
+      <span>Generated <strong>{{ r.generatedCount }}</strong> new payments · Skipped <strong>{{ r.skippedCount }}</strong> (already exist)</span>
+    </div>
+  }
+
+  <!-- Stats -->
+  <div class="stats-row">
+    <div class="stat-card">
+      <i class="fa-solid fa-list-check"></i>
+      <div><span>Total</span><strong>{{ stats().total }}</strong></div>
+    </div>
+    <div class="stat-card amber">
+      <i class="fa-solid fa-clock"></i>
+      <div><span>Pending</span><strong>{{ stats().pending }}</strong></div>
+    </div>
+    <div class="stat-card green">
+      <i class="fa-solid fa-circle-check"></i>
+      <div><span>Paid</span><strong>{{ stats().paid }}</strong></div>
+    </div>
+    <div class="stat-card red">
+      <i class="fa-solid fa-triangle-exclamation"></i>
+      <div><span>Overdue</span><strong>{{ stats().overdue }}</strong></div>
+    </div>
+    <div class="stat-card purple">
+      <i class="fa-solid fa-coins"></i>
+      <div><span>Total Volume</span><strong>{{ formatCurrency(stats().totalAmount) }}</strong></div>
+    </div>
+  </div>
+
+  <!-- Tabs -->
+  <div class="tab-bar">
+    <button class="tab" [class.active]="activeTab() === 'all'" (click)="activeTab.set('all')">
+      <i class="fa-solid fa-list"></i> All Payments
+    </button>
+    <button class="tab" [class.active]="activeTab() === 'overdue'" (click)="activeTab.set('overdue')">
+      <i class="fa-solid fa-triangle-exclamation"></i> Overdue
+      @if (overduePayments().length > 0) {
+        <span class="tab-badge">{{ overduePayments().length }}</span>
+      }
+    </button>
+  </div>
+
+  <!-- ===== ALL PAYMENTS ===== -->
+  @if (activeTab() === 'all') {
+    <!-- Filters -->
+    <div class="filters-row">
+      <div class="search-box">
+        <i class="fa-solid fa-magnifying-glass"></i>
+        <input type="text" placeholder="Search tenant, landlord, property..." [value]="searchQuery()"
+          (input)="searchQuery.set($any($event.target).value)" />
+        @if (searchQuery()) {
+          <button class="clear-btn" (click)="searchQuery.set('')"><i class="fa-solid fa-xmark"></i></button>
+        }
+      </div>
+      <select [value]="statusFilter()" (change)="statusFilter.set($any($event.target).value)">
+        <option value="All">All Status</option>
+        <option value="Pending">Pending</option>
+        <option value="Paid">Paid</option>
+        <option value="Overdue">Overdue</option>
+        <option value="Failed">Failed</option>
+      </select>
+    </div>
+
+    <div class="card">
+      @if (loading()) {
+        <div class="loading-state"><i class="fa-solid fa-spinner fa-spin"></i> Loading payments...</div>
+      } @else if (filteredPayments().length === 0) {
+        <div class="empty-state">
+          <i class="fa-solid fa-money-bill-wave"></i>
+          <p>No payments found. Use "Generate Monthly" to create this month's payments.</p>
+        </div>
+      } @else {
+        <div class="table-wrap">
+          <table class="data-table">
+            <thead>
+              <tr>
+                <th>Tenant</th>
+                <th>Property</th>
+                <th>Amount</th>
+                <th>Late Fee</th>
+                <th>Due Date</th>
+                <th>Status</th>
+                <th>Action</th>
+              </tr>
+            </thead>
+            <tbody>
+              @for (p of filteredPayments(); track p.id) {
+                <tr [class.processing-row]="processing() === p.id">
+                  <td>
+                    <div class="person-cell">
+                      <div class="avatar">{{ (p.tenantName || '?').charAt(0).toUpperCase() }}</div>
+                      <span>{{ p.tenantName || p.tenantId }}</span>
+                    </div>
+                  </td>
+                  <td class="muted">{{ p.propertyTitle || '—' }}</td>
+                  <td><strong>{{ formatCurrency(p.amount) }}</strong></td>
+                  <td class="muted">{{ p.lateFee ? formatCurrency(p.lateFee) : '—' }}</td>
+                  <td class="muted">{{ formatDate(p.dueDate) }}</td>
+                  <td>
+                    <span class="badge" [attr.data-color]="statusColor(p.status)">{{ p.status }}</span>
+                  </td>
+                  <td>
+                    @if (p.status === 'Pending') {
+                      <button class="btn-action approve" (click)="processPayment(p)"
+                        [disabled]="processing() !== null">
+                        @if (processing() === p.id) {
+                          <i class="fa-solid fa-spinner fa-spin"></i>
+                        } @else {
+                          <i class="fa-solid fa-check"></i> Process
+                        }
+                      </button>
+                    } @else if (p.status === 'Paid' && p.paidAt) {
+                      <span class="paid-date">{{ formatDate(p.paidAt) }}</span>
+                    } @else {
+                      <span class="muted">—</span>
+                    }
+                  </td>
+                </tr>
+              }
+            </tbody>
+          </table>
+        </div>
+      }
+    </div>
+  }
+
+  <!-- ===== OVERDUE ===== -->
+  @if (activeTab() === 'overdue') {
+    <div class="card">
+      @if (loadingOverdue()) {
+        <div class="loading-state"><i class="fa-solid fa-spinner fa-spin"></i> Loading overdue...</div>
+      } @else if (overduePayments().length === 0) {
+        <div class="empty-state empty-good">
+          <i class="fa-solid fa-circle-check"></i>
+          <p>No overdue payments. All caught up!</p>
+        </div>
+      } @else {
+        <div class="table-wrap">
+          <table class="data-table">
+            <thead>
+              <tr>
+                <th>Tenant</th>
+                <th>Property</th>
+                <th>Amount</th>
+                <th>Due Date</th>
+                <th>Days Overdue</th>
+                <th>Action</th>
+              </tr>
+            </thead>
+            <tbody>
+              @for (p of overduePayments(); track p.id) {
+                <tr>
+                  <td>
+                    <div class="person-cell">
+                      <div class="avatar red">{{ (p.tenantName || '?').charAt(0).toUpperCase() }}</div>
+                      <span>{{ p.tenantName || p.tenantId }}</span>
+                    </div>
+                  </td>
+                  <td class="muted">{{ p.propertyTitle || '—' }}</td>
+                  <td><strong class="text-red">{{ formatCurrency(p.amount) }}</strong></td>
+                  <td class="muted">{{ formatDate(p.dueDate) }}</td>
+                  <td>
+                    <span class="overdue-days">
+                      {{ daysSince(p.dueDate) }} days
+                    </span>
+                  </td>
+                  <td>
+                    <button class="btn-action late-fee" (click)="applyLateFee(p)"
+                      [disabled]="processing() !== null">
+                      @if (processing() === p.id) {
+                        <i class="fa-solid fa-spinner fa-spin"></i>
+                      } @else {
+                        <i class="fa-solid fa-plus"></i> Late Fee
+                      }
+                    </button>
+                  </td>
+                </tr>
+              }
+            </tbody>
+          </table>
+        </div>
+      }
+    </div>
+  }
+
+  <!-- Toast -->
+  @if (toast(); as t) {
+    <div class="toast" [class.success]="t.type === 'success'" [class.error]="t.type === 'error'">
+      <i class="fa-solid" [class.fa-circle-check]="t.type === 'success'" [class.fa-circle-xmark]="t.type === 'error'"></i>
+      {{ t.text }}
+    </div>
+  }
+
+</div>

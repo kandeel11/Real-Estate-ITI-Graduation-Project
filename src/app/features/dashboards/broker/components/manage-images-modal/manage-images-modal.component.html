@@ -1,0 +1,57 @@
+<div class="modal-backdrop" (click)="close()">
+  <div class="images-dialog" (click)="$event.stopPropagation()">
+    <div class="modal-header">
+      <div>
+        <h2>{{ 'BROKER.IMAGES.TITLE' | translate }}</h2>
+        <p class="modal-sub">{{ propertyTitle }}</p>
+      </div>
+      <button class="modal-close" (click)="close()"><i class="fa-solid fa-xmark"></i></button>
+    </div>
+
+    <div class="modal-body">
+      <p class="hint">{{ 'BROKER.IMAGES.HINT' | translate }}</p>
+
+      <label class="upload-zone" [class.disabled]="uploading()">
+        <input type="file" accept="image/*" multiple (change)="onFileChange($event)" hidden [disabled]="uploading()" />
+        @if (uploading()) {
+          <i class="fa-solid fa-spinner fa-spin"></i> {{ 'BROKER.IMAGES.UPLOADING' | translate }}
+        } @else {
+          <i class="fa-solid fa-cloud-arrow-up"></i> {{ 'BROKER.IMAGES.UPLOAD' | translate }}
+        }
+      </label>
+
+      @if (loading()) {
+        <div class="center-wrap"><i class="fa-solid fa-spinner fa-spin"></i></div>
+      } @else if (media().length === 0) {
+        <div class="empty-wrap">{{ 'BROKER.IMAGES.EMPTY' | translate }}</div>
+      } @else {
+        <div class="grid">
+          @for (m of media(); track m.id) {
+            <div class="tile" [class.primary]="m.isPrimary">
+              <img [src]="m.mediaUrl" [alt]="propertyTitle" />
+              @if (m.isPrimary) {
+                <span class="primary-badge"><i class="fa-solid fa-star"></i> {{ 'BROKER.IMAGES.PRIMARY' | translate }}</span>
+              }
+              <div class="tile-actions">
+                @if (!m.isPrimary) {
+                  <button class="tile-btn" (click)="setPrimary(m)" [disabled]="busyId() === m.id"
+                          [title]="'BROKER.IMAGES.SET_PRIMARY' | translate">
+                    <i class="fa-regular fa-star"></i>
+                  </button>
+                }
+                <button class="tile-btn danger" (click)="remove(m)" [disabled]="busyId() === m.id"
+                        [title]="'BROKER.IMAGES.DELETE' | translate">
+                  <i class="fa-solid fa-trash"></i>
+                </button>
+              </div>
+            </div>
+          }
+        </div>
+      }
+    </div>
+
+    <div class="modal-footer">
+      <button class="btn btn-primary" (click)="close()">{{ 'COMMON.DONE' | translate }}</button>
+    </div>
+  </div>
+</div>

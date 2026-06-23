@@ -1,0 +1,111 @@
+<div class="maintenance-page">
+  <div class="page-header">
+    <h1 class="page-title"><i class="fa-solid fa-screwdriver-wrench me-2"></i>{{ 'MAINTENANCE.TITLE' | translate }}</h1>
+    <a routerLink="/dashboard/maintenance-requests/create" class="btn btn-primary">
+      <i class="fa-solid fa-plus me-1"></i>{{ 'MAINTENANCE.NEW_TICKET' | translate }}
+    </a>
+  </div>
+
+  <!-- ── Status filter tabs ─────────────────────────────────────── -->
+  <div class="filter-tabs-wrap mb-4">
+    <div class="filter-tabs">
+      @for (tab of filterTabs; track tab.value) {
+        <button class="filter-tab"
+                [class.filter-tab-active]="activeFilter() === tab.value"
+                (click)="setFilter(tab.value)">
+          {{ tab.label | translate }}
+        </button>
+      }
+    </div>
+  </div>
+
+  <!-- ── Loading skeleton ───────────────────────────────────────── -->
+  @if (loading()) {
+    <div class="skeleton-list">
+      @for (_ of [1, 2, 3]; track $index) {
+        <div class="skeleton-card">
+          <div class="skel-row">
+            <div class="skel skel-chip"></div>
+            <div class="skel skel-chip"></div>
+          </div>
+          <div class="skel skel-title mt-2"></div>
+          <div class="skel skel-line mt-2"></div>
+          <div class="skel skel-line-short mt-1"></div>
+        </div>
+      }
+    </div>
+  }
+
+  <!-- ── Error ──────────────────────────────────────────────────── -->
+  @if (!loading() && error()) {
+    <div class="alert alert-danger d-flex align-items-center gap-2">
+      <i class="fa-solid fa-triangle-exclamation"></i>
+      <span>{{ error() }}</span>
+      <button class="btn btn-sm btn-outline-danger ms-auto" (click)="loadTickets()">{{ 'MAINTENANCE.TRY_AGAIN' | translate }}</button>
+    </div>
+  }
+
+  <!-- ── Empty state ────────────────────────────────────────────── -->
+  @if (!loading() && !error() && tickets().length === 0) {
+    <div class="empty-state">
+      <i class="fa-solid fa-screwdriver-wrench empty-icon"></i>
+      <p class="empty-title">{{ 'MAINTENANCE.NO_TICKETS' | translate }}</p>
+      <p class="empty-desc">
+        @if (activeFilter()) {
+          {{ 'MAINTENANCE.NO_MATCH' | translate }}
+        } @else {
+          {{ 'MAINTENANCE.NO_SUBMITTED' | translate }}
+        }
+      </p>
+      @if (!activeFilter()) {
+        <a routerLink="/dashboard/maintenance-requests/create" class="btn btn-primary mt-3">
+          <i class="fa-solid fa-plus me-2"></i>{{ 'MAINTENANCE.CREATE_FIRST' | translate }}
+        </a>
+      }
+    </div>
+  }
+
+  <!-- ── Ticket list ────────────────────────────────────────────── -->
+  @if (!loading() && !error() && tickets().length > 0) {
+    <div class="list-meta mb-2">
+      <span class="text-muted small">{{ 'MAINTENANCE.TICKETS_FOUND' | translate:{count: total()} }}</span>
+    </div>
+
+    <div class="ticket-list">
+      @for (ticket of tickets(); track ticket.id) {
+        <div class="ticket-card hover-lift" (click)="openDetail(ticket)"
+             role="button" tabindex="0" (keydown.enter)="openDetail(ticket)">
+          <div class="ticket-card-top">
+            <span class="ticket-number">{{ ticket.ticketNumber }}</span>
+            <span class="ticket-badge" [class]="priorityClass(ticket.priority)">{{ ticket.priority }}</span>
+            <span class="ticket-badge" [class]="statusClass(ticket.status)">{{ statusLabel(ticket.status) }}</span>
+            <span class="ms-auto"><i class="fa-solid fa-chevron-right text-muted" style="font-size:12px"></i></span>
+          </div>
+          <h3 class="ticket-title">{{ ticket.title }}</h3>
+          <div class="ticket-card-footer">
+            <span class="ticket-meta"><i class="fa-solid fa-location-dot me-1"></i>{{ ticket.propertyAddress }}</span>
+            <span class="ticket-meta"><i class="fa-regular fa-calendar me-1"></i>{{ ticket.createdAt | date:'mediumDate' }}</span>
+            @if (ticket.attachmentCount > 0) {
+              <span class="ticket-meta"><i class="fa-solid fa-paperclip me-1"></i>{{ ticket.attachmentCount }}</span>
+            }
+          </div>
+        </div>
+      }
+    </div>
+
+    <!-- ── Pagination ─────────────────────────────────────────── -->
+    @if (totalPages() > 1) {
+      <div class="pagination-row mt-4">
+        <button class="page-btn" [disabled]="page() === 1" (click)="goToPage(page() - 1)">
+          <i class="fa-solid fa-chevron-left"></i>
+        </button>
+        @for (p of pageNumbers(); track p) {
+          <button class="page-btn" [class.page-btn-active]="page() === p" (click)="goToPage(p)">{{ p }}</button>
+        }
+        <button class="page-btn" [disabled]="page() === totalPages()" (click)="goToPage(page() + 1)">
+          <i class="fa-solid fa-chevron-right"></i>
+        </button>
+      </div>
+    }
+  }
+</div>

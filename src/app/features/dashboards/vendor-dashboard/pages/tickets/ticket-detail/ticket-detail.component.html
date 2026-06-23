@@ -1,0 +1,383 @@
+<div class="detail-page">
+
+  <!-- ── BACK + TOAST ───────────────────────────────────────────────── -->
+  <div class="detail-topbar">
+    <button class="btn-back" (click)="goBack()">
+      <i class="fa-solid fa-arrow-left"></i> Back to Tickets
+    </button>
+    @if (toast(); as t) {
+      <div class="toast" [class.toast--error]="t.type === 'error'">
+        <i class="fa-solid"
+          [class.fa-circle-check]="t.type === 'success'"
+          [class.fa-circle-xmark]="t.type === 'error'"></i>
+        {{ t.text }}
+      </div>
+    }
+  </div>
+
+  <!-- ── LOADING ────────────────────────────────────────────────────── -->
+  @if (loading()) {
+    <div class="skeleton-wrap">
+      <div class="sk-hero"></div>
+      <div class="sk-body">
+        <div class="sk-card"></div>
+        <div class="sk-card"></div>
+      </div>
+    </div>
+  }
+
+  @else if (ticket(); as t) {
+
+    <!-- ── HEADER ─────────────────────────────────────────────────── -->
+    <div class="detail-header">
+      <div class="detail-header__left">
+        <div class="priority-bar big" [class]="priorityClass(t.priority)"></div>
+        <div>
+          <div class="header-meta">
+            <span class="ticket-number">{{ t.ticketNumber }}</span>
+            <span class="priority-badge {{ priorityClass(t.priority) }}">{{ t.priority }}</span>
+            <span class="status-badge {{ statusClass(t.status) }}">{{ statusLabel(t.status) }}</span>
+          </div>
+          <h1 class="ticket-h1">{{ t.title }}</h1>
+          <p class="ticket-desc">{{ t.description }}</p>
+        </div>
+      </div>
+
+      <!-- Action buttons -->
+      <div class="action-bar" [class.busy]="isBusy(t.id) || isBusy(t.vendorAssignment?.id)">
+        @if (t.status === 'AssignedToVendor') {
+          <button class="btn-accept" (click)="accept()" [disabled]="isBusy(t.vendorAssignment?.id)">
+            <i class="fa-solid fa-check"></i> Accept
+          </button>
+          <button class="btn-reject" (click)="openRejectModal()" [disabled]="isBusy(t.vendorAssignment?.id)">
+            <i class="fa-solid fa-xmark"></i> Reject
+          </button>
+        }
+        @if (t.status === 'VendorAccepted') {
+          <button class="btn-start" (click)="startWork()" [disabled]="isBusy(t.id)">
+            <i class="fa-solid fa-play"></i> Start Work
+          </button>
+        }
+        @if (t.status === 'InProgress') {
+          @if (!t.payment) {
+            <button class="btn-start" (click)="openPriceModal()" [disabled]="isBusy(t.id)">
+              <i class="fa-solid fa-tag"></i> Set Price
+            </button>
+          } @else {
+            <button class="btn-complete" (click)="completeWork()" [disabled]="isBusy(t.id)">
+              <i class="fa-solid fa-flag-checkered"></i> Complete Work
+            </button>
+            <button class="btn-outline-sm" (click)="openPriceModal()" [disabled]="isBusy(t.id)">
+              <i class="fa-solid fa-pencil"></i> Update Price
+            </button>
+          }
+        }
+        @if (t.status === 'AwaitingPayment' && t.payment?.transactionId) {
+          <button class="btn-confirm" (click)="confirmPayment()" [disabled]="isBusy(t.id)">
+            <i class="fa-solid fa-circle-check"></i> Confirm Payment Received
+          </button>
+        }
+      </div>
+    </div>
+
+    <!-- ── TWO-COLUMN GRID ─────────────────────────────────────────── -->
+    <div class="detail-grid">
+
+      <!-- LEFT COLUMN ──────────────────────────────────────────────── -->
+      <div class="col-left">
+
+        <!-- Property & Tenant -->
+        <div class="detail-card">
+          <h2 class="card-title"><i class="fa-solid fa-building"></i> Property & Tenant</h2>
+          <div class="info-grid">
+            <div class="info-item">
+              <label>Property Address</label>
+              <p><i class="fa-solid fa-location-dot"></i> {{ t.propertyAddress }}</p>
+            </div>
+            <div class="info-item">
+              <label>Tenant Email</label>
+              <p><i class="fa-solid fa-envelope"></i> {{ t.tenantEmail }}</p>
+            </div>
+            @if (t.tenantPhone) {
+              <div class="info-item">
+                <label>Tenant Phone</label>
+                <p><i class="fa-solid fa-phone"></i> {{ t.tenantPhone }}</p>
+              </div>
+            }
+            <div class="info-item">
+              <label>Responsible Party</label>
+              <p><i class="fa-solid fa-user-check"></i> {{ t.responsibleParty }}</p>
+            </div>
+            @if (t.resolutionMethod) {
+              <div class="info-item">
+                <label>Resolution Method</label>
+                <p>{{ t.resolutionMethod }}</p>
+              </div>
+            }
+            <div class="info-item">
+              <label>Created</label>
+              <p>{{ formatDate(t.createdAt) }}</p>
+            </div>
+            @if (t.resolvedAt) {
+              <div class="info-item">
+                <label>Resolved</label>
+                <p class="text-success">{{ formatDate(t.resolvedAt) }}</p>
+              </div>
+            }
+          </div>
+        </div>
+
+        <!-- AI Evaluation -->
+        @if (t.aiEvaluation; as ai) {
+          <div class="detail-card ai-card">
+            <h2 class="card-title"><i class="fa-solid fa-robot"></i> AI Evaluation</h2>
+            <div class="ai-body">
+              <div class="ai-row">
+                <span class="ai-label">Category</span>
+                <span class="ai-value cat-badge">{{ ai.category }}</span>
+              </div>
+              <div class="ai-row">
+                <span class="ai-label">Responsible Party</span>
+                <span class="ai-value">{{ ai.responsibleParty }}</span>
+              </div>
+              <div class="ai-row ai-row--full">
+                <span class="ai-label">Confidence</span>
+                <div class="confidence-bar-wrap">
+                  <div class="confidence-bar">
+                    <div class="confidence-fill" [style.width.%]="confidencePercent(ai.confidenceScore)"
+                      [class.high]="ai.confidenceScore >= 0.8"
+                      [class.mid]="ai.confidenceScore >= 0.5 && ai.confidenceScore < 0.8"
+                      [class.low]="ai.confidenceScore < 0.5">
+                    </div>
+                  </div>
+                  <span class="confidence-pct">{{ confidencePercent(ai.confidenceScore) }}%</span>
+                </div>
+              </div>
+              <div class="ai-row ai-row--full">
+                <span class="ai-label">Reasoning</span>
+                <p class="ai-reasoning">{{ ai.reasoning }}</p>
+              </div>
+              <div class="ai-row">
+                <span class="ai-label">Evaluated</span>
+                <span class="ai-value muted">{{ formatDateTime(ai.evaluatedAt) }}</span>
+              </div>
+            </div>
+          </div>
+        }
+
+        <!-- Attachments -->
+        @if (t.attachments.length > 0) {
+          <div class="detail-card">
+            <h2 class="card-title"><i class="fa-solid fa-paperclip"></i> Attachments</h2>
+            <div class="attachments-grid">
+              @for (att of t.attachments; track att.id) {
+                @if (isImage(att.fileType)) {
+                  <div class="attachment-thumb" (click)="openLightbox(att.fileUrl)">
+                    <img [src]="att.fileUrl" [alt]="att.fileType" loading="lazy" />
+                    <span class="attachment-size">{{ att.fileSizeKb }} KB</span>
+                  </div>
+                } @else {
+                  <a class="attachment-file" [href]="att.fileUrl" target="_blank" rel="noopener">
+                    <i class="fa-solid fa-file"></i>
+                    <span>{{ att.fileType }}</span>
+                    <span class="attachment-size">{{ att.fileSizeKb }} KB</span>
+                  </a>
+                }
+              }
+            </div>
+          </div>
+        }
+
+      </div>
+
+      <!-- RIGHT COLUMN ─────────────────────────────────────────────── -->
+      <div class="col-right">
+
+        <!-- Payment -->
+        @if (t.payment; as pay) {
+          <div class="detail-card payment-card">
+            <h2 class="card-title"><i class="fa-solid fa-credit-card"></i> Payment</h2>
+            <div class="payment-amount">
+              {{ formatNum(pay.amount) }} <span>{{ pay.currency }}</span>
+            </div>
+            <div class="pay-grid">
+              <div class="pay-row">
+                <span>Status</span>
+                <span class="pay-status-badge" [class]="pay.status.toLowerCase()">
+                  {{ pay.status }}
+                </span>
+              </div>
+              @if (pay.paymentMethod) {
+                <div class="pay-row">
+                  <span>Method</span><span>{{ pay.paymentMethod }}</span>
+                </div>
+              }
+              @if (pay.transactionId) {
+                <div class="pay-row">
+                  <span>Transaction ID</span>
+                  <span class="monospace">{{ pay.transactionId }}</span>
+                </div>
+              }
+              @if (pay.paidAt) {
+                <div class="pay-row">
+                  <span>Paid At</span><span>{{ formatDateTime(pay.paidAt) }}</span>
+                </div>
+              }
+              <div class="pay-row">
+                <span>Created</span><span>{{ formatDateTime(pay.createdAt) }}</span>
+              </div>
+            </div>
+            @if (t.status === 'AwaitingPayment' && pay.transactionId) {
+              <button class="btn-confirm full-width" (click)="confirmPayment()" [disabled]="isBusy(t.id)">
+                <i class="fa-solid fa-circle-check"></i> Confirm Payment Received
+              </button>
+            }
+            @if (t.status === 'AwaitingPayment' && !pay.transactionId) {
+              <p class="awaiting-note">
+                <i class="fa-regular fa-clock"></i>
+                Waiting for the tenant/owner to submit payment.
+              </p>
+            }
+          </div>
+        }
+
+        <!-- Status Timeline -->
+        @if (t.statusHistory.length > 0) {
+          <div class="detail-card">
+            <h2 class="card-title"><i class="fa-solid fa-timeline"></i> Status History</h2>
+            <div class="timeline">
+              @for (entry of t.statusHistory; track $index; let last = $last) {
+                <div class="timeline-item" [class.last]="last">
+                  <div class="timeline-dot" [class]="statusClass(entry.toStatus)"></div>
+                  <div class="timeline-content">
+                    <div class="timeline-header">
+                      <span class="status-badge {{ statusClass(entry.toStatus) }}">
+                        {{ statusLabel(entry.toStatus) }}
+                      </span>
+                      <span class="timeline-time">{{ formatDateTime(entry.changedAt) }}</span>
+                    </div>
+                    @if (entry.changedBy) {
+                      <p class="timeline-by">by {{ entry.changedBy }}</p>
+                    }
+                    @if (entry.notes) {
+                      <p class="timeline-note">{{ entry.notes }}</p>
+                    }
+                  </div>
+                </div>
+              }
+            </div>
+          </div>
+        }
+
+        <!-- Comments -->
+        @if (t.comments.length > 0) {
+          <div class="detail-card">
+            <h2 class="card-title"><i class="fa-solid fa-comments"></i> Comments</h2>
+            <div class="comments-list">
+              @for (c of t.comments; track c.id) {
+                @if (!c.isInternal) {
+                  <div class="comment">
+                    <div class="comment-header">
+                      <span class="comment-role">{{ c.userRole }}</span>
+                      <span class="comment-date">{{ formatDateTime(c.createdAt) }}</span>
+                    </div>
+                    <p class="comment-body">{{ c.content }}</p>
+                  </div>
+                }
+              }
+            </div>
+          </div>
+        }
+
+      </div>
+    </div>
+
+  }
+
+  @else {
+    <div class="error-state">
+      <i class="fa-solid fa-triangle-exclamation"></i>
+      <h3>Ticket not found</h3>
+      <button class="btn-back" (click)="goBack()">Back to Tickets</button>
+    </div>
+  }
+
+</div>
+
+<!-- ── REJECT MODAL ─────────────────────────────────────────────────── -->
+@if (showRejectModal()) {
+  <div class="modal-backdrop" (click)="closeRejectModal()">
+    <div class="modal" (click)="$event.stopPropagation()">
+      <div class="modal-head">
+        <h3><i class="fa-solid fa-xmark-circle"></i> Reject Ticket</h3>
+        <button class="modal-close" (click)="closeRejectModal()"><i class="fa-solid fa-times"></i></button>
+      </div>
+      <div class="modal-body">
+        <p>Provide a reason for rejecting this ticket:</p>
+        <textarea class="reason-input" rows="3"
+          placeholder="e.g., Outside our service area, not available this week..."
+          [value]="rejectReason()"
+          (input)="rejectReason.set($any($event.target).value)">
+        </textarea>
+      </div>
+      <div class="modal-footer">
+        <button class="btn-outline-sm" (click)="closeRejectModal()">Cancel</button>
+        <button class="btn-reject"
+          (click)="confirmReject()"
+          [disabled]="!rejectReason().trim() || isBusy(ticket()?.vendorAssignment?.id)">
+          <i class="fa-solid fa-xmark"></i> Confirm Reject
+        </button>
+      </div>
+    </div>
+  </div>
+}
+
+<!-- ── SET PRICE MODAL ──────────────────────────────────────────────── -->
+@if (showPriceModal()) {
+  <div class="modal-backdrop" (click)="closePriceModal()">
+    <div class="modal" (click)="$event.stopPropagation()">
+      <div class="modal-head">
+        <h3><i class="fa-solid fa-tag"></i> Set Price</h3>
+        <button class="modal-close" (click)="closePriceModal()"><i class="fa-solid fa-times"></i></button>
+      </div>
+      <div class="modal-body">
+        <div class="price-inputs">
+          <div class="form-group">
+            <label>Amount</label>
+            <input type="number" class="form-input" min="1"
+              [value]="priceAmount()"
+              (input)="priceAmount.set(+$any($event.target).value)"
+              placeholder="350.00" />
+          </div>
+          <div class="form-group">
+            <label>Currency</label>
+            <select class="form-input"
+              [value]="priceCurrency()"
+              (change)="priceCurrency.set($any($event.target).value)">
+              <option value="EGP">EGP</option>
+              <option value="USD">USD</option>
+            </select>
+          </div>
+        </div>
+      </div>
+      <div class="modal-footer">
+        <button class="btn-outline-sm" (click)="closePriceModal()">Cancel</button>
+        <button class="btn-start"
+          (click)="confirmPrice()"
+          [disabled]="priceAmount() <= 0 || isBusy(ticket()?.id)">
+          <i class="fa-solid fa-check"></i> Save Price
+        </button>
+      </div>
+    </div>
+  </div>
+}
+
+<!-- ── LIGHTBOX ─────────────────────────────────────────────────────── -->
+@if (lightboxUrl()) {
+  <div class="lightbox-backdrop" (click)="closeLightbox()">
+    <button class="lightbox-close" (click)="closeLightbox()">
+      <i class="fa-solid fa-times"></i>
+    </button>
+    <img [src]="lightboxUrl()!" alt="Attachment" (click)="$event.stopPropagation()" />
+  </div>
+}

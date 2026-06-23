@@ -1,0 +1,156 @@
+@if (loading()) {
+  <div class="d-flex justify-content-center align-items-center py-5">
+    <div class="spinner-border text-secondary" role="status">
+      <span class="visually-hidden">Loading…</span>
+    </div>
+  </div>
+} @else {
+  <!-- Header -->
+  <div class="mb-4">
+    <h2 class="mb-1">
+      {{ 'COMPANY_DASH.WELCOME' | translate }} {{ company()?.name }}
+      @if (company()?.isVerified) {
+        <i class="fa-solid fa-circle-check text-primary fs-5" [title]="'COMPANY_DASH.VERIFIED' | translate"></i>
+      }
+    </h2>
+    @if (subscription(); as sub) {
+      <span class="text-muted">
+        {{ sub.planName }} · {{ 'COMPANY_DASH.RENEWS' | translate }} {{ sub.endDate | date: 'MMM d, y' }}
+      </span>
+    }
+  </div>
+
+  <!-- Over-limit notices (grandfathered after a downgrade) -->
+  @if (stats(); as s) {
+    @if (subscription(); as sub) {
+      <app-over-limit-banner [used]="s.totalProperties" [max]="sub.maxProperties" label="properties" />
+      <app-over-limit-banner [used]="s.totalBrokers" [max]="sub.maxBrokers" label="brokers" />
+    }
+  }
+
+  <!-- Subscription usage -->
+  @if (stats(); as s) {
+    @if (subscription(); as sub) {
+      <h5 class="mb-3">{{ 'COMPANY_DASH.SUBSCRIPTION_USAGE' | translate }}</h5>
+      <div class="row g-3 mb-4">
+        <div class="col-md-4">
+          <app-usage-meter [label]="'COMPANY_DASH.PROPERTIES' | translate" [used]="s.totalProperties" [max]="sub.maxProperties" />
+        </div>
+        <div class="col-md-4">
+          <app-usage-meter [label]="'COMPANY_DASH.BROKERS' | translate" [used]="s.totalBrokers" [max]="sub.maxBrokers" />
+        </div>
+        <div class="col-md-4">
+          <app-usage-meter [label]="'COMPANY_DASH.AI_REQUESTS' | translate" [used]="usage()?.aiRequestsUsed ?? 0" [max]="sub.maxAiRequestsPerMonth" />
+        </div>
+      </div>
+    }
+  }
+
+  <!-- Statistics: property status + engagement -->
+  @if (stats(); as s) {
+    <div class="row g-3 mb-4">
+      <!-- Property status donut -->
+      <div class="col-lg-5">
+        <div class="card p-3 h-100">
+          <h5 class="mb-1">{{ 'COMPANY_DASH.PROPERTY_STATUS' | translate }}</h5>
+          <p class="text-muted small mb-3">{{ 'COMPANY_DASH.PORTFOLIO_DIST' | translate }}</p>
+          <div class="d-flex align-items-center gap-4">
+            <div class="status-donut" [style.background]="donutGradient()">
+              <div class="status-donut__hole">
+                <span class="status-donut__total">{{ s.totalProperties }}</span>
+                <span class="status-donut__label">{{ 'COMPANY_DASH.LISTINGS' | translate }}</span>
+              </div>
+            </div>
+            <div class="flex-grow-1">
+              @for (seg of statusBreakdown(); track seg.label) {
+                <div class="d-flex align-items-center justify-content-between py-1">
+                  <span class="small">
+                    <span class="status-dot" [style.background]="seg.color"></span>{{ seg.label }}
+                  </span>
+                  <span class="small text-muted">{{ seg.count }} · {{ seg.percent }}%</span>
+                </div>
+              }
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Engagement -->
+      <div class="col-lg-7">
+        <div class="card p-3 h-100">
+          <h5 class="mb-1">{{ 'COMPANY_DASH.ENGAGEMENT' | translate }}</h5>
+          <p class="text-muted small mb-3">{{ 'COMPANY_DASH.ENGAGEMENT_DESC' | translate }}</p>
+          <div class="row g-3">
+            <div class="col-6 col-md-3">
+              <div class="stat-tile">
+                <i class="fa-solid fa-eye text-primary"></i>
+                <div class="stat-tile__value">{{ s.totalViews | number }}</div>
+                <div class="stat-tile__label">{{ 'COMPANY_DASH.TOTAL_VIEWS' | translate }}</div>
+              </div>
+            </div>
+            <div class="col-6 col-md-3">
+              <div class="stat-tile">
+                <i class="fa-regular fa-envelope text-primary"></i>
+                <div class="stat-tile__value">{{ s.totalInquiries | number }}</div>
+                <div class="stat-tile__label">{{ 'COMPANY_DASH.INQUIRIES' | translate }}</div>
+              </div>
+            </div>
+            <div class="col-6 col-md-3">
+              <div class="stat-tile">
+                <i class="fa-solid fa-calendar-day text-primary"></i>
+                <div class="stat-tile__value">{{ s.monthlyInquiries | number }}</div>
+                <div class="stat-tile__label">{{ 'COMPANY_DASH.THIS_MONTH' | translate }}</div>
+              </div>
+            </div>
+            <div class="col-6 col-md-3">
+              <div class="stat-tile">
+                <i class="fa-solid fa-handshake text-primary"></i>
+                <div class="stat-tile__value">{{ s.dealsClosed | number }}</div>
+                <div class="stat-tile__label">{{ 'COMPANY_DASH.DEALS_CLOSED' | translate }}</div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  }
+
+  <div class="row g-3">
+    <!-- Top brokers -->
+    <div class="col-lg-6">
+      <div class="card p-3 h-100">
+        <h5 class="mb-3">{{ 'COMPANY_DASH.TOP_BROKERS' | translate }}</h5>
+        @for (broker of topBrokers(); track broker.id; let i = $index) {
+          <div class="d-flex align-items-center justify-content-between py-2 border-bottom">
+            <div class="d-flex align-items-center gap-2">
+              <span class="badge bg-dark rounded-circle">{{ i + 1 }}</span>
+              <span class="fw-semibold">{{ broker.fullName || broker.licenseNumber }}</span>
+            </div>
+            <div class="text-muted small">
+              {{ broker.closedDealsCount }} {{ 'COMPANY_DASH.DEALS' | translate }} ·
+              <i class="fa-solid fa-star text-warning"></i> {{ broker.ratingAvg }}
+            </div>
+          </div>
+        } @empty {
+          <p class="text-muted mb-0">{{ 'COMPANY_DASH.NO_BROKERS' | translate }}</p>
+        }
+      </div>
+    </div>
+
+    <!-- Recent activity -->
+    <div class="col-lg-6">
+      <div class="card p-3 h-100">
+        <h5 class="mb-3">{{ 'COMPANY_DASH.RECENT_ACTIVITY' | translate }}</h5>
+        @for (item of activity(); track item.text + item.timestamp) {
+          <div class="d-flex align-items-center gap-2 py-2 border-bottom">
+            <i class="fa-solid {{ iconFor(item) }}"></i>
+            <span class="flex-grow-1 small">{{ item.text }}</span>
+            <span class="text-muted small text-nowrap">{{ item.timestamp | date: 'MMM d, HH:mm' }}</span>
+          </div>
+        } @empty {
+          <p class="text-muted mb-0">{{ 'COMPANY_DASH.NO_ACTIVITY' | translate }}</p>
+        }
+      </div>
+    </div>
+  </div>
+}

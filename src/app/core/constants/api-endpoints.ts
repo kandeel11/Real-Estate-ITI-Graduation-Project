@@ -9,54 +9,99 @@ export const API_ENDPOINTS = {
   AUTH: {
     LOGIN: '/auth/login',
     REGISTER: '/auth/register',
+    REGISTER_COMPANY: '/auth/register-company',
     VERIFY_EMAIL: '/auth/verify-email',
-    REQUEST_OTP: '/auth/request-otp',
+    RESEND_VERIFICATION: '/auth/resend-verification',
+    SEND_OTP: '/auth/send-otp',
     VERIFY_OTP: '/auth/verify-otp',
-    REFRESH_TOKEN: '/auth/refresh-token',
+    REFRESH_TOKEN: '/auth/refresh',
     LOGOUT: '/auth/logout',
     FORGOT_PASSWORD: '/auth/forgot-password',
     RESET_PASSWORD: '/auth/reset-password',
+    CHANGE_PASSWORD: '/auth/change-password',
   },
 
   // ==================== PROPERTIES MODULE ====================
   PROPERTIES: {
-    GET_ALL: '/properties',
+    GET_ALL: '/properties', // admin-only on the backend
+    GET_ACTIVE: '/properties/active',
+    GET_MINE: '/properties/mine',
     GET_PAGINATED: '/properties/paginated',
     GET_BY_ID: (id: string) => `/properties/${id}`,
     CREATE: '/properties',
     UPDATE: (id: string) => `/properties/${id}`,
     DELETE: (id: string) => `/properties/${id}`,
-    UPLOAD_IMAGES: (id: string) => `/properties/${id}/images`,
-    DELETE_IMAGE: (id: string, imageId: string) =>
-      `/properties/${id}/images/${imageId}`,
+    SUBMIT: (id: string) => `/properties/${id}/submit`,
+    ASSIGN_BROKER: (id: string) => `/properties/${id}/assign-broker`,
+    REQUEST_AI_DESCRIPTION: (id: string) => `/properties/${id}/request-ai-description`,
+    MEDIA: (id: string) => `/properties/${id}/media`,
+    SET_PRIMARY_MEDIA: (id: string, mediaId: string) =>
+      `/properties/${id}/media/${mediaId}/primary`,
+    DELETE_MEDIA: (id: string, mediaId: string) => `/properties/${id}/media/${mediaId}`,
+    AMENITIES: (id: string) => `/properties/${id}/amenities`,
+    REMOVE_AMENITY: (id: string, amenityId: string) => `/properties/${id}/amenities/${amenityId}`,
     GET_BY_CITY: (city: string) => `/properties/city/${city}`,
     GET_FEATURED: '/properties/featured',
     SEARCH: '/properties/search',
+    SET_FEATURED: (id: string) => `/properties/${id}/feature`,
+    MARK_RENTED: (id: string) => `/properties/${id}/rented`,
+    // Saved properties (tenant wishlist)
+    SAVED: '/properties/saved',
+    SAVED_IDS: '/properties/saved/ids',
+    SAVE: (id: string) => `/properties/${id}/save`,
+  },
+
+  // ==================== AMENITIES CATALOG ====================
+  AMENITIES: {
+    GET_ALL: '/amenities',
+    GET_BY_PROPERTY: (propertyId: string) => `/amenities/property/${propertyId}`,
+  },
+
+  // ==================== INQUIRIES MODULE ====================
+  INQUIRIES: {
+    CREATE: '/inquiries',
+    CAN_CREATE: '/inquiries/can-create',
+    MINE: '/inquiries/mine',
+    BY_PROPERTY: (propertyId: string) => `/inquiries/property/${propertyId}`,
+  },
+
+  // ==================== AI MODULE ====================
+  AI: {
+    DESCRIPTION_BY_PROPERTY: (propertyId: string) => `/AI/descriptions/by-property/${propertyId}`,
+    ACCEPT_DESCRIPTION: (generationId: string) => `/AI/descriptions/${generationId}/accept`,
+    CHATBOT_CHAT: '/AI/chatbot/chat',
+    CHATBOT_SESSIONS: '/AI/chatbot/sessions',
+    CHATBOT_HISTORY: (sessionId: string) => `/AI/chatbot/sessions/${sessionId}/history`,
+    ADMIN_ANALYTICS_CHAT: '/AI/admin/analytics/chat',
   },
 
   // ==================== COMPANIES MODULE ====================
+  // Matches backend CompaniesController ("mine" routes read CompanyId from JWT)
   COMPANIES: {
-    GET_ALL: '/companies',
     GET_BY_ID: (id: string) => `/companies/${id}`,
-    CREATE: '/companies',
+    MINE: '/companies/mine',
+    UPDATE_MINE: '/companies/mine',
+    MINE_PROPERTIES: '/companies/mine/properties',
+    MINE_BROKERS: '/companies/mine/brokers',
+    MINE_STATS: '/companies/mine/stats',
+    MINE_ACTIVITY: '/companies/mine/activity',
+    MINE_INQUIRIES: '/companies/mine/inquiries',
+    MINE_LOGO: '/companies/mine/logo',
+    MINE_RATINGS_SUMMARY: '/companies/mine/ratings-summary',
     UPDATE: (id: string) => `/companies/${id}`,
-    DELETE: (id: string) => `/companies/${id}`,
+    VERIFY: (id: string) => `/companies/${id}/verify`,
     GET_PROPERTIES: (id: string) => `/companies/${id}/properties`,
     GET_BROKERS: (id: string) => `/companies/${id}/brokers`,
-    UPDATE_STATUS: (id: string) => `/companies/${id}/status`,
   },
 
   // ==================== BROKERS MODULE ====================
+  // Matches backend BrokersController (nested under /companies)
   BROKERS: {
-    GET_ALL: '/brokers',
-    GET_BY_ID: (id: string) => `/brokers/${id}`,
-    CREATE: '/brokers',
-    UPDATE: (id: string) => `/brokers/${id}`,
-    DELETE: (id: string) => `/brokers/${id}`,
-    GET_LISTINGS: (id: string) => `/brokers/${id}/listings`,
-    GET_PERFORMANCE: (id: string) => `/brokers/${id}/performance`,
-    GET_COMMISSION_HISTORY: (id: string) =>
-      `/brokers/${id}/commission-history`,
+    ADD_TO_MINE: '/companies/mine/brokers',
+    ADD: (companyId: string) => `/companies/${companyId}/brokers`,
+    DEACTIVATE_MINE: (brokerId: string) => `/companies/mine/brokers/${brokerId}`,
+    REACTIVATE_MINE: (brokerId: string) => `/companies/mine/brokers/${brokerId}/reactivate`,
+    DELETE_MINE: (brokerId: string) => `/companies/mine/brokers/${brokerId}/permanent`,
   },
 
   // ==================== MAINTENANCE MODULE ====================
@@ -67,16 +112,12 @@ export const API_ENDPOINTS = {
       CREATE: '/maintenance/tickets',
       UPDATE: (id: string) => `/maintenance/tickets/${id}`,
       DELETE: (id: string) => `/maintenance/tickets/${id}`,
-      GET_BY_PROPERTY: (propertyId: string) =>
-        `/maintenance/tickets/property/${propertyId}`,
-      GET_BY_STATUS: (status: string) =>
-        `/maintenance/tickets/status/${status}`,
+      GET_BY_PROPERTY: (propertyId: string) => `/maintenance/tickets/property/${propertyId}`,
+      GET_BY_STATUS: (status: string) => `/maintenance/tickets/status/${status}`,
     },
     STATUS_UPDATES: {
-      GET_HISTORY: (ticketId: string) =>
-        `/maintenance/tickets/${ticketId}/status-history`,
-      UPDATE_STATUS: (ticketId: string) =>
-        `/maintenance/tickets/${ticketId}/status`,
+      GET_HISTORY: (ticketId: string) => `/maintenance/tickets/${ticketId}/status-history`,
+      UPDATE_STATUS: (ticketId: string) => `/maintenance/tickets/${ticketId}/status`,
       ADD_NOTE: (ticketId: string) => `/maintenance/tickets/${ticketId}/notes`,
     },
     REPORTS: {
@@ -94,8 +135,7 @@ export const API_ENDPOINTS = {
     UPDATE: (id: string) => `/leases/${id}`,
     DELETE: (id: string) => `/leases/${id}`,
     GET_BY_TENANT: (tenantId: string) => `/leases/tenant/${tenantId}`,
-    GET_BY_PROPERTY: (propertyId: string) =>
-      `/leases/property/${propertyId}`,
+    GET_BY_PROPERTY: (propertyId: string) => `/leases/property/${propertyId}`,
     RENEW: (id: string) => `/leases/${id}/renew`,
     TERMINATE: (id: string) => `/leases/${id}/terminate`,
     GET_ACTIVE: '/leases/active',
@@ -103,25 +143,73 @@ export const API_ENDPOINTS = {
   },
 
   // ==================== SUBSCRIPTIONS MODULE ====================
+  // MINE/MINE_USAGE match the backend SubscriptionsController;
+  // plan catalog lives at /subscription-plans
   SUBSCRIPTIONS: {
-    GET_PLANS: '/subscriptions/plans',
-    GET_USER_SUBSCRIPTION: '/subscriptions/user',
-    SUBSCRIBE: '/subscriptions/subscribe',
-    UPGRADE_PLAN: '/subscriptions/upgrade',
-    CANCEL_SUBSCRIPTION: '/subscriptions/cancel',
-    GET_BILLING_HISTORY: '/subscriptions/billing-history',
-    GET_USAGE: '/subscriptions/usage',
+    GET_PLANS: '/subscription-plans',
+    MINE: '/subscriptions/mine',
+    MINE_USAGE: '/subscriptions/mine/usage',
+    MINE_PAYMENTS: '/subscriptions/mine/payments',
+    MINE_UPGRADE: '/subscriptions/mine/upgrade',
+    MINE_CANCEL: '/subscriptions/mine/cancel',
+    SELECT_PLAN: '/subscriptions/select-plan',
   },
 
   // ==================== PAYMENTS MODULE ====================
   PAYMENTS: {
-    CREATE_INTENT: '/payments/create-intent',
-    CONFIRM_PAYMENT: '/payments/confirm',
-    GET_PAYMENT_HISTORY: '/payments/history',
-    GET_INVOICE: (invoiceId: string) => `/payments/invoice/${invoiceId}`,
-    DOWNLOAD_INVOICE: (invoiceId: string) =>
-      `/payments/invoice/${invoiceId}/download`,
-    PROCESS_REFUND: (paymentId: string) => `/payments/${paymentId}/refund`,
+    GET_ALL: '/payments',
+    GET_MY: '/payments/my',
+    GET_BY_ID: (id: string) => `/payments/${id}`,
+    PROCESS: (id: string) => `/payments/${id}/process`,
+    GET_OVERDUE: '/payments/overdue',
+    GET_SUMMARY: '/payments/summary',
+    GET_BY_STATUS: (status: string) => `/payments/status/${status}`,
+    APPLY_LATE_FEE: (id: string) => `/payments/${id}/late-fee`,
+    GET_RECEIPT: (id: string) => `/payments/${id}/receipt`,
+    REFUND: (id: string) => `/payments/${id}/refund`,
+    GENERATE_MONTHLY: '/payments/generate-monthly',
+    GENERATE_FOR_LEASE: (leaseId: string) => `/payments/generate-for-lease/${leaseId}`,
+    SUBSCRIPTIONS_CHECKOUT: '/payments/subscriptions/checkout',
+    STRIPE_WEBHOOK: '/payments/webhook/stripe',
+  },
+
+  // ==================== TENANT PAYMENTS ====================
+  TENANT_PAYMENTS: {
+    GET_ALL: '/tenant/payments',
+    GET_SCHEDULE: '/tenant/payments/schedule',
+  },
+
+  // ==================== OWNER PAYMENTS ====================
+  OWNER_PAYMENTS: {
+    GET_ALL: '/owners/me/payments',
+  },
+
+  // ==================== BROKER PAYMENTS ====================
+  BROKER_PAYMENTS: {
+    GET_ALL: '/brokers/me/payments',
+    GET_SCHEDULE: '/brokers/me/payments/schedule',
+  },
+
+  // ==================== COMPANY PAYMENTS ====================
+  COMPANY_PAYMENTS: {
+    GET_ALL: '/companies/mine/payments',
+    GET_SCHEDULE: '/companies/mine/payments/schedule',
+  },
+
+  // ==================== WALLET MODULE ====================
+  WALLET: {
+    BALANCE: '/wallet/balance',
+    LEDGER: '/wallet/ledger',
+    WITHDRAW: '/wallet/withdrawals',
+    MY_WITHDRAWALS: '/wallet/withdrawals',
+    ALL_WITHDRAWALS: '/wallet/withdrawals/all',
+    APPROVE_WITHDRAWAL: (id: string) => `/wallet/withdrawals/${id}/approve`,
+    REJECT_WITHDRAWAL: (id: string) => `/wallet/withdrawals/${id}/reject`,
+  },
+
+  // ==================== LEASE PAYMENT SCHEDULE ====================
+  LEASE_SCHEDULE: {
+    GET: (leaseId: string) => `/leases/${leaseId}/payment-schedule`,
   },
 
   // ==================== SMART SEARCH MODULE ====================
@@ -132,19 +220,16 @@ export const API_ENDPOINTS = {
     GET_SUGGESTIONS: '/smart-search/suggestions',
     SAVE_SEARCH: '/smart-search/save-search',
     GET_SAVED_SEARCHES: '/smart-search/saved-searches',
-    DELETE_SAVED_SEARCH: (searchId: string) =>
-      `/smart-search/saved-searches/${searchId}`,
+    DELETE_SAVED_SEARCH: (searchId: string) => `/smart-search/saved-searches/${searchId}`,
   },
 
   // ==================== AI CHAT & RAG MODULE ====================
   CHAT_RAG: {
     SEND_MESSAGE: '/chat-rag/message',
-    GET_CONVERSATION: (conversationId: string) =>
-      `/chat-rag/conversation/${conversationId}`,
+    GET_CONVERSATION: (conversationId: string) => `/chat-rag/conversation/${conversationId}`,
     GET_CONVERSATIONS: '/chat-rag/conversations',
     CREATE_CONVERSATION: '/chat-rag/conversation',
-    DELETE_CONVERSATION: (conversationId: string) =>
-      `/chat-rag/conversation/${conversationId}`,
+    DELETE_CONVERSATION: (conversationId: string) => `/chat-rag/conversation/${conversationId}`,
     SEARCH_DOCUMENTS: '/chat-rag/search-documents',
     UPLOAD_DOCUMENT: '/chat-rag/upload-document',
   },
@@ -164,8 +249,7 @@ export const API_ENDPOINTS = {
   // ==================== ANALYTICS & REPORTING ====================
   ANALYTICS: {
     GET_DASHBOARD_METRICS: '/analytics/dashboard',
-    GET_PROPERTY_ANALYTICS: (propertyId: string) =>
-      `/analytics/property/${propertyId}`,
+    GET_PROPERTY_ANALYTICS: (propertyId: string) => `/analytics/property/${propertyId}`,
     GET_USER_ANALYTICS: '/analytics/user',
     EXPORT_REPORT: '/analytics/export',
   },

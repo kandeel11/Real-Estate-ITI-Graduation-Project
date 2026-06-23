@@ -4,16 +4,37 @@
  * Serves as the entry point for all routes and layout components
  */
 
-import { Component } from '@angular/core';
+import { Component, effect, inject } from '@angular/core';
 import { RouterOutlet } from '@angular/router';
+import { AuthService } from './core/services/auth.service';
+import { NotificationService } from './core/services/notification.service';
+import { ToastComponent } from './shared/components/toast/toast.component';
+import { EmailVerificationBarComponent } from './shared/components/email-verification-bar/email-verification-bar.component';
 
 @Component({
   selector: 'app-root',
   standalone: true,
-  imports: [RouterOutlet],
-  template: `<router-outlet />`,
+  imports: [RouterOutlet, ToastComponent, EmailVerificationBarComponent],
+  template: `
+    <app-email-verification-bar />
+    <router-outlet />
+    <app-toast />
+  `,
   styleUrls: [],
 })
 export class AppComponent {
+  private readonly auth = inject(AuthService);
+  private readonly notifications = inject(NotificationService);
   title = 'RealEstate Platform';
+
+  constructor() {
+    // App-wide notification toasts for every signed-in user (any role).
+    effect(() => {
+      if (this.auth.authenticated()) {
+        this.notifications.startWatcher();
+      } else {
+        this.notifications.stopWatcher();
+      }
+    });
+  }
 }
