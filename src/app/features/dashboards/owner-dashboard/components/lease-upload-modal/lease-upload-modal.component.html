@@ -89,6 +89,12 @@
             <i class="fa-solid fa-triangle-exclamation"></i>
             {{ 'OWNER.LEASE_UPLOAD.AI_FAILED_WARN' | translate }}
           </div>
+          @if (extractionDiagnosis()) {
+            <div class="extraction-diagnosis">
+              <i class="fa-solid fa-circle-info"></i>
+              {{ extractionDiagnosis() }}
+            </div>
+          }
         } @else {
           <div class="ai-badge">
             <i class="fa-solid fa-robot"></i>

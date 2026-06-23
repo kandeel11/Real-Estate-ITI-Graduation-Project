@@ -198,8 +198,16 @@ export class OwnerDataService {
       installment_amount?: Field; payment_frequency?: Field; total_rent_amount?: Field;
       duration_in_months?: Field; security_deposit?: Field; start_date?: Field; end_date?: Field;
       payment_day_of_month?: Field; tenant_name?: Field; owner_name?: Field;
-      overall_confidence?: number; extractionStatus?: 'pending' | 'done' | 'failed';
+      overall_confidence?: number; confidence?: number;
+      extractionStatus?: string; extraction_status?: string;
     }
+    const mapStatus = (s?: string): LeaseAiExtraction['extractionStatus'] => {
+      if (!s) return 'pending';
+      const low = s.toLowerCase();
+      if (low === 'extracted' || low === 'done') return 'done';
+      if (low === 'failed') return 'failed';
+      return 'pending';
+    };
     return this.http.get<Raw>(`${this.api}/leases/${leaseId}/ai-extraction`).pipe(
       timeout(10000),
       map((r): LeaseAiExtraction => ({
@@ -215,8 +223,8 @@ export class OwnerDataService {
         durationInMonths: r.duration_in_months ? Number(r.duration_in_months.value) : null,
         deposit: Number(r.security_deposit?.value ?? 0),
         paymentDayOfMonth: r.payment_day_of_month ? Number(r.payment_day_of_month.value) : null,
-        extractionStatus: r.extractionStatus ?? 'pending',
-        confidence: r.overall_confidence ?? 0,
+        extractionStatus: mapStatus(r.extractionStatus ?? r.extraction_status),
+        confidence: r.overall_confidence ?? r.confidence ?? 0,
         fieldConfidence: {
           tenantName: r.tenant_name?.confidence,
           ownerName: r.owner_name?.confidence,
@@ -230,6 +238,17 @@ export class OwnerDataService {
         },
       })),
     );
+  }
+
+  getLeaseExtractionDebug(leaseId: string): Observable<{
+    leaseId: string; extractionStatus: string;
+    displayStatus: 'pending' | 'done' | 'failed';
+    confidence: number; isReadyForFrontend: boolean;
+    nullFields: string[]; diagnosis: string;
+  }> {
+    return this.http
+      .get<any>(`${this.api}/leases/${leaseId}/extraction-debug`)
+      .pipe(timeout(10000));
   }
 
   sendLeaseToTenant(leaseId: string, data: Partial<LeaseAiExtraction>): Observable<void> {

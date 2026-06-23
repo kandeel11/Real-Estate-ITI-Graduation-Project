@@ -42,6 +42,8 @@ export class LeaseUploadModalComponent implements OnInit, OnDestroy {
 
   extraction = signal<LeaseAiExtraction | null>(null);
   extractionFailed = signal(false);
+  /** Diagnosis message from /extraction-debug when key fields are null after completion. */
+  extractionDiagnosis = signal<string | null>(null);
   sending = signal(false);
   /** Loading an existing lease's extraction while resuming (before the review step shows). */
   resuming = signal(false);
@@ -78,33 +80,61 @@ export class LeaseUploadModalComponent implements OnInit, OnDestroy {
   }
 
   /**
-   * Polls the lease's AI extraction until it settles, then opens the review step.
-   * Shared by a fresh upload and by resuming an existing lease.
+   * Polls /extraction-debug to detect completion, then always loads /ai-extraction
+   * for the real data. isReadyForFrontend drives a warning only — never blocks the form.
+   * Falls back to polling /ai-extraction directly if the debug endpoint is unavailable.
    */
   private beginExtractionPolling(leaseId: string, onSettled?: () => void): void {
+    const openReview = (ext: LeaseAiExtraction, failed: boolean, diagnosis?: string) => {
+      this.extraction.set({ ...ext, tenantEmail: this.lead.tenantEmail ?? '' });
+      this.extractionFailed.set(failed);
+      this.extractionDiagnosis.set(diagnosis ?? null);
+      this.uploading.set(false);
+      onSettled?.();
+      this.step.set(2);
+    };
+
     const doCheck = () => {
-      this.svc.getLeaseAiExtraction(leaseId).subscribe({
-        next: (ext) => {
-          if (ext.extractionStatus !== 'pending') {
-            this.stopPolling();
-            this.extractionFailed.set(ext.extractionStatus === 'failed');
-            // API no longer returns tenantEmail — fill it from the lead.
-            this.extraction.set({ ...ext, tenantEmail: this.lead.tenantEmail ?? '' });
-            this.uploading.set(false);
-            onSettled?.();
-            this.step.set(2);
-          }
+      this.svc.getLeaseExtractionDebug(leaseId).subscribe({
+        next: (debug) => {
+          if (debug.displayStatus === 'pending') return;
+
+          // Stop the interval immediately — don't let it fire again while the HTTP is in-flight.
+          this.stopPolling();
+
+          // Always load the real data; use isReadyForFrontend only for the warning badge.
+          this.svc.getLeaseAiExtraction(leaseId).subscribe({
+            next: (ext) => {
+              const warn = !debug.isReadyForFrontend ? debug.diagnosis : undefined;
+              openReview(ext, debug.displayStatus === 'failed', warn);
+            },
+            error: () => openReview(
+              { tenantName: '', tenantEmail: '', ownerName: '', propertyTitle: '',
+                startDate: '', endDate: '', installmentAmount: 0,
+                paymentFrequency: 'Monthly', deposit: 0,
+                extractionStatus: 'failed', confidence: 0 },
+              true, 'Extraction completed but data could not be loaded.',
+            ),
+          });
         },
         error: () => {
-          this.stopPolling();
-          this.uploading.set(false);
-          onSettled?.();
-          this.uploadError.set('OWNER.LEASE_UPLOAD.UPLOAD_ERROR');
+          // Debug endpoint unavailable — fall back to polling /ai-extraction directly.
+          this.svc.getLeaseAiExtraction(leaseId).subscribe({
+            next: (ext) => {
+              if (ext.extractionStatus === 'pending') return;
+              this.stopPolling();
+              openReview(ext, ext.extractionStatus === 'failed');
+            },
+            error: () => {
+              this.stopPolling();
+              this.uploading.set(false);
+              onSettled?.();
+              this.uploadError.set('OWNER.LEASE_UPLOAD.UPLOAD_ERROR');
+            },
+          });
         },
       });
     };
-    // Assign pollId BEFORE the first check so stopPolling() always sees a non-null id,
-    // even when the mock observable resolves synchronously inside doCheck().
     this.pollId = setInterval(doCheck, 3000);
     doCheck();
   }
