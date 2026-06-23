@@ -140,6 +140,7 @@ public sealed class LeaseExtractionService : ILeaseExtractionService
             cancellationToken: cancellationToken);
 
         var raw = response.Content ?? "{}";
+        _logger.LogInformation("[LeaseExtraction] Raw Claude response:\n{Raw}", raw);
         return ParseResponse(raw);
     }
 
@@ -167,7 +168,7 @@ public sealed class LeaseExtractionService : ILeaseExtractionService
             var overall = root.TryGetProperty("overall_confidence", out var oc)
                 ? oc.GetDecimal() : 0m;
 
-            return new ExtractedLeaseData(
+            var result = new ExtractedLeaseData(
                 InstallmentAmount:  ParseField("installment_amount"),
                 PaymentFrequency:   ParseField("payment_frequency"),
                 TotalRentAmount:    ParseField("total_rent_amount"),
@@ -180,10 +181,33 @@ public sealed class LeaseExtractionService : ILeaseExtractionService
                 OwnerName:          ParseField("owner_name"),
                 OverallConfidence:  overall,
                 RawAiResponse:      raw);
+
+            _logger.LogInformation(
+                "[LeaseExtraction] Parsed fields:\n" +
+                "  installment_amount   = {IA} ({IAC}%)\n" +
+                "  payment_frequency    = {PF} ({PFC}%)\n" +
+                "  total_rent_amount    = {TR} ({TRC}%)\n" +
+                "  duration_in_months   = {DM} ({DMC}%)\n" +
+                "  security_deposit     = {SD} ({SDC}%)\n" +
+                "  start_date           = {ST} ({STC}%)\n" +
+                "  end_date             = {ED} ({EDC}%)\n" +
+                "  payment_day_of_month = {PD} ({PDC}%)\n" +
+                "  overall_confidence   = {OC}%",
+                result.InstallmentAmount.Value,  result.InstallmentAmount.ConfidenceScore,
+                result.PaymentFrequency.Value,   result.PaymentFrequency.ConfidenceScore,
+                result.TotalRentAmount.Value,    result.TotalRentAmount.ConfidenceScore,
+                result.DurationInMonths.Value,   result.DurationInMonths.ConfidenceScore,
+                result.SecurityDeposit.Value,    result.SecurityDeposit.ConfidenceScore,
+                result.StartDate.Value,          result.StartDate.ConfidenceScore,
+                result.EndDate.Value,            result.EndDate.ConfidenceScore,
+                result.PaymentDayOfMonth.Value,  result.PaymentDayOfMonth.ConfidenceScore,
+                overall);
+
+            return result;
         }
         catch (Exception ex)
         {
-            _logger.LogError(ex, "Failed to parse Claude response: {Raw}", raw);
+            _logger.LogError(ex, "[LeaseExtraction] Failed to parse Claude response: {Raw}", raw);
             var failed = new ExtractedLeaseField(null, 0, true);
             return new ExtractedLeaseData(
                 failed, failed, failed, failed, failed, failed, failed, failed, failed, failed, 0, raw);

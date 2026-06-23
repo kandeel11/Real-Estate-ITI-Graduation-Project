@@ -13,6 +13,7 @@ using Identity.Application.Interfaces;
 using MediatR;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
+using Microsoft.Extensions.Logging;
 using Property.Application.Features.Queries.GetPropertyById;
 
 namespace RealEstate.Host.Controllers;
@@ -25,12 +26,20 @@ public class LeasesController : ControllerBase
     private readonly IUserRepository _userRepo;
     private readonly ICurrentUserService _currentUser;
     private readonly IAzureBlobService _blob;
-    public LeasesController(IMediator mediator, IUserRepository userRepo, ICurrentUserService currentUser, IAzureBlobService blob)
+    private readonly ILogger<LeasesController> _logger;
+
+    public LeasesController(
+        IMediator mediator,
+        IUserRepository userRepo,
+        ICurrentUserService currentUser,
+        IAzureBlobService blob,
+        ILogger<LeasesController> logger)
     {
         _mediator = mediator;
         _userRepo = userRepo;
         _currentUser = currentUser;
         _blob = blob;
+        _logger = logger;
     }
 
     private Guid CurrentUserId => _currentUser.UserId ?? throw new UnauthorizedAccessException();
@@ -64,6 +73,22 @@ public class LeasesController : ControllerBase
         var lease = await _mediator.Send(new GetLeaseByIdQuery(id), ct);
         if (lease == null) return NotFound();
 
+        _logger.LogInformation(
+            "[LeaseExtraction] GET ai-extraction for LeaseId={LeaseId} | Status={Status} | Confidence={Conf}% | " +
+            "InstallmentAmount={IA} | PaymentFrequency={PF} | StartDate={ST} | EndDate={ED} | " +
+            "DurationInMonths={DM} | TotalRentAmount={TR} | SecurityDeposit={SD} | PaymentDayOfMonth={PD}",
+            id, lease.ExtractionStatus, lease.ExtractionConfidence,
+            lease.InstallmentAmount, lease.PaymentFrequency,
+            lease.StartDate, lease.EndDate,
+            lease.DurationInMonths, lease.TotalRentAmount,
+            lease.SecurityDeposit, lease.PaymentDayOfMonth);
+
+        if (lease.InstallmentAmount == null || lease.StartDate == null)
+            _logger.LogWarning(
+                "[LeaseExtraction] LeaseId={LeaseId} — frontend will receive incomplete data. " +
+                "InstallmentAmount={IA}, StartDate={ST}, ExtractionStatus={Status}",
+                id, lease.InstallmentAmount, lease.StartDate, lease.ExtractionStatus);
+
         var tenant = await _userRepo.GetByIdAsync(lease.TenantId, ct);
         var property = await _mediator.Send(new GetPropertyByIdQuery(lease.PropertyId), ct);
 
@@ -81,6 +106,65 @@ public class LeasesController : ControllerBase
             deposit           = lease.SecurityDeposit ?? 0m,
             extractionStatus  = MapExtractionStatus(lease.ExtractionStatus),
             confidence        = lease.ExtractionConfidence ?? 0m
+        });
+    }
+
+    /// <summary>
+    /// Debug endpoint — returns the full extraction state including which fields are
+    /// null and why. Use this to diagnose why the frontend isn't getting data.
+    /// </summary>
+    [HttpGet("{id}/extraction-debug")]
+    public async Task<IActionResult> GetExtractionDebug(Guid id, CancellationToken ct)
+    {
+        var lease = await _mediator.Send(new GetLeaseByIdQuery(id), ct);
+        if (lease == null) return NotFound(new { error = $"Lease {id} not found." });
+
+        _logger.LogInformation(
+            "[LeaseExtraction] extraction-debug called for LeaseId={LeaseId}", id);
+
+        var nullFields = new List<string>();
+        if (lease.InstallmentAmount == null) nullFields.Add("installmentAmount");
+        if (lease.PaymentFrequency == null)  nullFields.Add("paymentFrequency");
+        if (lease.StartDate == null)         nullFields.Add("startDate");
+        if (lease.EndDate == null)           nullFields.Add("endDate");
+        if (lease.DurationInMonths == null)  nullFields.Add("durationInMonths");
+        if (lease.TotalRentAmount == null)   nullFields.Add("totalRentAmount");
+        if (lease.SecurityDeposit == null)   nullFields.Add("securityDeposit");
+        if (lease.PaymentDayOfMonth == null) nullFields.Add("paymentDayOfMonth");
+
+        var status = MapExtractionStatus(lease.ExtractionStatus);
+        var isReady = status == "done" && nullFields.Count == 0;
+
+        return Ok(new
+        {
+            leaseId          = lease.Id,
+            extractionStatus = lease.ExtractionStatus,
+            displayStatus    = status,
+            confidence       = lease.ExtractionConfidence ?? 0m,
+            isReadyForFrontend = isReady,
+            nullFields,
+            diagnosis = nullFields.Count == 0
+                ? "All required fields are populated."
+                : $"These fields are null — extraction may have failed or the PDF didn't contain them: [{string.Join(", ", nullFields)}]",
+            fields = new
+            {
+                installmentAmount   = lease.InstallmentAmount,
+                paymentFrequency    = lease.PaymentFrequency,
+                totalRentAmount     = lease.TotalRentAmount,
+                durationInMonths    = lease.DurationInMonths,
+                securityDeposit     = lease.SecurityDeposit,
+                startDate           = lease.StartDate?.ToString("yyyy-MM-dd"),
+                endDate             = lease.EndDate?.ToString("yyyy-MM-dd"),
+                paymentDayOfMonth   = lease.PaymentDayOfMonth
+            },
+            meta = new
+            {
+                leaseStatus  = lease.Status,
+                isActive     = lease.IsActive,
+                createdAt    = lease.CreatedAt,
+                tenantId     = lease.TenantId,
+                propertyId   = lease.PropertyId
+            }
         });
     }
 
