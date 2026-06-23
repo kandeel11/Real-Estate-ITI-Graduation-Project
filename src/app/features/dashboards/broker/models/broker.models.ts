@@ -121,7 +121,7 @@ export interface Inquiry {
   from: string;
   property: string;
   message: string;
-  status: 'new' | 'replied';
+  status: 'new' | 'replied' | 'converted';
   timeAgo: string;
   reply?: string;
 }
