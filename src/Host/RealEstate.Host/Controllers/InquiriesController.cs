@@ -76,6 +76,39 @@ public class InquiriesController(
         return result is null ? NotFound() : Ok(result);
     }
 
+    /// <summary>
+    /// Returns the current status of an inquiry so the frontend can decide whether to
+    /// show "Convert to Lead" or "Already Converted" without reloading the full list.
+    /// </summary>
+    [HttpGet("{id:guid}/status")]
+    public async Task<IActionResult> GetStatus(Guid id, CancellationToken ct)
+    {
+        var inquiry = await mediator.Send(new GetInquiryByIdQuery(id), ct);
+        if (inquiry is null) return NotFound(new { error = $"Inquiry {id} not found." });
+
+        var isConverted = inquiry.Status == "Accepted";
+        Guid? leadId = null;
+        if (isConverted)
+            leadId = await mediator.Send(new GetLeadByInquiryQuery(id), ct);
+
+        var displayStatus = inquiry.Status switch
+        {
+            "Accepted" => "converted",
+            "Closed"   => "closed",
+            "Expired"  => "expired",
+            _          => "pending"
+        };
+
+        return Ok(new
+        {
+            inquiryId       = inquiry.Id,
+            status          = inquiry.Status,
+            displayStatus,
+            isConvertedToLead = isConverted,
+            leadId
+        });
+    }
+
     // FIX: was GET /tenant/{tenantId} — now /mine scoped from JWT.
     // Enriched for the chat list: property title, last message + time, newest-first.
     [HttpGet("mine")]

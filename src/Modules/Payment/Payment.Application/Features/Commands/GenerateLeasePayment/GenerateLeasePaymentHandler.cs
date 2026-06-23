@@ -1,5 +1,6 @@
 using MediatR;
 using Microsoft.Extensions.Logging;
+using Payment.Application.Helpers;
 using Payment.Application.Interfaces;
 using PaymentEntity = Payment.Domain.Entities.Payment;
 
@@ -53,9 +54,9 @@ public sealed class GenerateLeasePaymentHandler
                 DueDate: lease.EndDate,
                 Message: $"Lease ended on {lease.EndDate:yyyy-MM-dd}. No new payments can be generated.");
 
-        // Calculate the due date for the current period
-        int day = Math.Min(lease.PaymentDayOfMonth, DateTime.DaysInMonth(today.Year, today.Month));
-        var dueDate = new DateOnly(today.Year, today.Month, day);
+        // Find the next due date respecting the lease's payment frequency and period structure
+        var dueDate = LeasePaymentHelper.ComputeNextDueDate(
+            lease.StartDate, lease.PaymentFrequency, lease.PaymentDayOfMonth, today);
 
         bool exists = await _repository.ExistsForLeaseAndMonthAsync(
             request.LeaseId, dueDate, cancellationToken);

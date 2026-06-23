@@ -373,8 +373,8 @@ public class OwnerDashboardController(
 
     private static string MapInquiryStatus(string status, bool hasReply) => status switch
     {
-        "Closed" => "converted",
-        "Accepted" => "replied",
+        "Accepted" => "converted",   // inquiry accepted = lead was created
+        "Closed"   => "closed",
         // A pending inquiry counts as "replied" once the broker/owner has sent a message.
         _ => hasReply ? "replied" : "new"
     };

@@ -51,7 +51,8 @@ public sealed class DocumentLeaseServiceAdapter : ILeaseService
                 TenantId: l.TenantId,
                 LandlordId: l.OwnerId,
                 StartDate: l.StartDate ?? DateOnly.FromDateTime(DateTime.UtcNow),
-                EndDate: l.EndDate ?? DateOnly.FromDateTime(DateTime.UtcNow.AddYears(1))
+                EndDate: l.EndDate ?? DateOnly.FromDateTime(DateTime.UtcNow.AddYears(1)),
+                PaymentFrequency: l.PaymentFrequency?.ToString()
             );
         }).ToList();
     }
@@ -81,7 +82,8 @@ public sealed class DocumentLeaseServiceAdapter : ILeaseService
             TenantId: lease.TenantId,
             LandlordId: lease.OwnerId,
             StartDate: lease.StartDate ?? DateOnly.FromDateTime(DateTime.UtcNow),
-            EndDate: lease.EndDate ?? DateOnly.FromDateTime(DateTime.UtcNow.AddYears(1))
+            EndDate: lease.EndDate ?? DateOnly.FromDateTime(DateTime.UtcNow.AddYears(1)),
+            PaymentFrequency: lease.PaymentFrequency?.ToString()
         );
     }
 }

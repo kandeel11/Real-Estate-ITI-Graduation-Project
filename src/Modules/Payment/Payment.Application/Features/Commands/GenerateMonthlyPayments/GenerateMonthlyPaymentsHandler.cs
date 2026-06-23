@@ -1,5 +1,6 @@
 using MediatR;
 using Microsoft.Extensions.Logging;
+using Payment.Application.Helpers;
 using Payment.Application.Interfaces;
 using PaymentEntity = Payment.Domain.Entities.Payment;
 
@@ -34,7 +35,6 @@ public sealed class GenerateMonthlyPaymentsHandler
     {
         // حدد الشهر المستهدف: لو مفيش شهر محدد، استخدم الشهر الحالي
         var targetMonth = request.TargetMonth ?? DateOnly.FromDateTime(DateTime.UtcNow);
-        var dueDate = new DateOnly(targetMonth.Year, targetMonth.Month, 1);
 
         _logger.LogInformation(
             "Starting monthly payment generation for {Month}/{Year}",
@@ -57,10 +57,19 @@ public sealed class GenerateMonthlyPaymentsHandler
         {
             try
             {
-                // حدد يوم الاستحقاق بناءً على paymentDayOfMonth في الـ lease
-                var paymentDay = Math.Min(lease.PaymentDayOfMonth,
-                    DateTime.DaysInMonth(targetMonth.Year, targetMonth.Month));
-                var exactDueDate = new DateOnly(targetMonth.Year, targetMonth.Month, paymentDay);
+                // Skip leases where this month is not a period-start month for their frequency.
+                // A Quarterly lease starting January only generates in Jan, Apr, Jul, Oct.
+                if (!LeasePaymentHelper.IsPeriodStartMonth(lease.StartDate, lease.PaymentFrequency, targetMonth))
+                {
+                    _logger.LogDebug(
+                        "Skipping LeaseId={LeaseId} — {Month}/{Year} is not a period-start month (frequency={Freq})",
+                        lease.LeaseId, targetMonth.Month, targetMonth.Year, lease.PaymentFrequency ?? "Monthly");
+                    skippedCount++;
+                    continue;
+                }
+
+                var exactDueDate = LeasePaymentHelper.DueDateForMonth(
+                    targetMonth.Year, targetMonth.Month, lease.PaymentDayOfMonth);
 
                 // تحقق إن مفيش دفعة موجودة لنفس الـ lease في نفس الشهر
                 var alreadyExists = await _repository.ExistsForLeaseAndMonthAsync(
