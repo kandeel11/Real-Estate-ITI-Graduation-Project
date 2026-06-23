@@ -71,7 +71,7 @@ public class ReplyToInquiryCommandHandler : IRequestHandler<ReplyToInquiryComman
             userId: inquiry.TenantId,
             title: "New Reply to Your Inquiry",
             body: cmd.Text.Trim(),
-            type: NotificationType.NewInquiry,
+            type: NotificationType.NewMessage,
             relatedEntityType: "inquiry",
             relatedEntityId: inquiry.Id,
             ct: ct);

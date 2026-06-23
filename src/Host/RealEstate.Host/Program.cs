@@ -108,6 +108,23 @@ public class Program
                         Encoding.UTF8.GetBytes(jwtOptions.SigningKey)),
                     ClockSkew = TimeSpan.FromSeconds(30)
                 };
+                // SignalR passes the JWT via the "access_token" query param for
+                // WebSocket/SSE connections (the browser can't set headers there).
+                options.Events = new JwtBearerEvents
+                {
+                    OnMessageReceived = context =>
+                    {
+                        var token = context.Request.Query["access_token"].ToString();
+                        var path  = context.HttpContext.Request.Path;
+                        if (!string.IsNullOrEmpty(token) &&
+                            (path.StartsWithSegments("/hubs/chat") ||
+                             path.StartsWithSegments("/hubs/notifications")))
+                        {
+                            context.Token = token;
+                        }
+                        return Task.CompletedTask;
+                    }
+                };
             });
 
         // ── Authorization Policies ────────────────────────────
@@ -231,6 +248,7 @@ public class Program
         app.UseAuthorization();
         app.MapControllers();
         app.MapHub<DocumentChatHub>("/hubs/chat");
+        app.MapHub<NotificationHub>("/hubs/notifications");
         app.Run();
     }
 }

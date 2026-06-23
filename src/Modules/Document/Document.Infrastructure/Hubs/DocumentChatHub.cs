@@ -1,4 +1,4 @@
-using Document.Application.Commands.Message.SendMessage;
+using Document.Application.Commands.Inquiry;
 using MediatR;
 using Microsoft.AspNetCore.SignalR;
 
@@ -10,20 +10,15 @@ public class DocumentChatHub : Hub
 
     public DocumentChatHub(IMediator mediator) => _mediator = mediator;
 
-    public async Task JoinConversation(Guid conversationId)
-    {
-        await Groups.AddToGroupAsync(Context.ConnectionId, conversationId.ToString());
-    }
+    public Task JoinConversation(Guid conversationId) =>
+        Groups.AddToGroupAsync(Context.ConnectionId, conversationId.ToString());
 
-    public async Task LeaveConversation(Guid conversationId)
-    {
-        await Groups.RemoveFromGroupAsync(Context.ConnectionId, conversationId.ToString());
-    }
+    public Task LeaveConversation(Guid conversationId) =>
+        Groups.RemoveFromGroupAsync(Context.ConnectionId, conversationId.ToString());
 
     /// <summary>
-    /// Inquiry-scoped chat groups. The app's chat threads are keyed by inquiry id
-    /// (not conversation id), so clients join here and the HTTP message endpoints
-    /// broadcast <c>ReceiveMessage</c> to the matching <c>inquiry-{id}</c> group.
+    /// Group key for inquiry-scoped chat. Both the hub and HTTP endpoints use this
+    /// so clients only need to join one group per thread.
     /// </summary>
     public static string InquiryGroup(Guid inquiryId) => $"inquiry-{inquiryId}";
 
@@ -33,27 +28,39 @@ public class DocumentChatHub : Hub
     public Task LeaveInquiry(Guid inquiryId) =>
         Groups.RemoveFromGroupAsync(Context.ConnectionId, InquiryGroup(inquiryId));
 
+    /// <summary>
+    /// Sends a message on an inquiry thread. Persists the message to the database,
+    /// triggers the in-app notification for the other party, and broadcasts
+    /// "ReceiveMessage" to the inquiry group so all connected clients get it live.
+    ///
+    /// Frontend change required: pass <c>InquiryId</c> (not ConversationId).
+    /// </summary>
     public async Task SendMessage(SendMessageDto dto)
     {
-        var messageId = await _mediator.Send(new SendMessageCommand(
-            dto.ConversationId,
-            dto.SenderId,
-            dto.Content));
+        // PostInquiryMessageCommand handles conversation creation (if needed),
+        // DB persistence, and in-app notification for the other participant.
+        var saved = await _mediator.Send(
+            new PostInquiryMessageCommand(dto.InquiryId, dto.SenderId, dto.Content));
 
-        await Clients.Group(dto.ConversationId.ToString())
+        await Clients.Group(InquiryGroup(dto.InquiryId))
             .SendAsync("ReceiveMessage", new
             {
-                Id = messageId,
-                dto.ConversationId,
-                dto.SenderId,
-                dto.Content,
-                CreatedAt = DateTime.UtcNow,
-                IsRead = false
+                inquiryId = dto.InquiryId,
+                message = new
+                {
+                    id = saved.Id,
+                    conversationId = saved.ConversationId,
+                    senderId = saved.SenderId,
+                    text = saved.Content,
+                    sentAt = DateTime.SpecifyKind(saved.CreatedAt, DateTimeKind.Utc),
+                    isRead = false
+                }
             });
     }
 }
 
+/// <param name="InquiryId">The inquiry this message belongs to (not the conversation id).</param>
 public record SendMessageDto(
-    Guid ConversationId,
+    Guid InquiryId,
     Guid SenderId,
     string Content);

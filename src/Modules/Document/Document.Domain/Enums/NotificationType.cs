@@ -9,6 +9,9 @@ namespace Document.Domain.Enums
     public enum NotificationType
     {
         NewInquiry,
+        InquiryAccepted,
+        NewMessage,
+        LeadStatusChanged,
         MaintenanceUpdate,
         SubscriptionExpiration,
         VerificationResult,

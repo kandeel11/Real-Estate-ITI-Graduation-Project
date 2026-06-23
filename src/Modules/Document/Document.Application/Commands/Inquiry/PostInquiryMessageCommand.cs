@@ -84,7 +84,7 @@ public class PostInquiryMessageCommandHandler
                 userId: recipientId,
                 title: "New Message",
                 body: cmd.Text.Trim(),
-                type: NotificationType.NewInquiry,
+                type: NotificationType.NewMessage,
                 relatedEntityType: "inquiry",
                 relatedEntityId: inquiry.Id,
                 ct: ct);
