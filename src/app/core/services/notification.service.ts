@@ -4,6 +4,7 @@ import { Observable, of, interval, Subscription } from 'rxjs';
 import { catchError, tap } from 'rxjs/operators';
 import { environment } from '../../../environments/environment';
 import { ToastService } from '../../shared/components/toast/toast.service';
+import { NotificationRealtimeService } from './notification-realtime.service';
 
 export interface AppNotification {
   id: string;
@@ -34,12 +35,14 @@ export interface NotificationsResponse {
 export class NotificationService {
   private readonly http = inject(HttpClient);
   private readonly toast = inject(ToastService);
+  private readonly realtime = inject(NotificationRealtimeService);
   private readonly base = environment.apiUrl;
 
   private readonly _unreadCount = signal<number>(0);
   readonly unreadCount = this._unreadCount.asReadonly();
 
   private watcherSub: Subscription | null = null;
+  private realtimeSub: Subscription | null = null;
   /** Ids already seen by the watcher — used to detect genuinely new arrivals. */
   private seenIds = new Set<string>();
   private baselineTaken = false;
