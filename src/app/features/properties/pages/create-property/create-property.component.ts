@@ -40,7 +40,7 @@ import { TranslatePipe } from '@ngx-translate/core';
 interface PhotoUpload {
   name: string;
   preview: string;
-  status: 'uploading' | 'done' | 'error';
+  status: 'uploading' | 'done' | 'error' | 'removing';
   mediaId?: string;
   isPrimary: boolean;
 }
@@ -458,6 +458,37 @@ export class CreatePropertyComponent implements OnInit {
       });
     });
     (event.target as HTMLInputElement).value = '';
+  }
+
+  /**
+   * Removes a photo the user no longer wants. If it finished uploading it's deleted
+   * from the backend (and Azure Blob Storage) first; an in-flight/errored upload with
+   * no media id is just dropped locally. Removing the primary promotes the next photo.
+   */
+  removePhoto(target: PhotoUpload): void {
+    if (target.status === 'removing') return;
+    const id = this.propertyId();
+
+    // No persisted media yet (still uploading, or it errored) → drop it locally.
+    if (!id || !target.mediaId) {
+      this.photos.update((list) => list.filter((p) => p !== target));
+      return;
+    }
+
+    const wasPrimary = target.isPrimary;
+    this.setPhotoStatus(target, 'removing');
+    this.propertySvc.deleteMedia(id, target.mediaId).subscribe({
+      next: () => {
+        this.photos.update((list) => list.filter((p) => p !== target));
+        // If we removed the primary, promote the first remaining uploaded photo.
+        if (wasPrimary) {
+          const next = this.photos().find((p) => p.mediaId && p.status === 'done');
+          if (next) this.setPrimaryPhoto(next);
+        }
+      },
+      // Couldn't delete (e.g. network/Azure) — restore the tile so nothing is silently lost.
+      error: () => this.setPhotoStatus(target, 'done'),
+    });
   }
 
   setPrimaryPhoto(target: PhotoUpload): void {

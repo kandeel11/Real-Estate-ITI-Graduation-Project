@@ -1,7 +1,7 @@
 import { Injectable, inject } from '@angular/core';
 import { HttpClient } from '@angular/common/http';
 import { Observable, of } from 'rxjs';
-import { catchError } from 'rxjs/operators';
+import { catchError, timeout } from 'rxjs/operators';
 import { environment } from '../../../../../environments/environment';
 
 // ── API lease shape ─────────────────────────────────────────────────────────
@@ -13,6 +13,7 @@ export type LeaseLifecycleStatus =
   | 'renewal_requested'
   | 'termination_requested'
   | 'terminated'
+  | 'declined'
   | 'ended';
 
 export interface ApiLease {
@@ -85,7 +86,10 @@ export interface LeaseOffer {
   propertyTitle: string;
   startDate: string;
   endDate: string;
-  monthlyRent: number;
+  /** Value of ONE installment (matches the backend's `installmentAmount`). */
+  installmentAmount: number;
+  paymentFrequency?: string | null;
+  totalRentAmount?: number | null;
   deposit: number;
   pdfUrl?: string;
   status: 'pending_tenant' | 'accepted' | 'declined';
@@ -125,11 +129,18 @@ export class LeaseService {
   }
 
   acceptOffer(offerId: string): Observable<void> {
-    return this.http.post<void>(`${this.base}/tenant/leases/${offerId}/accept`, {});
+    // Accept runs lease activation + downstream event handlers synchronously, so it
+    // can take several seconds. Cap it so a hung request surfaces an error (and lets
+    // the tenant retry) instead of spinning forever.
+    return this.http
+      .post<void>(`${this.base}/tenant/leases/${offerId}/accept`, {})
+      .pipe(timeout(30000));
   }
 
   declineOffer(offerId: string): Observable<void> {
-    return this.http.post<void>(`${this.base}/tenant/leases/${offerId}/decline`, {});
+    return this.http
+      .post<void>(`${this.base}/tenant/leases/${offerId}/decline`, {})
+      .pipe(timeout(30000));
   }
 
   getContractUrl(leaseId: string): Observable<{ contractFileUrl: string }> {

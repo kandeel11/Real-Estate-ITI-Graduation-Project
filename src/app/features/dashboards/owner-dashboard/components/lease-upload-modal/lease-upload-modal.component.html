@@ -11,8 +11,20 @@
       }
     </div>
 
+    <!-- ── Resume: loading the existing lease's extraction ─── -->
+    @if (resuming()) {
+      <div class="modal-header">
+        <h2>{{ 'OWNER.LEASE_UPLOAD.STEP2_TITLE' | translate }}</h2>
+        <button class="modal-close" (click)="closed.emit()"><i class="fa-solid fa-xmark"></i></button>
+      </div>
+      <div class="modal-body modal-body--center">
+        <i class="fa-solid fa-spinner fa-spin" style="font-size:24px"></i>
+        <p class="step-hint">{{ 'OWNER.LEASE_UPLOAD.UPLOADING' | translate }}</p>
+      </div>
+    }
+
     <!-- ── Step 1: Upload ──────────────────────────────────── -->
-    @if (step() === 1) {
+    @if (step() === 1 && !resuming()) {
       <div class="modal-header">
         <div>
           <h2>{{ 'OWNER.LEASE_UPLOAD.TITLE' | translate }}</h2>
@@ -81,7 +93,7 @@
           <div class="ai-badge">
             <i class="fa-solid fa-robot"></i>
             {{ 'OWNER.LEASE_UPLOAD.AI_EXTRACTED' | translate }}
-            <span class="confidence">{{ (extraction()!.confidence * 100).toFixed(0) }}%</span>
+            <span class="confidence">{{ extraction()!.confidence.toFixed(0) }}%</span>
           </div>
         }
         <p class="step-hint">{{ 'OWNER.LEASE_UPLOAD.STEP2_HINT' | translate }}</p>
@@ -108,9 +120,20 @@
               (input)="updateField('endDate', $any($event.target).value)" />
           </div>
           <div class="form-group">
-            <label>{{ 'OWNER.LEASE_UPLOAD.MONTHLY_RENT' | translate }}</label>
-            <input class="form-control" type="number" [value]="extraction()!.monthlyRent"
-              (input)="updateField('monthlyRent', +$any($event.target).value)" />
+            <label>{{ 'OWNER.LEASE_UPLOAD.INSTALLMENT_AMOUNT' | translate }}</label>
+            <input class="form-control" type="number" [value]="extraction()!.installmentAmount"
+              (input)="updateField('installmentAmount', +$any($event.target).value)" />
+          </div>
+          <div class="form-group">
+            <label>{{ 'OWNER.LEASE_UPLOAD.PAYMENT_FREQUENCY' | translate }}</label>
+            <select class="form-control" [value]="extraction()!.paymentFrequency"
+              (change)="updateField('paymentFrequency', $any($event.target).value)">
+              <option value="Monthly">{{ 'OWNER.LEASE_UPLOAD.FREQ_MONTHLY' | translate }}</option>
+              <option value="Bimonthly">{{ 'OWNER.LEASE_UPLOAD.FREQ_BIMONTHLY' | translate }}</option>
+              <option value="Quarterly">{{ 'OWNER.LEASE_UPLOAD.FREQ_QUARTERLY' | translate }}</option>
+              <option value="SemiAnnually">{{ 'OWNER.LEASE_UPLOAD.FREQ_SEMIANNUALLY' | translate }}</option>
+              <option value="Annually">{{ 'OWNER.LEASE_UPLOAD.FREQ_ANNUALLY' | translate }}</option>
+            </select>
           </div>
           <div class="form-group">
             <label>{{ 'OWNER.LEASE_UPLOAD.DEPOSIT' | translate }}</label>

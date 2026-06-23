@@ -48,8 +48,10 @@ export interface Lead {
   stageEnteredAt: number;
   dealValue?: string;
   notes?: string;
-  /** True once a lease has been created from this lead (persisted across reloads). */
+  /** True once a lease has been sent to the tenant from this lead (persisted across reloads). */
   hasLease?: boolean;
+  /** An uploaded-but-not-yet-sent lease for this lead — offer "Resume" to finish it. */
+  draftLeaseId?: string | null;
 }
 
 export interface ChatMessage {
@@ -76,13 +78,22 @@ export interface InquiryDetail {
   lastMessageAt?: string;
 }
 
+/** Payment cadence — mirrors the backend Document.Domain.Enums.PaymentFrequency. */
+export type PaymentFrequency = 'Monthly' | 'Bimonthly' | 'Quarterly' | 'SemiAnnually' | 'Annually';
+
 export interface LeaseAiExtraction {
   tenantName: string;
   tenantEmail: string;
   propertyTitle: string;
   startDate: string;
   endDate: string;
-  monthlyRent: number;
+  /** Value of ONE installment (key name matches the backend's `installmentAmount`). */
+  installmentAmount: number;
+  /** How often `installmentAmount` is paid. */
+  paymentFrequency: PaymentFrequency;
+  /** Total contract value, when the AI could derive it. */
+  totalRentAmount?: number | null;
+  durationInMonths?: number | null;
   deposit: number;
   extractionStatus: 'pending' | 'done' | 'failed';
   confidence: number;

@@ -60,6 +60,7 @@ export const API_ENDPOINTS = {
   // ==================== INQUIRIES MODULE ====================
   INQUIRIES: {
     CREATE: '/inquiries',
+    CAN_CREATE: '/inquiries/can-create',
     MINE: '/inquiries/mine',
     BY_PROPERTY: (propertyId: string) => `/inquiries/property/${propertyId}`,
   },

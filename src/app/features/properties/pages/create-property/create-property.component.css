@@ -727,6 +727,26 @@
 }
 .cp-photo-tile__star:hover { background: #fff; }
 
+.cp-photo-tile__remove {
+  position: absolute;
+  top: 6px;
+  left: 6px;
+  width: 28px;
+  height: 28px;
+  border-radius: 50%;
+  border: none;
+  background: rgba(255,255,255,.9);
+  color: #ef4444;
+  font-size: 13px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  transition: all .15s;
+  z-index: 2;
+}
+.cp-photo-tile__remove:hover { background: #ef4444; color: #fff; }
+
 /* ── Amenities ───────────────────────────────────────────────────────────── */
 .cp-amenity-group { margin-bottom: 18px; }
 .cp-amenity-group__label {

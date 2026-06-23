@@ -229,19 +229,26 @@
                 {{ 'DETAIL.INQUIRY_SENT' | translate }}
               </div>
             } @else if (isTenant()) {
-              @if (inquiryError()) {
-                <div class="alert alert-danger py-2">{{ inquiryError() }}</div>
-              }
-              <label class="form-label small fw-semibold">{{ 'DETAIL.YOUR_MESSAGE' | translate }}</label>
-              <textarea class="form-control mb-3" rows="4" [(ngModel)]="message"
-                        [placeholder]="'DETAIL.MESSAGE_PLACEHOLDER' | translate"></textarea>
-              <button class="btn btn-primary w-100" (click)="sendInquiry()" [disabled]="sending()">
-                @if (sending()) {
-                  <span class="spinner-border spinner-border-sm me-2"></span>{{ 'DETAIL.SENDING' | translate }}
-                } @else {
-                  <i class="fa-regular fa-paper-plane me-2"></i>{{ 'DETAIL.SEND_INQUIRY' | translate }}
+              @if (canInquire() === false) {
+                <div class="alert alert-warning mb-0">
+                  <i class="fa-solid fa-circle-info me-2"></i>
+                  {{ inquiryBlockReason() || ('DETAIL.INQUIRY_BLOCKED' | translate) }}
+                </div>
+              } @else {
+                @if (inquiryError()) {
+                  <div class="alert alert-danger py-2">{{ inquiryError() }}</div>
                 }
-              </button>
+                <label class="form-label small fw-semibold">{{ 'DETAIL.YOUR_MESSAGE' | translate }}</label>
+                <textarea class="form-control mb-3" rows="4" [(ngModel)]="message"
+                          [placeholder]="'DETAIL.MESSAGE_PLACEHOLDER' | translate"></textarea>
+                <button class="btn btn-primary w-100" (click)="sendInquiry()" [disabled]="sending()">
+                  @if (sending()) {
+                    <span class="spinner-border spinner-border-sm me-2"></span>{{ 'DETAIL.SENDING' | translate }}
+                  } @else {
+                    <i class="fa-regular fa-paper-plane me-2"></i>{{ 'DETAIL.SEND_INQUIRY' | translate }}
+                  }
+                </button>
+              }
             } @else if (isAuthenticated()) {
               <div class="alert alert-info mb-0">
                 <i class="fa-solid fa-circle-info me-2"></i>

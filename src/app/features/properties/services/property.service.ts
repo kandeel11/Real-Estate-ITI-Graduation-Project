@@ -80,6 +80,16 @@ export class PropertyService {
     });
   }
 
+  /**
+   * Whether the tenant may send a new inquiry right now (one engagement at a time),
+   * and a human-readable reason when they can't.
+   */
+  canCreateInquiry(): Observable<{ allowed: boolean; reason: string; reasonCode: string }> {
+    return this.http.get<{ allowed: boolean; reason: string; reasonCode: string }>(
+      `${this.baseUrl}${API_ENDPOINTS.INQUIRIES.CAN_CREATE}`,
+    );
+  }
+
   getById(id: string): Observable<PropertyDetail> {
     return this.http.get<PropertyDetail>(
       `${this.baseUrl}${API_ENDPOINTS.PROPERTIES.GET_BY_ID(id)}`

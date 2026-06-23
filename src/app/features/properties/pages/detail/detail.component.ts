@@ -55,6 +55,10 @@ export class DetailComponent implements OnInit {
   sending = signal(false);
   inquirySent = signal(false);
   inquiryError = signal<string | null>(null);
+  /** One engagement at a time: null until checked, then whether a new inquiry is allowed. */
+  canInquire = signal<boolean | null>(null);
+  /** Backend's reason the tenant can't inquire right now (shown when canInquire is false). */
+  inquiryBlockReason = signal<string | null>(null);
 
   // ── Owner photo management ───────────────────────────────────────
   uploadingPhotos = signal(false);
@@ -75,6 +79,19 @@ export class DetailComponent implements OnInit {
     }
     this.loadProperty(id);
     this.loadReviews(id);
+    if (this.isTenant()) this.loadInquiryGate();
+  }
+
+  /** Ask the backend whether this tenant may send a new inquiry right now. */
+  private loadInquiryGate(): void {
+    this.propertySvc.canCreateInquiry().subscribe({
+      next: (res) => {
+        this.canInquire.set(res.allowed);
+        this.inquiryBlockReason.set(res.allowed ? null : res.reason);
+      },
+      // On error, don't block the UI — the create call still enforces the rule server-side.
+      error: () => this.canInquire.set(true),
+    });
   }
 
   private loadReviews(id: string): void {
@@ -227,6 +244,12 @@ export class DetailComponent implements OnInit {
       },
       error: (err) => {
         this.sending.set(false);
+        // 409 = blocked by the one-engagement-at-a-time gate; switch to the blocked banner.
+        if (err?.status === 409 && err?.error?.error) {
+          this.canInquire.set(false);
+          this.inquiryBlockReason.set(err.error.error);
+          return;
+        }
         this.inquiryError.set(
           err?.error?.error ?? 'Could not send your inquiry. Please try again.',
         );

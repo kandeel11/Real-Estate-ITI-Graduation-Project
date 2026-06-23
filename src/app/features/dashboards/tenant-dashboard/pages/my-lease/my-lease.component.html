@@ -25,8 +25,8 @@
       </div>
       <div class="offer-terms">
         <div class="offer-term">
-          <span class="term-label">{{ 'MY_LEASE.MONTHLY_RENT' | translate }}</span>
-          <span class="term-value rent">{{ offer.monthlyRent | currency:'EGP':'symbol':'1.0-0' }}/mo</span>
+          <span class="term-label">{{ 'MY_LEASE.RENT' | translate }}</span>
+          <span class="term-value rent">{{ offer.installmentAmount | currency:'EGP':'symbol':'1.0-0' }}{{ freqSuffixKey(offer.paymentFrequency) | translate }}</span>
         </div>
         <div class="offer-term">
           <span class="term-label">{{ 'MY_LEASE.SECURITY_DEPOSIT' | translate }}</span>
@@ -51,6 +51,9 @@
           {{ 'MY_LEASE.ACCEPT_OFFER' | translate }}
         </button>
       </div>
+      @if (offerError()) {
+        <p class="err"><i class="fa-solid fa-triangle-exclamation"></i> {{ offerError()! | translate }}</p>
+      }
     </div>
   }
 

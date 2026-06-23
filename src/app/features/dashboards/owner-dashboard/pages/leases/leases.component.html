@@ -79,8 +79,14 @@
 
               <td class="actions-cell" [attr.data-label]="'OWNER.LEASES.COL_ACTIONS' | translate">
                 @if (lease.id) {
-                  <button class="action-link" (click)="viewContract(lease)">
-                    <i class="fa-solid fa-eye"></i> {{ 'OWNER.LEASES.VIEW_PDF' | translate }}
+                  <button class="action-link" (click)="openContract(lease)"
+                          [disabled]="contractLoadingId() === lease.id">
+                    @if (contractLoadingId() === lease.id) {
+                      <i class="fa-solid fa-spinner fa-spin"></i>
+                    } @else {
+                      <i class="fa-solid fa-download"></i>
+                    }
+                    {{ 'OWNER.LEASES.DOWNLOAD_PDF' | translate }}
                   </button>
                 } @else {
                   <span class="no-pdf">{{ 'OWNER.LEASES.NO_PDF' | translate }}</span>
@@ -164,36 +170,3 @@
   </div>
 }
 
-<!-- ── CONTRACT PDF VIEWER ──────────────────────── -->
-@if (contractLoading() || contractSafeUrl() || contractViewError()) {
-  <div class="contract-overlay" (click)="closeContractViewer()">
-    <div class="contract-modal" (click)="$event.stopPropagation()">
-      <div class="contract-modal-header">
-        <span><i class="fa-solid fa-file-pdf"></i> Contract PDF</span>
-        <div class="contract-modal-actions">
-          @if (contractRawUrl()) {
-            <a class="contract-dl-btn" [href]="contractRawUrl()" target="_blank" rel="noopener">
-              <i class="fa-solid fa-download"></i>
-            </a>
-          }
-          <button class="contract-close-btn" (click)="closeContractViewer()">
-            <i class="fa-solid fa-xmark"></i>
-          </button>
-        </div>
-      </div>
-      @if (contractLoading()) {
-        <div class="contract-body-state">
-          <i class="fa-solid fa-spinner fa-spin fa-2x"></i>
-          <p>Loading contract...</p>
-        </div>
-      } @else if (contractViewError()) {
-        <div class="contract-body-state">
-          <i class="fa-solid fa-triangle-exclamation fa-2x"></i>
-          <p>{{ contractViewError() }}</p>
-        </div>
-      } @else {
-        <iframe class="contract-embed" [src]="contractSafeUrl()" title="Contract PDF"></iframe>
-      }
-    </div>
-  </div>
-}

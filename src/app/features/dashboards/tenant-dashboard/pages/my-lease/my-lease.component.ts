@@ -60,6 +60,8 @@ export class MyLeaseComponent implements OnInit {
 
   protected pendingOffer = signal<LeaseOffer | null>(null);
   protected offerActionInProgress = signal(false);
+  /** Surfaced when accept/decline fails so the tenant can retry (the accept is idempotent). */
+  protected offerError = signal<string | null>(null);
 
   protected chatMessages = signal<ChatEntry[]>([]);
   protected chatInput = '';
@@ -125,8 +127,11 @@ export class MyLeaseComponent implements OnInit {
       endDate: lease.endDate,
       paymentDayOfMonth: lease.paymentDayOfMonth,
       isActive: lease.isActive,
-      // Trust the backend's derived status; fall back to isActive for older payloads.
-      status: lease.status ?? (lease.isActive ? 'active' : 'ended'),
+      // A declined offer reads as "ended" from the backend; show it distinctly to the tenant.
+      status:
+        lease.extractionStatus === 'rejected'
+          ? 'declined'
+          : (lease.status ?? (lease.isActive ? 'active' : 'ended')),
       contractFileUrl: lease.contractFileUrl,
       daysUntilExpiry,
       terminationRequestedByTenant: lease.terminationRequestedById === lease.tenantId,
@@ -150,6 +155,8 @@ export class MyLeaseComponent implements OnInit {
         return 'MY_LEASE.STATUS_TERMINATION_REQUESTED';
       case 'terminated':
         return 'MY_LEASE.STATUS_TERMINATED';
+      case 'declined':
+        return 'MY_LEASE.STATUS_DECLINED';
       default:
         return 'MY_LEASE.ENDED';
     }
@@ -158,7 +165,7 @@ export class MyLeaseComponent implements OnInit {
   /** 'active' | 'pending' | 'ended' — drives the existing badge colour classes. */
   badgeTone(status: LeaseLifecycleStatus): 'active' | 'pending' | 'ended' {
     if (status === 'pending') return 'pending';
-    if (status === 'terminated' || status === 'ended') return 'ended';
+    if (status === 'terminated' || status === 'ended' || status === 'declined') return 'ended';
     return 'active';
   }
 
@@ -166,6 +173,20 @@ export class MyLeaseComponent implements OnInit {
     const start = new Date(lease.startDate).getTime();
     const end = new Date(lease.endDate).getTime();
     return Math.min(100, Math.max(0, Math.round(((Date.now() - start) / (end - start)) * 100)));
+  }
+
+  /** i18n key for the per-installment suffix shown next to a rent amount. */
+  freqSuffixKey(freq?: string | null): string {
+    switch (freq) {
+      case 'Quarterly':
+        return 'MY_LEASE.PER_QUARTER';
+      case 'SemiAnnually':
+        return 'MY_LEASE.PER_HALF_YEAR';
+      case 'Annually':
+        return 'MY_LEASE.PER_YEAR';
+      default:
+        return 'MY_LEASE.PER_MONTH';
+    }
   }
 
   ordinalSuffix(n: number): string {
@@ -179,6 +200,7 @@ export class MyLeaseComponent implements OnInit {
     const offer = this.pendingOffer();
     if (!offer || this.offerActionInProgress()) return;
     this.offerActionInProgress.set(true);
+    this.offerError.set(null);
     this.leaseService
       .acceptOffer(offer.id)
       .pipe(finalize(() => this.offerActionInProgress.set(false)))
@@ -187,6 +209,9 @@ export class MyLeaseComponent implements OnInit {
           this.pendingOffer.set(null);
           this.loadData();
         },
+        // Keep the offer visible on failure so the tenant can retry — accepting is
+        // idempotent server-side, so a retry after a slow/timed-out request is safe.
+        error: () => this.offerError.set('MY_LEASE.OFFER_ACTION_ERROR'),
       });
   }
 
@@ -194,17 +219,33 @@ export class MyLeaseComponent implements OnInit {
     const offer = this.pendingOffer();
     if (!offer || this.offerActionInProgress()) return;
     this.offerActionInProgress.set(true);
+    this.offerError.set(null);
     this.leaseService
       .declineOffer(offer.id)
       .pipe(finalize(() => this.offerActionInProgress.set(false)))
-      .subscribe({ next: () => this.pendingOffer.set(null) });
+      .subscribe({
+        next: () => {
+          this.pendingOffer.set(null);
+          // Refresh history so the declined lease drops out of "Pending Review".
+          this.loadData();
+        },
+        error: () => this.offerError.set('MY_LEASE.OFFER_ACTION_ERROR'),
+      });
   }
 
   downloadContract(lease: LeaseView): void {
     this.contractLoading.set(true);
     this.leaseService.getContractUrl(lease.id).subscribe({
       next: ({ contractFileUrl }) => {
-        window.open(contractFileUrl, '_blank', 'noopener');
+        // The SAS URL is served with Content-Disposition: attachment — trigger a
+        // download via an anchor (avoids leaving a blank tab from window.open).
+        const a = document.createElement('a');
+        a.href = contractFileUrl;
+        a.download = 'lease-contract.pdf';
+        a.rel = 'noopener';
+        document.body.appendChild(a);
+        a.click();
+        a.remove();
         this.contractLoading.set(false);
       },
       error: () => this.contractLoading.set(false),

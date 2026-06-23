@@ -23,6 +23,13 @@ export class LeaseUploadModalComponent implements OnInit, OnDestroy {
 
   get isRenewal(): boolean { return !!this.renewLeaseId; }
 
+  /**
+   * When set, the modal *resumes* an existing un-sent lease: it skips the upload step,
+   * loads that lease's AI extraction, and opens straight on the review step.
+   */
+  @Input() resumeLeaseId: string | null = null;
+  get isResume(): boolean { return !!this.resumeLeaseId; }
+
   private readonly svc = inject(OwnerDataService);
   private pollId: ReturnType<typeof setInterval> | null = null;
 
@@ -36,6 +43,8 @@ export class LeaseUploadModalComponent implements OnInit, OnDestroy {
   extraction = signal<LeaseAiExtraction | null>(null);
   extractionFailed = signal(false);
   sending = signal(false);
+  /** Loading an existing lease's extraction while resuming (before the review step shows). */
+  resuming = signal(false);
 
   leaseId = signal<string | null>(null);
 
@@ -54,8 +63,49 @@ export class LeaseUploadModalComponent implements OnInit, OnDestroy {
 
   ngOnInit(): void {
     // The tenant's email comes from their account (resolved via the lead's TenantId),
-    // so the broker never types it.
+    // so the owner never types it.
     this.tenantEmail.set(this.lead.tenantEmail ?? '');
+
+    // Resume mode: jump straight to the review step for an already-uploaded lease.
+    if (this.resumeLeaseId) this.resumeExisting(this.resumeLeaseId);
+  }
+
+  /** Resume an existing un-sent lease: load its extraction, then show the review step. */
+  private resumeExisting(leaseId: string): void {
+    this.resuming.set(true);
+    this.leaseId.set(leaseId);
+    this.beginExtractionPolling(leaseId, () => this.resuming.set(false));
+  }
+
+  /**
+   * Polls the lease's AI extraction until it settles, then opens the review step.
+   * Shared by a fresh upload and by resuming an existing lease.
+   */
+  private beginExtractionPolling(leaseId: string, onSettled?: () => void): void {
+    const doCheck = () => {
+      this.svc.getLeaseAiExtraction(leaseId).subscribe({
+        next: (ext) => {
+          if (ext.extractionStatus !== 'pending') {
+            this.stopPolling();
+            this.extractionFailed.set(ext.extractionStatus === 'failed');
+            this.extraction.set(ext);
+            this.uploading.set(false);
+            onSettled?.();
+            this.step.set(2);
+          }
+        },
+        error: () => {
+          this.stopPolling();
+          this.uploading.set(false);
+          onSettled?.();
+          this.uploadError.set('OWNER.LEASE_UPLOAD.UPLOAD_ERROR');
+        },
+      });
+    };
+    // Assign pollId BEFORE the first check so stopPolling() always sees a non-null id,
+    // even when the mock observable resolves synchronously inside doCheck().
+    this.pollId = setInterval(doCheck, 3000);
+    doCheck();
   }
 
   ngOnDestroy(): void {
@@ -91,28 +141,7 @@ export class LeaseUploadModalComponent implements OnInit, OnDestroy {
     upload$.subscribe({
       next: ({ leaseId }) => {
         this.leaseId.set(leaseId);
-        const doCheck = () => {
-          this.svc.getLeaseAiExtraction(leaseId).subscribe({
-            next: ext => {
-              if (ext.extractionStatus !== 'pending') {
-                this.stopPolling();
-                this.extractionFailed.set(ext.extractionStatus === 'failed');
-                this.extraction.set(ext);
-                this.uploading.set(false);
-                this.step.set(2);
-              }
-            },
-            error: () => {
-              this.stopPolling();
-              this.uploading.set(false);
-              this.uploadError.set('OWNER.LEASE_UPLOAD.UPLOAD_ERROR');
-            },
-          });
-        };
-        // Assign pollId BEFORE calling doCheck() so stopPolling() always sees a non-null id,
-        // even when the mock observable resolves synchronously inside doCheck().
-        this.pollId = setInterval(doCheck, 3000);
-        doCheck();
+        this.beginExtractionPolling(leaseId);
       },
       error: () => { this.uploading.set(false); this.uploadError.set('OWNER.LEASE_UPLOAD.UPLOAD_ERROR'); },
     });

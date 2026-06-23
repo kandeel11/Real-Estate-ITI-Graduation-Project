@@ -3,7 +3,6 @@ import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
 import { RouterLink } from '@angular/router';
 import { TranslatePipe } from '@ngx-translate/core';
-import { DomSanitizer, SafeResourceUrl } from '@angular/platform-browser';
 import { finalize } from 'rxjs';
 import { OwnerDataService, BrokerLease } from '../../services/owner-data.service';
 import { LeaseUploadModalComponent } from '../../components/lease-upload-modal/lease-upload-modal.component';
@@ -20,7 +19,6 @@ type LeaseFilter = 'all' | 'active' | 'ended' | 'pending';
 })
 export class LeasesComponent implements OnInit {
   private readonly svc = inject(OwnerDataService);
-  private readonly sanitizer = inject(DomSanitizer);
 
   readonly leases = signal<BrokerLease[]>([]);
   readonly loading = signal(true);
@@ -36,11 +34,8 @@ export class LeasesComponent implements OnInit {
   readonly actionError = signal<string | null>(null);
 
   // PDF viewer
-  readonly contractRawUrl = signal<string | null>(null);
-  readonly contractSafeUrl = signal<SafeResourceUrl | null>(null);
-  readonly contractLoading = signal<boolean>(false);
-  readonly contractViewError = signal<string | null>(null);
-  private _contractBlobUrl: string | null = null;
+  // Contract download — id of the lease whose PDF link is being fetched.
+  readonly contractLoadingId = signal<string | null>(null);
 
   readonly filtered = computed(() => {
     const f = this.filter();
@@ -144,42 +139,27 @@ export class LeasesComponent implements OnInit {
     return 'active';
   }
 
-  viewContract(lease: BrokerLease): void {
-    this.contractLoading.set(true);
-    this.contractViewError.set(null);
-    this.contractSafeUrl.set(null);
-    this.contractRawUrl.set(null);
-    this.svc.getContractUrl(lease.id).subscribe({
-      next: ({ contractFileUrl }) => {
-        this.contractRawUrl.set(contractFileUrl);
-        fetch(contractFileUrl)
-          .then(r => r.blob())
-          .then(blob => {
-            if (this._contractBlobUrl) URL.revokeObjectURL(this._contractBlobUrl);
-            this._contractBlobUrl = URL.createObjectURL(blob);
-            this.contractSafeUrl.set(
-              this.sanitizer.bypassSecurityTrustResourceUrl(this._contractBlobUrl)
-            );
-            this.contractLoading.set(false);
-          })
-          .catch(() => {
-            this.contractViewError.set('Failed to load contract. Please try again.');
-            this.contractLoading.set(false);
-          });
-      },
-      error: () => {
-        this.contractViewError.set('Failed to load contract. Please try again.');
-        this.contractLoading.set(false);
-      },
-    });
+  /** Fetch the lease's contract URL and download the PDF (no tab/preview). */
+  openContract(lease: BrokerLease): void {
+    if (this.contractLoadingId()) return;
+    this.contractLoadingId.set(lease.id);
+    this.svc
+      .getContractUrl(lease.id)
+      .pipe(finalize(() => this.contractLoadingId.set(null)))
+      .subscribe({
+        next: ({ contractFileUrl }) => this.triggerDownload(contractFileUrl),
+        error: () => this.actionError.set('Could not download the contract. Please try again.'),
+      });
   }
 
-  closeContractViewer(): void {
-    if (this._contractBlobUrl) URL.revokeObjectURL(this._contractBlobUrl);
-    this._contractBlobUrl = null;
-    this.contractSafeUrl.set(null);
-    this.contractRawUrl.set(null);
-    this.contractViewError.set(null);
-    this.contractLoading.set(false);
+  /** Force a file download (the SAS URL is served with Content-Disposition: attachment). */
+  private triggerDownload(url: string): void {
+    const a = document.createElement('a');
+    a.href = url;
+    a.download = 'lease-contract.pdf';
+    a.rel = 'noopener';
+    document.body.appendChild(a);
+    a.click();
+    a.remove();
   }
 }
