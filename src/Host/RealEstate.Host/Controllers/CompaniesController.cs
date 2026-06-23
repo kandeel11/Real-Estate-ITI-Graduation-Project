@@ -1,4 +1,5 @@
 using Document.Application.Queries.Inquiry;
+using Document.Application.Queries.Lead.GetBrokerLeadPipeline;
 using Document.Application.Queries.Lease;
 using Document.Application.Queries.Lease.GetLeasePaymentSchedule;
 using Document.Application.Queries.Rating;
@@ -426,6 +427,40 @@ public class CompaniesController(
         var properties = await mediator.Send(new GetPropertiesByCompanyQuery(id), ct);
         await enrichment.EnrichAsync(properties, ct);
         return Ok(properties);
+    }
+
+    /// <summary>
+    /// Returns per-broker lead pipeline for the company manager's own company.
+    /// Shape is optimized for Kanban board rendering — each broker has a column
+    /// for every LeadStatus, plus summary counters.
+    /// </summary>
+    [HttpGet("mine/lead-pipeline")]
+    [Authorize(Policy = "CompanyManager")]
+    public async Task<IActionResult> GetLeadPipeline(CancellationToken ct)
+    {
+        var companyId = currentUser.CompanyId;
+        if (companyId is null)
+            return BadRequest(new { error = "No company is associated with your account." });
+
+        var brokers = await mediator.Send(new GetCompanyBrokersDetailsQuery(companyId.Value), ct);
+        if (brokers.Count == 0)
+            return Ok(new { companyId, brokers = Array.Empty<object>() });
+
+        var brokerUserIds = brokers.Select(b => b.UserId).ToList();
+        var pipelines = await mediator.Send(new GetBrokerLeadPipelineQuery(brokerUserIds), ct);
+
+        var brokerNameById = brokers.ToDictionary(b => b.UserId, b => b.FullName);
+
+        var result = pipelines.Select(p => new
+        {
+            brokerId = p.BrokerUserId,
+            brokerName = brokerNameById.GetValueOrDefault(p.BrokerUserId, "Unknown"),
+            totalLeads = p.TotalLeads,
+            closedWon = p.ClosedWon,
+            kanban = p.Kanban
+        });
+
+        return Ok(new { companyId, brokers = result });
     }
 
     /// <summary>

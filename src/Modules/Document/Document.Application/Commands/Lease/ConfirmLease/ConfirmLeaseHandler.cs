@@ -75,6 +75,11 @@ public class ConfirmLeaseHandler : IRequestHandler<ConfirmLeaseCommand, ConfirmL
             }
             else
             {
+                var isMaintenanceEnabled = lease.IsFullManagement ||
+                    (lease.ManagementOptions?.Contains("Maintenance", StringComparison.OrdinalIgnoreCase) ?? false);
+                var isPaymentEnabled = lease.IsFullManagement ||
+                    (lease.ManagementOptions?.Contains("Payment", StringComparison.OrdinalIgnoreCase) ?? false);
+
                 await _publisher.Publish(
                     new LeaseActivatedEvent(
                         lease.Id,
@@ -84,7 +89,10 @@ public class ConfirmLeaseHandler : IRequestHandler<ConfirmLeaseCommand, ConfirmL
                         lease.PaymentDayOfMonth ?? 1,
                         lease.StartDate ?? DateOnly.FromDateTime(DateTime.UtcNow),
                         lease.EndDate ?? DateOnly.FromDateTime(DateTime.UtcNow.AddYears(1)),
-                        lease.ContractFileUrl
+                        lease.ContractFileUrl,
+                        lease.IsFullManagement,
+                        isMaintenanceEnabled,
+                        isPaymentEnabled
                     ), ct);
             }
 
