@@ -81,7 +81,9 @@ export class MyLeaseComponent implements OnInit, OnDestroy {
 
   ngOnInit(): void {
     this.loadData();
-    this.offerSub = this.leaseService.getPendingOffer().subscribe((offer) => this.pendingOffer.set(offer));
+    this.offerSub = this.leaseService
+      .getPendingOffer()
+      .subscribe((offer) => this.pendingOffer.set(offer));
   }
 
   ngOnDestroy(): void {
