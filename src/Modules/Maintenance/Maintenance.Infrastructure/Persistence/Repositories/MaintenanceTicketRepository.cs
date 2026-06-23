@@ -75,6 +75,19 @@ public class MaintenanceTicketRepository(MaintenanceDbContext db) : IMaintenance
             .ToListAsync(ct);
     }
 
+    public Task<List<MaintenanceTicket>> GetOwnerDecisionQueueAsync(Guid ownerId, CancellationToken ct = default)
+        => db.MaintenanceTickets
+            .AsSplitQuery()
+            .Include(t => t.Attachments)
+            .Include(t => t.Comments)
+            .Include(t => t.AiEvaluation)
+            .Include(t => t.CurrentVendorAssignment)
+            .Include(t => t.StatusHistory)
+            .Include(t => t.Payment)
+            .Where(t => t.OwnerId == ownerId && t.Status == TicketStatus.WaitingForOwnerDecision)
+            .OrderByDescending(t => t.CreatedAt)
+            .ToListAsync(ct);
+
     public async Task<(List<MaintenanceTicket> Items, int Total)> GetAllForAdminAsync(
         TicketStatus? status, int page, int pageSize, CancellationToken ct = default)
     {

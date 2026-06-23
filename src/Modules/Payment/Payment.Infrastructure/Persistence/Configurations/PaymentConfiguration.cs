@@ -39,10 +39,13 @@ public sealed class PaymentConfiguration : IEntityTypeConfiguration<Payment.Doma
             .HasMaxLength(20)
             .IsRequired();
 
+        // No store default: PaymentType.Subscription == 0 is the CLR default, so a
+        // store default made EF treat subscription payments as "unset" and write
+        // 'Rent' instead — which broke subscription activation. The factory methods
+        // always set the type explicitly, so EF should always persist it as-is.
         builder.Property(p => p.PaymentType)
             .HasConversion<string>()
             .HasMaxLength(20)
-            .HasDefaultValue(PaymentType.Rent)
             .IsRequired();
 
         builder.Property(p => p.TransactionId)

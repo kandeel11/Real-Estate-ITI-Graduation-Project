@@ -19,11 +19,6 @@ public class GetLeasesByPropertyIdsHandler(IDocumentDbContext db)
             .OrderByDescending(l => l.CreatedAt)
             .ToListAsync(ct);
 
-        return leases.Select(l => new LeaseDto(
-            l.Id, l.PropertyId, l.TenantId, l.OwnerId,
-            l.InstallmentAmount, l.PaymentFrequency?.ToString(), l.TotalRentAmount, l.DurationInMonths,
-            l.SecurityDeposit, l.StartDate, l.EndDate,
-            l.PaymentDayOfMonth, l.ExtractionStatus,
-            l.ExtractionConfidence, l.IsActive, l.ContractFileUrl, l.CreatedAt)).ToList();
+        return leases.Select(LeaseDto.FromEntity).ToList();
     }
 }

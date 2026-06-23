@@ -1,5 +1,6 @@
 ﻿using Document.Application.DTOs;
 using Document.Application.Interfaces;
+using Document.Application.Queries.Inquiry;
 using Document.Domain.Enums;
 using MediatR;
 using RealEstate.Shared.Kernel.Shared.Contracts;
@@ -21,21 +22,30 @@ public class CreateInquiryCommandHandler : IRequestHandler<CreateInquiryCommand,
     private readonly INotificationService _notifications;
     private readonly ISubscriptionLimitChecker _limitChecker;
     private readonly IDocumentDbContext _db;
+    private readonly ISender _mediator;
 
     public CreateInquiryCommandHandler(
         IInquiryRepository inquiries,
         INotificationService notifications,
         ISubscriptionLimitChecker limitChecker,
-        IDocumentDbContext db)
+        IDocumentDbContext db,
+        ISender mediator)
     {
         _inquiries = inquiries;
         _notifications = notifications;
         _limitChecker = limitChecker;
         _db = db;
+        _mediator = mediator;
     }
 
     public async Task<InquiryResponse> Handle(CreateInquiryCommand cmd, CancellationToken ct)
     {
+        // One engagement in flight at a time: block if the tenant is already renting,
+        // has a lead in progress, or has an unanswered inquiry.
+        var gate = await _mediator.Send(new GetTenantInquiryGateQuery(cmd.TenantId), ct);
+        if (!gate.Allowed)
+            throw new InvalidOperationException(gate.Message);
+
         // Enforce the tenant plan's MaxInquiriesPerMonth
         var (allowed, reason) = await _limitChecker.CheckInquiryLimitAsync(cmd.TenantId, ct);
         if (!allowed)

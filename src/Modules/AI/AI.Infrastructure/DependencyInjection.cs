@@ -72,11 +72,30 @@ public static class DependencyInjection
         {
             var aiSettings = sp.GetRequiredService<IOptions<AiOptions>>().Value;
 
+            // Graceful degradation: when Azure OpenAI embeddings aren't configured in this
+            // environment, the endpoint is empty and `new Uri("")` would throw a
+            // UriFormatException — which breaks DI for EVERY consumer of this singleton,
+            // including the LeaseUploadedEvent handler graph (so lease uploads 500). Fall
+            // back to syntactically-valid placeholders so construction succeeds; embeddings
+            // (RAG/chatbot search) simply stay inert until real values are configured, while
+            // lease extraction and the rest of the app keep working.
+            var endpoint = aiSettings.AzureEmbeddingEndpoint;
+            if (string.IsNullOrWhiteSpace(endpoint) || !Uri.IsWellFormedUriString(endpoint, UriKind.Absolute))
+                endpoint = "https://embeddings-not-configured.invalid/";
+
+            var deployment = string.IsNullOrWhiteSpace(aiSettings.AzureEmbeddingDeploymentName)
+                ? "not-configured"
+                : aiSettings.AzureEmbeddingDeploymentName;
+
+            var apiKey = string.IsNullOrWhiteSpace(aiSettings.AzureEmbeddingApiKey)
+                ? "not-configured"
+                : aiSettings.AzureEmbeddingApiKey;
+
             // CHANGED: Azure embedding — replaced OpenAITextEmbeddingGenerationService
             return new Microsoft.SemanticKernel.Connectors.AzureOpenAI.AzureOpenAITextEmbeddingGenerationService(
-                deploymentName: aiSettings.AzureEmbeddingDeploymentName, // "text-embedding-ada-002"
-                endpoint: aiSettings.AzureEmbeddingEndpoint,
-                apiKey: aiSettings.AzureEmbeddingApiKey
+                deploymentName: deployment,
+                endpoint: endpoint,
+                apiKey: apiKey
             );
 
             // OLD (OpenAI — quota ended):

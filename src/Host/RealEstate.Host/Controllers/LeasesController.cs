@@ -1,13 +1,19 @@
 using Document.Application.Commands.Lease.ConfirmLease;
+using Document.Application.Commands.Lease.RenewLease;
+using Document.Application.Commands.Lease.RequestTermination;
+using Document.Application.Commands.Lease.RespondToTermination;
 using Document.Application.Commands.Lease.SendLeaseToTenant;
 using Document.Application.Commands.Lease.TerminateLease;
 using Document.Application.Commands.Lease.UploadLeaseContract;
+using Document.Application.Interfaces;
 using Document.Application.Queries.Lease;
 using Document.Application.Queries.Lease.GetLeaseById;
 using Document.Application.Queries.Lease.GetLeasePaymentSchedule;
 using Identity.Application.Interfaces;
 using MediatR;
+using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
+using Microsoft.Extensions.Logging;
 using Property.Application.Features.Queries.GetPropertyById;
 
 namespace RealEstate.Host.Controllers;
@@ -18,11 +24,25 @@ public class LeasesController : ControllerBase
 {
     private readonly IMediator _mediator;
     private readonly IUserRepository _userRepo;
-    public LeasesController(IMediator mediator, IUserRepository userRepo)
+    private readonly ICurrentUserService _currentUser;
+    private readonly IAzureBlobService _blob;
+    private readonly ILogger<LeasesController> _logger;
+
+    public LeasesController(
+        IMediator mediator,
+        IUserRepository userRepo,
+        ICurrentUserService currentUser,
+        IAzureBlobService blob,
+        ILogger<LeasesController> logger)
     {
         _mediator = mediator;
         _userRepo = userRepo;
+        _currentUser = currentUser;
+        _blob = blob;
+        _logger = logger;
     }
+
+    private Guid CurrentUserId => _currentUser.UserId ?? throw new UnauthorizedAccessException();
 
     [HttpPost("upload")]
     public async Task<IActionResult> Upload([FromForm] Guid leadId, IFormFile file)
@@ -53,6 +73,22 @@ public class LeasesController : ControllerBase
         var lease = await _mediator.Send(new GetLeaseByIdQuery(id), ct);
         if (lease == null) return NotFound();
 
+        _logger.LogInformation(
+            "[LeaseExtraction] GET ai-extraction for LeaseId={LeaseId} | Status={Status} | Confidence={Conf}% | " +
+            "InstallmentAmount={IA} | PaymentFrequency={PF} | StartDate={ST} | EndDate={ED} | " +
+            "DurationInMonths={DM} | TotalRentAmount={TR} | SecurityDeposit={SD} | PaymentDayOfMonth={PD}",
+            id, lease.ExtractionStatus, lease.ExtractionConfidence,
+            lease.InstallmentAmount, lease.PaymentFrequency,
+            lease.StartDate, lease.EndDate,
+            lease.DurationInMonths, lease.TotalRentAmount,
+            lease.SecurityDeposit, lease.PaymentDayOfMonth);
+
+        if (lease.InstallmentAmount == null || lease.StartDate == null)
+            _logger.LogWarning(
+                "[LeaseExtraction] LeaseId={LeaseId} — frontend will receive incomplete data. " +
+                "InstallmentAmount={IA}, StartDate={ST}, ExtractionStatus={Status}",
+                id, lease.InstallmentAmount, lease.StartDate, lease.ExtractionStatus);
+
         var tenant = await _userRepo.GetByIdAsync(lease.TenantId, ct);
         var property = await _mediator.Send(new GetPropertyByIdQuery(lease.PropertyId), ct);
 
@@ -73,6 +109,65 @@ public class LeasesController : ControllerBase
         });
     }
 
+    /// <summary>
+    /// Debug endpoint — returns the full extraction state including which fields are
+    /// null and why. Use this to diagnose why the frontend isn't getting data.
+    /// </summary>
+    [HttpGet("{id}/extraction-debug")]
+    public async Task<IActionResult> GetExtractionDebug(Guid id, CancellationToken ct)
+    {
+        var lease = await _mediator.Send(new GetLeaseByIdQuery(id), ct);
+        if (lease == null) return NotFound(new { error = $"Lease {id} not found." });
+
+        _logger.LogInformation(
+            "[LeaseExtraction] extraction-debug called for LeaseId={LeaseId}", id);
+
+        var nullFields = new List<string>();
+        if (lease.InstallmentAmount == null) nullFields.Add("installmentAmount");
+        if (lease.PaymentFrequency == null)  nullFields.Add("paymentFrequency");
+        if (lease.StartDate == null)         nullFields.Add("startDate");
+        if (lease.EndDate == null)           nullFields.Add("endDate");
+        if (lease.DurationInMonths == null)  nullFields.Add("durationInMonths");
+        if (lease.TotalRentAmount == null)   nullFields.Add("totalRentAmount");
+        if (lease.SecurityDeposit == null)   nullFields.Add("securityDeposit");
+        if (lease.PaymentDayOfMonth == null) nullFields.Add("paymentDayOfMonth");
+
+        var status = MapExtractionStatus(lease.ExtractionStatus);
+        var isReady = status == "done" && nullFields.Count == 0;
+
+        return Ok(new
+        {
+            leaseId          = lease.Id,
+            extractionStatus = lease.ExtractionStatus,
+            displayStatus    = status,
+            confidence       = lease.ExtractionConfidence ?? 0m,
+            isReadyForFrontend = isReady,
+            nullFields,
+            diagnosis = nullFields.Count == 0
+                ? "All required fields are populated."
+                : $"These fields are null — extraction may have failed or the PDF didn't contain them: [{string.Join(", ", nullFields)}]",
+            fields = new
+            {
+                installmentAmount   = lease.InstallmentAmount,
+                paymentFrequency    = lease.PaymentFrequency,
+                totalRentAmount     = lease.TotalRentAmount,
+                durationInMonths    = lease.DurationInMonths,
+                securityDeposit     = lease.SecurityDeposit,
+                startDate           = lease.StartDate?.ToString("yyyy-MM-dd"),
+                endDate             = lease.EndDate?.ToString("yyyy-MM-dd"),
+                paymentDayOfMonth   = lease.PaymentDayOfMonth
+            },
+            meta = new
+            {
+                leaseStatus  = lease.Status,
+                isActive     = lease.IsActive,
+                createdAt    = lease.CreatedAt,
+                tenantId     = lease.TenantId,
+                propertyId   = lease.PropertyId
+            }
+        });
+    }
+
     /// <summary>Persist reviewed lease terms and notify the tenant a lease is ready.</summary>
     [HttpPost("{id}/send-to-tenant")]
     public async Task<IActionResult> SendToTenant(Guid id, [FromBody] SendLeaseToTenantRequest req, CancellationToken ct)
@@ -84,7 +179,10 @@ public class LeasesController : ControllerBase
                 req.InstallmentAmount,
                 req.Deposit,
                 DateOnly.TryParse(req.StartDate, out var s) ? s : null,
-                DateOnly.TryParse(req.EndDate, out var e) ? e : null), ct);
+                DateOnly.TryParse(req.EndDate, out var e) ? e : null,
+                req.PaymentFrequency,
+                req.TotalRentAmount,
+                req.DurationInMonths), ct);
             return NoContent();
         }
         catch (KeyNotFoundException ex) { return NotFound(new { error = ex.Message }); }
@@ -102,6 +200,78 @@ public class LeasesController : ControllerBase
     {
         await _mediator.Send(new TerminateLeaseCommand(id, reason));
         return NoContent();
+    }
+
+    // ── Early termination (mutual consent) ──────────────────────────────────
+
+    /// <summary>Either party proposes ending the lease early; the other party must approve.</summary>
+    [HttpPost("{id}/terminate-request")]
+    [Authorize]
+    public async Task<IActionResult> RequestTermination(Guid id, [FromBody] TerminationRequestBody body, CancellationToken ct)
+    {
+        if (string.IsNullOrWhiteSpace(body.Reason))
+            return BadRequest(new { error = "A reason is required." });
+        try
+        {
+            await _mediator.Send(new RequestLeaseTerminationCommand(
+                id, CurrentUserId, body.Reason,
+                DateOnly.TryParse(body.EffectiveDate, out var d) ? d : null), ct);
+            return NoContent();
+        }
+        catch (KeyNotFoundException ex) { return NotFound(new { error = ex.Message }); }
+        catch (UnauthorizedAccessException ex) { return StatusCode(403, new { error = ex.Message }); }
+        catch (InvalidOperationException ex) { return BadRequest(new { error = ex.Message }); }
+    }
+
+    /// <summary>The counterparty approves a pending termination request — ends the lease.</summary>
+    [HttpPost("{id}/terminate-approve")]
+    [Authorize]
+    public async Task<IActionResult> ApproveTermination(Guid id, [FromBody] TerminationResponseBody? body, CancellationToken ct)
+    {
+        try
+        {
+            await _mediator.Send(new RespondToLeaseTerminationCommand(id, CurrentUserId, true, body?.Note), ct);
+            return NoContent();
+        }
+        catch (KeyNotFoundException ex) { return NotFound(new { error = ex.Message }); }
+        catch (UnauthorizedAccessException ex) { return StatusCode(403, new { error = ex.Message }); }
+        catch (InvalidOperationException ex) { return BadRequest(new { error = ex.Message }); }
+    }
+
+    /// <summary>The counterparty rejects a pending termination request — lease continues.</summary>
+    [HttpPost("{id}/terminate-reject")]
+    [Authorize]
+    public async Task<IActionResult> RejectTermination(Guid id, [FromBody] TerminationResponseBody? body, CancellationToken ct)
+    {
+        try
+        {
+            await _mediator.Send(new RespondToLeaseTerminationCommand(id, CurrentUserId, false, body?.Note), ct);
+            return NoContent();
+        }
+        catch (KeyNotFoundException ex) { return NotFound(new { error = ex.Message }); }
+        catch (UnauthorizedAccessException ex) { return StatusCode(403, new { error = ex.Message }); }
+        catch (InvalidOperationException ex) { return BadRequest(new { error = ex.Message }); }
+    }
+
+    // ── Renewal (landlord uploads a new contract, same AI cycle) ─────────────
+
+    /// <summary>
+    /// Owner/broker uploads a fresh contract to renew an existing lease. Returns the
+    /// new lease id + extraction status; the caller then polls {newId}/ai-extraction
+    /// and finishes with {newId}/send-to-tenant — identical to a first-time upload.
+    /// </summary>
+    [HttpPost("{id}/renew-upload")]
+    [Authorize]
+    public async Task<IActionResult> RenewUpload(Guid id, IFormFile file, CancellationToken ct)
+    {
+        if (file is null || file.Length == 0) return BadRequest(new { error = "A PDF file is required." });
+        try
+        {
+            var result = await _mediator.Send(new RenewLeaseUploadCommand(id, CurrentUserId, file), ct);
+            return Ok(result);
+        }
+        catch (KeyNotFoundException ex) { return NotFound(new { error = ex.Message }); }
+        catch (UnauthorizedAccessException ex) { return StatusCode(403, new { error = ex.Message }); }
     }
 
     [HttpPost("{id}/confirm")]
@@ -127,7 +297,16 @@ public class LeasesController : ControllerBase
     {
         var lease = await _mediator.Send(new GetLeaseByIdQuery(id));
         if (lease == null) return NotFound();
-        return Ok(new { contractFileUrl = lease.ContractFileUrl });
+        if (string.IsNullOrWhiteSpace(lease.ContractFileUrl))
+            return NotFound(new { error = "No contract file is attached to this lease." });
+
+        // ContractFileUrl is stored as a blob name (e.g. "leases/abc.pdf"). Hand the
+        // browser a time-limited SAS URL it can open directly. Tolerate values that are
+        // already absolute URLs (older rows / external links).
+        var url = Uri.IsWellFormedUriString(lease.ContractFileUrl, UriKind.Absolute)
+            ? lease.ContractFileUrl
+            : _blob.GenerateSasUrl(lease.ContractFileUrl);
+        return Ok(new { contractFileUrl = url });
     }
 
     /// <summary>
@@ -167,10 +346,16 @@ public record ConfirmLeaseRequest(
 
 public record RejectLeaseRequest(Guid TenantId, string Reason);
 
+public record TerminationRequestBody(string Reason, string? EffectiveDate);
+public record TerminationResponseBody(string? Note);
+
 public record SendLeaseToTenantRequest(
     decimal? InstallmentAmount = null,
     decimal? Deposit = null,
     string? StartDate = null,
     string? EndDate = null,
+    string? PaymentFrequency = null,
+    decimal? TotalRentAmount = null,
+    int? DurationInMonths = null,
     string? TenantEmail = null,
     string? TenantName = null);

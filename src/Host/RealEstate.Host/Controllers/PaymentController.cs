@@ -18,6 +18,7 @@ using Payment.Application.Features.Queries.GetOverduePayments;
 using Payment.Application.Features.Queries.GetPaymentReceipt;
 using Payment.Application.Features.Queries.GetPaymentsByStatus;
 using Payment.Application.Features.Queries.GetRentPaymentById;
+using Payment.Infrastructure.Services.Stripe;
 
 namespace RealEstate.Host.Controllers;
 
@@ -29,12 +30,18 @@ public sealed class PaymentController : ControllerBase
     private readonly IMediator _mediator;
     private readonly ICurrentUserService _currentUser;
     private readonly IUserRepository _userRepo;
+    private readonly StripeWebhookService _stripeWebhook;
 
-    public PaymentController(IMediator mediator, ICurrentUserService currentUser, IUserRepository userRepo)
+    public PaymentController(
+        IMediator mediator,
+        ICurrentUserService currentUser,
+        IUserRepository userRepo,
+        StripeWebhookService stripeWebhook)
     {
         _mediator = mediator;
         _currentUser = currentUser;
         _userRepo = userRepo;
+        _stripeWebhook = stripeWebhook;
     }
 
     // ── Subscription Payments ───────────────────────────────────
@@ -56,6 +63,31 @@ public sealed class PaymentController : ControllerBase
         catch (PlanNotFoundException ex)
         {
             return NotFound(new { error = ex.Message });
+        }
+        catch (InvalidOperationException ex)
+        {
+            return BadRequest(new { error = ex.Message });
+        }
+    }
+
+    /// <summary>
+    /// Confirms a subscription Checkout Session from the success redirect — for
+    /// local/dev use when the Stripe webhook isn't forwarded. Verifies the
+    /// session is paid (server-side, via Stripe) then runs the activation path.
+    /// Idempotent and safe to call even if the webhook already processed it.
+    /// </summary>
+    [HttpPost("subscriptions/confirm")]
+    public async Task<IActionResult> ConfirmSubscriptionPayment(
+        [FromBody] ConfirmSubscriptionPaymentRequest body,
+        CancellationToken cancellationToken)
+    {
+        if (string.IsNullOrWhiteSpace(body.SessionId))
+            return BadRequest(new { error = "sessionId is required." });
+
+        try
+        {
+            var paymentStatus = await _stripeWebhook.ConfirmCheckoutSessionAsync(body.SessionId, cancellationToken);
+            return Ok(new { paymentStatus });
         }
         catch (InvalidOperationException ex)
         {
@@ -244,6 +276,7 @@ public sealed class PaymentController : ControllerBase
 }
 
 // ── Request bodies (تبسيط الـ binding بدل ما الـ route param يتكرر في الـ command) ──
+public sealed record ConfirmSubscriptionPaymentRequest(string SessionId);
 public sealed record ProcessPaymentRequestBody(string PaymentMethod, string? CardToken);
 public sealed record RefundPaymentRequestBody(string Reason);
 public sealed record ApplyLateFeeRequestBody(decimal LateFeeAmount);

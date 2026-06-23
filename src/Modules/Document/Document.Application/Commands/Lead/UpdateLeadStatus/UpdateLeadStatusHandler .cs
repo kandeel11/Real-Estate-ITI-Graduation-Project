@@ -11,17 +11,23 @@ public class UpdateLeadStatusHandler : IRequestHandler<UpdateLeadStatusCommand>
 {
     private readonly IDocumentDbContext _db;
     private readonly IPublisher _publisher;
+    private readonly INotificationService _notifications;
 
-    public UpdateLeadStatusHandler(IDocumentDbContext db, IPublisher publisher)
-    { _db = db; _publisher = publisher; }
+    public UpdateLeadStatusHandler(
+        IDocumentDbContext db,
+        IPublisher publisher,
+        INotificationService notifications)
+    {
+        _db = db;
+        _publisher = publisher;
+        _notifications = notifications;
+    }
 
     public async Task Handle(UpdateLeadStatusCommand cmd, CancellationToken ct)
     {
         var lead = await _db.Leads.FindAsync(new object[] { cmd.LeadId }, ct)
             ?? throw new KeyNotFoundException($"Lead {cmd.LeadId} not found");
 
-        // Accept both lowercase snake-case ("closed_won") and PascalCase ("ClosedWon"),
-        // case-insensitively. Invalid values throw ArgumentException → controller maps to 400.
         var status = ParseStatus(cmd.NewStatus);
         lead.Status = status;
 
@@ -38,7 +44,25 @@ public class UpdateLeadStatusHandler : IRequestHandler<UpdateLeadStatusCommand>
         lead.UpdatedAt = DateTime.UtcNow;
         await _db.SaveChangesAsync(ct);
 
-        // لو closed_won ابعت event
+        // Notify the tenant that their lead has progressed in the pipeline.
+        var (title, body) = status switch
+        {
+            LeadStatus.Contacted   => ("Lead Update", "A broker has contacted you about your inquiry."),
+            LeadStatus.Negotiating => ("Lead Update", "Your inquiry is now in the negotiation stage."),
+            LeadStatus.ClosedWon   => ("Congratulations!", "Your inquiry has been closed successfully. A deal has been made!"),
+            LeadStatus.ClosedLost  => ("Inquiry Closed", "Unfortunately, your inquiry has been closed without a deal."),
+            _                      => ("Lead Update", $"Your inquiry status has been updated to: {status}.")
+        };
+
+        await _notifications.CreateInAppAsync(
+            userId: lead.TenantId,
+            title: title,
+            body: body,
+            type: NotificationType.LeadStatusChanged,
+            relatedEntityType: "lead",
+            relatedEntityId: lead.Id,
+            ct: ct);
+
         if (lead.Status == LeadStatus.ClosedWon)
         {
             await _publisher.Publish(new LeadClosedWonEvent
@@ -51,8 +75,6 @@ public class UpdateLeadStatusHandler : IRequestHandler<UpdateLeadStatusCommand>
                 DealValue = lead.DealValue
             }, ct);
 
-            // Credit the assigned broker's ClosedDealsCount (Identity module
-            // listens via Shared.Kernel — modules never reference each other)
             var assignedBrokerUserId = await _db.InquiryAssignments
                 .Where(a => a.InquiryId == lead.InquiryId)
                 .Select(a => (Guid?)a.AssignedToId)
@@ -66,20 +88,15 @@ public class UpdateLeadStatusHandler : IRequestHandler<UpdateLeadStatusCommand>
         }
     }
 
-    /// <summary>
-    /// Maps an incoming status string to <see cref="LeadStatus"/>. Accepts both
-    /// snake_case ("closed_won") and PascalCase ("ClosedWon"), case-insensitively.
-    /// Throws <see cref="ArgumentException"/> for unknown values.
-    /// </summary>
     private static LeadStatus ParseStatus(string? raw)
     {
         var normalized = (raw ?? string.Empty).Replace("_", string.Empty).Trim().ToLowerInvariant();
         return normalized switch
         {
-            "new" => LeadStatus.New,
-            "contacted" => LeadStatus.Contacted,
-            "negotiating" => LeadStatus.Negotiating,
-            "closedwon" => LeadStatus.ClosedWon,
+            "new"        => LeadStatus.New,
+            "contacted"  => LeadStatus.Contacted,
+            "negotiating"=> LeadStatus.Negotiating,
+            "closedwon"  => LeadStatus.ClosedWon,
             "closedlost" => LeadStatus.ClosedLost,
             _ => throw new ArgumentException($"Invalid lead status: '{raw}'")
         };

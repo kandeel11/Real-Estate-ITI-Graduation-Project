@@ -11,6 +11,8 @@ using Property.Application.Features.Commands.MarkAsRented;
 using Property.Application.Features.Commands.RemovePropertyAmenity;
 using Property.Application.Features.Commands.RemovePropertyMedia;
 using Property.Application.Features.Commands.RequestAiDescription;
+using Property.Application.Features.Commands.SaveProperty;
+using Property.Application.Features.Commands.UnsaveProperty;
 using Property.Application.Features.Commands.SetAiDescription;
 using Property.Application.Features.Commands.SetAiDuplicateScore;
 using Property.Application.Features.Commands.SetFeatured;
@@ -26,6 +28,8 @@ using Property.Application.Features.Queries.GetPendingVerification;
 using Property.Application.Features.Queries.GetPropertiesByOwner;
 using Property.Application.Features.Queries.GetPropertyAnalytics;
 using Property.Application.Features.Queries.GetPropertyById;
+using Property.Application.Features.Queries.GetSavedProperties;
+using Property.Application.Features.Queries.GetSavedPropertyIds;
 using Property.Application.Features.Queries.SearchProperties;
 using Property.Application.Interfaces;
 using Property.Domain.Enums;
@@ -135,6 +139,63 @@ public class PropertiesController : ControllerBase
         return Ok(result);
     }
 
+    // ── Saved properties (tenant wishlist) ───────────────────────────────────
+    // Routes are literal ("saved") so they never collide with the {id:guid} routes.
+
+    [HttpGet("saved")]
+    [Authorize(Roles = "tenant")]
+    public async Task<IActionResult> GetSaved(CancellationToken ct = default)
+    {
+        var userId = _currentUser.UserId;
+        if (userId is null) return Unauthorized(new { error = "User not authenticated." });
+
+        var result = await _mediator.Send(new GetSavedPropertiesQuery(userId.Value), ct);
+        return Ok(result);
+    }
+
+    [HttpGet("saved/ids")]
+    [Authorize(Roles = "tenant")]
+    public async Task<IActionResult> GetSavedIds(CancellationToken ct = default)
+    {
+        var userId = _currentUser.UserId;
+        if (userId is null) return Unauthorized(new { error = "User not authenticated." });
+
+        var result = await _mediator.Send(new GetSavedPropertyIdsQuery(userId.Value), ct);
+        return Ok(result);
+    }
+
+    [HttpPost("{id:guid}/save")]
+    [Authorize(Roles = "tenant")]
+    public async Task<IActionResult> Save(Guid id, CancellationToken ct = default)
+    {
+        var userId = _currentUser.UserId;
+        if (userId is null) return Unauthorized(new { error = "User not authenticated." });
+
+        if (!_currentUser.IsEmailVerified)
+            return StatusCode(StatusCodes.Status403Forbidden,
+                new { error = "Please verify your email to save properties." });
+
+        try
+        {
+            await _mediator.Send(new SavePropertyCommand(userId.Value, id), ct);
+            return NoContent();
+        }
+        catch (KeyNotFoundException ex) { return NotFound(new { error = ex.Message }); }
+        // Plan saved-listings limit reached
+        catch (InvalidOperationException ex) { return Conflict(new { error = ex.Message }); }
+    }
+
+    [HttpDelete("{id:guid}/save")]
+    [Authorize(Roles = "tenant")]
+    public async Task<IActionResult> Unsave(Guid id, CancellationToken ct = default)
+    {
+        var userId = _currentUser.UserId;
+        if (userId is null) return Unauthorized(new { error = "User not authenticated." });
+
+        await _mediator.Send(new UnsavePropertyCommand(userId.Value, id), ct);
+        return NoContent();
+    }
+
     [HttpGet("{id:guid}")]
     [AllowAnonymous]
     public async Task<IActionResult> GetById(Guid id, CancellationToken ct = default)
@@ -161,6 +222,10 @@ public class PropertiesController : ControllerBase
         var ownerId = _currentUser.UserId;
         if (ownerId is null)
             return Unauthorized(new { error = "User not authenticated." });
+
+        if (!_currentUser.IsEmailVerified)
+            return StatusCode(StatusCodes.Status403Forbidden,
+                new { error = "Please verify your email before creating a listing." });
 
         // Company managers don't create listings themselves — their brokers do.
         // (A manager-created listing would have no owner identity to verify and wouldn't

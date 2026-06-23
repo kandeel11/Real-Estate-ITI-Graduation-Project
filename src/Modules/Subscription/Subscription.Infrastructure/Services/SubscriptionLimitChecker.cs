@@ -118,6 +118,18 @@ public class SubscriptionLimitChecker : ISubscriptionLimitChecker
         await _usageRepo.UpdateAsync(usage, ct);
     }
 
+    public async Task<(bool Allowed, string Reason)> CheckSavedListingLimitAsync(Guid userId, int currentSavedCount, CancellationToken ct = default)
+    {
+        var (subscription, plan, _) = await ResolveAsync(userId, null, ct);
+        if (subscription is null || plan is null)
+            return (true, string.Empty);
+
+        if (currentSavedCount >= plan.MaxSavedListings)
+            return (false, $"Saved listings limit of {plan.MaxSavedListings} reached. Upgrade your plan to save more properties.");
+
+        return (true, string.Empty);
+    }
+
     public async Task<(bool Allowed, string Reason)> CheckStorageLimitAsync(Guid userId, Guid? companyId, decimal additionalGb, CancellationToken ct = default)
     {
         var (subscription, plan, usage) = await ResolveAsync(userId, companyId, ct);

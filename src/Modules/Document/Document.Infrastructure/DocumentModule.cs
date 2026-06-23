@@ -26,9 +26,7 @@ public static class DocumentModule
         services.AddScoped<IRatingStatsRepository, RatingStatsRepository>();
         services.AddScoped<INotificationRepository, NotificationRepository>();
         services.AddScoped<INotificationService, NotificationService>();
-	    services.AddScoped<ILeaseService, LeaseService>();
-	 //services.AddMediatR();
-	services.AddSignalR();
+        services.AddScoped<ILeaseService, LeaseService>();
         return services;
     }
 }

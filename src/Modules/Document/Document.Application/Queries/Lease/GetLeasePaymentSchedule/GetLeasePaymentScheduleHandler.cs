@@ -36,6 +36,7 @@ public class GetLeasePaymentScheduleHandler
         var monthsPerPeriod = frequency switch
         {
             PaymentFrequency.Monthly      => 1,
+            PaymentFrequency.Bimonthly    => 2,
             PaymentFrequency.Quarterly    => 3,
             PaymentFrequency.SemiAnnually => 6,
             PaymentFrequency.Annually     => 12,

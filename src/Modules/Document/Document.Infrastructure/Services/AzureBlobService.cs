@@ -1,5 +1,6 @@
 using Azure.Storage;
 using Azure.Storage.Blobs;
+using Azure.Storage.Blobs.Models;
 using Azure.Storage.Sas;
 using Document.Application.Interfaces;
 using Microsoft.Extensions.Configuration;
@@ -34,7 +35,11 @@ public class AzureBlobService : IAzureBlobService
         var safeName = Path.GetFileName(fileName).Replace(" ", "_");
         var blobName = $"leases/{Guid.NewGuid()}_{safeName}";
         var blob = container.GetBlobClient(blobName);
-        await blob.UploadAsync(fileStream, overwrite: true);
+        // Store the real content type so the browser renders (not downloads) the PDF.
+        await blob.UploadAsync(fileStream, new BlobUploadOptions
+        {
+            HttpHeaders = new BlobHttpHeaders { ContentType = "application/pdf" }
+        });
         return blobName; // بنحفظ الـ path مش الـ full URL
     }
 
@@ -46,7 +51,12 @@ public class AzureBlobService : IAzureBlobService
             BlobContainerName = _containerName,
             BlobName = blobName,
             Resource = "b",
-            ExpiresOn = DateTimeOffset.UtcNow.AddMinutes(_sasExpiryMinutes)
+            ExpiresOn = DateTimeOffset.UtcNow.AddMinutes(_sasExpiryMinutes),
+            // Override the response headers so the browser downloads the file as a PDF
+            // (rather than a blank octet-stream view) — works for blobs uploaded before
+            // the content type was set, too.
+            ContentType = "application/pdf",
+            ContentDisposition = "attachment; filename=\"lease-contract.pdf\""
         };
         sasBuilder.SetPermissions(BlobSasPermissions.Read);
         var sasToken = sasBuilder.ToSasQueryParameters(credential).ToString();
