@@ -24,7 +24,7 @@ public static class AmenitySeed
             Amenity.Create("Central Air Conditioning", "تكييف مركزي", "Climate"),
             Amenity.Create("Intercom", "اتصال داخلي", "Building"),
             Amenity.Create("Kids Play Area", "منطقة ألعاب للأطفال", "Outdoor"),
-            Amenity.Create("Pet Friendly", "مناسب للحيوانات الأليفة", "Lifestyle"),
+            // "Pet Friendly" intentionally omitted — duplicated by the PetsAllowed property field.
             Amenity.Create("High-Speed Internet", "إنترنت فائق السرعة", "Utilities"),
             Amenity.Create("Natural Gas", "غاز طبيعي", "Utilities"),
             Amenity.Create("Water Heater", "سخان مياه", "Utilities"),

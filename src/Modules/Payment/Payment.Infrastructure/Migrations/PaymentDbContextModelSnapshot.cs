@@ -17,7 +17,7 @@ namespace Payment.Infrastructure.Migrations
         {
 #pragma warning disable 612, 618
             modelBuilder
-                .HasAnnotation("ProductVersion", "9.0.17")
+                .HasAnnotation("ProductVersion", "9.0.16")
                 .HasAnnotation("Relational:MaxIdentifierLength", 128);
 
             SqlServerModelBuilderExtensions.UseIdentityColumns(modelBuilder);
@@ -76,6 +76,11 @@ namespace Payment.Infrastructure.Migrations
                         .HasMaxLength(1000)
                         .HasColumnType("nvarchar(1000)");
 
+                    b.Property<decimal>("CommissionAmount")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("decimal(12,2)")
+                        .HasDefaultValue(0m);
+
                     b.Property<DateTime>("CreatedAt")
                         .HasColumnType("datetime2");
 
@@ -86,11 +91,6 @@ namespace Payment.Infrastructure.Migrations
 
                     b.Property<DateOnly>("DueDate")
                         .HasColumnType("date");
-
-                    b.Property<decimal>("CommissionAmount")
-                        .ValueGeneratedOnAdd()
-                        .HasColumnType("decimal(12,2)")
-                        .HasDefaultValue(0m);
 
                     b.Property<decimal>("LateFee")
                         .ValueGeneratedOnAdd()
@@ -111,10 +111,8 @@ namespace Payment.Infrastructure.Migrations
 
                     b.Property<string>("PaymentType")
                         .IsRequired()
-                        .ValueGeneratedOnAdd()
                         .HasMaxLength(20)
-                        .HasColumnType("nvarchar(20)")
-                        .HasDefaultValue("Rent");
+                        .HasColumnType("nvarchar(20)");
 
                     b.Property<string>("ReceiptUrl")
                         .HasMaxLength(500)

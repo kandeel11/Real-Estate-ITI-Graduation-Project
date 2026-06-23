@@ -30,7 +30,8 @@ public static class MaintenanceModuleExtensions
 
         // Azure Blob Storage — reads ConnectionString from User Secrets,
         // ContainerName from appsettings.json
-        services.Configure<AzureStorageSettings>(configuration.GetSection("AzureStorage"));
+        //services.Configure<AzureStorageSettings>(configuration.GetSection("AzureStorage"));
+        services.Configure<AzureStorageSettings>(configuration.GetSection("AzureBlob"));
         services.AddScoped<IFileStorageService, AzureBlobFileStorageService>();
 
         // Other services

@@ -2,6 +2,7 @@ using Document.Application.Interfaces;
 using Document.Domain.Enums;
 using Document.Domain.Events;
 using MediatR;
+using RealEstate.Shared.Kernel.Shared.IntegrationEvents;
 using PaymentFrequencyEnum = Document.Domain.Enums.PaymentFrequency;
 
 namespace Document.Application.Commands.Lease.ConfirmLease;
@@ -58,16 +59,47 @@ public class ConfirmLeaseHandler : IRequestHandler<ConfirmLeaseCommand, ConfirmL
             lease.IsActive = true;
             lease.ExtractionStatus = LeaseExtractionStatus.Confirmed;
 
+            bool isRenewal = lease.RenewedFromLeaseId is { } prevId;
+
+            // A renewal keeps the SAME tenant in the SAME unit, so the property stays
+            // Rented and the usage slot stays consumed — supersede the predecessor
+            // quietly (no LeaseEndedEvent) and skip the property-facing activation event.
+            if (isRenewal)
+            {
+                var previous = await _db.Leases.FindAsync(new object[] { lease.RenewedFromLeaseId! }, ct);
+                if (previous is not null && previous.IsActive)
+                {
+                    previous.IsActive = false;
+                    previous.UpdatedAt = DateTime.UtcNow;
+                }
+            }
+            else
+            {
+                await _publisher.Publish(
+                    new LeaseActivatedEvent(
+                        lease.Id,
+                        lease.PropertyId,
+                        lease.OwnerId,
+                        lease.InstallmentAmount ?? 0,
+                        lease.PaymentDayOfMonth ?? 1,
+                        lease.StartDate ?? DateOnly.FromDateTime(DateTime.UtcNow),
+                        lease.EndDate ?? DateOnly.FromDateTime(DateTime.UtcNow.AddYears(1)),
+                        lease.ContractFileUrl
+                    ), ct);
+            }
+
             await _publisher.Publish(
-                new LeaseActivatedEvent(
-                    lease.Id,
-                    lease.PropertyId,
-                    lease.OwnerId,
-                    lease.InstallmentAmount ?? 0,
-                    lease.PaymentDayOfMonth ?? 1,
-                    lease.StartDate ?? DateOnly.FromDateTime(DateTime.UtcNow),
-                    lease.EndDate ?? DateOnly.FromDateTime(DateTime.UtcNow.AddYears(1)),
-                    lease.ContractFileUrl
+                new LeaseActivatedIntegrationEvent(
+                    LeaseId: lease.Id,
+                    PropertyId: lease.PropertyId,
+                    OwnerId: lease.OwnerId,
+                    TenantId: lease.TenantId,
+                    InstallmentAmount: lease.InstallmentAmount ?? 0,
+                    PaymentFrequency: lease.PaymentFrequency?.ToString() ?? "Monthly",
+                    DurationInMonths: lease.DurationInMonths ?? 12,
+                    PaymentDayOfMonth: lease.PaymentDayOfMonth ?? 1,
+                    StartDate: lease.StartDate ?? DateOnly.FromDateTime(DateTime.UtcNow),
+                    EndDate: lease.EndDate ?? DateOnly.FromDateTime(DateTime.UtcNow.AddYears(1))
                 ), ct);
         }
 
@@ -100,24 +132,27 @@ public class RejectLeaseHandler : IRequestHandler<RejectLeaseCommand, RejectLeas
         if (cmd.TenantId != lease.TenantId)
             throw new UnauthorizedAccessException("Only the tenant can reject this lease.");
 
+        // The parties already agreed to the lease in real life, so a decline means the
+        // uploaded contract has an error. Mark it rejected (it drops out of the tenant's
+        // pending offer) but keep the lead WON so the broker/owner can recreate a corrected
+        // lease — the rejected one no longer counts as "Lease Created" in the pipeline.
         lease.ExtractionStatus = LeaseExtractionStatus.Rejected;
         lease.RejectionReason = cmd.Reason;
         lease.UpdatedAt = DateTime.UtcNow;
 
         await _db.SaveChangesAsync(ct);
 
-        // إشعار الـ Owner
+        // Tell whoever created the lease (broker if assigned, else the owner) to fix & re-send it.
+        var recreatorId = lease.BrokerId ?? lease.OwnerId;
         await _notifications.CreateInAppAsync(
-            userId: lease.OwnerId,
-            title: "Lease Rejected",
-            body: $"The tenant rejected the lease terms. Reason: {cmd.Reason}",
+            userId: recreatorId,
+            title: "Lease Declined — Please Recreate",
+            body: $"The tenant declined the lease — there may be an error in the contract. Please recreate it. Reason: {cmd.Reason}",
             type: NotificationType.LeaseRejected,
             relatedEntityType: "lease",
             relatedEntityId: lease.Id,
             ct: ct
         );
-
-        // TODO: إشعار الأدمن (لو فيه IAdminNotificationService أو role-based notification)
 
         return new RejectLeaseResult(true, "Rejected");
     }

@@ -90,13 +90,17 @@ public sealed class LeaseExtractionService : ILeaseExtractionService
                               This could be a monthly, quarterly, semi-annual, or annual figure —
                               extract exactly what the contract states as a single payment.
     - payment_frequency     : How often payments are made. Must be exactly one of:
-                              Monthly, Quarterly, SemiAnnually, Annually.
-                              If ambiguous, infer from context (e.g. "monthly rent" → Monthly).
+                              Monthly, Bimonthly, Quarterly, SemiAnnually, Annually.
+                              Bimonthly means every 2 months. If ambiguous, infer from
+                              context (e.g. "monthly rent" → Monthly, "every two months" → Bimonthly).
     - total_rent_amount     : Total contract value if EXPLICITLY stated in the text (number only).
                               If not explicitly written, return null.
     - duration_in_months    : Lease duration in months if EXPLICITLY stated (e.g. "12-month lease" → 12).
                               If not explicitly stated, return null (backend will calculate from dates).
-    - security_deposit      : Security deposit amount (number only).
+    - security_deposit      : Security deposit / insurance amount (number only). This is a
+                              refundable guarantee, DISTINCT from the rent. Only extract it if the
+                              contract explicitly states a deposit/insurance ("تأمين" / "deposit").
+                              Never copy the rent figure here — if no deposit is stated, return null.
     - start_date            : Lease start date (YYYY-MM-DD).
     - end_date              : Lease end date (YYYY-MM-DD).
     - payment_day_of_month  : Day of month when each installment is due (1–31).
@@ -136,6 +140,7 @@ public sealed class LeaseExtractionService : ILeaseExtractionService
             cancellationToken: cancellationToken);
 
         var raw = response.Content ?? "{}";
+        _logger.LogInformation("[LeaseExtraction] Raw Claude response:\n{Raw}", raw);
         return ParseResponse(raw);
     }
 
@@ -153,7 +158,7 @@ public sealed class LeaseExtractionService : ILeaseExtractionService
                     return new ExtractedLeaseField(null, 0, true);
 
                 var value = el.TryGetProperty("value", out var v)
-                    ? (v.ValueKind == JsonValueKind.Null ? null : v.GetString())
+                    ? (v.ValueKind == JsonValueKind.Null ? null : v.ToString())
                     : null;
                 var confidence = el.TryGetProperty("confidence", out var c) ? c.GetDecimal() : 0m;
 
@@ -163,7 +168,7 @@ public sealed class LeaseExtractionService : ILeaseExtractionService
             var overall = root.TryGetProperty("overall_confidence", out var oc)
                 ? oc.GetDecimal() : 0m;
 
-            return new ExtractedLeaseData(
+            var result = new ExtractedLeaseData(
                 InstallmentAmount:  ParseField("installment_amount"),
                 PaymentFrequency:   ParseField("payment_frequency"),
                 TotalRentAmount:    ParseField("total_rent_amount"),
@@ -176,10 +181,33 @@ public sealed class LeaseExtractionService : ILeaseExtractionService
                 OwnerName:          ParseField("owner_name"),
                 OverallConfidence:  overall,
                 RawAiResponse:      raw);
+
+            _logger.LogInformation(
+                "[LeaseExtraction] Parsed fields:\n" +
+                "  installment_amount   = {IA} ({IAC}%)\n" +
+                "  payment_frequency    = {PF} ({PFC}%)\n" +
+                "  total_rent_amount    = {TR} ({TRC}%)\n" +
+                "  duration_in_months   = {DM} ({DMC}%)\n" +
+                "  security_deposit     = {SD} ({SDC}%)\n" +
+                "  start_date           = {ST} ({STC}%)\n" +
+                "  end_date             = {ED} ({EDC}%)\n" +
+                "  payment_day_of_month = {PD} ({PDC}%)\n" +
+                "  overall_confidence   = {OC}%",
+                result.InstallmentAmount.Value,  result.InstallmentAmount.ConfidenceScore,
+                result.PaymentFrequency.Value,   result.PaymentFrequency.ConfidenceScore,
+                result.TotalRentAmount.Value,    result.TotalRentAmount.ConfidenceScore,
+                result.DurationInMonths.Value,   result.DurationInMonths.ConfidenceScore,
+                result.SecurityDeposit.Value,    result.SecurityDeposit.ConfidenceScore,
+                result.StartDate.Value,          result.StartDate.ConfidenceScore,
+                result.EndDate.Value,            result.EndDate.ConfidenceScore,
+                result.PaymentDayOfMonth.Value,  result.PaymentDayOfMonth.ConfidenceScore,
+                overall);
+
+            return result;
         }
         catch (Exception ex)
         {
-            _logger.LogError(ex, "Failed to parse Claude response: {Raw}", raw);
+            _logger.LogError(ex, "[LeaseExtraction] Failed to parse Claude response: {Raw}", raw);
             var failed = new ExtractedLeaseField(null, 0, true);
             return new ExtractedLeaseData(
                 failed, failed, failed, failed, failed, failed, failed, failed, failed, failed, 0, raw);

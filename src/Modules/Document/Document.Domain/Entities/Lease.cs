@@ -36,5 +36,18 @@ public class Lease
     public Lead? Lead { get; set; }
     public DateTime? OwnerConfirmedAt { get; set; }
     public DateTime? TenantConfirmedAt { get; set; }
-    public string? RejectionReason { get; set; }	
+    public string? RejectionReason { get; set; }
+
+    // ── Renewal ──────────────────────────────────────────────────────────────
+    /// <summary>When set, this lease was created as a renewal of the referenced predecessor.</summary>
+    public Guid? RenewedFromLeaseId { get; set; }
+    /// <summary>Set when the tenant asks to renew; cleared once the landlord uploads the renewal lease.</summary>
+    public DateTime? RenewalRequestedAt { get; set; }
+
+    // ── Early termination (mutual consent) ───────────────────────────────────
+    /// <summary>The party (tenant or owner/broker) who requested early termination, if any.</summary>
+    public Guid? TerminationRequestedById { get; set; }
+    public DateTime? TerminationRequestedAt { get; set; }
+    /// <summary>Proposed date the lease should end if the other party approves.</summary>
+    public DateOnly? TerminationEffectiveDate { get; set; }
 }

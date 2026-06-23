@@ -373,6 +373,37 @@ namespace Property.Infrastructure.Migrations
                     b.ToTable("property_media", "property");
                 });
 
+            modelBuilder.Entity("Property.Domain.Entities.SavedProperty", b =>
+                {
+                    b.Property<Guid>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("uniqueidentifier");
+
+                    b.Property<DateTime>("CreatedAt")
+                        .HasColumnType("datetime2");
+
+                    b.Property<DateTime?>("DeletedAt")
+                        .HasColumnType("datetime2");
+
+                    b.Property<Guid>("PropertyId")
+                        .HasColumnType("uniqueidentifier");
+
+                    b.Property<DateTime?>("UpdatedAt")
+                        .HasColumnType("datetime2");
+
+                    b.Property<Guid>("UserId")
+                        .HasColumnType("uniqueidentifier");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("UserId");
+
+                    b.HasIndex("UserId", "PropertyId")
+                        .IsUnique();
+
+                    b.ToTable("saved_properties", "property");
+                });
+
             modelBuilder.Entity("Property.Domain.Entities.PropertyAmenity", b =>
                 {
                     b.HasOne("Property.Domain.Entities.Amenity", null)

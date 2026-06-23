@@ -4,8 +4,6 @@ using AI.Infrastructure.Persistence.Contexts;
 using Document.Infrastructure;
 using Document.Infrastructure.Hubs;
 using Document.Infrastructure.Persistence;
-using Hangfire;
-using Hangfire.SqlServer;
 using Identity.Infrastructure;
 using Identity.Infrastructure.Persistence;
 using Identity.Infrastructure.Seed;
@@ -22,7 +20,6 @@ using Property.Infrastructure;
 using Property.Infrastructure.Persistence.Contexts;
 using Payment.Application.Interfaces;
 using RealEstate.Host.Adapters;
-using RealEstate.Host.Infrastructure;
 using RealEstate.Host.Jobs;
 using RealEstate.Host.Services;
 using Subscription.Infrastructure;
@@ -30,6 +27,7 @@ using Subscription.Infrastructure.Persistence;
 using Subscription.Infrastructure.Seed;
 using Wallet.Infrastructure;
 using Wallet.Infrastructure.Persistence;
+using Azure.Storage.Blobs;
 using System.IdentityModel.Tokens.Jwt;
 using System.Text;
 using MaintenanceCompanies.Infrastructure;
@@ -110,6 +108,23 @@ public class Program
                         Encoding.UTF8.GetBytes(jwtOptions.SigningKey)),
                     ClockSkew = TimeSpan.FromSeconds(30)
                 };
+                // SignalR passes the JWT via the "access_token" query param for
+                // WebSocket/SSE connections (the browser can't set headers there).
+                options.Events = new JwtBearerEvents
+                {
+                    OnMessageReceived = context =>
+                    {
+                        var token = context.Request.Query["access_token"].ToString();
+                        var path  = context.HttpContext.Request.Path;
+                        if (!string.IsNullOrEmpty(token) &&
+                            (path.StartsWithSegments("/hubs/chat") ||
+                             path.StartsWithSegments("/hubs/notifications")))
+                        {
+                            context.Token = token;
+                        }
+                        return Task.CompletedTask;
+                    }
+                };
             });
 
         // ── Authorization Policies ────────────────────────────
@@ -155,7 +170,6 @@ public class Program
         });
 
         builder.Services.AddScoped<PropertyEnrichmentService>();
-        builder.Services.AddScoped<LeaseExpiryJob>();
         builder.Services.AddHostedService<LeaseExpiryBackgroundService>();
         builder.Services.AddAiApplication(builder.Configuration);
         builder.Services.AddAiInfrastructure(builder.Configuration);
@@ -165,33 +179,6 @@ public class Program
         // ── SignalR ───────────────────────────────────────────
         builder.Services.AddSignalR();
 
-        // ── Hangfire (critical scheduled jobs only) ───────────
-        var hangfireOpts = builder.Configuration.GetSection("Hangfire").Get<HangfireOptions>()
-            ?? new HangfireOptions();
-
-        if (hangfireOpts.Enabled)
-        {
-            builder.Services.AddHangfire(config => config
-                .SetDataCompatibilityLevel(CompatibilityLevel.Version_180)
-                .UseSimpleAssemblyNameTypeSerializer()
-                .UseRecommendedSerializerSettings()
-                .UseSqlServerStorage(
-                    builder.Configuration.GetConnectionString("DefaultConnection"),
-                    new SqlServerStorageOptions
-                    {
-                        CommandBatchMaxTimeout = TimeSpan.FromMinutes(5),
-                        SlidingInvisibilityTimeout = TimeSpan.FromMinutes(5),
-                        QueuePollInterval = TimeSpan.FromSeconds(hangfireOpts.QueuePollIntervalSeconds),
-                        UseRecommendedIsolationLevel = true,
-                        DisableGlobalLocks = true
-                    }));
-
-            builder.Services.AddHangfireServer(options =>
-            {
-                options.WorkerCount = hangfireOpts.WorkerCount;
-                options.Queues = new[] { "default" };
-            });
-        }
 
         builder.Services.AddCors(options =>
         {
@@ -203,23 +190,6 @@ public class Program
         });
 
         var app = builder.Build();
-
-        if (hangfireOpts.Enabled)
-        {
-            if (hangfireOpts.DashboardEnabled)
-            {
-                app.UseHangfireDashboard("/hangfire", new DashboardOptions
-                {
-                    Authorization = new[] { new HangfireDashboardAuthFilter() }
-                });
-            }
-
-            // Daily sweep: end leases past their EndDate and return properties to market.
-            RecurringJob.AddOrUpdate<LeaseExpiryJob>(
-                "expire-due-leases",
-                job => job.RunAsync(),
-                Cron.Daily);
-        }
 
         // ── Migrations + Seeding ──────────────────────────────
         using (var scope = app.Services.CreateScope())
@@ -243,6 +213,11 @@ public class Program
             await identityDb.Database.MigrateAsync();
             var hasher = scope.ServiceProvider.GetRequiredService<Identity.Application.Interfaces.IPasswordHasher>();
             await AdminSeed.SeedAsync(identityDb, hasher);
+
+            var blobServiceClient = scope.ServiceProvider.GetService<BlobServiceClient>();
+            await RealEstate.Host.Seeds.PropertyDataSeed.SeedAsync(
+                propertyDb, identityDb, hasher, blobServiceClient,
+                app.Environment.WebRootPath);
 
             var paymentDb = scope.ServiceProvider.GetRequiredService<PaymentDbContext>();
             await paymentDb.Database.MigrateAsync();
@@ -273,6 +248,7 @@ public class Program
         app.UseAuthorization();
         app.MapControllers();
         app.MapHub<DocumentChatHub>("/hubs/chat");
+        app.MapHub<NotificationHub>("/hubs/notifications");
         app.Run();
     }
 }

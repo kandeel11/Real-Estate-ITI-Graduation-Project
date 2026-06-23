@@ -7,5 +7,6 @@ public interface ICurrentUserService
     string? Role { get; }
     Guid? CompanyId { get; }
     bool IsAuthenticated { get; }
+    bool IsEmailVerified { get; }
     bool IsInRole(string role);
 }

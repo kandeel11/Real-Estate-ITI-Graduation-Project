@@ -35,6 +35,7 @@ public static class PropertyModuleExtensions
                 .AddInterceptors(sp.GetRequiredService<DispatchDomainEventsInterceptor>()));
 
         services.AddScoped<IPropertyRepository, PropertyRepository>();
+        services.AddScoped<ISavedPropertyRepository, SavedPropertyRepository>();
         services.AddScoped<IPropertyAnalyticsRepository, PropertyAnalyticsRepository>();
         services.AddScoped<IPropertyAnalyticsService, PropertyAnalyticsService>();
 

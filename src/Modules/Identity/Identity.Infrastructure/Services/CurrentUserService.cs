@@ -42,5 +42,9 @@ public class CurrentUserService : ICurrentUserService
 
     public bool IsAuthenticated => User?.Identity?.IsAuthenticated ?? false;
 
+    // From the "email_verified" JWT claim issued by JwtService.
+    public bool IsEmailVerified =>
+        string.Equals(User?.FindFirstValue("email_verified"), "true", StringComparison.OrdinalIgnoreCase);
+
     public bool IsInRole(string role) => User?.IsInRole(role) ?? false;
 }

@@ -5,10 +5,12 @@ using Document.Application.Queries.Lead.GetLeadByInquiry;
 using Document.Application.Queries.Message.GetInquiryLastMessages;
 using Document.Application.Queries.Message.GetMessagesByConversation;
 using Document.Application.Queries.Message.GetMessagesByInquiry;
+using Document.Infrastructure.Hubs;
 using Identity.Application.Interfaces;
 using MediatR;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
+using Microsoft.AspNetCore.SignalR;
 using Property.Application.Features.Queries.GetPropertyById;
 
 namespace RealEstate.Host.Controllers;
@@ -19,14 +21,26 @@ namespace RealEstate.Host.Controllers;
 public class InquiriesController(
     IMediator mediator,
     ICurrentUserService currentUser,
-    IUserRepository userRepo) : ControllerBase
+    IUserRepository userRepo,
+    IHubContext<DocumentChatHub> chatHub) : ControllerBase
 {
     private Guid UserId => currentUser.UserId ?? throw new UnauthorizedAccessException();
+
+    /// <summary>Returns a 403 result if the caller hasn't verified their email, else null.</summary>
+    private IActionResult? RequireVerified() =>
+        currentUser.IsEmailVerified
+            ? null
+            : StatusCode(StatusCodes.Status403Forbidden,
+                new { error = "Please verify your email to manage inquiries." });
 
     [HttpPost]
     [Authorize(Roles = "tenant")]
     public async Task<IActionResult> Create([FromBody] CreateInquiryBodyRequest req, CancellationToken ct)
     {
+        if (!currentUser.IsEmailVerified)
+            return StatusCode(StatusCodes.Status403Forbidden,
+                new { error = "Please verify your email to send inquiries." });
+
         try
         {
             // Route the inquiry to the property's listing broker (if any) so it
@@ -41,9 +55,18 @@ public class InquiriesController(
         }
         catch (InvalidOperationException ex)
         {
-            // Plan inquiry limit reached
+            // Blocked by the one-engagement-at-a-time gate or the plan inquiry limit.
             return Conflict(new { error = ex.Message });
         }
+    }
+
+    /// <summary>Tells the tenant whether they may send a new inquiry right now, and if not, why.</summary>
+    [HttpGet("can-create")]
+    [Authorize(Roles = "tenant")]
+    public async Task<IActionResult> CanCreate(CancellationToken ct)
+    {
+        var gate = await mediator.Send(new GetTenantInquiryGateQuery(UserId), ct);
+        return Ok(new { allowed = gate.Allowed, reason = gate.Message, reasonCode = gate.ReasonCode });
     }
 
     [HttpGet("{id:guid}")]
@@ -51,6 +74,39 @@ public class InquiriesController(
     {
         var result = await mediator.Send(new GetInquiryByIdQuery(id), ct);
         return result is null ? NotFound() : Ok(result);
+    }
+
+    /// <summary>
+    /// Returns the current status of an inquiry so the frontend can decide whether to
+    /// show "Convert to Lead" or "Already Converted" without reloading the full list.
+    /// </summary>
+    [HttpGet("{id:guid}/status")]
+    public async Task<IActionResult> GetStatus(Guid id, CancellationToken ct)
+    {
+        var inquiry = await mediator.Send(new GetInquiryByIdQuery(id), ct);
+        if (inquiry is null) return NotFound(new { error = $"Inquiry {id} not found." });
+
+        var isConverted = inquiry.Status == "Accepted";
+        Guid? leadId = null;
+        if (isConverted)
+            leadId = await mediator.Send(new GetLeadByInquiryQuery(id), ct);
+
+        var displayStatus = inquiry.Status switch
+        {
+            "Accepted" => "converted",
+            "Closed"   => "closed",
+            "Expired"  => "expired",
+            _          => "pending"
+        };
+
+        return Ok(new
+        {
+            inquiryId       = inquiry.Id,
+            status          = inquiry.Status,
+            displayStatus,
+            isConvertedToLead = isConverted,
+            leadId
+        });
     }
 
     // FIX: was GET /tenant/{tenantId} — now /mine scoped from JWT.
@@ -62,8 +118,10 @@ public class InquiriesController(
         var inquiries = await mediator.Send(new GetMyInquiriesQuery(UserId), ct);
         if (inquiries.Count == 0) return Ok(Array.Empty<object>());
 
-        var lastMessages = await mediator.Send(
-            new GetInquiryLastMessagesQuery(inquiries.Select(i => i.Id).ToList()), ct);
+        var inquiryIds = inquiries.Select(i => i.Id).ToList();
+        var lastMessages = await mediator.Send(new GetInquiryLastMessagesQuery(inquiryIds), ct);
+        // "Answered" = a broker/owner has replied, whether via the inquiry tab or the chat.
+        var answered = await mediator.Send(new GetAnsweredInquiriesQuery(inquiryIds), ct);
 
         var titles = new Dictionary<Guid, string>();
         foreach (var pid in inquiries.Select(i => i.PropertyId).Distinct())
@@ -78,7 +136,7 @@ public class InquiriesController(
             {
                 var last = lastMessages.GetValueOrDefault(i.Id);
                 var status = i.Status == "Accepted" ? "converted"
-                           : last is not null ? "replied"
+                           : answered.Contains(i.Id) ? "replied"
                            : "new";
                 return (object)new
                 {
@@ -105,6 +163,7 @@ public class InquiriesController(
     [Authorize(Roles = "owner,broker,company_manager")]
     public async Task<IActionResult> Accept(Guid id, CancellationToken ct)
     {
+        if (RequireVerified() is { } forbid) return forbid;
         try { return Ok(await mediator.Send(new AcceptInquiryCommand(id, UserId), ct)); }
         catch (KeyNotFoundException ex) { return NotFound(ex.Message); }
         catch (InvalidOperationException ex) { return BadRequest(ex.Message); }
@@ -115,6 +174,7 @@ public class InquiriesController(
     [Authorize(Roles = "owner,broker,company_manager")]
     public async Task<IActionResult> ConvertToLead(Guid id, CancellationToken ct)
     {
+        if (RequireVerified() is { } forbid) return forbid;
         try
         {
             var result = await mediator.Send(new AcceptInquiryCommand(id, UserId), ct);
@@ -136,6 +196,7 @@ public class InquiriesController(
     [Authorize(Roles = "owner,broker,company_manager")]
     public async Task<IActionResult> Reply(Guid id, [FromBody] ReplyInquiryBodyRequest req, CancellationToken ct)
     {
+        if (RequireVerified() is { } forbid) return forbid;
         try
         {
             await mediator.Send(new ReplyToInquiryCommand(id, UserId, req.Text), ct);
@@ -190,6 +251,13 @@ public class InquiriesController(
             var saved = await mediator.Send(new PostInquiryMessageCommand(id, UserId, req.Text), ct);
             var inquiry = await mediator.Send(new GetInquiryByIdQuery(id), ct);
             var mapped = (await ToChatMessages([saved], inquiry!, ct)).Single();
+
+            // Push the new message live to everyone viewing this inquiry thread.
+            // The sender also receives this echo and dedupes it by message id.
+            await chatHub.Clients
+                .Group(DocumentChatHub.InquiryGroup(id))
+                .SendAsync("ReceiveMessage", new { inquiryId = id, message = mapped }, ct);
+
             return Ok(mapped);
         }
         catch (KeyNotFoundException ex) { return NotFound(new { error = ex.Message }); }

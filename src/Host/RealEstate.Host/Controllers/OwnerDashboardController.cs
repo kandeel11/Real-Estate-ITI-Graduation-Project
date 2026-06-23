@@ -2,13 +2,17 @@ using Document.Application.Queries.Inquiry;
 using Document.Application.Queries.Lead.GetLeadsByProperties;
 using Document.Application.Queries.Lease;
 using Document.Application.Queries.Lease.GetLeadsWithLeases;
+using Document.Application.Queries.Lease.GetLeadLeaseStates;
 using Document.Application.Queries.Message.GetInquiriesWithReply;
 using Document.Application.Queries.Message.GetInquiryLastMessages;
 using Document.Application.Queries.Notification;
 using Identity.Application.Interfaces;
+using Maintenance.Application.Features.Queries.GetOwnerDecisionQueue;
+using Maintenance.Application.Features.Queries.GetOwnerTicketStatistics;
 using MediatR;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
+using Payment.Application.Features.Queries.GetMyRentPayments;
 using Property.Application.DTOs;
 using Property.Application.Features.Queries.GetPropertiesByOwner;
 using RealEstate.Host.Services;
@@ -147,24 +151,29 @@ public class OwnerDashboardController(
             if (u is not null) tenantContacts[tid] = (u.Email, u.Phone);
         }
 
-        // Which leads already have a lease → show "Lease Created" instead of "Create Lease".
-        var leadsWithLease = await sender.Send(
-            new GetLeadsWithLeasesQuery(leads.Select(l => l.Id).ToList()), ct);
+        // Per-lead lease state → "Lease Created" (sent), "Resume" (un-sent draft), or "Create Lease".
+        var leaseStates = await sender.Send(
+            new GetLeadLeaseStatesQuery(leads.Select(l => l.Id).ToList()), ct);
 
-        var result = leads.Select(l => new
+        var result = leads.Select(l =>
         {
-            id = l.Id,
-            tenantId = l.TenantId,
-            tenantName = tenantNames.GetValueOrDefault(l.TenantId, string.Empty),
-            tenantEmail = tenantContacts.GetValueOrDefault(l.TenantId).Email ?? string.Empty,
-            tenantPhone = tenantContacts.GetValueOrDefault(l.TenantId).Phone ?? string.Empty,
-            propertyId = l.PropertyId,
-            propertyTitle = propertyTitles.GetValueOrDefault(l.PropertyId, string.Empty),
-            status = MapLeadStatus(l.Status),
-            stageEnteredAt = new DateTimeOffset(DateTime.SpecifyKind(l.UpdatedAt, DateTimeKind.Utc)).ToUnixTimeMilliseconds(),
-            dealValue = l.DealValue?.ToString(),
-            notes = l.Notes,
-            hasLease = leadsWithLease.Contains(l.Id)
+            var st = leaseStates.GetValueOrDefault(l.Id);
+            return new
+            {
+                id = l.Id,
+                tenantId = l.TenantId,
+                tenantName = tenantNames.GetValueOrDefault(l.TenantId, string.Empty),
+                tenantEmail = tenantContacts.GetValueOrDefault(l.TenantId).Email ?? string.Empty,
+                tenantPhone = tenantContacts.GetValueOrDefault(l.TenantId).Phone ?? string.Empty,
+                propertyId = l.PropertyId,
+                propertyTitle = propertyTitles.GetValueOrDefault(l.PropertyId, string.Empty),
+                status = MapLeadStatus(l.Status),
+                stageEnteredAt = new DateTimeOffset(DateTime.SpecifyKind(l.UpdatedAt, DateTimeKind.Utc)).ToUnixTimeMilliseconds(),
+                dealValue = l.DealValue?.ToString(),
+                notes = l.Notes,
+                hasLease = st?.HasSentLease ?? false,
+                draftLeaseId = st?.DraftLeaseId
+            };
         });
 
         return Ok(result);
@@ -222,13 +231,21 @@ public class OwnerDashboardController(
     [HttpGet("leases")]
     public async Task<IActionResult> GetLeases(CancellationToken ct)
     {
-        var leases = await sender.Send(new GetLeasesByOwnerQuery(UserId), ct);
+        // Resolve leases through the owner's properties so renewals (new leases on the
+        // same property) and any lease on an owned property are always included.
+        var properties = await sender.Send(new GetPropertiesByOwnerQuery(UserId), ct);
+        if (properties.Count == 0) return Ok(Array.Empty<object>());
+
+        var leases = await sender.Send(
+            new GetLeasesByPropertyIdsQuery(properties.Select(p => p.Id).ToList()), ct);
         if (leases.Count == 0) return Ok(Array.Empty<object>());
 
-        var properties = await sender.Send(new GetPropertiesByOwnerQuery(UserId), ct);
         var propertyTitles = properties.ToDictionary(p => p.Id, p => p.Title);
         var tenantNames = await userRepo.GetFullNamesByIdsAsync(
             leases.Select(l => l.TenantId).Distinct(), ct);
+
+        // Predecessors that have an in-progress renewal draft (a non-terminal child lease).
+        var renewalParents = BrokerDashboardController.LeasesWithRenewalDraft(leases);
 
         var today = DateOnly.FromDateTime(DateTime.UtcNow);
 
@@ -248,6 +265,11 @@ public class OwnerDashboardController(
                 monthlyRent = l.InstallmentAmount ?? 0m,
                 deposit = l.SecurityDeposit ?? 0m,
                 status = MapLeaseStatus(l, today),
+                lifecycleStatus = l.Status,
+                renewalRequestedAt = l.RenewalRequestedAt,
+                renewalInProgress = renewalParents.Contains(l.Id),
+                terminationRequestedAt = l.TerminationRequestedAt,
+                terminationRequestedByTenant = l.TerminationRequestedById == l.TenantId,
                 pdfUrl = l.ContractFileUrl,
                 aiStatus = MapExtractionStatus(l.ExtractionStatus)
             });
@@ -296,6 +318,43 @@ public class OwnerDashboardController(
         return Ok(tasks);
     }
 
+    // ── Rent payments received for owner's properties ───────────────────────────
+
+    /// <summary>
+    /// All rent payments for the logged-in owner's properties.
+    /// Includes pending, paid, and overdue installments across all active leases.
+    /// </summary>
+    [HttpGet("payments")]
+    public async Task<IActionResult> GetPayments(CancellationToken ct)
+    {
+        var result = await sender.Send(new GetMyRentPaymentsQuery(UserId, "owner"), ct);
+        return Ok(result);
+    }
+
+    // ── Maintenance ───────────────────────────────────────────────────────────────
+
+    /// <summary>
+    /// Returns tickets awaiting this owner's resolution decision (PlatformVendor or ExternalTechnician).
+    /// Filtered server-side to Status == WaitingForOwnerDecision and OwnerId == caller.
+    /// Full ticket detail is included so the decision UI can render AI evaluation, attachments, etc.
+    /// </summary>
+    [HttpGet("maintenance/decision-queue")]
+    public async Task<IActionResult> GetMaintenanceDecisionQueue(CancellationToken ct)
+    {
+        var result = await sender.Send(new GetOwnerDecisionQueueQuery(UserId), ct);
+        return Ok(result);
+    }
+
+    /// <summary>
+    /// Returns ticket counts by status for the logged-in owner, used to populate dashboard stat cards.
+    /// </summary>
+    [HttpGet("maintenance/stats")]
+    public async Task<IActionResult> GetMaintenanceStats(CancellationToken ct)
+    {
+        var result = await sender.Send(new GetOwnerTicketStatisticsQuery(UserId), ct);
+        return Ok(result);
+    }
+
     // ── Ratings (owners have no per-broker review feed) ──────────────────────────
     [HttpGet("ratings")]
     public IActionResult GetRatings() => Ok(Array.Empty<object>());
@@ -314,8 +373,8 @@ public class OwnerDashboardController(
 
     private static string MapInquiryStatus(string status, bool hasReply) => status switch
     {
-        "Closed" => "converted",
-        "Accepted" => "replied",
+        "Accepted" => "converted",   // inquiry accepted = lead was created
+        "Closed"   => "closed",
         // A pending inquiry counts as "replied" once the broker/owner has sent a message.
         _ => hasReply ? "replied" : "new"
     };

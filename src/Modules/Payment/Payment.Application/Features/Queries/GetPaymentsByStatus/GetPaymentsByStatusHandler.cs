@@ -27,7 +27,12 @@ namespace Payment.Application.Features.Queries.GetPaymentsByStatus
                 .Include(p => p.RentDetails)
                 .OrderByDescending(p => p.DueDate)
                 .Select(p => new RentPaymentDto(
-                    p.Id, p.RentDetails!.LeaseId, p.Amount, p.DueDate, p.PaidAt,
+                    p.Id,
+                    p.RentDetails!.LeaseId,
+                    p.RentDetails!.PropertyId,
+                    p.RentDetails!.TenantId,
+                    p.RentDetails!.LandlordId,
+                    p.Amount, p.DueDate, p.PaidAt,
                     p.Status.ToString(), p.PaymentMethod.ToString(), p.TransactionId,
                     p.LateFee, p.AiPredictedLate, p.ReceiptUrl, p.Notes,
                     p.CreatedAt, p.UpdatedAt))

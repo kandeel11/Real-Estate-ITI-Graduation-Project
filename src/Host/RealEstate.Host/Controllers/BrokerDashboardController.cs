@@ -1,7 +1,10 @@
 using Document.Application.Queries.Inquiry;
 using Document.Application.Queries.Lead.GetLeadsByBroker;
 using Document.Application.Queries.Lead.GetLeadsByProperties;
+using Document.Application.Queries.Lease;
+using Document.Application.Queries.Lease.GetLeasePaymentSchedule;
 using Document.Application.Queries.Lease.GetLeadsWithLeases;
+using Document.Application.Queries.Lease.GetLeadLeaseStates;
 using Document.Application.Queries.Message.GetInquiriesWithReply;
 using Document.Application.Queries.Message.GetInquiryLastMessages;
 using Document.Application.Queries.Notification;
@@ -9,8 +12,10 @@ using Identity.Application.Interfaces;
 using MediatR;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
+using Payment.Application.Features.Queries.GetRentPaymentsByLeaseIds;
 using Property.Application.DTOs;
 using Property.Application.Features.Queries.GetPropertiesByBroker;
+using Property.Application.Features.Queries.GetPropertyById;
 using RealEstate.Host.Services;
 
 namespace RealEstate.Host.Controllers;
@@ -164,27 +169,113 @@ public class BrokerDashboardController(
             if (u is not null) tenantContacts[tid] = (u.Email, u.Phone);
         }
 
-        // Which leads already have a lease → show "Lease Created" instead of "Create Lease".
-        var leadsWithLease = await sender.Send(
-            new GetLeadsWithLeasesQuery(leads.Select(l => l.Id).ToList()), ct);
+        // Per-lead lease state → "Lease Created" (sent), "Resume" (un-sent draft), or "Create Lease".
+        var leaseStates = await sender.Send(
+            new GetLeadLeaseStatesQuery(leads.Select(l => l.Id).ToList()), ct);
 
-        var result = leads.Select(l => new
+        var result = leads.Select(l =>
         {
-            id = l.Id,
-            tenantId = l.TenantId,
-            tenantName = tenantNames.GetValueOrDefault(l.TenantId, string.Empty),
-            tenantEmail = tenantContacts.GetValueOrDefault(l.TenantId).Email ?? string.Empty,
-            tenantPhone = tenantContacts.GetValueOrDefault(l.TenantId).Phone ?? string.Empty,
-            propertyId = l.PropertyId,
-            propertyTitle = propertyTitles.GetValueOrDefault(l.PropertyId, string.Empty),
-            status = MapLeadStatus(l.Status),
-            stageEnteredAt = new DateTimeOffset(DateTime.SpecifyKind(l.UpdatedAt, DateTimeKind.Utc)).ToUnixTimeMilliseconds(),
-            dealValue = l.DealValue?.ToString(),
-            notes = l.Notes,
-            hasLease = leadsWithLease.Contains(l.Id)
+            var st = leaseStates.GetValueOrDefault(l.Id);
+            return new
+            {
+                id = l.Id,
+                tenantId = l.TenantId,
+                tenantName = tenantNames.GetValueOrDefault(l.TenantId, string.Empty),
+                tenantEmail = tenantContacts.GetValueOrDefault(l.TenantId).Email ?? string.Empty,
+                tenantPhone = tenantContacts.GetValueOrDefault(l.TenantId).Phone ?? string.Empty,
+                propertyId = l.PropertyId,
+                propertyTitle = propertyTitles.GetValueOrDefault(l.PropertyId, string.Empty),
+                status = MapLeadStatus(l.Status),
+                stageEnteredAt = new DateTimeOffset(DateTime.SpecifyKind(l.UpdatedAt, DateTimeKind.Utc)).ToUnixTimeMilliseconds(),
+                dealValue = l.DealValue?.ToString(),
+                notes = l.Notes,
+                hasLease = st?.HasSentLease ?? false,
+                draftLeaseId = st?.DraftLeaseId
+            };
         });
 
         return Ok(result);
+    }
+
+    // ── Leases I manage (Lease.BrokerId == me) ──────────────────────────────────
+
+    [HttpGet("leases")]
+    public async Task<IActionResult> GetLeases(CancellationToken ct)
+    {
+        // A broker is tied to leases through the properties they list (Lease has no
+        // reliable BrokerId), mirroring how GetLeads resolves the broker's pipeline.
+        var properties = await sender.Send(new GetPropertiesByBrokerQuery(UserId), ct);
+        if (properties.Count == 0) return Ok(Array.Empty<object>());
+
+        var leases = await sender.Send(
+            new GetLeasesByPropertyIdsQuery(properties.Select(p => p.Id).ToList()), ct);
+        if (leases.Count == 0) return Ok(Array.Empty<object>());
+
+        var propertyTitles = properties.ToDictionary(p => p.Id, p => p.Title);
+
+        var tenantNames = await userRepo.GetFullNamesByIdsAsync(
+            leases.Select(l => l.TenantId).Distinct(), ct);
+
+        // Predecessors that have an in-progress renewal draft (a non-terminal child lease).
+        var renewalParents = LeasesWithRenewalDraft(leases);
+
+        var today = DateOnly.FromDateTime(DateTime.UtcNow);
+        var result = new List<object>(leases.Count);
+        foreach (var l in leases)
+        {
+            var tenant = await userRepo.GetByIdAsync(l.TenantId, ct);
+            result.Add(new
+            {
+                id = l.Id,
+                propertyId = l.PropertyId,
+                propertyTitle = propertyTitles.GetValueOrDefault(l.PropertyId, string.Empty),
+                tenantName = tenantNames.GetValueOrDefault(l.TenantId, string.Empty),
+                tenantEmail = tenant?.Email ?? string.Empty,
+                startDate = l.StartDate?.ToString("yyyy-MM-dd") ?? string.Empty,
+                endDate = l.EndDate?.ToString("yyyy-MM-dd") ?? string.Empty,
+                installmentAmount = l.InstallmentAmount ?? 0m,
+                totalRentAmount = l.TotalRentAmount,
+                paymentFrequency = l.PaymentFrequency,
+                durationInMonths = l.DurationInMonths,
+                securityDeposit = l.SecurityDeposit ?? 0m,
+                status = MapBrokerLeaseStatus(l, today),
+                lifecycleStatus = l.Status,
+                renewalRequestedAt = l.RenewalRequestedAt,
+                renewalInProgress = renewalParents.Contains(l.Id),
+                terminationRequestedAt = l.TerminationRequestedAt,
+                terminationRequestedByTenant = l.TerminationRequestedById == l.TenantId,
+                contractFileUrl = l.ContractFileUrl,
+                extractionStatus = l.ExtractionStatus
+            });
+        }
+
+        return Ok(result);
+    }
+
+    /// <summary>
+    /// Ids of leases that have an in-progress renewal draft — a child lease
+    /// (RenewedFromLeaseId == parent) that is not yet active and not rejected. Used so the
+    /// UI can offer "Resume Renewal" and avoid spawning a duplicate draft.
+    /// </summary>
+    internal static HashSet<Guid> LeasesWithRenewalDraft(
+        IEnumerable<Document.Application.Queries.Lease.GetLeaseById.LeaseDto> leases) =>
+        leases
+            .Where(c => c.RenewedFromLeaseId is not null
+                        && !c.IsActive
+                        && !string.Equals(c.ExtractionStatus, "rejected", StringComparison.OrdinalIgnoreCase))
+            .Select(c => c.RenewedFromLeaseId!.Value)
+            .ToHashSet();
+
+    /// <summary>Legacy list-filter status (active/expiring/ended) the leases page chips use.</summary>
+    private static string MapBrokerLeaseStatus(
+        Document.Application.Queries.Lease.GetLeaseById.LeaseDto l, DateOnly today)
+    {
+        if (l.EndDate is DateOnly end)
+        {
+            if (end < today) return "ended";
+            if (end <= today.AddDays(30)) return "expiring";
+        }
+        return "active";
     }
 
     // ── Inquiries assigned to me ────────────────────────────────────────────────
@@ -228,6 +319,60 @@ public class BrokerDashboardController(
                 // Latest activity for the chat list (falls back to the inquiry itself).
                 lastMessage = last?.Text ?? i.Message,
                 lastMessageAt = last?.At ?? i.CreatedAt
+            });
+        }
+
+        return Ok(result);
+    }
+
+    // ── Payments ─────────────────────────────────────────────────────────────────
+
+    /// <summary>
+    /// All rent payments for leases managed by this broker (where Lease.BrokerId == UserId).
+    /// Returns RentPaymentDto[] enriched with propertyId/tenantId/landlordId.
+    /// </summary>
+    [HttpGet("payments")]
+    public async Task<IActionResult> GetPayments(CancellationToken ct)
+    {
+        var leases = await sender.Send(new GetLeasesByBrokerQuery(UserId), ct);
+        if (leases.Count == 0) return Ok(Array.Empty<object>());
+
+        var leaseIds = leases.Select(l => l.Id).ToList();
+        var payments = await sender.Send(new GetRentPaymentsByLeaseIdsQuery(leaseIds), ct);
+        return Ok(payments);
+    }
+
+    /// <summary>
+    /// Payment schedule for every active lease managed by this broker.
+    /// Returns one schedule entry per lease, enriched with property title.
+    /// </summary>
+    [HttpGet("payments/schedule")]
+    public async Task<IActionResult> GetPaymentsSchedule(CancellationToken ct)
+    {
+        var leases = await sender.Send(new GetLeasesByBrokerQuery(UserId), ct);
+        var activeLeases = leases.Where(l => l.IsActive).ToList();
+        if (activeLeases.Count == 0) return Ok(Array.Empty<object>());
+
+        var propertyTitles = new Dictionary<Guid, string>();
+        foreach (var pid in activeLeases.Select(l => l.PropertyId).Distinct())
+        {
+            var prop = await sender.Send(new GetPropertyByIdQuery(pid), ct);
+            if (prop is not null) propertyTitles[pid] = prop.Title;
+        }
+
+        var result = new List<object>(activeLeases.Count);
+        foreach (var lease in activeLeases)
+        {
+            var schedule = await sender.Send(new GetLeasePaymentScheduleQuery(lease.Id), ct);
+            result.Add(new
+            {
+                leaseId = lease.Id,
+                propertyId = lease.PropertyId,
+                propertyTitle = propertyTitles.GetValueOrDefault(lease.PropertyId, string.Empty),
+                tenantId = lease.TenantId,
+                startDate = lease.StartDate,
+                endDate = lease.EndDate,
+                schedule
             });
         }
 
@@ -310,9 +455,8 @@ public class BrokerDashboardController(
 
     private static string MapInquiryStatus(string status, bool hasReply) => status switch
     {
-        "Closed" => "converted",
-        "Accepted" => "replied",
-        // A pending inquiry counts as "replied" once the broker/owner has sent a message.
+        "Accepted" => "converted",   // inquiry accepted = lead was created
+        "Closed"   => "closed",
         _ => hasReply ? "replied" : "new"
     };
 

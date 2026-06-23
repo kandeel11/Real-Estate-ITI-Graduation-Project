@@ -84,7 +84,7 @@ public class AcceptInquiryCommandHandler : IRequestHandler<AcceptInquiryCommand,
             userId: inquiry.TenantId,
             title: "Inquiry Accepted",
             body: "Your inquiry has been accepted. You can now start a conversation.",
-            type: NotificationType.NewInquiry,
+            type: NotificationType.InquiryAccepted,
             relatedEntityType: "inquiry",
             relatedEntityId: inquiry.Id,
             ct: ct

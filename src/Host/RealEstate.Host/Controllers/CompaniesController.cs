@@ -1,5 +1,8 @@
 using Document.Application.Queries.Inquiry;
+using Document.Application.Queries.Lease;
+using Document.Application.Queries.Lease.GetLeasePaymentSchedule;
 using Document.Application.Queries.Rating;
+using Payment.Application.Features.Queries.GetRentPaymentsByLeaseIds;
 using Identity.Application.Commands.UpdateCompany;
 using Identity.Application.Commands.UpdateCompanyLogo;
 using Identity.Application.Commands.VerifyCompany;
@@ -109,6 +112,10 @@ public class CompaniesController(
     {
         var userId = currentUser.UserId;
         if (userId is null) return Unauthorized(new { error = "User not authenticated." });
+
+        if (!currentUser.IsEmailVerified)
+            return StatusCode(StatusCodes.Status403Forbidden,
+                new { error = "Please verify your email to update your company profile." });
 
         var companyId = currentUser.CompanyId;
         if (companyId is null) return BadRequest(new { error = "No company is associated with your account." });
@@ -304,6 +311,71 @@ public class CompaniesController(
             i.CreatedAt,
             i.AcceptedAt,
             i.ClosedAt));
+
+        return Ok(result);
+    }
+
+    /// <summary>
+    /// All rent payments for the company's properties (across all brokers and leases).
+    /// Returns RentPaymentDto[] enriched with propertyId/tenantId/landlordId.
+    /// </summary>
+    [HttpGet("mine/payments")]
+    [Authorize(Policy = "CompanyManager")]
+    public async Task<IActionResult> GetMyPayments(CancellationToken ct)
+    {
+        var companyId = currentUser.CompanyId;
+        if (companyId is null)
+            return BadRequest(new { error = "No company is associated with your account." });
+
+        var properties = await mediator.Send(new GetPropertiesByCompanyQuery(companyId.Value), ct);
+        if (properties.Count == 0) return Ok(Array.Empty<object>());
+
+        var propertyIds = properties.Select(p => p.Id).ToList();
+        var leases = await mediator.Send(new GetLeasesByPropertyIdsQuery(propertyIds), ct);
+        if (leases.Count == 0) return Ok(Array.Empty<object>());
+
+        var leaseIds = leases.Select(l => l.Id).ToList();
+        var payments = await mediator.Send(new GetRentPaymentsByLeaseIdsQuery(leaseIds), ct);
+        return Ok(payments);
+    }
+
+    /// <summary>
+    /// Payment schedule for every active lease under the company's properties.
+    /// Returns one schedule entry per lease enriched with property title and tenant ID.
+    /// </summary>
+    [HttpGet("mine/payments/schedule")]
+    [Authorize(Policy = "CompanyManager")]
+    public async Task<IActionResult> GetMyPaymentsSchedule(CancellationToken ct)
+    {
+        var companyId = currentUser.CompanyId;
+        if (companyId is null)
+            return BadRequest(new { error = "No company is associated with your account." });
+
+        var properties = await mediator.Send(new GetPropertiesByCompanyQuery(companyId.Value), ct);
+        if (properties.Count == 0) return Ok(Array.Empty<object>());
+
+        var propertyIds = properties.Select(p => p.Id).ToList();
+        var leases = await mediator.Send(new GetLeasesByPropertyIdsQuery(propertyIds), ct);
+        var activeLeases = leases.Where(l => l.IsActive).ToList();
+        if (activeLeases.Count == 0) return Ok(Array.Empty<object>());
+
+        var propertyTitles = properties.ToDictionary(p => p.Id, p => p.Title);
+
+        var result = new List<object>(activeLeases.Count);
+        foreach (var lease in activeLeases)
+        {
+            var schedule = await mediator.Send(new GetLeasePaymentScheduleQuery(lease.Id), ct);
+            result.Add(new
+            {
+                leaseId = lease.Id,
+                propertyId = lease.PropertyId,
+                propertyTitle = propertyTitles.GetValueOrDefault(lease.PropertyId, string.Empty),
+                tenantId = lease.TenantId,
+                startDate = lease.StartDate,
+                endDate = lease.EndDate,
+                schedule
+            });
+        }
 
         return Ok(result);
     }

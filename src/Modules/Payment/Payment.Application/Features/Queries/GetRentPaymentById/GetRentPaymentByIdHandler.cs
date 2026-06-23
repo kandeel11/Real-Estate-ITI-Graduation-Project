@@ -24,7 +24,8 @@ namespace Payment.Application.Features.Queries.GetRentPaymentById
                 return null;
 
             return new RentPaymentDto(
-                payment.Id, payment.LeaseId, payment.Amount, payment.DueDate, payment.PaidAt,
+                payment.Id, payment.LeaseId, payment.PropertyId, payment.TenantId, payment.LandlordId,
+                payment.Amount, payment.DueDate, payment.PaidAt,
                 payment.Status.ToString(), payment.PaymentMethod.ToString(), payment.TransactionId,
                 payment.LateFee, payment.AiPredictedLate, payment.ReceiptUrl, payment.Notes,
                 payment.CreatedAt, payment.UpdatedAt);

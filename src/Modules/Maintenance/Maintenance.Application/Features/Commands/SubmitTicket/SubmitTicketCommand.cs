@@ -48,11 +48,14 @@ public class SubmitTicketHandler(
                 result.ConfidenceScore, result.Reasoning);
             await aiRepo.AddAsync(evaluation, ct);
 
-            var responsible = result.ResponsibleParty == "Owner"
-                ? ResponsibleParty.Owner : ResponsibleParty.Tenant;
+            var responsible = result.ResponsibleParty == "Owner" || result.ResponsibleParty == "Landlord"
+                 ? ResponsibleParty.Owner
+                 : ResponsibleParty.Tenant;
             ticket.ApplyAiEvaluation(responsible);
             await repo.SaveChangesAsync(ct);
         }
-        catch { }
+        catch (Exception ex){
+            Console.Error.WriteLine($"[AI Evaluation Failed] TicketId={ticket.Id}, Error={ex.Message}");
+        }
     }
 }

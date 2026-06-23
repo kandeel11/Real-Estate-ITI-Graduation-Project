@@ -52,6 +52,23 @@ public sealed class SubscriptionPaymentSucceededEventHandler
             return;
         }
 
+        // Supersede the caller's previous active subscription (the one being
+        // replaced by this paid upgrade). Without this there would be two
+        // Active rows for the same user/company and "get active" would return
+        // an arbitrary one — leaving the plan looking unchanged after payment.
+        var previous = subscription.CompanyId is not null
+            ? await _subscriptionRepository.GetActiveByCompanyAsync(subscription.CompanyId.Value, cancellationToken)
+            : await _subscriptionRepository.GetActiveByUserAsync(subscription.UserId, cancellationToken);
+
+        if (previous is not null && previous.Id != subscription.Id)
+        {
+            previous.Expire();
+            await _subscriptionRepository.UpdateAsync(previous, cancellationToken);
+            _logger.LogInformation(
+                "Superseded previous subscription {PreviousId} (plan {PreviousPlanId}) on upgrade to {SubscriptionId}.",
+                previous.Id, previous.PlanId, subscription.Id);
+        }
+
         var startDate = DateTime.UtcNow;
         var endDate = CalculateExpiryDate(startDate, subscription.BillingCycle);
 
