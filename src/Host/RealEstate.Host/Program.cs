@@ -219,6 +219,14 @@ public class Program
                 propertyDb, identityDb, hasher, blobServiceClient,
                 app.Environment.WebRootPath);
 
+            // Backfill: assign Free plans to seed accounts that have no active
+            // subscription yet (idempotent — skips ones that already have one).
+            var seedPublisher = scope.ServiceProvider.GetRequiredService<MediatR.IPublisher>();
+            var seedSubscriptionRepo = scope.ServiceProvider
+                .GetRequiredService<Subscription.Application.Interfaces.ISubscriptionRepository>();
+            await RealEstate.Host.Seeds.PropertyDataSeed.BackfillSubscriptionsAsync(
+                identityDb, seedSubscriptionRepo, seedPublisher);
+
             var paymentDb = scope.ServiceProvider.GetRequiredService<PaymentDbContext>();
             await paymentDb.Database.MigrateAsync();
 

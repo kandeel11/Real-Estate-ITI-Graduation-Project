@@ -4,10 +4,13 @@ using Identity.Application.Interfaces;
 using Identity.Domain.Entities;
 using Identity.Domain.Enums;
 using Identity.Infrastructure.Persistence;
+using MediatR;
 using Microsoft.EntityFrameworkCore;
 using Property.Domain.Entities;
 using Property.Domain.Enums;
 using Property.Infrastructure.Persistence.Contexts;
+using RealEstate.Shared.Kernel.Shared.IntegrationEvents;
+using Subscription.Application.Interfaces;
 
 namespace RealEstate.Host.Seeds;
 
@@ -73,6 +76,10 @@ public static class PropertyDataSeed
         managerCairo.SetCompany(companyCairo.Id);
         managerAlex.SetCompany(companyAlex.Id);
         await identityDb.SaveChangesAsync();
+
+        // Free-plan assignment for these accounts is handled by
+        // BackfillSubscriptionsAsync, which publishes the integration events only
+        // when no active subscription exists (covers both fresh and existing DBs).
 
         // ── 4. Broker Users & Records ─────────────────────────────────────────
         var brokerUser1 = MakeVerifiedUser("Karim Mostafa Amin", "karim.mostafa@seeddata.com", "+201006006006", UserRole.Broker, hasher);
@@ -232,6 +239,42 @@ public static class PropertyDataSeed
             floor: 4, totalFloors: 8, yearBuilt: 2024, isFurnished: true, petsAllowed: false,
             "Egypt", "Gharbia", "25 El Geish Street", 12, "Tanta", "El Geish District",
             ListingSource.Company, "Cairo Elite Properties", featured: false);
+    }
+
+    // ── Backfill subscriptions for already-seeded accounts ───────────────────
+    // Runs on every startup (independent of the once-only seed guard). For seed
+    // companies/owners created before the seed published the integration events,
+    // this assigns the missing Free plan so /api/subscriptions/mine stops 404ing.
+    // Idempotent: skips any account that already has an active subscription.
+    public static async Task BackfillSubscriptionsAsync(
+        IdentityDbContext identityDb,
+        ISubscriptionRepository subscriptions,
+        IPublisher publisher)
+    {
+        var seedUsers = await identityDb.Users
+            .Where(u => SeedEmails.Contains(u.Email))
+            .ToListAsync();
+
+        if (seedUsers.Count == 0) return;
+
+        // Individual owners → personal Free Individual subscription
+        foreach (var owner in seedUsers.Where(u => u.Role == UserRole.Owner.ToRoleString()))
+        {
+            if (await subscriptions.GetActiveByUserAsync(owner.Id) is null)
+                await publisher.Publish(new IndividualUserCreatedEvent(owner.Id, "Owner"));
+        }
+
+        // Companies → company Free Company subscription (keyed by manager seed user)
+        var seedUserIds = seedUsers.Select(u => u.Id).ToList();
+        var seedCompanies = await identityDb.Companies
+            .Where(c => seedUserIds.Contains(c.ManagerId))
+            .ToListAsync();
+
+        foreach (var company in seedCompanies)
+        {
+            if (await subscriptions.GetActiveByCompanyAsync(company.Id) is null)
+                await publisher.Publish(new CompanyCreatedEvent(company.Id, company.ManagerId));
+        }
     }
 
     // ── Clear all previous seed data ─────────────────────────────────────────
