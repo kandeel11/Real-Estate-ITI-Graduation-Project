@@ -1,4 +1,5 @@
 ﻿using Document.Application.Commands.Lease.ConfirmLease;
+using Document.Application.Commands.Lease.TenantAcceptLease;
 using Document.Application.Commands.Lease.RequestRenewal;
 using Document.Application.Queries.Lead.GetMyLeads;
 using Document.Application.Queries.Lease.GetLeaseById;
@@ -142,13 +143,14 @@ public class TenantController(
     [HttpPost("leases/{id}/accept")]
     public async Task<IActionResult> AcceptLeaseOffer(Guid id, CancellationToken ct)
     {
-        var lease = await sender.Send(new GetLeaseByIdQuery(id), ct);
-        if (lease is null) return NotFound(new { message = "Lease not found." });
-        if (lease.TenantId != UserId) return Forbid();
-
-        var result = await sender.Send(
-            new ConfirmLeaseCommand(id, UserId, null, null, null, null, null, null, null, null), ct);
-        return Ok(result);
+        try
+        {
+            await sender.Send(new TenantAcceptLeaseCommand(id, UserId), ct);
+            return NoContent();
+        }
+        catch (KeyNotFoundException ex)      { return NotFound(new { error = ex.Message }); }
+        catch (UnauthorizedAccessException ex) { return StatusCode(403, new { error = ex.Message }); }
+        catch (InvalidOperationException ex)  { return BadRequest(new { error = ex.Message }); }
     }
 
     [HttpGet("payments")]

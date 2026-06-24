@@ -181,10 +181,6 @@ public class TicketsController(ISender sender, ICurrentUserService currentUser) 
         var company = await companySvc.GetByUserIdAsync(CurrentUserId.ToString())
             ?? throw new KeyNotFoundException($"Maintenance company profile not found for UserId={CurrentUserId}.");
 
-        // TEMP DEBUG — remove after confirming VendorId match in the DB
-        Console.Error.WriteLine(
-            $"[DEBUG] GetMyAssignments: JWT CurrentUserId={CurrentUserId}  =>  maintenanceComp.Id (query key)={company.Id}");
-
         var result = await sender.Send(new GetVendorTicketsQuery(company.Id));
         return Ok(result);
     }
