@@ -36,12 +36,26 @@ public sealed class ApproveLeaseManagementHandler : IRequestHandler<ApproveLease
             lease.ManagerApprovalStatus = "Approved";
             lease.ManagerApprovedAt = DateTime.UtcNow;
 
-            // Notify the broker that they can now send to tenant
-            var notifyId = lease.BrokerId ?? lease.OwnerId;
+            // Auto-send to tenant: manager approval finalises the owner/broker side
+            lease.OwnerConfirmedAt ??= DateTime.UtcNow;
+            lease.ExtractionStatus = LeaseExtractionStatus.Extracted;
+
+            // Notify broker that approval is done and lease was forwarded to tenant
+            var brokerId = lease.BrokerId ?? lease.OwnerId;
             await _notifications.CreateInAppAsync(
-                userId: notifyId,
-                title: "Management Options Approved — Ready for Tenant",
-                body: "The company manager has approved the management options. You can now send the lease to the tenant.",
+                userId: brokerId,
+                title: "Management Options Approved — Lease Sent to Tenant",
+                body: "The company manager has approved the management options. The lease has been sent to the tenant for acceptance.",
+                type: NotificationType.ContractSigned,
+                relatedEntityType: "lease",
+                relatedEntityId: cmd.LeaseId,
+                ct: ct);
+
+            // Notify tenant that the lease is ready for their review
+            await _notifications.CreateInAppAsync(
+                userId: lease.TenantId,
+                title: "Lease Ready for Review",
+                body: "Your landlord has sent a lease agreement for your review and acceptance.",
                 type: NotificationType.ContractSigned,
                 relatedEntityType: "lease",
                 relatedEntityId: cmd.LeaseId,
