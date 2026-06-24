@@ -1,4 +1,5 @@
 using Document.Application.Commands.Lease.ApproveLeaseManagement;
+using Document.Application.Commands.Lease.TenantAcceptLease;
 using Document.Application.Commands.Lease.ConfirmLease;
 using Document.Application.Commands.Lease.RenewLease;
 using Document.Application.Commands.Lease.RequestTermination;
@@ -314,6 +315,25 @@ public class LeasesController : ControllerBase
             return NoContent();
         }
         catch (KeyNotFoundException ex) { return NotFound(new { error = ex.Message }); }
+        catch (InvalidOperationException ex) { return BadRequest(new { error = ex.Message }); }
+    }
+
+    /// <summary>
+    /// Tenant accepts the lease offer — activates the lease and triggers the payment schedule.
+    /// Only the assigned tenant may call this. The lease must be in "extracted" status
+    /// (i.e. the manager has approved and forwarded it to the tenant).
+    /// </summary>
+    [HttpPost("{id:guid}/tenant-accept")]
+    [Authorize]
+    public async Task<IActionResult> TenantAccept(Guid id, CancellationToken ct)
+    {
+        try
+        {
+            await _mediator.Send(new TenantAcceptLeaseCommand(id, CurrentUserId), ct);
+            return NoContent();
+        }
+        catch (KeyNotFoundException ex) { return NotFound(new { error = ex.Message }); }
+        catch (UnauthorizedAccessException ex) { return StatusCode(403, new { error = ex.Message }); }
         catch (InvalidOperationException ex) { return BadRequest(new { error = ex.Message }); }
     }
 
