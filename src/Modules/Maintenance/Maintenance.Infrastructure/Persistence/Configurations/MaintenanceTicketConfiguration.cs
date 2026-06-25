@@ -36,10 +36,14 @@ public class MaintenanceTicketConfiguration : IEntityTypeConfiguration<Maintenan
         b.Property(x => x.UpdatedAt);
         b.Property(x => x.DeletedAt);
 
+        b.Property(x => x.RoutedToCompanyId);
+        b.Property(x => x.ParentTicketId);
+
         b.HasIndex(x => x.TenantId);
         b.HasIndex(x => x.OwnerId);
         b.HasIndex(x => x.PropertyId);
         b.HasIndex(x => x.Status);
+        b.HasIndex(x => x.RoutedToCompanyId);
 
         b.HasMany(x => x.Attachments).WithOne(a => a.Ticket)
             .HasForeignKey(a => a.TicketId).OnDelete(DeleteBehavior.Cascade);

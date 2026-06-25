@@ -7,8 +7,10 @@ using Maintenance.Application.Features.Commands.CancelTicket;
 using Maintenance.Application.Features.Commands.CompleteWork;
 using Maintenance.Application.Features.Commands.MarkCompleted;
 using Maintenance.Application.Features.Commands.ConfirmPayment;
+using Maintenance.Application.Features.Commands.CreateMaintenanceCheckout;
 using Maintenance.Application.Features.Commands.CreatePayment;
 using Maintenance.Application.Features.Commands.UserPay;
+using Maintenance.Application.Features.Queries.GetCompanyRoutedTickets;
 using Maintenance.Application.Features.Commands.CreateTicket;
 using Maintenance.Application.Features.Commands.DeleteTicket;
 using Maintenance.Application.Features.Commands.MakeDecision;
@@ -330,6 +332,28 @@ public class TicketsController(ISender sender, ICurrentUserService currentUser) 
         return result is null ? NotFound() : Ok(result);
     }
 
+    // Creates (or returns cached) Stripe Checkout URL for a maintenance payment.
+    // company_manager is included because the company-facing ticket has OwnerId = company manager.
+    [HttpPost("{id:guid}/payments/checkout")]
+    [Authorize(Roles = "tenant,owner,company_manager")]
+    public async Task<IActionResult> CreateCheckout(Guid id)
+    {
+        var checkoutUrl = await sender.Send(new CreateMaintenanceCheckoutCommand(id));
+        return Ok(new { checkoutUrl });
+    }
+
+    // Company manager sees tickets auto-routed to their company.
+    // Admins can query any company; company_manager can only query their own.
+    [HttpGet("company/{companyId:guid}/routed")]
+    [Authorize(Policy = "CompanyManager")]
+    public async Task<IActionResult> GetCompanyRoutedTickets(Guid companyId)
+    {
+        if (currentUser.IsInRole("company_manager") && currentUser.CompanyId != companyId)
+            return Forbid();
+
+        var result = await sender.Send(new GetCompanyRoutedTicketsQuery(companyId));
+        return Ok(result);
+    }
 
     [HttpPost("{id:guid}/start-work")]
     [Authorize(Roles = "maintenance_company")]

@@ -7,12 +7,33 @@ namespace Payment.Application.Interfaces;
 public interface IPaymentGatewayService
 {
     /// <summary>
-    /// عملية الدفع الفعلية عبر الـ gateway
+    /// Server-side charge (requires card token already collected by frontend).
     /// </summary>
     Task<PaymentGatewayResult> ProcessPaymentAsync(
         ProcessPaymentRequest request,
         CancellationToken cancellationToken = default);
+
+    /// <summary>
+    /// Creates a PaymentIntent without confirming it — returns clientSecret so the
+    /// frontend can render Stripe Elements and let the tenant enter card details.
+    /// Call this before or on the due date to generate a payment link for rent.
+    /// </summary>
+    Task<CreatePaymentIntentResult> CreatePaymentIntentAsync(
+        Guid paymentId,
+        decimal amount,
+        string? description = null,
+        CancellationToken cancellationToken = default);
 }
+
+/// <summary>
+/// Returned by CreatePaymentIntentAsync — pass clientSecret and publishableKey
+/// to the Angular frontend so it can complete the payment with Stripe.js.
+/// </summary>
+public sealed record CreatePaymentIntentResult(
+    string ClientSecret,
+    string PaymentIntentId,
+    string PublishableKey
+);
 
 /// <summary>
 /// الطلب المرسل للـ gateway

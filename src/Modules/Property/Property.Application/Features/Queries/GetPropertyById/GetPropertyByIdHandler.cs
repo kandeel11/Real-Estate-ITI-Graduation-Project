@@ -26,6 +26,8 @@ public class GetPropertyByIdHandler : IRequestHandler<GetPropertyByIdQuery, Prop
             Id = property.Id,
             OwnerId = property.OwnerId,
             CompanyId = property.CompanyId,
+            IsFullManagement = property.IsFullManagement,
+            IsMaintenanceEnabled = property.IsMaintenanceEnabled,
             ListingBrokerId = property.ListingBrokerId,
             Title = property.Title,
             TitleAr = property.TitleAr,

@@ -3,6 +3,7 @@ using MediatR;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using Payment.Application.Exceptions;
+using Payment.Application.Interfaces;
 using Property.Application.Features.Queries.GetPropertyById;
 using Payment.Application.Features.Commands.ApplyLateFee;
 using Payment.Application.Features.Commands.CreateSubscriptionPayment;
@@ -31,17 +32,20 @@ public sealed class PaymentController : ControllerBase
     private readonly ICurrentUserService _currentUser;
     private readonly IUserRepository _userRepo;
     private readonly StripeWebhookService _stripeWebhook;
+    private readonly IPaymentGatewayService _paymentGateway;
 
     public PaymentController(
         IMediator mediator,
         ICurrentUserService currentUser,
         IUserRepository userRepo,
-        StripeWebhookService stripeWebhook)
+        StripeWebhookService stripeWebhook,
+        IPaymentGatewayService paymentGateway)
     {
         _mediator = mediator;
         _currentUser = currentUser;
         _userRepo = userRepo;
         _stripeWebhook = stripeWebhook;
+        _paymentGateway = paymentGateway;
     }
 
     // ── Subscription Payments ───────────────────────────────────
@@ -151,6 +155,41 @@ public sealed class PaymentController : ControllerBase
     {
         var result = await _mediator.Send(new GetRentPaymentByIdQuery(id), cancellationToken);
         return result is null ? NotFound() : Ok(result);
+    }
+
+    /// <summary>
+    /// Generates a Stripe PaymentIntent for an existing rent payment record and
+    /// returns the clientSecret + publishableKey so the Angular frontend can render
+    /// a Stripe Elements form. Works before, on, and after the due date — tenants
+    /// can pay early. Each call creates a new PaymentIntent (idempotent: Stripe
+    /// de-duplicates by idempotency key "pay_{id}").
+    /// </summary>
+    [HttpPost("{id:guid}/initiate")]
+    [Authorize(Roles = "tenant,owner,company_manager")]
+    public async Task<ActionResult<CreatePaymentIntentResult>> InitiatePayment(
+        Guid id, CancellationToken cancellationToken)
+    {
+        var payment = await _mediator.Send(new GetRentPaymentByIdQuery(id), cancellationToken);
+        if (payment is null)
+            return NotFound(new { error = $"Payment {id} not found." });
+
+        if (payment.Status == "Paid")
+            return BadRequest(new { error = "This payment has already been completed." });
+
+        try
+        {
+            var result = await _paymentGateway.CreatePaymentIntentAsync(
+                id,
+                payment.Amount + payment.LateFee,
+                $"Rent — lease {payment.LeaseId} due {payment.DueDate:yyyy-MM-dd}",
+                cancellationToken);
+
+            return Ok(result);
+        }
+        catch (Stripe.StripeException ex)
+        {
+            return BadRequest(new { error = ex.StripeError?.Message ?? ex.Message });
+        }
     }
 
     [HttpGet("status/{status}")]

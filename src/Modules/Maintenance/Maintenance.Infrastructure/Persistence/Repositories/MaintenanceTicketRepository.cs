@@ -127,6 +127,24 @@ public class MaintenanceTicketRepository(MaintenanceDbContext db) : IMaintenance
     public Task<int> CountAsync(CancellationToken ct = default)
         => db.MaintenanceTickets.IgnoreQueryFilters().CountAsync(ct);
 
+    public Task<List<MaintenanceTicket>> GetByRoutedCompanyIdAsync(Guid companyId, CancellationToken ct = default)
+        => db.MaintenanceTickets
+            .AsSplitQuery()
+            .Include(t => t.Attachments)
+            .Include(t => t.Comments)
+            .Include(t => t.AiEvaluation)
+            .Include(t => t.CurrentVendorAssignment)
+            .Include(t => t.StatusHistory)
+            .Include(t => t.Payment)
+            .Where(t => t.RoutedToCompanyId == companyId)
+            .OrderByDescending(t => t.CreatedAt)
+            .ToListAsync(ct);
+
+    public Task<MaintenancePayment?> GetPaymentByIdAsync(Guid paymentId, CancellationToken ct = default)
+        => db.Payments
+            .Include(p => p.Ticket)
+            .FirstOrDefaultAsync(p => p.Id == paymentId, ct);
+
     public async Task AddAsync(MaintenanceTicket ticket, CancellationToken ct = default)
         => await db.MaintenanceTickets.AddAsync(ticket, ct);
 
