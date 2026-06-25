@@ -90,8 +90,8 @@ public class PropertyConfiguration : IEntityTypeConfiguration<Domain.Entities.Pr
         builder.HasIndex(x => x.IsFeatured);
 
         builder.HasMany(x => x.Media)
-               .WithOne() 
-               .HasForeignKey("PropertyId")
-               .OnDelete(DeleteBehavior.NoAction); 
+               .WithOne()
+               .HasForeignKey(m => m.PropertyId)
+               .OnDelete(DeleteBehavior.Cascade);
     }
 }
