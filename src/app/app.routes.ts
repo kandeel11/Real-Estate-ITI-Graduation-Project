@@ -226,6 +226,13 @@ export const routes: Routes = [
               ),
           },
           {
+            path: 'tickets',
+            loadComponent: () =>
+              import('./features/dashboards/company/pages/tickets/tickets.component').then(
+                (m) => m.CompanyTicketsComponent,
+              ),
+          },
+          {
             path: 'payments',
             loadComponent: () =>
               import('./features/dashboards/company/pages/payments/payments.component').then(

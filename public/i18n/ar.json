@@ -881,6 +881,7 @@
     "PROPERTIES": "العقارات",
     "BROKERS": "الوسطاء",
     "LEASES": "عقود الإيجار",
+    "TICKETS": "تذاكر الصيانة",
     "PAYMENTS": "المدفوعات",
     "PERFORMANCE": "الأداء",
     "INQUIRIES": "الاستفسارات",
@@ -1630,7 +1631,8 @@
     "MAINTENANCE": "الصيانة",
     "TICKETS": "التذاكر",
     "PAYMENTS": "المدفوعات",
-    "WITHDRAWALS": "طلبات السحب"
+    "WITHDRAWALS": "طلبات السحب",
+    "PLATFORM": "لوحة إيرادات المنصة"
   },
   "ADMIN": {
     "SIDEBAR": {

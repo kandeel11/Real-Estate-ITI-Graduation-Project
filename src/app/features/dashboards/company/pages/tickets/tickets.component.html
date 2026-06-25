@@ -1,0 +1,89 @@
+<div class="tickets-page">
+
+  <div class="page-header">
+    <div>
+      <h1 class="page-title">
+        <i class="fa-solid fa-screwdriver-wrench me-2"></i>Maintenance Tickets
+      </h1>
+      <p class="page-subtitle">Tickets automatically routed to your company by the AI pipeline</p>
+    </div>
+    <button class="btn-refresh" (click)="reload()" [disabled]="loading()">
+      <i class="fa-solid fa-rotate-right" [class.fa-spin]="loading()"></i>
+      Refresh
+    </button>
+  </div>
+
+  <!-- Filter tabs -->
+  <div class="filter-row">
+    @for (f of FILTERS; track f.value) {
+      <button class="filter-btn" [class.filter-btn-active]="activeFilter() === f.value"
+              (click)="activeFilter.set(f.value)">
+        {{ f.label }}
+        @if (f.value === 'all') {
+          <span class="filter-count">{{ tickets().length }}</span>
+        }
+      </button>
+    }
+  </div>
+
+  @if (loading()) {
+    <div class="skeleton-list">
+      @for (i of [1,2,3,4]; track i) {
+        <div class="skeleton-row skeleton"></div>
+      }
+    </div>
+  } @else if (error()) {
+    <div class="error-banner">
+      <i class="fa-solid fa-triangle-exclamation"></i>
+      {{ error() }}
+      <button class="btn-retry" (click)="reload()">Retry</button>
+    </div>
+  } @else if (filtered().length === 0) {
+    <div class="empty-state">
+      <i class="fa-solid fa-inbox empty-icon"></i>
+      <p>{{ activeFilter() === 'all' ? 'No maintenance tickets routed to your company yet.' : 'No tickets match this filter.' }}</p>
+    </div>
+  } @else {
+    <div class="ticket-list">
+      @for (t of filtered(); track t.id) {
+        <div class="ticket-card" (click)="openTicket(t.id)" role="button" tabindex="0"
+             (keydown.enter)="openTicket(t.id)">
+          <div class="ticket-left">
+            <div class="ticket-icon" [class]="t.priority === 'Emergency' ? 'icon-emergency' : t.priority === 'Medium' ? 'icon-medium' : 'icon-low'">
+              <i class="fa-solid fa-wrench"></i>
+            </div>
+          </div>
+
+          <div class="ticket-body">
+            <div class="ticket-top">
+              <span class="ticket-number">{{ t.ticketNumber }}</span>
+              <span class="ticket-badge" [class]="priorityClass(t.priority)">{{ t.priority }}</span>
+              <span class="ticket-badge" [class]="statusClass(t.status)">{{ statusLabel(t.status) }}</span>
+            </div>
+            <h3 class="ticket-title">{{ t.title }}</h3>
+            <div class="ticket-meta">
+              <span><i class="fa-solid fa-location-dot me-1"></i>{{ t.propertyAddress }}</span>
+              <span><i class="fa-regular fa-clock me-1"></i>{{ timeAgo(t.createdAt) }}</span>
+              @if (t.aiEvaluation) {
+                <span class="ai-chip">
+                  <i class="fa-solid fa-robot me-1"></i>{{ t.aiEvaluation.category }}
+                </span>
+              }
+            </div>
+          </div>
+
+          <div class="ticket-right">
+            @if (t.payment && t.payment.status !== 'Paid') {
+              <span class="pay-needed">
+                <i class="fa-solid fa-circle-dollar-to-slot"></i>
+                Payment Needed
+              </span>
+            }
+            <i class="fa-solid fa-chevron-right caret"></i>
+          </div>
+        </div>
+      }
+    </div>
+  }
+
+</div>

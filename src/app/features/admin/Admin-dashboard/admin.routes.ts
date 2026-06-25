@@ -67,6 +67,13 @@ export const adminRoutes: Routes = [
             (m) => m.AdminWithdrawalsComponent,
           ),
       },
+      {
+        path: 'platform',
+        loadComponent: () =>
+          import('./pages/platform-dashboard/platform-dashboard.component').then(
+            (m) => m.AdminPlatformDashboardComponent,
+          ),
+      },
       // Placeholder redirects until pages are built
       { path: 'approvals', redirectTo: 'overview', pathMatch: 'full' },
       { path: 'reports', redirectTo: 'overview', pathMatch: 'full' },

@@ -50,6 +50,12 @@
       <i class="fa-solid fa-coins"></i>
       <div><span>Total Volume</span><strong>{{ formatCurrency(stats().totalAmount) }}</strong></div>
     </div>
+    @if (summary(); as s) {
+      <div class="stat-card indigo">
+        <i class="fa-solid fa-percent"></i>
+        <div><span>Rent Commission (1%)</span><strong>{{ formatCurrency(s.totalRentCommission) }}</strong></div>
+      </div>
+    }
   </div>
 
   <!-- Tabs -->

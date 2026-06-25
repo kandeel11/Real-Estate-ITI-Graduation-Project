@@ -1,7 +1,10 @@
-import { Component, inject, signal, computed, OnInit } from '@angular/core';
+import { Component, inject, signal, computed, OnInit, ElementRef, ViewChild } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { PaymentService } from '../../../../../core/services/payment.service';
 import { RentPayment, PaymentSchedule, PaymentPeriod } from '../../../../../core/models/payment.model';
+
+/* eslint-disable @typescript-eslint/no-explicit-any */
+declare const Stripe: any;
 
 type ActiveTab = 'schedule' | 'history';
 
@@ -14,6 +17,8 @@ type ActiveTab = 'schedule' | 'history';
 })
 export class MyPaymentsComponent implements OnInit {
   private paymentService = inject(PaymentService);
+
+  @ViewChild('stripeCard') stripeCardRef?: ElementRef<HTMLDivElement>;
 
   activeTab = signal<ActiveTab>('schedule');
 
@@ -35,6 +40,16 @@ export class MyPaymentsComponent implements OnInit {
 
   paidPayments = computed(() => this.payments().filter(p => p.status === 'Paid'));
   pendingPayments = computed(() => this.payments().filter(p => p.status === 'Pending' || p.status === 'Late' || p.status === 'Overdue'));
+
+  // Stripe Elements state
+  stripePaymentId = signal<string | null>(null);
+  stripeLoading = signal(false);
+  stripeError = signal<string | null>(null);
+  stripeConfirming = signal(false);
+  stripeSuccess = signal(false);
+  private stripeInstance: any = null;
+  private stripeElements: any = null;
+  private stripePaymentEl: any = null;
 
   ngOnInit() {
     this.loadSchedule();
@@ -102,5 +117,81 @@ export class MyPaymentsComponent implements OnInit {
     const total = s.summary.totalInstallments;
     const past = s.summary.pastInstallments;
     return total > 0 ? Math.round((past / total) * 100) : 0;
+  }
+
+  // ── Stripe Elements rent payment ─────────────────────────────────────────
+
+  openStripePayment(paymentId: string): void {
+    this.stripePaymentId.set(paymentId);
+    this.stripeError.set(null);
+    this.stripeSuccess.set(false);
+    this.stripeLoading.set(true);
+    this.paymentService.initiatePayment(paymentId).subscribe({
+      next: ({ clientSecret, publishableKey }) => {
+        this.loadStripeJs(publishableKey, clientSecret);
+      },
+      error: () => {
+        this.stripeError.set('Could not start payment. Please try again.');
+        this.stripeLoading.set(false);
+      },
+    });
+  }
+
+  private loadStripeJs(publishableKey: string, clientSecret: string): void {
+    if (typeof Stripe !== 'undefined') {
+      this.mountStripe(publishableKey, clientSecret);
+      return;
+    }
+    const script = document.createElement('script');
+    script.src = 'https://js.stripe.com/v3/';
+    script.onload = () => this.mountStripe(publishableKey, clientSecret);
+    script.onerror = () => {
+      this.stripeError.set('Failed to load Stripe. Check your connection and try again.');
+      this.stripeLoading.set(false);
+    };
+    document.head.appendChild(script);
+  }
+
+  private mountStripe(publishableKey: string, clientSecret: string): void {
+    this.stripeLoading.set(false);
+    // Give the DOM time to render the mount point
+    setTimeout(() => {
+      const mountEl = this.stripeCardRef?.nativeElement;
+      if (!mountEl) return;
+      this.stripeInstance = Stripe(publishableKey);
+      this.stripeElements = this.stripeInstance.elements({ clientSecret });
+      this.stripePaymentEl = this.stripeElements.create('payment');
+      this.stripePaymentEl.mount(mountEl);
+    }, 50);
+  }
+
+  async confirmStripePayment(): Promise<void> {
+    if (!this.stripeInstance || !this.stripeElements || this.stripeConfirming()) return;
+    this.stripeConfirming.set(true);
+    this.stripeError.set(null);
+    const { error } = await this.stripeInstance.confirmPayment({
+      elements: this.stripeElements,
+      confirmParams: { return_url: window.location.href },
+      redirect: 'if_required',
+    });
+    this.stripeConfirming.set(false);
+    if (error) {
+      this.stripeError.set(error.message ?? 'Payment failed. Please try again.');
+    } else {
+      this.stripeSuccess.set(true);
+      this.closeStripePayment();
+      this.loadHistory();
+    }
+  }
+
+  closeStripePayment(): void {
+    this.stripePaymentEl?.unmount();
+    this.stripePaymentEl = null;
+    this.stripeElements = null;
+    this.stripeInstance = null;
+    this.stripePaymentId.set(null);
+    this.stripeError.set(null);
+    this.stripeLoading.set(false);
+    this.stripeConfirming.set(false);
   }
 }

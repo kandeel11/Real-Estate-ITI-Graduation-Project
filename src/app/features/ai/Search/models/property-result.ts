@@ -13,5 +13,7 @@ export interface PropertyResult {
   listingType: ListingType;
   description: string;
   mainImageUrl: string | null;
+  /** All property images. mainImageUrl is the first; remaining are extras. */
+  imageUrls?: string[];
   matchScore: number;
 }

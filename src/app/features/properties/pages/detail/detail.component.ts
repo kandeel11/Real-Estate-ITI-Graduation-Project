@@ -20,11 +20,12 @@ import {
   RatingResponse,
 } from '../../../dashboards/tenant-dashboard/services/rating.service';
 import { StarRatingComponent } from '../../../../shared/components/star-rating/star-rating.component';
+import { AgentAvatarComponent } from '../../../../shared/components/agent-avatar/agent-avatar.component';
 
 @Component({
   selector: 'app-property-detail',
   standalone: true,
-  imports: [DecimalPipe, DatePipe, RouterLink, FormsModule, TranslatePipe, StarRatingComponent],
+  imports: [DecimalPipe, DatePipe, RouterLink, FormsModule, TranslatePipe, StarRatingComponent, AgentAvatarComponent],
   templateUrl: './detail.component.html',
   styleUrl: './detail.component.css',
 })

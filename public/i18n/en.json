@@ -881,6 +881,7 @@
     "PROPERTIES": "Properties",
     "BROKERS": "Brokers",
     "LEASES": "Leases",
+    "TICKETS": "Maintenance Tickets",
     "PAYMENTS": "Payments",
     "PERFORMANCE": "Performance",
     "INQUIRIES": "Inquiries",
@@ -1630,7 +1631,8 @@
     "MAINTENANCE": "Maintenance",
     "TICKETS": "Tickets",
     "PAYMENTS": "Payments",
-    "WITHDRAWALS": "Withdrawals"
+    "WITHDRAWALS": "Withdrawals",
+    "PLATFORM": "Platform Dashboard"
   },
   "ADMIN": {
     "SIDEBAR": {
