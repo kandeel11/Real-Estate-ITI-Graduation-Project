@@ -31,8 +31,8 @@ public class PropertyEnrichmentService
         var brokerUserIds = list.Where(p => p.ListingBrokerId.HasValue).Select(p => p.ListingBrokerId!.Value).Distinct();
         var brokerNames = await _userRepo.GetFullNamesByIdsAsync(brokerUserIds, ct);
 
-        // For individual (non-company) listings, fetch owner names too
-        var ownerIds = list.Where(p => !p.CompanyId.HasValue).Select(p => p.OwnerId).Distinct();
+        // For listings with no company and no broker, fetch owner names
+        var ownerIds = list.Where(p => !p.CompanyId.HasValue && !p.ListingBrokerId.HasValue).Select(p => p.OwnerId).Distinct();
         var ownerNames = await _userRepo.GetFullNamesByIdsAsync(ownerIds, ct);
 
         foreach (var property in list)
@@ -40,6 +40,10 @@ public class PropertyEnrichmentService
             if (property.CompanyId.HasValue && companyNames.TryGetValue(property.CompanyId.Value, out var companyName))
             {
                 property.ListingDisplayName = companyName;
+            }
+            else if (property.ListingBrokerId.HasValue && brokerNames.TryGetValue(property.ListingBrokerId.Value, out var brokerDisplayName))
+            {
+                property.ListingDisplayName = brokerDisplayName;
             }
             else if (ownerNames.TryGetValue(property.OwnerId, out var ownerName))
             {
@@ -61,18 +65,22 @@ public class PropertyEnrichmentService
             if (companyNames.TryGetValue(property.CompanyId.Value, out var companyName))
                 property.ListingDisplayName = companyName;
         }
-        else
-        {
-            var ownerNames = await _userRepo.GetFullNamesByIdsAsync([property.OwnerId], ct);
-            if (ownerNames.TryGetValue(property.OwnerId, out var ownerName))
-                property.ListingDisplayName = ownerName;
-        }
 
         if (property.ListingBrokerId.HasValue)
         {
             var brokerNames = await _userRepo.GetFullNamesByIdsAsync([property.ListingBrokerId.Value], ct);
             if (brokerNames.TryGetValue(property.ListingBrokerId.Value, out var brokerName))
+            {
                 property.ListingBrokerName = brokerName;
+                if (!property.CompanyId.HasValue)
+                    property.ListingDisplayName = brokerName;
+            }
+        }
+        else if (!property.CompanyId.HasValue)
+        {
+            var ownerNames = await _userRepo.GetFullNamesByIdsAsync([property.OwnerId], ct);
+            if (ownerNames.TryGetValue(property.OwnerId, out var ownerName))
+                property.ListingDisplayName = ownerName;
         }
     }
 }

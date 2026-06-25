@@ -1,4 +1,5 @@
 using Document.Application.Queries.Inquiry;
+using Document.Application.Queries.Lead.GetBrokerLeadPipeline;
 using Document.Application.Queries.Lease;
 using Document.Application.Queries.Lease.GetLeasePaymentSchedule;
 using Document.Application.Queries.Rating;
@@ -429,6 +430,40 @@ public class CompaniesController(
     }
 
     /// <summary>
+    /// Returns per-broker lead pipeline for the company manager's own company.
+    /// Shape is optimized for Kanban board rendering — each broker has a column
+    /// for every LeadStatus, plus summary counters.
+    /// </summary>
+    [HttpGet("mine/lead-pipeline")]
+    [Authorize(Policy = "CompanyManager")]
+    public async Task<IActionResult> GetLeadPipeline(CancellationToken ct)
+    {
+        var companyId = currentUser.CompanyId;
+        if (companyId is null)
+            return BadRequest(new { error = "No company is associated with your account." });
+
+        var brokers = await mediator.Send(new GetCompanyBrokersDetailsQuery(companyId.Value), ct);
+        if (brokers.Count == 0)
+            return Ok(new { companyId, brokers = Array.Empty<object>() });
+
+        var brokerUserIds = brokers.Select(b => b.UserId).ToList();
+        var pipelines = await mediator.Send(new GetBrokerLeadPipelineQuery(brokerUserIds), ct);
+
+        var brokerNameById = brokers.ToDictionary(b => b.UserId, b => b.FullName);
+
+        var result = pipelines.Select(p => new
+        {
+            brokerId = p.BrokerUserId,
+            brokerName = brokerNameById.GetValueOrDefault(p.BrokerUserId, "Unknown"),
+            totalLeads = p.TotalLeads,
+            closedWon = p.ClosedWon,
+            kanban = p.Kanban
+        });
+
+        return Ok(new { companyId, brokers = result });
+    }
+
+    /// <summary>
     /// Lists all brokers belonging to a company.
     /// </summary>
     [HttpGet("{id:guid}/brokers")]
@@ -443,6 +478,112 @@ public class CompaniesController(
         // (the bare BrokerDto has none of those → admin UI showed "Unknown" / no deals).
         var brokers = await mediator.Send(new GetCompanyBrokersDetailsQuery(id), ct);
         return Ok(brokers);
+    }
+
+    /// <summary>
+    /// Leases across the company's properties that are waiting for the manager to approve
+    /// the broker's management-option selection (ManagerApprovalStatus = "PendingApproval").
+    /// </summary>
+    [HttpGet("mine/leases/pending-approval")]
+    [Authorize(Policy = "CompanyManager")]
+    public async Task<IActionResult> GetPendingApprovalLeases(CancellationToken ct)
+    {
+        var companyId = currentUser.CompanyId;
+        if (companyId is null)
+            return BadRequest(new { error = "No company is associated with your account." });
+
+        var properties = await mediator.Send(new GetPropertiesByCompanyQuery(companyId.Value), ct);
+        if (properties.Count == 0) return Ok(Array.Empty<object>());
+
+        var propertyIds = properties.Select(p => p.Id).ToList();
+        var leases = await mediator.Send(new GetPendingApprovalLeasesQuery(propertyIds), ct);
+        if (leases.Count == 0) return Ok(Array.Empty<object>());
+
+        var userIds = leases.Select(l => l.TenantId)
+            .Concat(leases.Where(l => l.BrokerId.HasValue).Select(l => l.BrokerId!.Value))
+            .Distinct().ToList();
+        var names = await mediator.Send(new GetUserNamesQuery(userIds), ct);
+        var titlesById = properties.ToDictionary(p => p.Id, p => p.Title);
+
+        var result = leases.Select(l => new
+        {
+            id                   = l.Id,
+            propertyId           = l.PropertyId,
+            propertyTitle        = titlesById.GetValueOrDefault(l.PropertyId, string.Empty),
+            tenantId             = l.TenantId,
+            tenantName           = names.GetValueOrDefault(l.TenantId, "Unknown"),
+            brokerId             = l.BrokerId,
+            brokerName           = l.BrokerId.HasValue ? names.GetValueOrDefault(l.BrokerId.Value) : null,
+            installmentAmount    = l.InstallmentAmount,
+            paymentFrequency     = l.PaymentFrequency,
+            totalRentAmount      = l.TotalRentAmount,
+            durationInMonths     = l.DurationInMonths,
+            securityDeposit      = l.SecurityDeposit,
+            startDate            = l.StartDate,
+            endDate              = l.EndDate,
+            paymentDayOfMonth    = l.PaymentDayOfMonth,
+            managerApprovalStatus = l.ManagerApprovalStatus,
+            managerNotes         = l.ManagerNotes,
+            isFullManagement     = l.IsFullManagement,
+            managementOptions    = l.ManagementOptions,
+            createdAt            = l.CreatedAt
+        });
+
+        return Ok(result);
+    }
+
+    /// <summary>
+    /// Leases across the company's properties that the manager has approved and forwarded
+    /// to the tenant — now waiting for the tenant to call tenant-accept
+    /// (ManagerApprovalStatus = "Approved", ExtractionStatus = "extracted").
+    /// </summary>
+    [HttpGet("mine/leases/awaiting-tenant")]
+    [Authorize(Policy = "CompanyManager")]
+    public async Task<IActionResult> GetAwaitingTenantLeases(CancellationToken ct)
+    {
+        var companyId = currentUser.CompanyId;
+        if (companyId is null)
+            return BadRequest(new { error = "No company is associated with your account." });
+
+        var properties = await mediator.Send(new GetPropertiesByCompanyQuery(companyId.Value), ct);
+        if (properties.Count == 0) return Ok(Array.Empty<object>());
+
+        var propertyIds = properties.Select(p => p.Id).ToList();
+        var leases = await mediator.Send(new GetAwaitingTenantLeasesQuery(propertyIds), ct);
+        if (leases.Count == 0) return Ok(Array.Empty<object>());
+
+        var userIds = leases.Select(l => l.TenantId)
+            .Concat(leases.Where(l => l.BrokerId.HasValue).Select(l => l.BrokerId!.Value))
+            .Distinct().ToList();
+        var names = await mediator.Send(new GetUserNamesQuery(userIds), ct);
+        var titlesById = properties.ToDictionary(p => p.Id, p => p.Title);
+
+        var result = leases.Select(l => new
+        {
+            id                   = l.Id,
+            propertyId           = l.PropertyId,
+            propertyTitle        = titlesById.GetValueOrDefault(l.PropertyId, string.Empty),
+            tenantId             = l.TenantId,
+            tenantName           = names.GetValueOrDefault(l.TenantId, "Unknown"),
+            brokerId             = l.BrokerId,
+            brokerName           = l.BrokerId.HasValue ? names.GetValueOrDefault(l.BrokerId.Value) : null,
+            installmentAmount    = l.InstallmentAmount,
+            paymentFrequency     = l.PaymentFrequency,
+            totalRentAmount      = l.TotalRentAmount,
+            durationInMonths     = l.DurationInMonths,
+            securityDeposit      = l.SecurityDeposit,
+            startDate            = l.StartDate,
+            endDate              = l.EndDate,
+            paymentDayOfMonth    = l.PaymentDayOfMonth,
+            managerApprovalStatus = l.ManagerApprovalStatus,
+            managerApprovedAt    = l.ManagerApprovedAt,
+            managerNotes         = l.ManagerNotes,
+            isFullManagement     = l.IsFullManagement,
+            managementOptions    = l.ManagementOptions,
+            createdAt            = l.CreatedAt
+        });
+
+        return Ok(result);
     }
 }
 

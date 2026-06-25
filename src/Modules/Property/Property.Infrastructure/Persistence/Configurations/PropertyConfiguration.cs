@@ -76,6 +76,9 @@ public class PropertyConfiguration : IEntityTypeConfiguration<Domain.Entities.Pr
 
         builder.Property(x => x.ViewsCount).IsRequired().HasDefaultValue(0);
         builder.Property(x => x.InquiriesCount).IsRequired().HasDefaultValue(0);
+        builder.Property(x => x.IsFullManagement).IsRequired().HasDefaultValue(false);
+        builder.Property(x => x.IsMaintenanceEnabled).IsRequired().HasDefaultValue(false);
+        builder.Property(x => x.IsPaymentEnabled).IsRequired().HasDefaultValue(false);
 
         builder.Property(x => x.CreatedAt).IsRequired();
         builder.Property(x => x.UpdatedAt);
@@ -87,8 +90,8 @@ public class PropertyConfiguration : IEntityTypeConfiguration<Domain.Entities.Pr
         builder.HasIndex(x => x.IsFeatured);
 
         builder.HasMany(x => x.Media)
-               .WithOne() 
-               .HasForeignKey("PropertyId")
-               .OnDelete(DeleteBehavior.NoAction); 
+               .WithOne()
+               .HasForeignKey(m => m.PropertyId)
+               .OnDelete(DeleteBehavior.Cascade);
     }
 }

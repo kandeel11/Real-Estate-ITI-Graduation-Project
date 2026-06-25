@@ -22,6 +22,11 @@ public class LeaseConfiguration : IEntityTypeConfiguration<Lease>
         builder.Property(x => x.CreatedAt).IsRequired();
         builder.Property(x => x.UpdatedAt).IsRequired();
 
+        builder.Property(x => x.IsFullManagement).IsRequired().HasDefaultValue(false);
+        builder.Property(x => x.ManagementOptions).HasMaxLength(500);
+        builder.Property(x => x.ManagerApprovalStatus).HasMaxLength(20);
+        builder.Property(x => x.ManagerNotes).HasMaxLength(1000);
+
         builder.HasOne(x => x.Inquiry)
             .WithMany()
             .HasForeignKey(x => x.InquiryId)

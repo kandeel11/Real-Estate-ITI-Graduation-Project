@@ -1,8 +1,11 @@
+using Document.Application.Commands.Lease.ApproveLeaseManagement;
+using Document.Application.Commands.Lease.TenantAcceptLease;
 using Document.Application.Commands.Lease.ConfirmLease;
 using Document.Application.Commands.Lease.RenewLease;
 using Document.Application.Commands.Lease.RequestTermination;
 using Document.Application.Commands.Lease.RespondToTermination;
 using Document.Application.Commands.Lease.SendLeaseToTenant;
+using Document.Application.Commands.Lease.SetLeaseManagementOptions;
 using Document.Application.Commands.Lease.TerminateLease;
 using Document.Application.Commands.Lease.UploadLeaseContract;
 using Document.Application.Interfaces;
@@ -274,6 +277,66 @@ public class LeasesController : ControllerBase
         catch (UnauthorizedAccessException ex) { return StatusCode(403, new { error = ex.Message }); }
     }
 
+    // ── Full-management workflow (Company Broker only) ────────────────────────
+
+    /// <summary>
+    /// Broker sets which management services are included for this lease.
+    /// Full management (Maintenance + PaymentCollection selected) routes to tenant directly.
+    /// Partial selection routes to the company manager for approval first.
+    /// </summary>
+    [HttpPost("{id:guid}/management-options")]
+    [Authorize]
+    public async Task<IActionResult> SetManagementOptions(
+        Guid id, [FromBody] SetManagementOptionsRequest req, CancellationToken ct)
+    {
+        try
+        {
+            var result = await _mediator.Send(
+                new SetLeaseManagementOptionsCommand(id, req.ManagementOptions ?? [], req.ManagerUserId), ct);
+            return Ok(result);
+        }
+        catch (KeyNotFoundException ex) { return NotFound(new { error = ex.Message }); }
+        catch (InvalidOperationException ex) { return BadRequest(new { error = ex.Message }); }
+    }
+
+    /// <summary>
+    /// Company manager approves or rejects a broker's management option selection.
+    /// Approved → broker can send the lease to the tenant.
+    /// Rejected → broker is notified to revise the options.
+    /// </summary>
+    [HttpPost("{id:guid}/manager-approve")]
+    [Authorize]
+    public async Task<IActionResult> ApproveManagement(
+        Guid id, [FromBody] ManagerApprovalRequest req, CancellationToken ct)
+    {
+        try
+        {
+            await _mediator.Send(new ApproveLeaseManagementCommand(id, CurrentUserId, req.IsApproved, req.Notes), ct);
+            return NoContent();
+        }
+        catch (KeyNotFoundException ex) { return NotFound(new { error = ex.Message }); }
+        catch (InvalidOperationException ex) { return BadRequest(new { error = ex.Message }); }
+    }
+
+    /// <summary>
+    /// Tenant accepts the lease offer — activates the lease and triggers the payment schedule.
+    /// Only the assigned tenant may call this. The lease must be in "extracted" status
+    /// (i.e. the manager has approved and forwarded it to the tenant).
+    /// </summary>
+    [HttpPost("{id:guid}/tenant-accept")]
+    [Authorize]
+    public async Task<IActionResult> TenantAccept(Guid id, CancellationToken ct)
+    {
+        try
+        {
+            await _mediator.Send(new TenantAcceptLeaseCommand(id, CurrentUserId), ct);
+            return NoContent();
+        }
+        catch (KeyNotFoundException ex) { return NotFound(new { error = ex.Message }); }
+        catch (UnauthorizedAccessException ex) { return StatusCode(403, new { error = ex.Message }); }
+        catch (InvalidOperationException ex) { return BadRequest(new { error = ex.Message }); }
+    }
+
     [HttpPost("{id}/confirm")]
     public async Task<IActionResult> Confirm(Guid id, [FromBody] ConfirmLeaseRequest req)
     {
@@ -345,6 +408,13 @@ public record ConfirmLeaseRequest(
     int? PaymentDayOfMonth);
 
 public record RejectLeaseRequest(Guid TenantId, string Reason);
+
+public record SetManagementOptionsRequest(
+    List<string>? ManagementOptions,  // e.g. ["Maintenance", "PaymentCollection"]
+    Guid? ManagerUserId               // company manager's UserId for notification routing
+);
+
+public record ManagerApprovalRequest(bool IsApproved, string? Notes);
 
 public record TerminationRequestBody(string Reason, string? EffectiveDate);
 public record TerminationResponseBody(string? Note);

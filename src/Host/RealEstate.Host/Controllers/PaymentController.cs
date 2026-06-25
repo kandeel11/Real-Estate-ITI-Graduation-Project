@@ -1,8 +1,10 @@
 using Identity.Application.Interfaces;
+using Maintenance.Application.Interfaces;
 using MediatR;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using Payment.Application.Exceptions;
+using Payment.Application.Interfaces;
 using Property.Application.Features.Queries.GetPropertyById;
 using Payment.Application.Features.Commands.ApplyLateFee;
 using Payment.Application.Features.Commands.CreateSubscriptionPayment;
@@ -19,6 +21,8 @@ using Payment.Application.Features.Queries.GetPaymentReceipt;
 using Payment.Application.Features.Queries.GetPaymentsByStatus;
 using Payment.Application.Features.Queries.GetRentPaymentById;
 using Payment.Infrastructure.Services.Stripe;
+using Wallet.Application.Interfaces;
+using Wallet.Domain.Enums;
 
 namespace RealEstate.Host.Controllers;
 
@@ -31,17 +35,20 @@ public sealed class PaymentController : ControllerBase
     private readonly ICurrentUserService _currentUser;
     private readonly IUserRepository _userRepo;
     private readonly StripeWebhookService _stripeWebhook;
+    private readonly IPaymentGatewayService _paymentGateway;
 
     public PaymentController(
         IMediator mediator,
         ICurrentUserService currentUser,
         IUserRepository userRepo,
-        StripeWebhookService stripeWebhook)
+        StripeWebhookService stripeWebhook,
+        IPaymentGatewayService paymentGateway)
     {
         _mediator = mediator;
         _currentUser = currentUser;
         _userRepo = userRepo;
         _stripeWebhook = stripeWebhook;
+        _paymentGateway = paymentGateway;
     }
 
     // ── Subscription Payments ───────────────────────────────────
@@ -153,6 +160,41 @@ public sealed class PaymentController : ControllerBase
         return result is null ? NotFound() : Ok(result);
     }
 
+    /// <summary>
+    /// Generates a Stripe PaymentIntent for an existing rent payment record and
+    /// returns the clientSecret + publishableKey so the Angular frontend can render
+    /// a Stripe Elements form. Works before, on, and after the due date — tenants
+    /// can pay early. Each call creates a new PaymentIntent (idempotent: Stripe
+    /// de-duplicates by idempotency key "pay_{id}").
+    /// </summary>
+    [HttpPost("{id:guid}/initiate")]
+    [Authorize(Roles = "tenant,owner,company_manager")]
+    public async Task<ActionResult<CreatePaymentIntentResult>> InitiatePayment(
+        Guid id, CancellationToken cancellationToken)
+    {
+        var payment = await _mediator.Send(new GetRentPaymentByIdQuery(id), cancellationToken);
+        if (payment is null)
+            return NotFound(new { error = $"Payment {id} not found." });
+
+        if (payment.Status == "Paid")
+            return BadRequest(new { error = "This payment has already been completed." });
+
+        try
+        {
+            var result = await _paymentGateway.CreatePaymentIntentAsync(
+                id,
+                payment.Amount + payment.LateFee,
+                $"Rent — lease {payment.LeaseId} due {payment.DueDate:yyyy-MM-dd}",
+                cancellationToken);
+
+            return Ok(result);
+        }
+        catch (Stripe.StripeException ex)
+        {
+            return BadRequest(new { error = ex.StripeError?.Message ?? ex.Message });
+        }
+    }
+
     [HttpGet("status/{status}")]
     [Authorize(Roles = "admin")]
     public async Task<ActionResult> GetByStatus(string status, CancellationToken cancellationToken)
@@ -189,6 +231,84 @@ public sealed class PaymentController : ControllerBase
     {
         var result = await _mediator.Send(new GetFinancialSummaryQuery(), cancellationToken);
         return Ok(result);
+    }
+
+    /// <summary>
+    /// Comprehensive platform-level financial dashboard.
+    /// Aggregates rent commission (1%), maintenance commission (2%), and withdrawal commission (1%).
+    /// </summary>
+    [HttpGet("platform-dashboard")]
+    [Authorize(Roles = "admin")]
+    public async Task<ActionResult> GetPlatformDashboard(
+        [FromServices] IMaintenancePaymentRepository maintenancePaymentRepo,
+        [FromServices] IWithdrawalRepository withdrawalRepo,
+        CancellationToken ct)
+    {
+        // ── Rent ──────────────────────────────────────────────────────────────
+        var rentSummary = await _mediator.Send(new GetFinancialSummaryQuery(), ct);
+
+        var totalRentCollected  = rentSummary.TotalCollected;
+        var totalRentCommission = rentSummary.TotalRentCommission;
+        var pendingRentCount    = rentSummary.TotalOverduePayments;
+        var pendingRentAmount   = rentSummary.TotalPending;
+
+        // ── Maintenance ───────────────────────────────────────────────────────
+        var paidMaintenancePayments = await maintenancePaymentRepo.GetAllPaidAsync(ct);
+        var totalMaintenanceCollected  = paidMaintenancePayments.Sum(p => p.Amount);
+        var totalMaintenanceCommission = paidMaintenancePayments.Sum(p => p.CommissionAmount);
+        var totalMaintenanceNet        = paidMaintenancePayments.Sum(p => p.NetAmount);
+
+        // ── Withdrawals ───────────────────────────────────────────────────────
+        var allWithdrawals = await withdrawalRepo.GetAllAsync(ct);
+        var completedWithdrawals       = allWithdrawals.Where(w => w.Status == WithdrawalStatus.Completed).ToList();
+        var pendingWithdrawals         = allWithdrawals.Where(w => w.Status == WithdrawalStatus.Pending).ToList();
+        var totalWithdrawalAmount      = completedWithdrawals.Sum(w => w.Amount);
+        var totalWithdrawalCommission  = allWithdrawals.Sum(w => w.CommissionAmount);
+        var totalWithdrawalNet         = completedWithdrawals.Sum(w => w.NetAmount);
+
+        // ── Platform totals ───────────────────────────────────────────────────
+        var totalPlatformCommission = totalRentCommission + totalMaintenanceCommission + totalWithdrawalCommission;
+
+        return Ok(new
+        {
+            rent = new
+            {
+                totalCollected        = totalRentCollected,
+                totalCommission       = totalRentCommission,        // 1%
+                commissionRate        = "1%",
+                totalPending          = pendingRentAmount,
+                overdueCount          = pendingRentCount,
+                totalLateFees         = rentSummary.TotalLateFees
+            },
+            maintenance = new
+            {
+                totalCollected        = totalMaintenanceCollected,
+                totalCommission       = totalMaintenanceCommission, // 2%
+                commissionRate        = "2%",
+                totalNetToVendors     = totalMaintenanceNet,
+                paidPaymentsCount     = paidMaintenancePayments.Count
+            },
+            withdrawals = new
+            {
+                totalWithdrawn        = totalWithdrawalAmount,
+                totalCommission       = totalWithdrawalCommission,  // 1%
+                commissionRate        = "1%",
+                totalNetPaidOut       = totalWithdrawalNet,
+                pendingCount          = pendingWithdrawals.Count,
+                pendingAmount         = pendingWithdrawals.Sum(w => w.Amount),
+                completedCount        = completedWithdrawals.Count
+            },
+            platform = new
+            {
+                totalCommissionEarned = totalPlatformCommission,
+                breakdown = new
+                {
+                    fromRent          = totalRentCommission,
+                    fromMaintenance   = totalMaintenanceCommission,
+                    fromWithdrawals   = totalWithdrawalCommission
+                }
+            }
+        });
     }
 
     [HttpPost("{id:guid}/process")]

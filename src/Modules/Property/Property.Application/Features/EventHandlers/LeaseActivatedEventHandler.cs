@@ -45,7 +45,10 @@ public sealed class LeaseActivatedEventHandler : INotificationHandler<LeaseActiv
             // ✅ Mark property as Rented (validates Status=Active and raises PropertyRentedEvent).
             // PropertyRentedEvent is dispatched by DispatchDomainEventsInterceptor after save,
             // which triggers the subscription quota decrement.
-            property.MarkAsRented();
+            property.MarkAsRentedWithManagement(
+                notification.IsFullManagement,
+                notification.IsMaintenanceEnabled,
+                notification.IsPaymentEnabled);
             await _repository.SaveChangesAsync(cancellationToken);
 
             _logger.LogInformation(

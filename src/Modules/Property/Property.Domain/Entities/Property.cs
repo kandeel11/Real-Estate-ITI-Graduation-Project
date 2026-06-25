@@ -54,6 +54,12 @@ public class Property : BaseEntity
 
     public int ViewsCount { get; private set; }
     public int InquiriesCount { get; private set; }
+
+    // ── Full-management flags (set when a Company Broker manages the property) ─
+    public bool IsFullManagement { get; private set; }
+    public bool IsMaintenanceEnabled { get; private set; }
+    public bool IsPaymentEnabled { get; private set; }
+
     public ICollection<PropertyMedia> Media { get; private set; } = new List<PropertyMedia>();
     private Property() { }
 
@@ -307,6 +313,14 @@ public class Property : BaseEntity
         Status = PropertyStatus.Rented;
         UpdatedAt = DateTime.UtcNow;
         AddDomainEvent(new PropertyRentedEvent(Id, OwnerId, CompanyId));
+    }
+
+    public void MarkAsRentedWithManagement(bool isFullManagement, bool isMaintenanceEnabled, bool isPaymentEnabled)
+    {
+        MarkAsRented();
+        IsFullManagement = isFullManagement;
+        IsMaintenanceEnabled = isMaintenanceEnabled;
+        IsPaymentEnabled = isPaymentEnabled;
     }
 
     /// <summary>

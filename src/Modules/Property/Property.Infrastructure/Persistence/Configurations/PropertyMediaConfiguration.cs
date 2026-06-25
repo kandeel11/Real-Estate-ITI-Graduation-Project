@@ -19,11 +19,6 @@ public class PropertyMediaConfiguration : IEntityTypeConfiguration<PropertyMedia
         builder.Property(x => x.UploadedAt).IsRequired();
         builder.Property(x => x.CreatedAt).IsRequired();
 
-        builder.HasOne<Domain.Entities.Property>()
-            .WithMany()
-            .HasForeignKey(x => x.PropertyId)
-            .OnDelete(DeleteBehavior.Cascade);
-
         builder.HasIndex(x => x.PropertyId);
     }
 }

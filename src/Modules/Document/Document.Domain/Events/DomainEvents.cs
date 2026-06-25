@@ -53,5 +53,8 @@ public sealed record LeaseActivatedEvent(
     int PaymentDayOfMonth,
     DateOnly StartDate,
     DateOnly EndDate,
-    string BlobPath      // Mohamed reads this to embed into Qdrant
+    string BlobPath,     // Mohamed reads this to embed into Qdrant
+    bool IsFullManagement = false,
+    bool IsMaintenanceEnabled = false,
+    bool IsPaymentEnabled = false
 ) : INotification;

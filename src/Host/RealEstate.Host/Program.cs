@@ -1,5 +1,7 @@
 using AI.Application;
+using AI.Application.Interfaces;
 using AI.Infrastructure;
+using AI.Infrastructure.Services;
 using AI.Infrastructure.Persistence.Contexts;
 using Document.Infrastructure;
 using Document.Infrastructure.Hubs;
@@ -19,7 +21,10 @@ using Payment.Infrastructure.Persistence;
 using Property.Infrastructure;
 using Property.Infrastructure.Persistence.Contexts;
 using Payment.Application.Interfaces;
+using MediatR;
+using Microsoft.Extensions.DependencyInjection.Extensions;
 using RealEstate.Host.Adapters;
+using RealEstate.Host.Behaviors;
 using RealEstate.Host.Jobs;
 using RealEstate.Host.Services;
 using Subscription.Infrastructure;
@@ -149,6 +154,8 @@ public class Program
         builder.Services.AddScoped<ILeaseService, DocumentLeaseServiceAdapter>();
         builder.Services.AddScoped<INotificationService, SmtpNotificationServiceAdapter>();
         builder.Services.AddScoped<Property.Application.Interfaces.IAdminEmailService, PropertyAdminEmailAdapter>();
+        builder.Services.AddScoped<Maintenance.Application.Interfaces.IPropertyManagementChecker, PropertyManagementCheckerAdapter>();
+        builder.Services.AddScoped<Maintenance.Application.Interfaces.IMaintenancePaymentLinkService, MaintenancePaymentLinkAdapter>();
 
         builder.Services.AddPaymentModule(builder.Configuration);
         builder.Services.AddWalletModule(builder.Configuration);
@@ -169,10 +176,18 @@ public class Program
             );
         });
 
+        // ── Redis ─────────────────────────────────────────────
+        builder.Services.AddStackExchangeRedisCache(opts =>
+            opts.Configuration = builder.Configuration["Redis:ConnectionString"]);
+        // Cache-aside pipeline behavior for all registered queries
+        builder.Services.AddTransient(typeof(IPipelineBehavior<,>), typeof(CachingBehavior<,>));
+
         builder.Services.AddScoped<PropertyEnrichmentService>();
         builder.Services.AddHostedService<LeaseExpiryBackgroundService>();
         builder.Services.AddAiApplication(builder.Configuration);
         builder.Services.AddAiInfrastructure(builder.Configuration);
+        // Replace InMemorySessionStore with the Redis-backed implementation
+        builder.Services.Replace(ServiceDescriptor.Singleton<ISessionStore, RedisSessionStore>());
         builder.Services.AddDocumentModule(builder.Configuration);
         builder.Services.AddMaintenanceCompaniesModule(builder.Configuration);
 
@@ -218,6 +233,14 @@ public class Program
             await RealEstate.Host.Seeds.PropertyDataSeed.SeedAsync(
                 propertyDb, identityDb, hasher, blobServiceClient,
                 app.Environment.WebRootPath);
+
+            // Backfill: assign Free plans to seed accounts that have no active
+            // subscription yet (idempotent — skips ones that already have one).
+            var seedPublisher = scope.ServiceProvider.GetRequiredService<MediatR.IPublisher>();
+            var seedSubscriptionRepo = scope.ServiceProvider
+                .GetRequiredService<Subscription.Application.Interfaces.ISubscriptionRepository>();
+            await RealEstate.Host.Seeds.PropertyDataSeed.BackfillSubscriptionsAsync(
+                identityDb, seedSubscriptionRepo, seedPublisher);
 
             var paymentDb = scope.ServiceProvider.GetRequiredService<PaymentDbContext>();
             await paymentDb.Database.MigrateAsync();

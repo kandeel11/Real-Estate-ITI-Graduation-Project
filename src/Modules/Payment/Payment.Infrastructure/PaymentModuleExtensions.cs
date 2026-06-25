@@ -31,7 +31,6 @@ public static class PaymentModuleExtensions
         services.AddScoped<IPaymentDbContext>(sp =>
             sp.GetRequiredService<PaymentDbContext>());
 
-        //services.AddScoped<IRentPaymentRepository, RentPaymentRepository>();
         services.AddScoped<IPaymentAnalyticsService, PaymentAnalyticsService>();
         services.AddScoped<IPaymentRepository, PaymentRepository>();
         services.AddScoped<IUnitOfWork, UnitOfWork>();

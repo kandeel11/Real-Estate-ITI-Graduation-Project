@@ -6,5 +6,5 @@ using System.Threading.Tasks;
 
 namespace Maintenance.Application.DTOs.Responses
 {
-    public record PaymentDto(Guid Id, decimal Amount, string Currency, string Status, string? PaymentMethod, string? TransactionId, DateTime? PaidAt, DateTime CreatedAt);
+    public record PaymentDto(Guid Id, decimal Amount, string Currency, string Status, string? PaymentMethod, string? TransactionId, DateTime? PaidAt, DateTime CreatedAt, string? CheckoutUrl = null, string? CheckoutSessionId = null);
 }

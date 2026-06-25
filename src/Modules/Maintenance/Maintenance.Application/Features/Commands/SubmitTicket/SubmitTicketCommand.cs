@@ -15,7 +15,8 @@ public class SubmitTicketHandler(
     IMaintenanceTicketRepository repo,
     ITicketNumberGenerator numberGen,
     IAiEvaluationService aiService,
-    ITicketAiEvaluationRepository aiRepo)
+    ITicketAiEvaluationRepository aiRepo,
+    IPropertyManagementChecker managementChecker)
     : IRequestHandler<SubmitTicketCommand>
 {
     public async Task Handle(SubmitTicketCommand cmd, CancellationToken ct)
@@ -52,10 +53,43 @@ public class SubmitTicketHandler(
                  ? ResponsibleParty.Owner
                  : ResponsibleParty.Tenant;
             ticket.ApplyAiEvaluation(responsible);
+
+            if (responsible == ResponsibleParty.Owner)
+                await TryRouteToManagementCompanyAsync(ticket, ct);
+
             await repo.SaveChangesAsync(ct);
         }
-        catch (Exception ex){
+        catch (Exception ex)
+        {
             Console.Error.WriteLine($"[AI Evaluation Failed] TicketId={ticket.Id}, Error={ex.Message}");
+        }
+    }
+
+    private async Task TryRouteToManagementCompanyAsync(MaintenanceTicket ticket, CancellationToken ct)
+    {
+        try
+        {
+            var mgmt = await managementChecker.GetAsync(ticket.PropertyId, ct);
+            if (mgmt is not { IsFullManagement: true, IsMaintenanceEnabled: true })
+                return;
+
+            var companyTicket = MaintenanceTicket.CreateForCompany(
+                ticket.PropertyId,
+                ticket.TenantId,
+                mgmt.CompanyManagerUserId,
+                ticket.Title,
+                ticket.Description,
+                ticket.Priority,
+                ticket.Id,
+                mgmt.CompanyId,
+                ticket.LeaseId);
+
+            await repo.AddAsync(companyTicket, ct);
+            ticket.RouteToManagementCompany(mgmt.CompanyId, companyTicket.Id);
+        }
+        catch (Exception ex)
+        {
+            Console.Error.WriteLine($"[Routing Failed] TicketId={ticket.Id}, Error={ex.Message}");
         }
     }
 }

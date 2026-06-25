@@ -14,6 +14,7 @@ public class GetPaymentHandler(IMaintenancePaymentRepository repo)
         var p = await repo.GetByTicketIdAsync(q.TicketId, ct);
         if (p is null) return null;
         return new PaymentDto(p.Id, p.Amount, p.Currency, p.Status.ToString(),
-            p.PaymentMethod, p.TransactionId, p.PaidAt, p.CreatedAt);
+            p.PaymentMethod, p.TransactionId, p.PaidAt, p.CreatedAt,
+            p.CheckoutUrl, p.CheckoutSessionId);
     }
 }
