@@ -13,6 +13,9 @@ public class MaintenancePaymentRepository(MaintenanceDbContext db) : IMaintenanc
     public Task<MaintenancePayment?> GetByIdAsync(Guid id, CancellationToken ct = default)
         => db.Payments.FirstOrDefaultAsync(p => p.Id == id, ct);
 
+    public Task<List<MaintenancePayment>> GetAllPaidAsync(CancellationToken ct = default)
+        => db.Payments.Where(p => p.Status == Maintenance.Domain.Enums.MaintenancePaymentStatus.Paid).ToListAsync(ct);
+
     public async Task AddAsync(MaintenancePayment payment, CancellationToken ct = default)
         => await db.Payments.AddAsync(payment, ct);
 

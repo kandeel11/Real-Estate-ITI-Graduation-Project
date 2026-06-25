@@ -1,4 +1,5 @@
 using Identity.Application.Interfaces;
+using Maintenance.Application.Interfaces;
 using MediatR;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
@@ -20,6 +21,8 @@ using Payment.Application.Features.Queries.GetPaymentReceipt;
 using Payment.Application.Features.Queries.GetPaymentsByStatus;
 using Payment.Application.Features.Queries.GetRentPaymentById;
 using Payment.Infrastructure.Services.Stripe;
+using Wallet.Application.Interfaces;
+using Wallet.Domain.Enums;
 
 namespace RealEstate.Host.Controllers;
 
@@ -228,6 +231,84 @@ public sealed class PaymentController : ControllerBase
     {
         var result = await _mediator.Send(new GetFinancialSummaryQuery(), cancellationToken);
         return Ok(result);
+    }
+
+    /// <summary>
+    /// Comprehensive platform-level financial dashboard.
+    /// Aggregates rent commission (1%), maintenance commission (2%), and withdrawal commission (1%).
+    /// </summary>
+    [HttpGet("platform-dashboard")]
+    [Authorize(Roles = "admin")]
+    public async Task<ActionResult> GetPlatformDashboard(
+        [FromServices] IMaintenancePaymentRepository maintenancePaymentRepo,
+        [FromServices] IWithdrawalRepository withdrawalRepo,
+        CancellationToken ct)
+    {
+        // ── Rent ──────────────────────────────────────────────────────────────
+        var rentSummary = await _mediator.Send(new GetFinancialSummaryQuery(), ct);
+
+        var totalRentCollected  = rentSummary.TotalCollected;
+        var totalRentCommission = rentSummary.TotalRentCommission;
+        var pendingRentCount    = rentSummary.TotalOverduePayments;
+        var pendingRentAmount   = rentSummary.TotalPending;
+
+        // ── Maintenance ───────────────────────────────────────────────────────
+        var paidMaintenancePayments = await maintenancePaymentRepo.GetAllPaidAsync(ct);
+        var totalMaintenanceCollected  = paidMaintenancePayments.Sum(p => p.Amount);
+        var totalMaintenanceCommission = paidMaintenancePayments.Sum(p => p.CommissionAmount);
+        var totalMaintenanceNet        = paidMaintenancePayments.Sum(p => p.NetAmount);
+
+        // ── Withdrawals ───────────────────────────────────────────────────────
+        var allWithdrawals = await withdrawalRepo.GetAllAsync(ct);
+        var completedWithdrawals       = allWithdrawals.Where(w => w.Status == WithdrawalStatus.Completed).ToList();
+        var pendingWithdrawals         = allWithdrawals.Where(w => w.Status == WithdrawalStatus.Pending).ToList();
+        var totalWithdrawalAmount      = completedWithdrawals.Sum(w => w.Amount);
+        var totalWithdrawalCommission  = allWithdrawals.Sum(w => w.CommissionAmount);
+        var totalWithdrawalNet         = completedWithdrawals.Sum(w => w.NetAmount);
+
+        // ── Platform totals ───────────────────────────────────────────────────
+        var totalPlatformCommission = totalRentCommission + totalMaintenanceCommission + totalWithdrawalCommission;
+
+        return Ok(new
+        {
+            rent = new
+            {
+                totalCollected        = totalRentCollected,
+                totalCommission       = totalRentCommission,        // 1%
+                commissionRate        = "1%",
+                totalPending          = pendingRentAmount,
+                overdueCount          = pendingRentCount,
+                totalLateFees         = rentSummary.TotalLateFees
+            },
+            maintenance = new
+            {
+                totalCollected        = totalMaintenanceCollected,
+                totalCommission       = totalMaintenanceCommission, // 2%
+                commissionRate        = "2%",
+                totalNetToVendors     = totalMaintenanceNet,
+                paidPaymentsCount     = paidMaintenancePayments.Count
+            },
+            withdrawals = new
+            {
+                totalWithdrawn        = totalWithdrawalAmount,
+                totalCommission       = totalWithdrawalCommission,  // 1%
+                commissionRate        = "1%",
+                totalNetPaidOut       = totalWithdrawalNet,
+                pendingCount          = pendingWithdrawals.Count,
+                pendingAmount         = pendingWithdrawals.Sum(w => w.Amount),
+                completedCount        = completedWithdrawals.Count
+            },
+            platform = new
+            {
+                totalCommissionEarned = totalPlatformCommission,
+                breakdown = new
+                {
+                    fromRent          = totalRentCommission,
+                    fromMaintenance   = totalMaintenanceCommission,
+                    fromWithdrawals   = totalWithdrawalCommission
+                }
+            }
+        });
     }
 
     [HttpPost("{id:guid}/process")]

@@ -35,11 +35,16 @@ public sealed class GetFinancialSummaryHandler
         var totalOverdue = allPayments
             .Count(p => p.IsOverdue(today));
 
+        var totalRentCommission = allPayments
+            .Where(p => p.Status == PaymentStatus.Paid && p.PaymentType == PaymentType.Rent)
+            .Sum(p => p.CommissionAmount);
+
         return new FinancialSummaryDto(
             TotalCollected: totalCollected,
             TotalPending: totalPending,
             TotalLateFees: totalLateFees,
-            TotalOverduePayments: totalOverdue
+            TotalOverduePayments: totalOverdue,
+            TotalRentCommission: totalRentCommission
         );
     }
 }
