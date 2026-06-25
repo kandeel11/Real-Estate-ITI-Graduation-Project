@@ -372,4 +372,4 @@ Swagger UI: `https://localhost:7240/swagger`
 
 ---
 
-*ITI Graduation Project — 2025*
+*ITI Graduation Project — 2026*
