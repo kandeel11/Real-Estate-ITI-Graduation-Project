@@ -5,6 +5,8 @@ public class PropertyDetailDto
     public Guid Id { get; init; }
     public Guid OwnerId { get; init; }
     public Guid? CompanyId { get; init; }
+    public bool IsFullManagement { get; init; }
+    public bool IsMaintenanceEnabled { get; init; }
     public Guid? ListingBrokerId { get; init; }
 
     public string Title { get; init; } = string.Empty;

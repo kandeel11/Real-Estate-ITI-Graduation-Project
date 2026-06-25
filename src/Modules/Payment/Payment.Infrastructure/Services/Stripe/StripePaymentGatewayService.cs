@@ -1,3 +1,4 @@
+using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.Options;
 using Payment.Application.Interfaces;
@@ -22,16 +23,17 @@ namespace Payment.Infrastructure.Services.Stripe;
 public sealed class StripePaymentGatewayService : IPaymentGatewayService
 {
     private readonly StripeSettings _settings;
+    private readonly string _appBaseUrl;
     private readonly ILogger<StripePaymentGatewayService> _logger;
 
     public StripePaymentGatewayService(
         IOptions<StripeSettings> settings,
+        IConfiguration configuration,
         ILogger<StripePaymentGatewayService> logger)
     {
         _settings = settings.Value;
+        _appBaseUrl = configuration["EmailSettings:AppBaseUrl"]?.TrimEnd('/') ?? "https://localhost:7240";
         _logger = logger;
-
-        // إعداد الـ Stripe SDK بالـ Secret Key
         StripeConfiguration.ApiKey = _settings.SecretKey;
     }
 
@@ -54,7 +56,7 @@ public sealed class StripePaymentGatewayService : IPaymentGatewayService
                 Currency = _settings.DefaultCurrency,
                 PaymentMethod = request.CardToken, // الـ PaymentMethod ID من الـ frontend
                 Confirm = true,                    // اعمل confirm فوراً
-                ReturnUrl = "https://your-app.com/payment/complete", // مطلوب لـ 3D Secure
+                ReturnUrl = $"{_appBaseUrl}/payment/complete",
                 Metadata = new Dictionary<string, string>
                 {
                     ["payment_id"] = request.PaymentId.ToString(),
@@ -245,11 +247,3 @@ public sealed class StripePaymentGatewayService : IPaymentGatewayService
     }
 }
 
-/// <summary>
-/// نتيجة إنشاء PaymentIntent — بتتبعت للـ frontend
-/// </summary>
-public sealed record CreatePaymentIntentResult(
-    string ClientSecret,
-    string PaymentIntentId,
-    string PublishableKey
-);

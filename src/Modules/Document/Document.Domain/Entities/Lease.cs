@@ -50,4 +50,13 @@ public class Lease
     public DateTime? TerminationRequestedAt { get; set; }
     /// <summary>Proposed date the lease should end if the other party approves.</summary>
     public DateOnly? TerminationEffectiveDate { get; set; }
+
+    // ── Full-management workflow (Company Broker only) ────────────────────────
+    public bool IsFullManagement { get; set; }
+    public string? ManagementOptions { get; set; }
+    public string? ManagerApprovalStatus { get; set; }  // "Pending" | "Approved" | "Rejected"
+    public Guid? ManagerId { get; set; }
+    public DateTime? ManagerApprovedAt { get; set; }
+    public DateTime? ManagerRejectedAt { get; set; }
+    public string? ManagerNotes { get; set; }
 }

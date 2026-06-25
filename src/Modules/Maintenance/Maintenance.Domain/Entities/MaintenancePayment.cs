@@ -21,6 +21,14 @@ namespace Maintenance.Domain.Entities
         public DateTime? PaidAt { get; private set; }
         public string? Notes { get; private set; }
 
+        // ── Platform Commission (2%) ──────────────────────────────────────────
+        public decimal CommissionAmount { get; private set; }
+        public decimal NetAmount { get; private set; }
+
+        // ── Stripe Checkout ───────────────────────────────────────────────────
+        public string? CheckoutSessionId { get; private set; }
+        public string? CheckoutUrl { get; private set; }
+
         public MaintenanceTicket Ticket { get; private set; } = default!;
 
         protected MaintenancePayment() { }
@@ -60,6 +68,36 @@ namespace Maintenance.Domain.Entities
             Status = MaintenancePaymentStatus.Paid;
             PaidAt = DateTime.UtcNow;
             MarkAsUpdated();
+        }
+
+        public void SetCheckoutSession(string sessionId, string checkoutUrl)
+        {
+            CheckoutSessionId = sessionId;
+            CheckoutUrl = checkoutUrl;
+            MarkAsUpdated();
+        }
+
+        /// <summary>
+        /// Idempotent confirmation from Stripe webhook. Returns false when already Paid.
+        /// Records 2% platform commission and net payout on confirmation.
+        /// </summary>
+        public bool TryConfirmViaWebhook(string stripeTransactionId)
+        {
+            if (Status == MaintenancePaymentStatus.Paid)
+                return false;
+            TransactionId = stripeTransactionId;
+            PaymentMethod = "Stripe";
+            Status = MaintenancePaymentStatus.Paid;
+            PaidAt = DateTime.UtcNow;
+            RecordCommission();
+            MarkAsUpdated();
+            return true;
+        }
+
+        public void RecordCommission(decimal rate = 0.02m)
+        {
+            CommissionAmount = Math.Round(Amount * rate, 2);
+            NetAmount = Amount - CommissionAmount;
         }
 
         public void Fail()

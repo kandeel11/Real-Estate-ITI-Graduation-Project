@@ -11,6 +11,7 @@ namespace Maintenance.Application.Interfaces
     {
         Task<MaintenancePayment?> GetByTicketIdAsync(Guid ticketId, CancellationToken ct = default);
         Task<MaintenancePayment?> GetByIdAsync(Guid id, CancellationToken ct = default);
+        Task<List<MaintenancePayment>> GetAllPaidAsync(CancellationToken ct = default);
         Task AddAsync(MaintenancePayment payment, CancellationToken ct = default);
         Task SaveChangesAsync(CancellationToken ct = default);
     }

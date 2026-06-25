@@ -25,6 +25,10 @@ public class MaintenancePaymentConfiguration : IEntityTypeConfiguration<Maintena
         b.Property(x => x.PaymentMethod).HasMaxLength(100);
         b.Property(x => x.TransactionId).HasMaxLength(255);
         b.Property(x => x.Notes).HasMaxLength(500);
+        b.Property(x => x.CommissionAmount).HasPrecision(10, 2).HasDefaultValue(0m);
+        b.Property(x => x.NetAmount).HasPrecision(10, 2).HasDefaultValue(0m);
+        b.Property(x => x.CheckoutSessionId).HasMaxLength(255);
+        b.Property(x => x.CheckoutUrl).HasMaxLength(2048);
         b.Property(x => x.CreatedAt).IsRequired();
         b.Property(x => x.UpdatedAt);
     }

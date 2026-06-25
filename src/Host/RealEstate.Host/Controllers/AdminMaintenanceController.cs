@@ -4,6 +4,7 @@ using MediatR;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using Property.Application.Features.Queries.GetAllProperties;
+using Property.Application.Features.Queries.GetFullyManagedProperties;
 
 namespace RealEstate.Host.Controllers;
 
@@ -47,6 +48,21 @@ public class AdminMaintenanceController(IMediator mediator) : ControllerBase
             wonLeads = wonLeads.Count,
             leadsWithoutBroker = skipped,
             brokersUpdated
+        });
+    }
+
+    /// <summary>
+    /// Returns all rented properties under full company management.
+    /// Each entry includes which services are enabled (maintenance, payment).
+    /// </summary>
+    [HttpGet("properties/fully-managed")]
+    public async Task<IActionResult> GetFullyManagedProperties(CancellationToken ct)
+    {
+        var properties = await mediator.Send(new GetFullyManagedPropertiesQuery(), ct);
+        return Ok(new
+        {
+            total = properties.Count,
+            properties
         });
     }
 }

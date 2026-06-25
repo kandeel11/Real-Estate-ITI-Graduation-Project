@@ -223,6 +223,29 @@ public sealed class StripeWebhookService
     // the session isn't paid yet or the payment is already Paid.
     private async Task<SubscriptionPaymentSucceededEvent?> ProcessPaidCheckoutSessionAsync(Session session, CancellationToken ct)
     {
+        // ── Maintenance payment — must be checked before rent/subscription ──
+        if (session.Metadata.TryGetValue("maintenance_payment_id", out var maintIdStr)
+            && Guid.TryParse(maintIdStr, out var maintPaymentId))
+        {
+            if (session.PaymentStatus != "paid")
+            {
+                _logger.LogWarning(
+                    "checkout.session.completed (maintenance): PaymentStatus={Status}, SessionId={SessionId}",
+                    session.PaymentStatus, session.Id);
+                return null;
+            }
+
+            var transactionId = session.PaymentIntentId ?? session.Id;
+            await _publisher.Publish(
+                new MaintenancePaymentConfirmedEvent(maintPaymentId, transactionId), ct);
+
+            _logger.LogInformation(
+                "MaintenancePaymentConfirmedEvent published for PaymentId={PaymentId}, SessionId={SessionId}",
+                maintPaymentId, session.Id);
+
+            return null;
+        }
+
         if (!session.Metadata.TryGetValue("payment_id", out var paymentIdStr)
             || !Guid.TryParse(paymentIdStr, out var paymentId))
         {

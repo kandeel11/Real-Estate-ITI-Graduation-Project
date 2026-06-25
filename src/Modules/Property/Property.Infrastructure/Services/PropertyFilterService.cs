@@ -14,14 +14,10 @@ namespace Properties.Infrastructure.Services;
 public sealed class PropertyFilterService : IPropertyFilterService
 {
     private readonly IPropertyRepository _db;
-    private readonly IDocumentStorageService _storage;
 
-    public PropertyFilterService(
-        IPropertyRepository db,
-        IDocumentStorageService storage)
+    public PropertyFilterService(IPropertyRepository db)
     {
         _db = db;
-        _storage = storage;
     }
 
     public async Task<(IReadOnlyList<PropertySearchItem> Items, int Total)> SearchAsync(
@@ -111,36 +107,26 @@ public sealed class PropertyFilterService : IPropertyFilterService
                  MainImagePath = p.Media
                                   .Where(m => m.IsPrimary)
                                   .Select(m => m.MediaUrl)
-                                  .FirstOrDefault()
+                                  .FirstOrDefault(),
+                 AllImageUrls = p.Media.Select(m => m.MediaUrl).ToList()
              })
              .ToListAsync(ct);
 
-        // Generate SAS URLs for main images
-        var result = new List<PropertySearchItem>();
-        foreach (var item in items)
-        {
-            string? imageUrl = null;
-            if (!string.IsNullOrEmpty(item.MainImagePath))
-            {
-                imageUrl = await _storage.GetSecureUrlAsync(
-                    item.MainImagePath, TimeSpan.FromHours(1), ct);
-            }
-
-            result.Add(new PropertySearchItem(
-                PropertyId: item.Id,
-                Title: item.Title,
-                PropertyType: item.PropertyType.ToString(),
-                City: item.City,
-                District: item.District,
-                AreaInMeters: (double)item.AreaSqm,
-                Bedrooms: item.Bedrooms,
-                Bathrooms: item.Bathrooms,
-                Price: item.Price,
-                ListingType: "For Rent",
-                Description: item.Description,
-                MainImageUrl: imageUrl,
-                MatchScore: 1.0));
-        }
+        var result = items.Select(item => new PropertySearchItem(
+            PropertyId: item.Id,
+            Title: item.Title,
+            PropertyType: item.PropertyType.ToString(),
+            City: item.City,
+            District: item.District,
+            AreaInMeters: (double)item.AreaSqm,
+            Bedrooms: item.Bedrooms,
+            Bathrooms: item.Bathrooms,
+            Price: item.Price,
+            ListingType: "For Rent",
+            Description: item.Description,
+            MainImageUrl: item.MainImagePath,
+            ImageUrls: item.AllImageUrls,
+            MatchScore: 1.0)).ToList();
 
         return (result, total);
     }

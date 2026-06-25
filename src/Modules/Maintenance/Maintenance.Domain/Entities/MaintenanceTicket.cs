@@ -17,6 +17,19 @@ namespace Maintenance.Domain.Entities
         public Guid OwnerId { get; private set; }
         public Guid? MaintenanceCompanyId { get; private set; }
 
+        // ── Company Management Routing ────────────────────────────────────────
+        /// <summary>
+        /// Set on the original tenant ticket when it is automatically routed to a
+        /// management company (AI said Owner pays + property is full-management).
+        /// </summary>
+        public Guid? RoutedToCompanyId { get; private set; }
+
+        /// <summary>
+        /// Set on the company-facing ticket generated at routing time.
+        /// References the original tenant ticket that triggered routing.
+        /// </summary>
+        public Guid? ParentTicketId { get; private set; }
+
         public string? TicketNumber { get; private set; } = default!;
         public string Title { get; private set; } = default!;
         public string Description { get; private set; } = default!;
@@ -189,6 +202,62 @@ namespace Maintenance.Domain.Entities
             if (Status != TicketStatus.Draft)
                 throw new InvalidOperationException("Only Draft tickets can be deleted.");
             MarkAsDeleted();
+        }
+
+        // ── Company Routing ───────────────────────────────────────────────────
+
+        /// <summary>
+        /// Marks the original tenant ticket as routed to a management company.
+        /// Called after AI determines Owner is responsible and the property is
+        /// under IsFullManagement = true.
+        /// </summary>
+        public void RouteToManagementCompany(Guid companyId, Guid companyFacingTicketId)
+        {
+            RoutedToCompanyId = companyId;
+            MarkAsUpdated();
+            AddDomainEvent(new Events.TicketRoutedToCompanyDomainEvent(
+                Id, OwnerId, companyId, companyFacingTicketId));
+        }
+
+        /// <summary>
+        /// Creates a company-facing shadow ticket that starts at WaitingForOwnerDecision.
+        /// The company manager (acting as owner/landlord) sees this ticket in their queue
+        /// and decides how to resolve it (vendor vs external technician).
+        /// </summary>
+        public static MaintenanceTicket CreateForCompany(
+            Guid propertyId,
+            Guid tenantId,
+            Guid companyManagerUserId,
+            string title,
+            string description,
+            TicketPriority priority,
+            Guid parentTicketId,
+            Guid routedToCompanyId,
+            Guid? leaseId = null)
+        {
+            var ticket = new MaintenanceTicket
+            {
+                PropertyId        = propertyId,
+                TenantId          = tenantId,
+                OwnerId           = companyManagerUserId,
+                LeaseId           = leaseId,
+                Title             = $"[Company] {title}",
+                Description       = description,
+                Priority          = priority,
+                Status            = TicketStatus.WaitingForOwnerDecision,
+                ResponsibleParty  = Enums.ResponsibleParty.Owner,
+                ParentTicketId    = parentTicketId,
+                RoutedToCompanyId = routedToCompanyId,
+            };
+
+            // Seed the audit trail so the company ticket has a meaningful history
+            ticket.StatusHistory.Add(TicketStatusHistory.Create(
+                ticket.Id,
+                TicketStatus.Draft,
+                TicketStatus.WaitingForOwnerDecision,
+                "System [Auto-routed from tenant ticket]"));
+
+            return ticket;
         }
 
         private void TransitionTo(TicketStatus newStatus, string changedBy)
