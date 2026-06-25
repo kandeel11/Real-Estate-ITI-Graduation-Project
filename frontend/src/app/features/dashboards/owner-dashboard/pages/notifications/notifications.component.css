@@ -1,0 +1,226 @@
+.notifications-page { padding: 28px; }
+
+/* ── HEADER ────────────────────────────────────── */
+.page-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  flex-wrap: wrap;
+  gap: 12px;
+  margin-bottom: 20px;
+}
+
+.header-left {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+
+.page-title {
+  font-size: 22px;
+  font-weight: 700;
+  color: var(--color-on-surface);
+  margin: 0;
+}
+
+.unread-badge {
+  background: var(--color-error);
+  color: var(--color-on-error);
+  font-size: 12px;
+  font-weight: 700;
+  height: 22px;
+  border-radius: var(--radius-full);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 0 8px;
+}
+
+/* ── PILLS ─────────────────────────────────────── */
+.pills-row { display: flex; gap: 8px; }
+
+.pill {
+  padding: 7px 18px;
+  border-radius: var(--radius-lg);
+  font-size: 14px;
+  font-weight: 500;
+  cursor: pointer;
+  background: var(--color-surface-container-low);
+  border: 1px solid var(--color-outline-variant);
+  color: var(--color-on-surface-variant);
+  transition: all 0.15s;
+}
+
+.pill-active {
+  background: var(--color-primary);
+  border-color: var(--color-primary);
+  color: var(--color-on-primary);
+  font-weight: 600;
+}
+
+/* ── LOADING / EMPTY ───────────────────────────── */
+.loading-state {
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  min-height: 300px;
+}
+
+.empty-state {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  padding: 60px 20px;
+  gap: 8px;
+  color: var(--color-on-surface-variant);
+  text-align: center;
+}
+
+.empty-icon { font-size: 3.5rem; opacity: 0.3; margin-bottom: 8px; }
+.empty-title { font-size: 18px; font-weight: 600; color: var(--color-on-surface); margin: 0; }
+.empty-desc { font-size: 14px; margin: 0; }
+
+/* ── NOTIFICATION LIST ─────────────────────────── */
+.notif-list {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+}
+
+.notif-item {
+  display: flex;
+  align-items: flex-start;
+  gap: 14px;
+  padding: 14px 16px;
+  border-radius: var(--radius-md);
+  background: var(--color-surface);
+  cursor: pointer;
+  transition: background 0.2s ease, border-left-color 0.2s ease, box-shadow 0.2s ease;
+  border-left: 3px solid transparent;
+  position: relative;
+}
+
+.notif-item:hover {
+  background: var(--color-surface-container-low);
+}
+
+.notif-unread {
+  background: rgba(53, 37, 205, 0.04);
+  border-left-color: var(--color-primary);
+  box-shadow: var(--shadow-soft);
+}
+
+/* ── ICON WRAP ─────────────────────────────────── */
+.notif-icon-wrap {
+  width: 38px;
+  height: 38px;
+  border-radius: var(--radius-full);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 15px;
+  flex-shrink: 0;
+  margin-top: 2px;
+}
+
+/* Type-specific icon colors */
+.notif-icon-wrap.icon-primary {
+  color: var(--color-primary);
+  background: var(--color-primary-fixed);
+}
+
+.notif-icon-wrap.icon-info {
+  color: #1e40af;
+  background: #dbeafe;
+}
+
+.notif-icon-wrap.icon-success {
+  color: #166534;
+  background: #dcfce7;
+}
+
+.notif-icon-wrap.icon-warning {
+  color: #92400e;
+  background: #fef3c7;
+}
+
+.notif-icon-wrap.icon-danger {
+  color: var(--color-error);
+  background: var(--color-error-container);
+}
+
+/* ── BODY ──────────────────────────────────────── */
+.notif-body { flex: 1; min-width: 0; }
+
+.notif-title {
+  font-size: 14px;
+  font-weight: 500;
+  color: var(--color-on-surface);
+  margin: 0 0 3px;
+}
+
+.notif-title--unread {
+  font-weight: 700;
+}
+
+.notif-text {
+  font-size: 13px;
+  color: var(--color-on-surface-variant);
+  margin: 0 0 4px;
+  line-height: 1.4;
+  display: -webkit-box;
+  -webkit-line-clamp: 2;
+  -webkit-box-orient: vertical;
+  overflow: hidden;
+}
+
+.notif-time {
+  font-size: 12px;
+  color: var(--color-on-surface-variant);
+  opacity: 0.7;
+}
+
+/* ── UNREAD DOT ────────────────────────────────── */
+.notif-dot {
+  width: 8px;
+  height: 8px;
+  border-radius: var(--radius-full);
+  background: var(--color-primary);
+  flex-shrink: 0;
+  margin-top: 6px;
+  transition: opacity 0.2s ease;
+}
+
+/* ── PAGINATION ────────────────────────────────── */
+.pagination-wrap {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 12px;
+  margin-top: 24px;
+  padding-top: 16px;
+  border-top: 1px solid var(--color-outline-variant);
+}
+
+.pagination-btn {
+  width: 32px;
+  height: 32px;
+  padding: 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.pagination-info {
+  font-size: 14px;
+  font-weight: 500;
+  color: var(--color-on-surface-variant);
+}
+
+/* ── RESPONSIVE ────────────────────────────────── */
+@media (max-width: 576px) {
+  .notifications-page { padding: 16px; }
+  .notif-item { padding: 12px; }
+  .page-title { font-size: 18px; }
+}

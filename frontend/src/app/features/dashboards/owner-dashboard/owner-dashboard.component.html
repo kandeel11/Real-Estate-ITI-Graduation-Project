@@ -1,0 +1,70 @@
+<div class="dashboard-layout" [dir]="lang.isRtl() ? 'rtl' : 'ltr'">
+  <!-- ── SIDEBAR (desktop) ─────────────────────────── -->
+  <aside class="sidebar">
+    <div class="sidebar-brand">
+      <i class="fa-solid fa-house brand-icon"></i>
+      <span class="brand-name">{{ 'OWNER_NAV.BRAND' | translate }}</span>
+      <button class="lang-toggle" (click)="lang.toggle()"
+              [title]="lang.isRtl() ? 'Switch to English' : 'التبديل إلى العربية'">
+        <i class="fa-solid fa-globe"></i>
+        <span>{{ lang.isRtl() ? 'EN' : 'ع' }}</span>
+      </button>
+    </div>
+
+    <nav class="sidebar-nav" aria-label="Owner navigation">
+      @for (item of navItems; track item.id) {
+        <a class="nav-item"
+           [routerLink]="item.route"
+           routerLinkActive="active"
+           [attr.aria-label]="item.labelKey | translate">
+          <i [class]="item.icon"></i>
+          <span class="nav-label">{{ item.labelKey | translate }}</span>
+          @if (item.badge && item.badge() > 0) {
+            <span class="nav-badge">{{ item.badge() }}</span>
+          }
+        </a>
+      }
+    </nav>
+
+    <div class="sidebar-footer">
+      <div class="user-avatar-sm" aria-hidden="true">{{ userInitials }}</div>
+      <div class="user-info">
+        <span class="user-name">{{ userName }}</span>
+        <span class="user-role">{{ roleLabel | translate }}</span>
+      </div>
+      <button class="btn-logout" (click)="logout()" [title]="'OWNER_NAV.LOGOUT' | translate">
+        <i class="fa-solid fa-right-from-bracket"></i>
+      </button>
+    </div>
+  </aside>
+
+  <!-- ── MAIN CONTENT ──────────────────────────────── -->
+  <main class="main-content">
+    <div class="route-container p-4" [@routeAnimations]="routeState">
+      <router-outlet />
+    </div>
+  </main>
+</div>
+
+<!-- ── BOTTOM TAB BAR (mobile) ──────────────────── -->
+<nav class="bottom-tab-bar" aria-label="Mobile navigation">
+  @for (item of navItems; track item.id) {
+    <a class="tab-item"
+       [routerLink]="item.route"
+       routerLinkActive="active">
+      <span class="tab-icon-wrap">
+        <i [class]="item.icon"></i>
+        @if (item.badge && item.badge() > 0) {
+          <span class="tab-dot"></span>
+        }
+      </span>
+      <span class="tab-label">{{ item.labelKey | translate }}</span>
+    </a>
+  }
+  <button class="tab-item tab-logout" (click)="logout()">
+    <span class="tab-icon-wrap">
+      <i class="fa-solid fa-right-from-bracket"></i>
+    </span>
+    <span class="tab-label">{{ 'OWNER_NAV.LOGOUT' | translate }}</span>
+  </button>
+</nav>

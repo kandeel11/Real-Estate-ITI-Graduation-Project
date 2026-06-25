@@ -1,0 +1,303 @@
+<div class="wallet-page">
+
+  <!-- Header -->
+  <div class="page-head">
+    <div>
+      <h1><i class="fa-solid fa-wallet"></i> My Wallet</h1>
+      <p>Track your balance, transaction history, and withdrawal requests.</p>
+    </div>
+    <button class="btn-outline" (click)="loadBalance(); loadLedger(); loadWithdrawals()">
+      <i class="fa-solid fa-arrows-rotate"></i> Refresh
+    </button>
+  </div>
+
+  <!-- Balance Card -->
+  <div class="balance-card">
+    @if (loadingBalance()) {
+      <div class="balance-loading"><i class="fa-solid fa-spinner fa-spin"></i></div>
+    } @else if (balance()) {
+      <div class="balance-left">
+        <span class="balance-label">Available Balance</span>
+        <strong class="balance-amount">
+          {{ formatCurrency(balance()!.balance, balance()!.currency) }}
+        </strong>
+        <span class="balance-currency">{{ balance()!.currency }}</span>
+      </div>
+      <div class="balance-actions">
+        <button class="btn-withdraw" (click)="setView('withdraw')">
+          <i class="fa-solid fa-arrow-up-from-bracket"></i> Withdraw Funds
+        </button>
+        <button class="btn-ghost" (click)="setView('ledger')">
+          <i class="fa-solid fa-list"></i> View Ledger
+        </button>
+      </div>
+    } @else {
+      <span class="balance-empty">Could not load balance.</span>
+    }
+  </div>
+
+  <!-- Nav tabs -->
+  <div class="view-tabs">
+    <button class="vtab" [class.active]="activeView() === 'overview'" (click)="setView('overview')">
+      <i class="fa-solid fa-gauge-high"></i> Overview
+    </button>
+    <button class="vtab" [class.active]="activeView() === 'ledger'" (click)="setView('ledger')">
+      <i class="fa-solid fa-list-ul"></i> Ledger
+    </button>
+    <button class="vtab" [class.active]="activeView() === 'withdraw'" (click)="setView('withdraw')">
+      <i class="fa-solid fa-arrow-up-from-bracket"></i> Withdraw
+    </button>
+    <button class="vtab" [class.active]="activeView() === 'history'" (click)="setView('history')">
+      <i class="fa-solid fa-clock-rotate-left"></i> Withdrawal History
+    </button>
+  </div>
+
+  <!-- ===== OVERVIEW ===== -->
+  @if (activeView() === 'overview') {
+    <div class="overview-grid">
+      <div class="stat-card green">
+        <div class="stat-icon"><i class="fa-solid fa-arrow-down"></i></div>
+        <div>
+          <span>Total Credits</span>
+          <strong>{{ formatCurrency(totalCredits()) }}</strong>
+        </div>
+      </div>
+      <div class="stat-card red">
+        <div class="stat-icon"><i class="fa-solid fa-arrow-up"></i></div>
+        <div>
+          <span>Total Debits</span>
+          <strong>{{ formatCurrency(totalDebits()) }}</strong>
+        </div>
+      </div>
+      <div class="stat-card amber">
+        <div class="stat-icon"><i class="fa-solid fa-clock"></i></div>
+        <div>
+          <span>Pending Withdrawals</span>
+          <strong>{{ pendingWithdrawalsCount() }}</strong>
+        </div>
+      </div>
+      <div class="stat-card blue">
+        <div class="stat-icon"><i class="fa-solid fa-check-circle"></i></div>
+        <div>
+          <span>Completed Withdrawals</span>
+          <strong>{{ completedWithdrawalsCount() }}</strong>
+        </div>
+      </div>
+    </div>
+
+    <!-- Recent ledger entries -->
+    <div class="section-card">
+      <div class="section-head">
+        <h3><i class="fa-solid fa-clock-rotate-left"></i> Recent Transactions</h3>
+        <button class="link-btn" (click)="setView('ledger')">View all</button>
+      </div>
+      @if (loadingLedger()) {
+        <div class="loading-row"><i class="fa-solid fa-spinner fa-spin"></i> Loading...</div>
+      } @else if (ledgerEntries().length === 0) {
+        <div class="empty-state"><i class="fa-solid fa-receipt"></i><p>No transactions yet.</p></div>
+      } @else {
+        <div class="ledger-list">
+          @for (entry of ledgerEntries().slice(0, 5); track $index) {
+            <div class="ledger-row">
+              <div class="ledger-icon" [class.credit]="entry.type === 'Credit'" [class.debit]="entry.type === 'Debit'">
+                <i class="fa-solid" [class.fa-arrow-down]="entry.type === 'Credit'" [class.fa-arrow-up]="entry.type === 'Debit'"></i>
+              </div>
+              <div class="ledger-info">
+                <strong>{{ entry.description }}</strong>
+                <span>{{ formatDate(entry.occurredAt) }}</span>
+              </div>
+              <div class="ledger-amount" [class.credit]="entry.type === 'Credit'" [class.debit]="entry.type === 'Debit'">
+                {{ entry.type === 'Credit' ? '+' : '-' }}{{ formatCurrency(entry.amount, balance()?.currency) }}
+              </div>
+            </div>
+          }
+        </div>
+      }
+    </div>
+  }
+
+  <!-- ===== LEDGER ===== -->
+  @if (activeView() === 'ledger') {
+    <div class="section-card">
+      <div class="section-head">
+        <h3><i class="fa-solid fa-list-ul"></i> Transaction Ledger</h3>
+        <span class="record-count">{{ ledgerTotal() }} records</span>
+      </div>
+      @if (loadingLedger()) {
+        <div class="loading-row"><i class="fa-solid fa-spinner fa-spin"></i> Loading...</div>
+      } @else if (ledgerEntries().length === 0) {
+        <div class="empty-state"><i class="fa-solid fa-receipt"></i><p>No transactions found.</p></div>
+      } @else {
+        <div class="table-wrap">
+          <table class="data-table">
+            <thead>
+              <tr>
+                <th>Type</th>
+                <th>Amount</th>
+                <th>Description</th>
+                <th>Date</th>
+              </tr>
+            </thead>
+            <tbody>
+              @for (entry of ledgerEntries(); track $index) {
+                <tr>
+                  <td>
+                    <span class="badge" [attr.data-color]="entry.type === 'Credit' ? 'green' : 'red'">
+                      <i class="fa-solid" [class.fa-arrow-down]="entry.type === 'Credit'" [class.fa-arrow-up]="entry.type === 'Debit'"></i>
+                      {{ entry.type }}
+                    </span>
+                  </td>
+                  <td [class.text-green]="entry.type === 'Credit'" [class.text-red]="entry.type === 'Debit'">
+                    <strong>{{ entry.type === 'Credit' ? '+' : '-' }}{{ formatCurrency(entry.amount) }}</strong>
+                  </td>
+                  <td class="desc-cell">{{ entry.description }}</td>
+                  <td class="muted">{{ formatDate(entry.occurredAt) }}</td>
+                </tr>
+              }
+            </tbody>
+          </table>
+        </div>
+
+        <!-- Pagination -->
+        @if (ledgerTotalPages() > 1) {
+          <div class="pagination">
+            <button class="page-btn" [disabled]="ledgerPage() === 1" (click)="changeLedgerPage(ledgerPage() - 1)">
+              <i class="fa-solid fa-chevron-left"></i>
+            </button>
+            <span class="page-info">Page {{ ledgerPage() }} of {{ ledgerTotalPages() }}</span>
+            <button class="page-btn" [disabled]="ledgerPage() === ledgerTotalPages()" (click)="changeLedgerPage(ledgerPage() + 1)">
+              <i class="fa-solid fa-chevron-right"></i>
+            </button>
+          </div>
+        }
+      }
+    </div>
+  }
+
+  <!-- ===== WITHDRAW ===== -->
+  @if (activeView() === 'withdraw') {
+    <div class="withdraw-wrap">
+      <div class="withdraw-card">
+        <div class="wc-head">
+          <div class="wc-icon"><i class="fa-solid fa-arrow-up-from-bracket"></i></div>
+          <div>
+            <h3>Request Withdrawal</h3>
+            <p>Funds will be transferred to your bank account after admin approval.</p>
+          </div>
+        </div>
+
+        <div class="wc-body">
+          <div class="available-row">
+            <span>Available Balance</span>
+            <strong>{{ formatCurrency(balance()?.balance ?? 0, balance()?.currency) }}</strong>
+          </div>
+
+          <div class="form-field">
+            <label>Amount ({{ balance()?.currency ?? 'AED' }}) *</label>
+            <input type="number" [value]="withdrawAmount()"
+              (input)="withdrawAmount.set($any($event.target).value)"
+              placeholder="Enter amount to withdraw" min="1"
+              [max]="balance()?.balance ?? 0" />
+            @if (parseFloat(withdrawAmount()) > (balance()?.balance ?? 0)) {
+              <small class="field-err"><i class="fa-solid fa-triangle-exclamation"></i> Amount exceeds available balance</small>
+            }
+          </div>
+
+          <div class="form-field">
+            <label>Bank Account / IBAN *</label>
+            <input type="text" [value]="withdrawBank()"
+              (input)="withdrawBank.set($any($event.target).value)"
+              placeholder="e.g. IBAN: AE070331234567890123456" />
+          </div>
+
+          <!-- Commission preview -->
+          @if (parseFloat(withdrawAmount()) > 0) {
+            <div class="commission-preview">
+              <div class="cp-row">
+                <span>Requested Amount</span>
+                <strong>{{ formatCurrency(parseFloat(withdrawAmount()), balance()?.currency) }}</strong>
+              </div>
+              <div class="cp-row commission">
+                <span>Platform Commission (1%)</span>
+                <strong>- {{ formatCurrency(commissionPreview().commission, balance()?.currency) }}</strong>
+              </div>
+              <div class="cp-row net">
+                <span>You Receive</span>
+                <strong>{{ formatCurrency(commissionPreview().net, balance()?.currency) }}</strong>
+              </div>
+            </div>
+          }
+        </div>
+
+        <div class="wc-footer">
+          <button class="btn-outline" (click)="setView('overview')">Cancel</button>
+          <button class="btn-primary" (click)="submitWithdrawal()"
+            [disabled]="!canWithdraw() || submitting()">
+            @if (submitting()) {
+              <i class="fa-solid fa-spinner fa-spin"></i> Submitting...
+            } @else {
+              <i class="fa-solid fa-arrow-up-from-bracket"></i> Submit Request
+            }
+          </button>
+        </div>
+      </div>
+    </div>
+  }
+
+  <!-- ===== WITHDRAWAL HISTORY ===== -->
+  @if (activeView() === 'history') {
+    <div class="section-card">
+      <div class="section-head">
+        <h3><i class="fa-solid fa-clock-rotate-left"></i> Withdrawal History</h3>
+        <span class="record-count">{{ withdrawals().length }} requests</span>
+      </div>
+      @if (loadingWithdrawals()) {
+        <div class="loading-row"><i class="fa-solid fa-spinner fa-spin"></i> Loading...</div>
+      } @else if (withdrawals().length === 0) {
+        <div class="empty-state">
+          <i class="fa-solid fa-arrow-up-from-bracket"></i>
+          <p>No withdrawal requests yet.</p>
+          <button class="btn-outline sm" (click)="setView('withdraw')">Make a Request</button>
+        </div>
+      } @else {
+        <div class="table-wrap">
+          <table class="data-table">
+            <thead>
+              <tr>
+                <th>Amount</th>
+                <th>Commission</th>
+                <th>Net Payout</th>
+                <th>Bank Details</th>
+                <th>Status</th>
+                <th>Requested</th>
+              </tr>
+            </thead>
+            <tbody>
+              @for (w of withdrawals(); track w.id) {
+                <tr>
+                  <td><strong>{{ formatCurrency(w.amount) }}</strong></td>
+                  <td class="muted text-red">- {{ formatCurrency(w.commissionAmount) }}</td>
+                  <td><strong class="text-green">{{ formatCurrency(w.netAmount) }}</strong></td>
+                  <td class="bank-cell">{{ w.bankAccountDetails }}</td>
+                  <td>
+                    <span class="badge" [attr.data-color]="statusColor(w.status)">{{ w.status }}</span>
+                  </td>
+                  <td class="muted">{{ formatDate(w.requestedAt ?? '') }}</td>
+                </tr>
+              }
+            </tbody>
+          </table>
+        </div>
+      }
+    </div>
+  }
+
+  <!-- Toast -->
+  @if (toast(); as t) {
+    <div class="toast" [class.success]="t.type === 'success'" [class.error]="t.type === 'error'">
+      <i class="fa-solid" [class.fa-circle-check]="t.type === 'success'" [class.fa-circle-xmark]="t.type === 'error'"></i>
+      {{ t.text }}
+    </div>
+  }
+
+</div>

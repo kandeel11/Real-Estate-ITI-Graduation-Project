@@ -1,0 +1,111 @@
+<div class="page">
+  @if (loading()) {
+    <div class="skeleton-wrap">
+      <div class="skeleton" style="height:32px;width:260px;margin-bottom:8px"></div>
+      <div class="skeleton" style="height:18px;width:180px;margin-bottom:32px"></div>
+      <div class="stats-grid">
+        @for (i of [1,2,3,4]; track i) {
+          <div class="skeleton" style="height:110px;border-radius:12px"></div>
+        }
+      </div>
+    </div>
+  } @else {
+    <!-- Header -->
+    <div class="page-header">
+      <div>
+        <h1 class="welcome">{{ 'BROKER.OVERVIEW.WELCOME' | translate }} {{ userName() }}</h1>
+        <span class="role-badge" [class.company]="isCompanyBroker()">
+          <i class="fa-solid fa-circle-check"></i>
+          {{ (isCompanyBroker() ? 'BROKER.OVERVIEW.COMPANY_BADGE' : 'BROKER.OVERVIEW.INDEPENDENT_BADGE') | translate }}
+        </span>
+      </div>
+    </div>
+
+    <!-- Stats -->
+    @if (stats(); as s) {
+      <div class="stats-grid">
+        <div class="stat-card">
+          <div class="stat-icon blue"><i class="fa-solid fa-building"></i></div>
+          <div class="stat-value">{{ s.assignedProperties }}</div>
+          <div class="stat-label">{{ 'BROKER.OVERVIEW.STAT_PROPERTIES' | translate }}</div>
+        </div>
+        <div class="stat-card">
+          <div class="stat-icon amber"><i class="fa-regular fa-envelope"></i></div>
+          <div class="stat-value">{{ s.newInquiries }}</div>
+          <div class="stat-label">{{ 'BROKER.OVERVIEW.STAT_INQUIRIES' | translate }}</div>
+        </div>
+        <div class="stat-card">
+          <div class="stat-icon green"><i class="fa-solid fa-handshake"></i></div>
+          <div class="stat-value">{{ s.closedDeals }}</div>
+          <div class="stat-label">{{ 'BROKER.OVERVIEW.STAT_DEALS' | translate }}</div>
+        </div>
+        <div class="stat-card">
+          <div class="stat-icon purple"><i class="fa-solid fa-star"></i></div>
+          <div class="stat-value">{{ s.rating | number:'1.1-1' }}</div>
+          <div class="stat-label">{{ 'BROKER.OVERVIEW.STAT_RATING' | translate }}</div>
+          @if (s.rankInCompany) {
+            <div class="stat-sub">{{ 'BROKER.OVERVIEW.RANK' | translate:{ rank: s.rankInCompany, total: s.totalBrokers } }}</div>
+          }
+        </div>
+      </div>
+    }
+
+    <!-- Tasks + Activity -->
+    <div class="two-col">
+      <div class="card">
+        <h2 class="card-title">
+          <i class="fa-solid fa-list-check"></i>
+          {{ 'BROKER.OVERVIEW.TASKS_TITLE' | translate }}
+        </h2>
+        @if (tasks().length === 0) {
+          <p class="empty-hint">{{ 'BROKER.OVERVIEW.NO_TASKS' | translate }}</p>
+        } @else {
+          <ul class="task-list">
+            @for (task of tasks(); track task.id) {
+              <li class="task-item" [class.done]="task.done" (click)="toggleTask(task)">
+                <span class="task-check">
+                  <i [class]="task.done ? 'fa-solid fa-circle-check' : 'fa-regular fa-circle'"></i>
+                </span>
+                <span class="task-text">{{ task.text }}</span>
+              </li>
+            }
+          </ul>
+        }
+      </div>
+
+      <div class="card">
+        <h2 class="card-title">
+          <i class="fa-solid fa-clock-rotate-left"></i>
+          {{ 'BROKER.OVERVIEW.ACTIVITY_TITLE' | translate }}
+        </h2>
+        @if (activity().length === 0) {
+          <p class="empty-hint">{{ 'BROKER.OVERVIEW.NO_ACTIVITY' | translate }}</p>
+        } @else {
+          <ul class="activity-list">
+            @for (item of activity(); track item.id) {
+              <li class="activity-item">
+                <span class="activity-dot"></span>
+                <div>
+                  <p class="activity-text">{{ item.text }}</p>
+                  <span class="activity-time">{{ item.timeAgo }}</span>
+                </div>
+              </li>
+            }
+          </ul>
+        }
+      </div>
+    </div>
+
+    <!-- Quick links -->
+    <div class="quick-links">
+      <a class="quick-link" routerLink="/dashboard/broker/leads">
+        <i class="fa-solid fa-filter"></i>
+        {{ 'BROKER.OVERVIEW.VIEW_LEADS' | translate }}
+      </a>
+      <a class="quick-link" routerLink="/dashboard/broker/inquiries">
+        <i class="fa-regular fa-envelope"></i>
+        {{ 'BROKER.OVERVIEW.VIEW_INQUIRIES' | translate }}
+      </a>
+    </div>
+  }
+</div>

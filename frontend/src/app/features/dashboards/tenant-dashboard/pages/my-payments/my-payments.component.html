@@ -1,0 +1,321 @@
+<div class="payments-page">
+
+  <div class="page-head">
+    <div>
+      <h1><i class="fa-solid fa-calendar-check"></i> Payments</h1>
+      <p>Track your rent schedule and payment history.</p>
+    </div>
+    <div class="pills-row">
+      <button class="pill" [class.pill-active]="activeTab() === 'schedule'" (click)="activeTab.set('schedule')">
+        <i class="fa-solid fa-calendar-days me-1"></i> Schedule
+      </button>
+      <button class="pill" [class.pill-active]="activeTab() === 'history'" (click)="activeTab.set('history')">
+        <i class="fa-solid fa-clock-rotate-left me-1"></i> History
+      </button>
+    </div>
+  </div>
+
+  <!-- ══════════════════ SCHEDULE TAB ══════════════════ -->
+  @if (activeTab() === 'schedule') {
+
+    @if (scheduleLoading()) {
+      <div class="loading-state">
+        <i class="fa-solid fa-spinner fa-spin"></i>
+        <p>Loading your payment schedule...</p>
+      </div>
+    } @else if (scheduleError()) {
+      <div class="error-state">
+        <i class="fa-solid fa-circle-info"></i>
+        <p>{{ scheduleError() }}</p>
+      </div>
+    } @else if (schedule(); as s) {
+
+      <!-- Summary Cards -->
+      <div class="summary-grid">
+        <div class="summary-card primary">
+          <div class="sc-icon"><i class="fa-solid fa-money-bill-wave"></i></div>
+          <div>
+            <span>Monthly Installment</span>
+            <strong>{{ formatCurrency(s.installmentAmount) }}</strong>
+          </div>
+        </div>
+        <div class="summary-card">
+          <div class="sc-icon green"><i class="fa-solid fa-check-circle"></i></div>
+          <div>
+            <span>Paid So Far</span>
+            <strong>{{ formatCurrency(s.summary.amountDueSoFar) }}</strong>
+            <small>{{ s.summary.pastInstallments }} / {{ s.summary.totalInstallments }} installments</small>
+          </div>
+        </div>
+        <div class="summary-card">
+          <div class="sc-icon amber"><i class="fa-solid fa-hourglass-half"></i></div>
+          <div>
+            <span>Remaining</span>
+            <strong>{{ formatCurrency(s.summary.amountRemaining) }}</strong>
+            <small>{{ s.summary.totalInstallments - s.summary.pastInstallments }} installments left</small>
+          </div>
+        </div>
+        <div class="summary-card">
+          <div class="sc-icon blue"><i class="fa-solid fa-coins"></i></div>
+          <div>
+            <span>Total Rent</span>
+            <strong>{{ formatCurrency(s.summary.totalAmount) }}</strong>
+            <small>{{ s.durationInMonths }} months · {{ s.paymentFrequency }}</small>
+          </div>
+        </div>
+      </div>
+
+      <!-- Progress -->
+      <div class="progress-card">
+        <div class="progress-head">
+          <span>Lease Progress</span>
+          <strong>{{ progressPercent(s) }}% complete</strong>
+        </div>
+        <div class="progress-bar">
+          <div class="progress-fill" [style.width.%]="progressPercent(s)"></div>
+        </div>
+        <div class="progress-dates">
+          <span>{{ formatDate(s.startDate) }}</span>
+          <span>{{ formatDate(s.endDate) }}</span>
+        </div>
+      </div>
+
+      <!-- Current + Next Period -->
+      @if (s.currentPeriod || s.nextPeriod) {
+        <div class="period-highlights">
+          @if (s.currentPeriod; as cp) {
+            <div class="highlight-card current">
+              <div class="hl-badge">Current Period</div>
+              <div class="hl-amount">{{ formatCurrency(cp.amount) }}</div>
+              <div class="hl-dates">
+                <span>{{ formatDate(cp.periodStart) }}</span>
+                <i class="fa-solid fa-arrow-right"></i>
+                <span>{{ formatDate(cp.periodEnd) }}</span>
+              </div>
+              <div class="hl-due">Due: <strong>{{ formatDate(cp.dueDate) }}</strong></div>
+            </div>
+          }
+          @if (s.nextPeriod; as np) {
+            <div class="highlight-card next">
+              <div class="hl-badge">Next Period</div>
+              <div class="hl-amount">{{ formatCurrency(np.amount) }}</div>
+              <div class="hl-dates">
+                <span>{{ formatDate(np.periodStart) }}</span>
+                <i class="fa-solid fa-arrow-right"></i>
+                <span>{{ formatDate(np.periodEnd) }}</span>
+              </div>
+              <div class="hl-due">Due: <strong>{{ formatDate(np.dueDate) }}</strong></div>
+            </div>
+          }
+        </div>
+      }
+
+      <!-- All Periods Table -->
+      <div class="schedule-card">
+        <div class="schedule-head">
+          <h3><i class="fa-solid fa-table-list"></i> Full Schedule</h3>
+          <span class="record-count">{{ s.summary.totalInstallments }} installments</span>
+        </div>
+
+        <div class="table-wrap">
+          <table class="data-table">
+            <thead>
+              <tr>
+                <th>#</th>
+                <th>Period</th>
+                <th>Due Date</th>
+                <th>Amount</th>
+                <th>Status</th>
+              </tr>
+            </thead>
+            <tbody>
+              @for (p of visiblePeriods(); track p.periodNumber) {
+                <tr [class.row-current]="p.isCurrent" [class.row-past]="p.isPast">
+                  <td class="num-cell">{{ p.periodNumber }}</td>
+                  <td class="period-cell">
+                    {{ formatDate(p.periodStart) }} — {{ formatDate(p.periodEnd) }}
+                  </td>
+                  <td>{{ formatDate(p.dueDate) }}</td>
+                  <td><strong>{{ formatCurrency(p.amount) }}</strong></td>
+                  <td>
+                    <span class="badge" [attr.data-color]="periodColor(p)">
+                      @if (p.isPast) { <i class="fa-solid fa-check"></i> }
+                      @if (p.isCurrent) { <i class="fa-solid fa-circle-dot"></i> }
+                      @if (p.isNext) { <i class="fa-solid fa-clock"></i> }
+                      @if (!p.isPast && !p.isCurrent && !p.isNext) { <i class="fa-solid fa-calendar"></i> }
+                      {{ periodStatusLabel(p) }}
+                    </span>
+                  </td>
+                </tr>
+              }
+            </tbody>
+          </table>
+        </div>
+
+        @if (!showAll() && s.allPeriods.length > 6) {
+          <div class="show-more">
+            <button class="btn-outline" (click)="showAll.set(true)">
+              <i class="fa-solid fa-chevron-down"></i>
+              Show all {{ s.allPeriods.length }} installments
+            </button>
+          </div>
+        }
+      </div>
+
+    }
+
+  }
+
+  <!-- ══════════════════ HISTORY TAB ══════════════════ -->
+  @if (activeTab() === 'history') {
+
+    @if (historyLoading()) {
+      <div class="loading-state">
+        <i class="fa-solid fa-spinner fa-spin"></i>
+        <p>Loading payment history...</p>
+      </div>
+    } @else if (historyError()) {
+      <div class="error-state">
+        <i class="fa-solid fa-circle-info"></i>
+        <p>{{ historyError() }}</p>
+      </div>
+    } @else if (payments().length === 0) {
+      <div class="empty-state">
+        <i class="fa-solid fa-receipt empty-icon"></i>
+        <p>No payment records found yet.</p>
+      </div>
+    } @else {
+
+      <!-- History Summary -->
+      <div class="summary-grid">
+        <div class="summary-card">
+          <div class="sc-icon green"><i class="fa-solid fa-check-circle"></i></div>
+          <div>
+            <span>Paid</span>
+            <strong>{{ paidPayments().length }}</strong>
+            <small>payments</small>
+          </div>
+        </div>
+        <div class="summary-card">
+          <div class="sc-icon amber"><i class="fa-solid fa-clock"></i></div>
+          <div>
+            <span>Pending / Overdue</span>
+            <strong>{{ pendingPayments().length }}</strong>
+            <small>payments</small>
+          </div>
+        </div>
+      </div>
+
+      <!-- History Table -->
+      <div class="schedule-card">
+        <div class="schedule-head">
+          <h3><i class="fa-solid fa-receipt"></i> Payment Records</h3>
+          <span class="record-count">{{ payments().length }} records</span>
+        </div>
+
+        <div class="table-wrap">
+          <table class="data-table">
+            <thead>
+              <tr>
+                <th>Due Date</th>
+                <th>Amount</th>
+                <th>Late Fee</th>
+                <th>Paid On</th>
+                <th>Status</th>
+                <th>Method</th>
+                <th></th>
+              </tr>
+            </thead>
+            <tbody>
+              @for (p of payments(); track p.id) {
+                <tr>
+                  <td>{{ formatDate(p.dueDate) }}</td>
+                  <td><strong>{{ formatCurrency(p.amount) }}</strong></td>
+                  <td>
+                    @if (p.lateFee && p.lateFee > 0) {
+                      <span class="late-fee">+{{ formatCurrency(p.lateFee) }}</span>
+                    } @else {
+                      <span class="text-muted">—</span>
+                    }
+                  </td>
+                  <td>{{ p.paidAt ? formatDate(p.paidAt) : '—' }}</td>
+                  <td>
+                    <span class="badge" [attr.data-color]="statusColor(p.status)">
+                      @switch (p.status) {
+                        @case ('Paid') { <i class="fa-solid fa-check"></i> }
+                        @case ('Pending') { <i class="fa-solid fa-clock"></i> }
+                        @case ('Late') { <i class="fa-solid fa-triangle-exclamation"></i> }
+                        @case ('Overdue') { <i class="fa-solid fa-circle-exclamation"></i> }
+                        @case ('Refunded') { <i class="fa-solid fa-rotate-left"></i> }
+                      }
+                      {{ p.status }}
+                    </span>
+                  </td>
+                  <td>
+                    @if (p.paymentMethod) {
+                      <span class="method-tag">{{ p.paymentMethod }}</span>
+                    } @else {
+                      <span class="text-muted">—</span>
+                    }
+                  </td>
+                  <td>
+                    @if (p.status === 'Pending' || p.status === 'Late' || p.status === 'Overdue') {
+                      <button class="btn-pay-now" (click)="openStripePayment(p.id)">
+                        <i class="fa-brands fa-stripe"></i> Pay Now
+                      </button>
+                    }
+                  </td>
+                </tr>
+              }
+            </tbody>
+          </table>
+        </div>
+      </div>
+
+    }
+
+  }
+
+</div>
+
+<!-- ── Stripe Elements Payment Modal ───────────────────────── -->
+@if (stripePaymentId()) {
+  <div class="stripe-backdrop" (click)="closeStripePayment()">
+    <div class="stripe-modal" (click)="$event.stopPropagation()">
+      <div class="stripe-modal-header">
+        <h3><i class="fa-brands fa-stripe me-2"></i>Pay Rent Installment</h3>
+        <button class="stripe-close" (click)="closeStripePayment()"><i class="fa-solid fa-xmark"></i></button>
+      </div>
+
+      <div class="stripe-modal-body">
+        @if (stripeLoading()) {
+          <div class="stripe-loading">
+            <i class="fa-solid fa-spinner fa-spin"></i>
+            <span>Setting up secure payment…</span>
+          </div>
+        } @else {
+          <div #stripeCard id="stripe-card-element"></div>
+        }
+
+        @if (stripeError()) {
+          <div class="stripe-err">
+            <i class="fa-solid fa-circle-exclamation"></i>
+            {{ stripeError() }}
+          </div>
+        }
+      </div>
+
+      <div class="stripe-modal-footer">
+        <button class="btn-stripe-cancel" (click)="closeStripePayment()" [disabled]="stripeConfirming()">Cancel</button>
+        <button class="btn-stripe-pay" (click)="confirmStripePayment()"
+                [disabled]="stripeLoading() || stripeConfirming()">
+          @if (stripeConfirming()) {
+            <i class="fa-solid fa-spinner fa-spin me-1"></i>Processing…
+          } @else {
+            <i class="fa-solid fa-lock me-1"></i>Confirm Payment
+          }
+        </button>
+      </div>
+    </div>
+  </div>
+}

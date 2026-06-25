@@ -1,0 +1,21 @@
+<div class="sub-card">
+  <div class="sub-card-left">
+    <div class="sub-icon-wrap">
+      <i class="fa-solid fa-crown"></i>
+    </div>
+    <div class="sub-info">
+      <p class="sub-label">Current Plan</p>
+      <p class="sub-name">{{ planName }}</p>
+    </div>
+  </div>
+
+  <div class="sub-card-right">
+    <span class="sub-status-badge badge-active">
+      <i class="fa-solid fa-circle me-1" style="font-size:7px; vertical-align:middle;"></i>
+      {{ status }}
+    </span>
+    <a class="sub-link" routerLink="/dashboard/subscription">
+      View Plans <i class="fa-solid fa-arrow-right ms-1" style="font-size:11px;"></i>
+    </a>
+  </div>
+</div>

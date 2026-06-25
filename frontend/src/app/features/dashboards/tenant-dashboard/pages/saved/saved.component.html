@@ -1,0 +1,75 @@
+<div class="saved-page">
+  <div class="page-header">
+    <h1 class="page-title"><i class="fa-solid fa-heart me-2"></i>{{ 'TENANT_SAVED.TITLE' | translate }}</h1>
+    <p class="page-subtitle">{{ 'TENANT_SAVED.SUBTITLE' | translate }}</p>
+  </div>
+
+  @if (loading()) {
+    <div class="loading-state d-flex justify-content-center py-5">
+      <div class="spinner-border text-primary" role="status">
+        <span class="visually-hidden">Loading…</span>
+      </div>
+    </div>
+  } @else if (error()) {
+    <div class="alert alert-danger d-flex align-items-center gap-2">
+      <i class="fa-solid fa-triangle-exclamation"></i>
+      <span>{{ error() }}</span>
+      <button class="btn btn-sm btn-outline-danger ms-2" (click)="load()">{{ 'COMMON.RETRY' | translate }}</button>
+    </div>
+  } @else if (savedSvc.count() === 0) {
+    <div class="empty-state">
+      <i class="fa-regular fa-heart empty-icon"></i>
+      <p class="empty-title">{{ 'TENANT_SAVED.EMPTY_TITLE' | translate }}</p>
+      <p class="empty-desc">{{ 'TENANT_SAVED.EMPTY_DESC' | translate }}</p>
+      <a routerLink="/properties" class="btn btn-primary btn-sm">
+        <i class="fa-solid fa-magnifying-glass me-1"></i>{{ 'TENANT_SAVED.BROWSE' | translate }}
+      </a>
+    </div>
+  } @else {
+    <div class="row g-4">
+      @for (p of savedSvc.list(); track p.id) {
+        <div class="col-12 col-md-6 col-xl-4">
+          <a class="saved-card" [routerLink]="['/properties', p.id]">
+            <div class="saved-card__img">
+              @if (p.primaryImageUrl) {
+                <img [src]="p.primaryImageUrl" [alt]="p.title" />
+              } @else {
+                <div class="saved-card__img-placeholder"><i class="fa-regular fa-image"></i></div>
+              }
+              <span class="saved-card__badge">
+                <i [class]="typeIcon(p.propertyType) + ' fa-xs'"></i>&nbsp;{{ p.propertyType }}
+              </span>
+              @if (p.isFeatured) {
+                <span class="saved-card__featured"><i class="fa-solid fa-star fa-xs"></i></span>
+              }
+              <button type="button" class="saved-card__remove saved"
+                      (click)="unsave(p.id, $event)"
+                      [attr.aria-label]="'TENANT_SAVED.REMOVE' | translate"
+                      [title]="'TENANT_SAVED.REMOVE' | translate">
+                <i class="fa-solid fa-heart"></i>
+              </button>
+            </div>
+            <div class="saved-card__body">
+              <h3 class="saved-card__name">{{ p.title }}</h3>
+              <p class="saved-card__loc">
+                <i class="fa-solid fa-location-dot fa-xs"></i>&nbsp;{{ p.district }}, {{ p.city }}
+              </p>
+              <div class="saved-card__chips">
+                <span class="saved-card__chip"><i class="fa-solid fa-bed fa-xs"></i>&nbsp;{{ p.bedrooms }}</span>
+                <span class="saved-card__chip"><i class="fa-solid fa-bath fa-xs"></i>&nbsp;{{ p.bathrooms }}</span>
+                <span class="saved-card__chip"><i class="fa-solid fa-ruler-combined fa-xs"></i>&nbsp;{{ p.areaSqm }} m²</span>
+              </div>
+              <div class="saved-card__footer">
+                <div>
+                  <span class="saved-card__price-label">{{ 'TENANT_SAVED.MONTHLY' | translate }}</span>
+                  <span class="saved-card__price">{{ p.price | number }} EGP</span>
+                </div>
+                <span class="saved-card__cta">{{ 'TENANT_SAVED.VIEW' | translate }} <i class="fa-solid fa-arrow-right fa-xs"></i></span>
+              </div>
+            </div>
+          </a>
+        </div>
+      }
+    </div>
+  }
+</div>

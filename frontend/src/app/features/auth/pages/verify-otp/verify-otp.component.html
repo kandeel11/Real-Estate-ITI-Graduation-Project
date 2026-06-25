@@ -1,0 +1,188 @@
+<div class="otp-page">
+
+  <!-- ══ Left brand panel ══════════════════════════════════════════════════ -->
+  <aside class="otp-brand">
+    <div class="otp-brand__dots"></div>
+    <div class="otp-brand__blob otp-brand__blob--1"></div>
+    <div class="otp-brand__blob otp-brand__blob--2"></div>
+
+    <div class="otp-brand__content">
+      <a routerLink="/" class="otp-brand__logo">
+        <i class="fa-solid fa-house-chimney"></i>
+        <span>Estatein</span>
+      </a>
+
+      <div class="otp-brand__body">
+        <div class="otp-brand__shield">
+          <i class="fa-solid fa-shield-halved"></i>
+        </div>
+        <h2 class="otp-brand__title">Your security<br>is our priority</h2>
+        <p class="otp-brand__subtitle">
+          We verify every account with a one-time code to keep your data and properties safe.
+        </p>
+      </div>
+
+      <div class="otp-brand__steps">
+        <div class="otp-brand__step otp-brand__step--done">
+          <span class="otp-brand__step-dot"><i class="fa-solid fa-check"></i></span>
+          <span>Account created</span>
+        </div>
+        <div class="otp-brand__step otp-brand__step--active">
+          <span class="otp-brand__step-dot"><i class="fa-solid fa-envelope"></i></span>
+          <span>Verify your email</span>
+        </div>
+        <div class="otp-brand__step">
+          <span class="otp-brand__step-dot"><i class="fa-solid fa-lock-open"></i></span>
+          <span>Access your dashboard</span>
+        </div>
+      </div>
+    </div>
+  </aside>
+
+  <!-- ══ Right form panel ══════════════════════════════════════════════════ -->
+  <main class="otp-panel">
+
+    <!-- Mobile logo -->
+    <a routerLink="/" class="otp-mobile-logo">
+      <i class="fa-solid fa-house-chimney"></i>
+      <span>Estatein</span>
+    </a>
+
+    <!-- ── Verified success state ── -->
+    @if (verified) {
+      <div class="otp-card otp-card--success">
+        <div class="otp-success-icon">
+          <i class="fa-solid fa-circle-check"></i>
+        </div>
+        <h1 class="otp-title">Email Verified!</h1>
+        <p class="otp-subtitle otp-subtitle--center">
+          Your account is confirmed.<br>Redirecting you to login…
+        </p>
+        <div class="otp-progress">
+          <div class="otp-progress__fill"></div>
+        </div>
+      </div>
+    }
+
+    <!-- ── Main verification card ── -->
+    @if (!verified) {
+      <div class="otp-card">
+
+        <!-- Animated envelope icon -->
+        <div class="otp-icon-wrap">
+          <div class="otp-icon-ring"></div>
+          <div class="otp-icon-circle">
+            @if (resending) {
+              <i class="fa-solid fa-circle-notch fa-spin"></i>
+            } @else {
+              <i class="fa-regular fa-envelope"></i>
+            }
+          </div>
+        </div>
+
+        <!-- Header -->
+        <div class="otp-header">
+          <h1 class="otp-title">Check your email</h1>
+          <p class="otp-subtitle">
+            We sent a 6-digit code to<br>
+            <strong class="otp-email">{{ maskedEmail }}</strong>
+          </p>
+        </div>
+
+        <!-- Alert messages -->
+        @if (errorMsg) {
+          <div class="otp-alert otp-alert--error">
+            <i class="fa-solid fa-circle-exclamation"></i>
+            <span>{{ errorMsg }}</span>
+          </div>
+        }
+        @if (successMsg) {
+          <div class="otp-alert otp-alert--success">
+            <i class="fa-solid fa-circle-check"></i>
+            <span>{{ successMsg }}</span>
+          </div>
+        }
+
+        <!-- 6 digit input boxes -->
+        <div class="otp-digits" [class.otp-digits--error]="!!errorMsg">
+          @for (digit of digits; track $index) {
+            <input
+              #digitInput
+              class="otp-digit"
+              type="text"
+              inputmode="numeric"
+              maxlength="1"
+              placeholder="·"
+              [value]="digit"
+              (input)="onDigitInput($index, $event)"
+              (keydown)="onKeydown($index, $event)"
+              (paste)="onPaste($event)"
+              (focus)="onFocus($event)"
+              [attr.aria-label]="'Digit ' + ($index + 1) + ' of 6'"
+              autocomplete="one-time-code"
+            />
+          }
+        </div>
+
+        <!-- Resend section -->
+        <div class="otp-resend">
+          @if (resending) {
+            <div class="otp-resend__sending">
+              <span class="otp-spinner"></span>
+              <span>Sending code…</span>
+            </div>
+          } @else if (resendCooldown > 0) {
+            <div class="otp-resend__countdown">
+              <div class="otp-ring-wrap">
+                <svg viewBox="0 0 36 36" class="otp-ring-svg">
+                  <circle cx="18" cy="18" r="15" fill="none" stroke="#e2e8f0" stroke-width="3"/>
+                  <circle cx="18" cy="18" r="15" fill="none" stroke="#4f46e5" stroke-width="3"
+                    stroke-linecap="round"
+                    stroke-dasharray="94.25"
+                    [attr.stroke-dashoffset]="ringOffset"/>
+                </svg>
+                <span class="otp-ring-num">{{ resendCooldown }}</span>
+              </div>
+              <span>Resend in <strong>{{ resendCooldown }}s</strong></span>
+            </div>
+          } @else {
+            <p class="otp-resend__text">Didn't receive it?</p>
+            <button type="button" class="otp-resend__btn" (click)="resend()">
+              <i class="fa-solid fa-rotate-right"></i>
+              Resend code
+            </button>
+          }
+        </div>
+
+        <!-- Verify button -->
+        <button
+          class="otp-submit"
+          [class.otp-submit--ready]="canSubmit && !loading"
+          [disabled]="!canSubmit || loading"
+          (click)="onSubmit()">
+          @if (loading) {
+            <span class="otp-spinner otp-spinner--white"></span>
+            Verifying…
+          } @else {
+            <i class="fa-solid fa-shield-halved"></i>
+            Verify Email
+          }
+        </button>
+
+        <!-- Footer -->
+        <div class="otp-footer">
+          <a routerLink="/auth/register" class="otp-footer__link">
+            <i class="fa-solid fa-arrow-left"></i>
+            Back to registration
+          </a>
+          <span class="otp-footer__sep">·</span>
+          <a routerLink="/auth/login" class="otp-footer__link">
+            Sign in instead
+          </a>
+        </div>
+
+      </div>
+    }
+
+  </main>
+</div>

@@ -1,0 +1,284 @@
+<div class="tickets-page">
+
+  <!-- ── HEADER ─────────────────────────────────────────────────────── -->
+  <div class="page-head">
+    <div>
+      <h1><i class="fa-solid fa-ticket"></i> My Tickets</h1>
+      <p>Full history of all assigned maintenance tickets.</p>
+    </div>
+    <button class="btn-outline" (click)="load()" [disabled]="loading()">
+      <i class="fa-solid fa-rotate-right" [class.spin]="loading()"></i>
+      Refresh
+    </button>
+  </div>
+
+  <!-- ── FILTER TABS ─────────────────────────────────────────────────── -->
+  <div class="filter-tabs">
+    <button class="tab" [class.active]="activeFilter() === 'all'"
+      (click)="activeFilter.set('all')">
+      All <span class="tab-count">{{ filterCounts().all }}</span>
+    </button>
+    <button class="tab" [class.active]="activeFilter() === 'active'"
+      (click)="activeFilter.set('active')">
+      Active <span class="tab-count active-count">{{ filterCounts().active }}</span>
+    </button>
+    <button class="tab" [class.active]="activeFilter() === 'completed'"
+      (click)="activeFilter.set('completed')">
+      Completed <span class="tab-count completed-count">{{ filterCounts().completed }}</span>
+    </button>
+    <button class="tab" [class.active]="activeFilter() === 'rejected'"
+      (click)="activeFilter.set('rejected')">
+      Rejected <span class="tab-count rejected-count">{{ filterCounts().rejected }}</span>
+    </button>
+  </div>
+
+  <!-- ── LOADING SKELETON ────────────────────────────────────────────── -->
+  @if (loading()) {
+    <div class="skeleton-list">
+      @for (i of [1,2,3]; track i) {
+        <div class="skeleton-card">
+          <div class="sk-line sk-title"></div>
+          <div class="sk-line sk-sub"></div>
+          <div class="sk-line sk-sub short"></div>
+        </div>
+      }
+    </div>
+  }
+
+  <!-- ── EMPTY STATE ─────────────────────────────────────────────────── -->
+  @else if (filteredTickets().length === 0) {
+    <div class="empty-state">
+      <i class="fa-solid fa-ticket-simple"></i>
+      <h3>No tickets found</h3>
+      <p>There are no tickets matching the selected filter.</p>
+    </div>
+  }
+
+  <!-- ── TICKET CARDS ────────────────────────────────────────────────── -->
+  @else {
+    <div class="ticket-list">
+      @for (ticket of filteredTickets(); track ticket.id) {
+        <div class="ticket-card"
+          [class.busy]="isBusy(ticket.id) || isBusy(ticket.vendorAssignment?.id)">
+
+          <!-- Header -->
+          <div class="card-header">
+            <div class="card-title-area">
+              <div class="priority-bar" [class]="priorityClass(ticket.priority)"></div>
+              <div style="min-width:0">
+                <div class="ticket-meta-top">
+                  <span class="ticket-number">{{ ticket.ticketNumber }}</span>
+                  <span class="priority-badge {{ priorityClass(ticket.priority) }}">
+                    {{ ticket.priority }}
+                  </span>
+                  @if (ticket.aiEvaluation) {
+                    <span class="cat-chip">
+                      <i class="fa-solid fa-robot"></i>
+                      {{ ticket.aiEvaluation.category }}
+                    </span>
+                  }
+                </div>
+                <h3 class="ticket-title">{{ ticket.title }}</h3>
+              </div>
+            </div>
+            <div class="header-right">
+              <span class="status-badge {{ statusClass(ticket.status) }}">
+                {{ statusLabel(ticket.status) }}
+              </span>
+              <button class="btn-outline btn-sm" (click)="viewDetail(ticket.id)">
+                <i class="fa-solid fa-eye"></i> Details
+              </button>
+            </div>
+          </div>
+
+          <!-- Body -->
+          <div class="card-body">
+            @if (ticket.propertyAddress) {
+              <span class="meta-item">
+                <i class="fa-solid fa-location-dot"></i> {{ ticket.propertyAddress }}
+              </span>
+            }
+            @if (ticket.tenantEmail) {
+              <span class="meta-item">
+                <i class="fa-solid fa-envelope"></i> {{ ticket.tenantEmail }}
+              </span>
+            }
+            @if (ticket.tenantPhone) {
+              <span class="meta-item">
+                <i class="fa-solid fa-phone"></i> {{ ticket.tenantPhone }}
+              </span>
+            }
+            <span class="meta-item">
+              <i class="fa-regular fa-calendar"></i> {{ formatDate(ticket.createdAt) }}
+            </span>
+            @if (ticket.resolvedAt) {
+              <span class="meta-item resolved">
+                <i class="fa-solid fa-check"></i> Resolved {{ formatDate(ticket.resolvedAt) }}
+              </span>
+            }
+            @if (ticket.payment) {
+              <span class="meta-item price">
+                <i class="fa-solid fa-tag"></i>
+                {{ formatNum(ticket.payment.amount) }} {{ ticket.payment.currency }}
+                <span class="pay-status" [class]="ticket.payment.status.toLowerCase()">
+                  · {{ ticket.payment.status }}
+                </span>
+              </span>
+            }
+          </div>
+
+          <!-- Actions (only for actionable statuses) -->
+          @if (['AssignedToVendor','VendorAccepted','InProgress','AwaitingPayment'].includes(ticket.status)) {
+            <div class="card-actions">
+
+              @if (ticket.status === 'AssignedToVendor') {
+                <button class="btn-accept"
+                  (click)="accept(ticket)"
+                  [disabled]="isBusy(ticket.vendorAssignment?.id)">
+                  <i class="fa-solid fa-check"></i> Accept
+                </button>
+                <button class="btn-reject"
+                  (click)="openRejectModal(ticket)"
+                  [disabled]="isBusy(ticket.vendorAssignment?.id)">
+                  <i class="fa-solid fa-xmark"></i> Reject
+                </button>
+              }
+
+              @if (ticket.status === 'VendorAccepted') {
+                <button class="btn-primary"
+                  (click)="startWork(ticket)"
+                  [disabled]="isBusy(ticket.id)">
+                  <i class="fa-solid fa-play"></i> Start Work
+                </button>
+              }
+
+              @if (ticket.status === 'InProgress') {
+                @if (!ticket.payment) {
+                  <button class="btn-primary"
+                    (click)="openPriceModal(ticket)"
+                    [disabled]="isBusy(ticket.id)">
+                    <i class="fa-solid fa-tag"></i> Set Price
+                  </button>
+                } @else {
+                  <button class="btn-complete"
+                    (click)="completeWork(ticket)"
+                    [disabled]="isBusy(ticket.id)">
+                    <i class="fa-solid fa-flag-checkered"></i> Complete Work
+                  </button>
+                  <button class="btn-outline"
+                    (click)="openPriceModal(ticket)"
+                    [disabled]="isBusy(ticket.id)">
+                    <i class="fa-solid fa-pencil"></i> Update Price
+                  </button>
+                }
+              }
+
+              @if (ticket.status === 'AwaitingPayment') {
+                @if (ticket.payment?.transactionId) {
+                  <button class="btn-confirm-payment"
+                    (click)="confirmPayment(ticket)"
+                    [disabled]="isBusy(ticket.id)">
+                    <i class="fa-solid fa-circle-check"></i> Confirm Payment Received
+                  </button>
+                } @else {
+                  <span class="muted-info">
+                    <i class="fa-regular fa-clock"></i>
+                    Waiting for tenant/owner to pay
+                  </span>
+                }
+              }
+
+            </div>
+          }
+
+        </div>
+      }
+    </div>
+  }
+
+  <!-- ── TOAST ───────────────────────────────────────────────────────── -->
+  @if (toast(); as t) {
+    <div class="toast" [class.toast--error]="t.type === 'error'">
+      <i class="fa-solid"
+        [class.fa-circle-check]="t.type === 'success'"
+        [class.fa-circle-xmark]="t.type === 'error'"></i>
+      {{ t.text }}
+    </div>
+  }
+
+</div>
+
+<!-- ── REJECT MODAL ─────────────────────────────────────────────────── -->
+@if (showRejectModal()) {
+  <div class="modal-backdrop" (click)="closeRejectModal()">
+    <div class="modal" (click)="$event.stopPropagation()">
+      <div class="modal-head">
+        <h3><i class="fa-solid fa-xmark-circle"></i> Reject Ticket</h3>
+        <button class="modal-close" (click)="closeRejectModal()">
+          <i class="fa-solid fa-times"></i>
+        </button>
+      </div>
+      <div class="modal-body">
+        <p>Provide a reason for rejecting
+          <strong>{{ rejectingTicket()?.title }}</strong>:
+        </p>
+        <textarea class="reason-input" rows="3"
+          placeholder="e.g., Outside our service area, not available this week..."
+          [value]="rejectReason()"
+          (input)="rejectReason.set($any($event.target).value)">
+        </textarea>
+      </div>
+      <div class="modal-footer">
+        <button class="btn-outline" (click)="closeRejectModal()">Cancel</button>
+        <button class="btn-reject"
+          (click)="confirmReject()"
+          [disabled]="!rejectReason().trim() || isBusy(rejectingTicket()?.vendorAssignment?.id)">
+          <i class="fa-solid fa-xmark"></i> Confirm Reject
+        </button>
+      </div>
+    </div>
+  </div>
+}
+
+<!-- ── SET PRICE MODAL ──────────────────────────────────────────────── -->
+@if (showPriceModal()) {
+  <div class="modal-backdrop" (click)="closePriceModal()">
+    <div class="modal" (click)="$event.stopPropagation()">
+      <div class="modal-head">
+        <h3><i class="fa-solid fa-tag"></i> Set Price</h3>
+        <button class="modal-close" (click)="closePriceModal()">
+          <i class="fa-solid fa-times"></i>
+        </button>
+      </div>
+      <div class="modal-body">
+        <p>Set the service price for <strong>{{ pricingTicket()?.title }}</strong>:</p>
+        <div class="price-inputs">
+          <div class="form-group">
+            <label>Amount</label>
+            <input type="number" class="form-input" min="1"
+              [value]="priceAmount()"
+              (input)="priceAmount.set(+$any($event.target).value)"
+              placeholder="350.00" />
+          </div>
+          <div class="form-group">
+            <label>Currency</label>
+            <select class="form-input"
+              [value]="priceCurrency()"
+              (change)="priceCurrency.set($any($event.target).value)">
+              <option value="EGP">EGP</option>
+              <option value="USD">USD</option>
+            </select>
+          </div>
+        </div>
+      </div>
+      <div class="modal-footer">
+        <button class="btn-outline" (click)="closePriceModal()">Cancel</button>
+        <button class="btn-primary"
+          (click)="confirmPrice()"
+          [disabled]="priceAmount() <= 0 || isBusy(pricingTicket()?.id)">
+          <i class="fa-solid fa-check"></i> Save Price
+        </button>
+      </div>
+    </div>
+  </div>
+}

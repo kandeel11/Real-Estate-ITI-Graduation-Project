@@ -1,0 +1,186 @@
+<div class="ai-page" [class.sidebar-collapsed]="!sidebarOpen()">
+
+  <!-- ══════════ SESSIONS SIDEBAR ══════════ -->
+  <aside class="ai-sidebar">
+
+    <div class="ai-sidebar-header">
+      <div class="ai-brand">
+        <div class="ai-brand-icon">
+          <i class="fa-solid fa-wand-magic-sparkles"></i>
+        </div>
+        <div>
+          <p class="ai-brand-name">AI Insights</p>
+          <p class="ai-brand-sub">Analytics Assistant</p>
+        </div>
+      </div>
+      <button class="ai-icon-btn" (click)="newChat()" title="New chat">
+        <i class="fa-solid fa-pen-to-square"></i>
+      </button>
+    </div>
+
+    <div class="ai-sessions-wrap">
+      <p class="ai-sessions-label">Recent conversations</p>
+      <div class="ai-sessions">
+        @for (s of sessions(); track s.id) {
+          <button class="ai-session" [class.active]="sessionId() === s.id" (click)="openSession(s)">
+            <div class="ai-session-icon"><i class="fa-regular fa-message"></i></div>
+            <div class="ai-session-body">
+              <strong [textContent]="s.title"></strong>
+              <span [textContent]="s.lastMessage"></span>
+            </div>
+            <span class="ai-session-time" [textContent]="relativeTime(s.updatedAt)"></span>
+          </button>
+        } @empty {
+          <div class="ai-sessions-empty">
+            <i class="fa-regular fa-comment-dots"></i>
+            <p>No conversations yet</p>
+          </div>
+        }
+      </div>
+    </div>
+
+    <div class="ai-sidebar-footer">
+      <div class="ai-status-pill">
+        <span class="ai-status-dot"></span>
+        <span>Analytics AI · Live</span>
+      </div>
+    </div>
+
+  </aside>
+
+  <!-- ══════════ MAIN CHAT AREA ══════════ -->
+  <main class="ai-main">
+
+    <!-- Topbar -->
+    <header class="ai-topbar">
+      <button class="ai-toggle-btn" (click)="toggleSidebar()" title="Toggle sidebar">
+        <i class="fa-solid fa-bars"></i>
+      </button>
+
+      <div class="ai-topbar-center">
+        <div class="ai-topbar-avatar">
+          <i class="fa-solid fa-wand-magic-sparkles"></i>
+        </div>
+        <div>
+          <p class="ai-topbar-title">Admin Analytics AI</p>
+          <p class="ai-topbar-status">
+            <span class="ai-topbar-dot"></span>
+            Connected · Real-time data
+          </p>
+        </div>
+      </div>
+
+      <button class="ai-icon-btn" (click)="newChat()" title="New chat">
+        <i class="fa-solid fa-pen-to-square"></i>
+      </button>
+    </header>
+
+    <!-- Scroll Area -->
+    <div class="ai-scroll" #scrollArea>
+
+      <!-- ── Welcome / Empty State ── -->
+      @if (!hasMessages()) {
+        <div class="ai-welcome">
+          <div class="ai-welcome-bg"></div>
+
+          <div class="ai-welcome-orb">
+            <div class="ai-orb-ring"></div>
+            <i class="fa-solid fa-wand-magic-sparkles"></i>
+          </div>
+
+          <h2 class="ai-welcome-title">
+            What would you like<br>to analyse today?
+          </h2>
+          <p class="ai-welcome-sub">
+            I have live access to properties, payments, subscriptions, and user data.
+            Ask me anything about your platform.
+          </p>
+
+          <div class="ai-caps">
+            <span class="ai-cap"><i class="fa-solid fa-house"></i> Properties</span>
+            <span class="ai-cap"><i class="fa-solid fa-money-bill-wave"></i> Revenue</span>
+            <span class="ai-cap"><i class="fa-solid fa-users"></i> Users</span>
+            <span class="ai-cap"><i class="fa-solid fa-layer-group"></i> Subscriptions</span>
+          </div>
+
+          <div class="ai-suggestions">
+            @for (sug of suggestions; track sug.title) {
+              <button class="ai-suggestion" [attr.data-color]="sug.color" (click)="usePrompt(sug.prompt)">
+                <div class="ai-suggestion-icon">
+                  <i class="fa-solid {{ sug.icon }}"></i>
+                </div>
+                <div class="ai-suggestion-body">
+                  <strong>{{ sug.title }}</strong>
+                  <span>{{ sug.prompt }}</span>
+                </div>
+                <i class="fa-solid fa-arrow-right ai-suggestion-arrow"></i>
+              </button>
+            }
+          </div>
+        </div>
+      }
+
+      <!-- ── Messages ── -->
+      @if (hasMessages()) {
+        <div class="ai-messages">
+          @for (msg of messages(); track msg.id) {
+            <div class="ai-msg" [class.user]="msg.role === 'user'"
+                 [class.assistant]="msg.role === 'assistant'">
+
+              <div class="ai-msg-avatar" [class.ai-msg-avatar--user]="msg.role === 'user'">
+                @if (msg.role === 'user') {
+                  <i class="fa-solid fa-user"></i>
+                } @else {
+                  <i class="fa-solid fa-wand-magic-sparkles"></i>
+                }
+              </div>
+
+              <div class="ai-msg-bubble" [class.ai-msg-bubble--error]="msg.error">
+                @if (msg.pending) {
+                  <div class="ai-typing">
+                    <span></span><span></span><span></span>
+                  </div>
+                } @else {
+                  <div class="ai-msg-content"
+                       [innerHTML]="renderMarkdown(msg.content)"></div>
+                  <time class="ai-msg-time">{{ formatTime(msg.createdAt) }}</time>
+                }
+              </div>
+
+            </div>
+          }
+        </div>
+      }
+
+    </div>
+
+    <!-- Composer -->
+    <footer class="ai-composer">
+      <div class="ai-composer-box" [class.focused]="false">
+        <textarea
+          rows="1"
+          [value]="draft()"
+          (input)="draft.set($any($event.target).value)"
+          (keydown)="onKeydown($event)"
+          placeholder="Ask about revenue, properties, users, subscriptions…"
+          [disabled]="sending()">
+        </textarea>
+        <button class="ai-send-btn" [class.ai-send-btn--active]="canSend()"
+                [disabled]="!canSend()" (click)="send()" title="Send (Enter)">
+          @if (sending()) {
+            <i class="fa-solid fa-circle-notch fa-spin"></i>
+          } @else {
+            <i class="fa-solid fa-arrow-up"></i>
+          }
+        </button>
+      </div>
+      <p class="ai-composer-hint">
+        <i class="fa-solid fa-database"></i>
+        Live data from all modules &nbsp;·&nbsp;
+        <kbd>Enter</kbd> to send &nbsp;·&nbsp;
+        <kbd>Shift+Enter</kbd> for new line
+      </p>
+    </footer>
+
+  </main>
+</div>

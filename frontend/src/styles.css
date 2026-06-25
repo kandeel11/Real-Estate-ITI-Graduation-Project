@@ -1,0 +1,355 @@
+/* ================================================
+   GOOGLE FONTS
+   ================================================ */
+@import url('https://fonts.googleapis.com/css2?family=Manrope:wght@400;500;600;700;800&display=swap');
+
+/* ================================================
+   CSS VARIABLES — :root
+   ================================================ */
+:root {
+
+  /* --- Primary --- */
+  --color-primary:                  #3525cd;
+  --color-primary-container:        #4f46e5;
+  --color-primary-fixed:            #e2dfff;
+  --color-primary-fixed-dim:        #c3c0ff;
+  --color-on-primary:               #ffffff;
+  --color-on-primary-fixed:         #0f0069;
+  --color-on-primary-fixed-variant: #3323cc;
+  --color-on-primary-container:     #dad7ff;
+  --color-inverse-primary:          #c3c0ff;
+
+  /* --- Secondary --- */
+  --color-secondary:                #545f73;
+  --color-secondary-fixed:          #d8e3fb;
+  --color-secondary-fixed-dim:      #bcc7de;
+  --color-secondary-container:      #d5e0f8;
+  --color-on-secondary:             #ffffff;
+  --color-on-secondary-fixed:       #111c2d;
+  --color-on-secondary-fixed-variant: #3c475a;
+  --color-on-secondary-container:   #586377;
+
+  /* --- Tertiary --- */
+  --color-tertiary:                 #46494a;
+  --color-tertiary-container:       #5e6061;
+  --color-tertiary-fixed:           #e1e3e4;
+  --color-tertiary-fixed-dim:       #c5c7c8;
+  --color-on-tertiary:              #ffffff;
+  --color-on-tertiary-fixed:        #191c1d;
+  --color-on-tertiary-fixed-variant:#454748;
+  --color-on-tertiary-container:    #dadbdc;
+
+  /* --- Surface --- */
+  --color-background:               #f8f9ff;
+  --color-surface:                  #f8f9ff;
+  --color-surface-bright:           #f8f9ff;
+  --color-surface-dim:              #cbdbf5;
+  --color-surface-variant:          #d3e4fe;
+  --color-surface-tint:             #4d44e3;
+  --color-surface-container-lowest: #ffffff;
+  --color-surface-container-low:    #eff4ff;
+  --color-surface-container:        #e5eeff;
+  --color-surface-container-high:   #dce9ff;
+  --color-surface-container-highest:#d3e4fe;
+
+  /* --- On surface --- */
+  --color-on-surface:               #0b1c30;
+  --color-on-surface-variant:       #464555;
+  --color-on-background:            #0b1c30;
+  --color-inverse-surface:          #213145;
+  --color-inverse-on-surface:       #eaf1ff;
+
+  /* --- Outline --- */
+  --color-outline:                  #777587;
+  --color-outline-variant:          #c7c4d8;
+
+  /* --- Error --- */
+  --color-error:                    #ba1a1a;
+  --color-error-container:          #ffdad6;
+  --color-on-error:                 #ffffff;
+  --color-on-error-container:       #93000a;
+
+  /* ================================================
+     TYPOGRAPHY
+     ================================================ */
+  --font-family:               'Manrope', sans-serif;
+
+  --font-display-lg-size:      48px;
+  --font-display-lg-weight:    700;
+  --font-display-lg-leading:   1.2;
+  --font-display-lg-spacing:   -0.02em;
+
+  --font-headline-lg-size:     32px;
+  --font-headline-lg-weight:   600;
+  --font-headline-lg-leading:  1.3;
+
+  --font-headline-md-size:     24px;
+  --font-headline-md-weight:   600;
+  --font-headline-md-leading:  1.4;
+
+  --font-body-lg-size:         18px;
+  --font-body-lg-weight:       400;
+  --font-body-lg-leading:      1.6;
+
+  --font-body-md-size:         16px;
+  --font-body-md-weight:       400;
+  --font-body-md-leading:      1.6;
+
+  --font-label-md-size:        14px;
+  --font-label-md-weight:      500;
+  --font-label-md-leading:     1.4;
+  --font-label-md-spacing:     0.01em;
+
+  --font-label-sm-size:        12px;
+  --font-label-sm-weight:      600;
+  --font-label-sm-leading:     1.2;
+
+  /* ================================================
+     SPACING
+     ================================================ */
+  --spacing-stack-sm:          8px;
+  --spacing-stack-md:          16px;
+  --spacing-stack-lg:          24px;
+  --spacing-gutter:            24px;
+  --spacing-section:           80px;
+  --container-max-width:       1280px;
+
+  /* ================================================
+     BORDER RADIUS
+     ================================================ */
+  --radius-sm:                 4px;
+  --radius-md:                 8px;
+  --radius-lg:                 12px;
+  --radius-full:               9999px;
+
+  /* ================================================
+     SHADOWS
+     ================================================ */
+  --shadow-soft:               0 4px 12px rgba(79, 70, 229, 0.08);
+  --shadow-hover:              0 8px 24px rgba(79, 70, 229, 0.12);
+  --transition-default:        0.2s ease;
+}
+
+/* ================================================
+   BASE
+   ================================================ */
+*,
+*::before,
+*::after {
+  box-sizing: border-box;
+}
+
+/* Kill horizontal page scroll on BOTH html and body. body alone isn't enough:
+   if a child stretches past the viewport, the html element still scrolls sideways. */
+html {
+  overflow-x: hidden;
+  max-width: 100%;
+}
+
+body {
+  font-family:      var(--font-family);
+  font-size:        var(--font-body-md-size);
+  font-weight:      var(--font-body-md-weight);
+  line-height:      var(--font-body-md-leading);
+  color:            var(--color-on-surface);
+  background-color: var(--color-background);
+  overflow-x:       hidden;
+  max-width:        100%;
+  -webkit-font-smoothing: antialiased;
+}
+
+/* Arabic font override */
+:root[lang="ar"] body,
+body.lang-ar {
+  font-family: 'Cairo', sans-serif;
+}
+
+/* RTL text alignment helpers */
+[dir="rtl"] .text-start { text-align: right !important; }
+[dir="rtl"] .text-end   { text-align: left !important; }
+[dir="rtl"] .me-1 { margin-right: 0 !important; margin-left: 0.25rem !important; }
+[dir="rtl"] .me-2 { margin-right: 0 !important; margin-left: 0.5rem !important; }
+[dir="rtl"] .me-3 { margin-right: 0 !important; margin-left: 1rem !important; }
+[dir="rtl"] .ms-1 { margin-left: 0 !important; margin-right: 0.25rem !important; }
+[dir="rtl"] .ms-2 { margin-left: 0 !important; margin-right: 0.5rem !important; }
+[dir="rtl"] .ms-auto { margin-left: 0 !important; margin-right: auto !important; }
+
+/* Override Bootstrap's primary color with ours */
+.btn-primary {
+  background-color: var(--color-primary-container) !important;
+  border-color:     var(--color-primary-container) !important;
+  color:            #ffffff !important;
+}
+
+.btn-primary:hover {
+  background-color: var(--color-primary) !important;
+  border-color:     var(--color-primary) !important;
+}
+
+.text-primary {
+  color: var(--color-primary) !important;
+}
+
+/* Hover lift utility — add to cards */
+.hover-lift {
+  transition: transform var(--transition-default),
+              box-shadow var(--transition-default);
+}
+
+.hover-lift:hover {
+  transform:  translateY(-2px);
+  box-shadow: var(--shadow-hover);
+}
+
+/* ─── Scroll-triggered fade-up animation ─── */
+.in-view {
+  opacity: 0;
+  transform: translateY(28px);
+  transition: opacity 0.55s ease, transform 0.55s ease;
+}
+.in-view.visible {
+  opacity: 1;
+  transform: none;
+}
+
+/* ================================================
+   SHARED DASHBOARD UTILITIES  (polish + responsive)
+   Opt-in classes reused across broker / owner / company
+   dashboards so status chips, actions, empty states and
+   data tables look consistent and reflow on small screens.
+   ================================================ */
+
+/* --- Status chips --------------------------------------------------------- */
+.ui-badge {
+  display: inline-flex;
+  align-items: center;
+  gap: .35rem;
+  padding: .22rem .6rem;
+  border-radius: 999px;
+  font-size: .75rem;
+  font-weight: 600;
+  line-height: 1;
+  white-space: nowrap;
+}
+.ui-badge--active     { background: #dcfce7; color: #166534; }
+.ui-badge--expiring   { background: #fef9c3; color: #854d0e; }
+.ui-badge--ended      { background: #e5e7eb; color: #374151; }
+.ui-badge--terminated { background: #fee2e2; color: #991b1b; }
+.ui-badge--pending    { background: #e0e7ff; color: #3730a3; }
+.ui-badge--info       { background: #e0f2fe; color: #075985; }
+
+/* --- Compact action links in table rows ----------------------------------- */
+.ui-action {
+  display: inline-flex;
+  align-items: center;
+  gap: .35rem;
+  background: none;
+  border: 0;
+  padding: .25rem .4rem;
+  border-radius: 8px;
+  font: inherit;
+  font-size: .82rem;
+  font-weight: 600;
+  cursor: pointer;
+  color: var(--color-primary);
+  transition: background var(--transition-default), opacity var(--transition-default);
+}
+.ui-action:hover { background: var(--color-surface-container); }
+.ui-action:disabled { opacity: .5; cursor: not-allowed; }
+.ui-action--danger  { color: #dc2626; }
+.ui-action--success { color: #16a34a; }
+
+/* --- Empty state ---------------------------------------------------------- */
+.ui-empty {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  text-align: center;
+  gap: .35rem;
+  padding: 3rem 1rem;
+  color: var(--color-on-surface-variant);
+}
+.ui-empty .ui-empty__icon { font-size: 2.5rem; opacity: .4; margin-bottom: .5rem; }
+.ui-empty .ui-empty__title { font-weight: 700; color: var(--color-on-surface); }
+
+/* --- Loading skeleton ----------------------------------------------------- */
+.ui-skeleton {
+  border-radius: 10px;
+  background: linear-gradient(90deg,
+    var(--color-surface-container) 25%,
+    var(--color-surface-container-high) 37%,
+    var(--color-surface-container) 63%);
+  background-size: 400% 100%;
+  animation: ui-shimmer 1.3s ease-in-out infinite;
+}
+@keyframes ui-shimmer { 0% { background-position: 100% 0; } 100% { background-position: 0 0; } }
+
+/* --- Data table that reflows to cards on phones --------------------------- */
+/* Wrapper gives any wide table a horizontal-scroll floor on small screens. */
+.ui-table-wrap { width: 100%; overflow-x: auto; -webkit-overflow-scrolling: touch; }
+
+/* Add .ui-cards-sm to a <table> and data-label="…" to each <td>. Below 768px the
+   table rows become stacked cards with the label shown beside each value. */
+@media (max-width: 768px) {
+  table.ui-cards-sm,
+  table.ui-cards-sm thead,
+  table.ui-cards-sm tbody,
+  table.ui-cards-sm tr,
+  table.ui-cards-sm td { display: block; width: 100%; }
+
+  table.ui-cards-sm thead { display: none; }
+
+  table.ui-cards-sm tr {
+    margin-bottom: .85rem;
+    border: 1px solid var(--color-surface-container-high);
+    border-radius: 12px;
+    background: var(--color-surface-container-lowest);
+    padding: .35rem .25rem;
+    box-shadow: var(--shadow-1, 0 1px 3px rgba(0,0,0,.08));
+  }
+
+  table.ui-cards-sm td {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    gap: 1rem;
+    padding: .5rem .9rem;
+    border: 0;
+    text-align: right;
+  }
+
+  table.ui-cards-sm td::before {
+    content: attr(data-label);
+    font-size: .72rem;
+    font-weight: 700;
+    text-transform: uppercase;
+    letter-spacing: .03em;
+    color: var(--color-on-surface-variant);
+    text-align: left;
+    flex: 0 0 auto;
+  }
+
+  /* The actions cell stacks its buttons full-width for easy tapping. */
+  table.ui-cards-sm td.actions-cell {
+    flex-wrap: wrap;
+    justify-content: flex-start;
+  }
+}
+
+[dir="rtl"] table.ui-cards-sm td { text-align: left; }
+[dir="rtl"] table.ui-cards-sm td::before { text-align: right; }
+
+/* Global safety net: never let content force horizontal page scroll. */
+img, svg, video, canvas { max-width: 100%; height: auto; }
+
+/* Any wide table that isn't using the card-reflow scrolls inside its own box on
+   phones instead of stretching the page — prevents a site-wide side scroller. */
+@media (max-width: 768px) {
+  table:not(.ui-cards-sm) {
+    display: block;
+    max-width: 100%;
+    overflow-x: auto;
+    -webkit-overflow-scrolling: touch;
+  }
+}

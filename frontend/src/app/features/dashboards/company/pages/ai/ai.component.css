@@ -1,0 +1,58 @@
+.ai-gate-wrapper {
+  position: relative;
+}
+
+/* Free plan: content visible but blurred and inert behind the overlay */
+.ai-locked {
+  filter: blur(6px);
+  pointer-events: none;
+  user-select: none;
+}
+
+.ai-gate-overlay {
+  position: absolute;
+  inset: 0;
+  display: flex;
+  align-items: flex-start;
+  justify-content: center;
+  padding-top: 8vh;
+  z-index: 10;
+}
+
+.ai-gate-box {
+  background: #fff;
+  border-radius: 14px;
+  padding: 36px 40px;
+  text-align: center;
+  max-width: 420px;
+}
+
+/* ── Chat ── */
+.chat-card {
+  max-width: 860px;
+}
+
+.chat-messages {
+  min-height: 260px;
+  max-height: 420px;
+  overflow-y: auto;
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.chat-bubble {
+  align-self: flex-start;
+  background: #f1f3f5;
+  border-radius: 14px 14px 14px 4px;
+  padding: 10px 14px;
+  max-width: 75%;
+  white-space: pre-wrap;
+}
+
+.chat-bubble--user {
+  align-self: flex-end;
+  background: #212529;
+  color: #fff;
+  border-radius: 14px 14px 4px 14px;
+}

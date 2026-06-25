@@ -1,0 +1,135 @@
+<div class="ai-page">
+  <div class="page-header">
+    <h1 class="page-title"><i class="fa-solid fa-robot me-2"></i>{{ 'TENANT_AI.TITLE' | translate }}</h1>
+    <div class="pills-row">
+      <button class="pill" [class.pill-active]="activeTab() === 'search'" (click)="activeTab.set('search')">
+        <i class="fa-solid fa-magnifying-glass me-1"></i>{{ 'TENANT_AI.SEARCH_TAB' | translate }}
+      </button>
+      <button class="pill" [class.pill-active]="activeTab() === 'chat'" (click)="activeTab.set('chat')">
+        <i class="fa-solid fa-comment-dots me-1"></i>{{ 'TENANT_AI.CHAT_TAB' | translate }}
+      </button>
+    </div>
+  </div>
+
+  <!-- ══════════════════ PROPERTY SEARCH ══════════════════ -->
+  @if (activeTab() === 'search') {
+
+    <!-- Search bar -->
+    <div class="search-hero mb-4">
+      <div class="search-bar-wrap">
+        <i class="fa-solid fa-magnifying-glass search-icon"></i>
+        <input
+          class="search-input"
+          type="text"
+          [placeholder]="'TENANT_AI.SEARCH_PLACEHOLDER' | translate"
+          [(ngModel)]="searchQuery"
+          (keyup.enter)="search()"
+        />
+        <button class="btn btn-primary search-btn" (click)="search()" [disabled]="!searchQuery.trim() || searchLoading()">
+          @if (searchLoading()) {
+            <span class="spinner-border spinner-border-sm" role="status"></span>
+          } @else {
+            {{ 'TENANT_AI.SEARCH' | translate }}
+          }
+        </button>
+      </div>
+      @if (searchQuery.trim()) {
+        <div class="search-actions">
+          <button class="btn btn-sm btn-outline-primary" (click)="saveSearch()" [disabled]="saveLoading()">
+            <i class="fa-regular fa-bookmark me-1"></i>{{ 'TENANT_AI.SAVE_SEARCH' | translate }}
+          </button>
+        </div>
+      }
+    </div>
+
+    <!-- Saved searches -->
+    @if (savedSearches().length > 0) {
+      <div class="saved-searches mb-4">
+        <p class="saved-label"><i class="fa-regular fa-bookmark me-1"></i>{{ 'TENANT_AI.SAVED_SEARCHES' | translate }}</p>
+        <div class="saved-chips">
+          @for (s of savedSearches(); track s.id) {
+            <div class="saved-chip">
+              <span (click)="searchQuery = s.query; search()">{{ s.query }}</span>
+              <button class="chip-remove" (click)="deleteSavedSearch(s.id)">
+                <i class="fa-solid fa-xmark"></i>
+              </button>
+            </div>
+          }
+        </div>
+      </div>
+    }
+
+    <!-- Results -->
+    @if (searchDone()) {
+      @if (searchResults().length === 0) {
+        <div class="empty-state">
+          <i class="fa-solid fa-house-circle-xmark empty-icon"></i>
+          <p class="empty-title">{{ 'TENANT_AI.NO_PROPERTIES' | translate }}</p>
+          <p class="empty-desc">{{ 'TENANT_AI.NO_PROPERTIES_DESC' | translate }}</p>
+        </div>
+      } @else {
+        <div class="results-grid">
+          @for (r of searchResults(); track r.id) {
+            <div class="result-card">
+              <div class="result-img-wrap">
+                <img [src]="r.mainImage || 'https://placehold.co/400x220/e5eeff/4f46e5?text=Property'" [alt]="r.title" />
+                <span class="result-type">{{ r.type }}</span>
+              </div>
+              <div class="result-body">
+                <h3 class="result-title">{{ r.title }}</h3>
+                <p class="result-address"><i class="fa-solid fa-location-dot me-1"></i>{{ r.address }}</p>
+                <div class="result-meta">
+                  <span><i class="fa-solid fa-bed me-1"></i>{{ r.bedrooms }} bd</span>
+                  <span><i class="fa-solid fa-bath me-1"></i>{{ r.bathrooms }} ba</span>
+                  <span><i class="fa-solid fa-vector-square me-1"></i>{{ r.area }} sqft</span>
+                </div>
+                <p class="result-price">{{ r.price | currency:'USD':'symbol':'1.0-0' }}/mo</p>
+              </div>
+            </div>
+          }
+        </div>
+      }
+    }
+  }
+
+  <!-- ══════════════════ ASK AI ══════════════════ -->
+  @if (activeTab() === 'chat') {
+    <div class="chat-container">
+      <div class="chat-messages" #messagesContainer>
+        @for (msg of messages(); track $index) {
+          <div class="chat-row" [class.row-user]="msg.role === 'user'" [class.row-ai]="msg.role === 'assistant'">
+            @if (msg.role === 'assistant') {
+              <div class="ai-avatar"><i class="fa-solid fa-robot"></i></div>
+            }
+            <div class="chat-bubble" [class.bubble-user]="msg.role === 'user'" [class.bubble-ai]="msg.role === 'assistant'">
+              {{ msg.content }}
+            </div>
+          </div>
+        }
+        @if (chatLoading()) {
+          <div class="chat-row row-ai">
+            <div class="ai-avatar"><i class="fa-solid fa-robot"></i></div>
+            <div class="chat-bubble bubble-ai typing-indicator">
+              <span></span><span></span><span></span>
+            </div>
+          </div>
+        }
+      </div>
+
+      <div class="chat-input-bar">
+        <input
+          class="chat-input"
+          type="text"
+          [placeholder]="'TENANT_AI.CHAT_PLACEHOLDER' | translate"
+          [(ngModel)]="chatInput"
+          (keyup.enter)="sendMessage()"
+          [disabled]="chatLoading()"
+        />
+        <button class="btn btn-primary chat-send" (click)="sendMessage()"
+                [disabled]="!chatInput.trim() || chatLoading()">
+          <i class="fa-solid fa-paper-plane"></i>
+        </button>
+      </div>
+    </div>
+  }
+</div>

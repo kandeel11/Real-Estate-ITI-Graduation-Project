@@ -1,0 +1,155 @@
+<div class="tickets-page">
+
+  <!-- Header -->
+  <div class="page-head">
+    <div>
+      <h1><i class="fa-solid fa-ticket"></i> All Tickets</h1>
+      <p>View and monitor all maintenance tickets across the platform.</p>
+    </div>
+    <button class="btn-outline" (click)="load()" [disabled]="loading()">
+      <i class="fa-solid fa-rotate-right" [class.spin]="loading()"></i>
+      Refresh
+    </button>
+  </div>
+
+  <!-- Stats Row -->
+  @if (!loading() && tickets().length > 0) {
+  <div class="stats-row">
+    <div class="stat-card">
+      <i class="fa-solid fa-ticket"></i>
+      <div>
+        <strong>{{ tickets().length }}</strong>
+        <span>Total Tickets</span>
+      </div>
+    </div>
+    <div class="stat-card inprogress">
+      <i class="fa-solid fa-spinner"></i>
+      <div>
+        <strong>{{ statusCounts()['InProgress'] ?? 0 }}</strong>
+        <span>In Progress</span>
+      </div>
+    </div>
+    <div class="stat-card awaiting">
+      <i class="fa-solid fa-hourglass-half"></i>
+      <div>
+        <strong>{{ statusCounts()['AwaitingPayment'] ?? 0 }}</strong>
+        <span>Awaiting Payment</span>
+      </div>
+    </div>
+    <div class="stat-card completed">
+      <i class="fa-solid fa-circle-check"></i>
+      <div>
+        <strong>{{ statusCounts()['Completed'] ?? 0 }}</strong>
+        <span>Completed</span>
+      </div>
+    </div>
+  </div>
+  }
+
+  <!-- Search & Filter -->
+  <div class="toolbar">
+    <div class="search-box">
+      <i class="fa-solid fa-magnifying-glass"></i>
+      <input type="text" placeholder="Search by title, tenant, company..." [value]="searchQuery()"
+        (input)="onSearch($event)" />
+    </div>
+    <div class="filter-tabs">
+      <button class="tab" [class.active]="activeFilter() === 'all'" (click)="activeFilter.set('all')">
+        All <span class="tab-count">{{ statusCounts()['all'] ?? 0 }}</span>
+      </button>
+      @for (status of uniqueStatuses(); track status) {
+      <button class="tab" [class.active]="activeFilter() === status" (click)="activeFilter.set(status)">
+        {{ statusLabel(status) }}
+        <span class="tab-count {{ statusClass(status) }}">{{ statusCounts()[status] ?? 0 }}</span>
+      </button>
+      }
+    </div>
+  </div>
+
+  <!-- Loading Skeleton -->
+  @if (loading()) {
+  <div class="skeleton-wrap">
+    <div class="skeleton-head"></div>
+    @for (i of [1,2,3,4,5]; track i) {
+    <div class="skeleton-row">
+      <div class="sk sk-title"></div>
+      <div class="sk sk-sm"></div>
+      <div class="sk sk-sm"></div>
+      <div class="sk sk-badge"></div>
+    </div>
+    }
+  </div>
+  }
+
+  <!-- Empty State -->
+  @else if (filteredTickets().length === 0) {
+  <div class="empty-state">
+    <i class="fa-solid fa-ticket-simple"></i>
+    <h3>No tickets found</h3>
+    <p>{{ searchQuery() ? 'Try a different search term.' : 'No maintenance tickets have been submitted yet.' }}</p>
+  </div>
+  }
+
+  <!-- Table -->
+  @else {
+  <div class="table-wrap">
+    <table class="tickets-table">
+      <thead>
+        <tr>
+          <th>Ticket</th>
+          <th>Category</th>
+          <th>Tenant</th>
+          <th>Company</th>
+          <th>Address</th>
+          <th>Date</th>
+          <th>Amount</th>
+          <th>Status</th>
+        </tr>
+      </thead>
+      <tbody>
+        @for (ticket of filteredTickets(); track ticket.id) {
+        <tr>
+          <td class="col-title">
+            <strong>{{ ticket.title }}</strong>
+            @if (ticket.description) {
+            <span class="desc-preview">{{ ticket.description }}</span>
+            }
+          </td>
+          <td>
+            @if (ticket.categoryName) {
+            <span class="cat-chip">
+              @if (ticket.categoryIcon) { <i class="fa-solid {{ ticket.categoryIcon }}"></i> }
+              {{ ticket.categoryName }}
+            </span>
+            } @else { <span class="text-muted">—</span> }
+          </td>
+          <td>{{ ticket.tenantName ?? '—' }}</td>
+          <td>{{ ticket.companyName ?? '—' }}</td>
+          <td class="col-address">{{ ticket.propertyAddress ?? '—' }}</td>
+          <td class="col-date">{{ formatDate(ticket.createdAt) }}</td>
+          <td class="col-amount">
+            @if (ticket.amount) {
+            <span class="amount">{{ ticket.amount | number }} {{ ticket.currency }}</span>
+            } @else { <span class="text-muted">—</span> }
+          </td>
+          <td>
+            <span class="status-badge {{ statusClass(ticket.status) }}">{{ statusLabel(ticket.status) }}</span>
+          </td>
+        </tr>
+        }
+      </tbody>
+    </table>
+  </div>
+
+  <p class="result-count">Showing {{ filteredTickets().length }} of {{ tickets().length }} tickets</p>
+  }
+
+  <!-- Toast -->
+  @if (toast(); as t) {
+  <div class="toast" [class.toast--error]="t.type === 'error'">
+    <i class="fa-solid" [class.fa-circle-check]="t.type === 'success'" [class.fa-circle-xmark]="t.type === 'error'"></i>
+    {{ t.text }}
+  </div>
+  }
+
+</div>

@@ -1,0 +1,120 @@
+<div class="messages-page">
+
+  <!-- ── LEFT PANEL: Conversation list ──────────────── -->
+  <div class="sidebar" [class.sidebar--hidden]="!!selected()">
+
+    <div class="sidebar-header">
+      <h2 class="sidebar-title">
+        <i class="fa-regular fa-comments"></i>
+        {{ 'OWNER.MESSAGES.TITLE' | translate }}
+      </h2>
+      <p class="sidebar-sub">{{ 'OWNER.MESSAGES.SUBTITLE' | translate }}</p>
+    </div>
+
+    @if (loadingInquiries()) {
+      <div class="thread-skeleton-wrap">
+        @for (n of [1,2,3]; track $index) {
+          <div class="thread-skeleton">
+            <div class="sk-avatar skeleton"></div>
+            <div class="sk-lines">
+              <div class="skeleton" style="width:70%;height:14px;"></div>
+              <div class="skeleton" style="width:50%;height:12px;margin-top:6px;"></div>
+            </div>
+          </div>
+        }
+      </div>
+    } @else if (inquiries().length === 0) {
+      <div class="empty-state">
+        <i class="fa-regular fa-envelope-open empty-icon"></i>
+        <p>{{ 'OWNER.MESSAGES.EMPTY_TITLE' | translate }}</p>
+        <span>{{ 'OWNER.MESSAGES.EMPTY_SUB' | translate }}</span>
+      </div>
+    } @else {
+      <ul class="thread-list">
+        @for (inq of inquiries(); track inq.id) {
+          <li class="thread-item" [class.thread-item--active]="selected()?.id === inq.id"
+              (click)="selectInquiry(inq)">
+            <div class="thread-avatar">{{ initials(inq.tenantName) }}</div>
+            <div class="thread-content">
+              <div class="thread-top">
+                <span class="thread-title">{{ inq.tenantName }}</span>
+                <span class="thread-time">{{ lastTime(inq) | date:'MMM d' }}</span>
+              </div>
+              <p class="thread-property"><i class="fa-solid fa-building"></i> {{ inq.propertyTitle }}</p>
+              <p class="thread-preview">{{ lastMessage(inq) }}</p>
+            </div>
+            @if (inq.status === 'new') {
+              <span class="thread-badge"></span>
+            }
+          </li>
+        }
+      </ul>
+    }
+  </div>
+
+  <!-- ── RIGHT PANEL: Chat thread ───────────────────── -->
+  <div class="chat-panel" [class.chat-panel--visible]="!!selected()">
+
+    @if (!selected()) {
+      <div class="chat-empty">
+        <i class="fa-regular fa-comments chat-empty-icon"></i>
+        <p class="chat-empty-title">{{ 'OWNER.MESSAGES.SELECT_TITLE' | translate }}</p>
+        <span class="chat-empty-sub">{{ 'OWNER.MESSAGES.SELECT_SUB' | translate }}</span>
+      </div>
+    } @else {
+      <div class="chat-header">
+        <button class="btn-back" (click)="selected.set(null)">
+          <i class="fa-solid fa-arrow-left"></i>
+        </button>
+        <div class="chat-header-info">
+          <span class="chat-header-name">{{ selected()!.tenantName }}</span>
+          <span class="chat-header-sub">{{ selected()!.propertyTitle }}</span>
+        </div>
+        <span class="status-chip"
+              [class.status-chip--replied]="selected()!.status === 'replied'"
+              [class.status-chip--converted]="selected()!.status === 'converted'">
+          {{ selected()!.status }}
+        </span>
+      </div>
+
+      <div class="msg-list" #msgList>
+        @if (loadingMessages()) {
+          <div class="msg-loading">
+            <i class="fa-solid fa-spinner fa-spin"></i>
+          </div>
+        } @else if (messages().length === 0) {
+          <div class="msg-empty">{{ 'OWNER.MESSAGES.NO_MESSAGES' | translate }}</div>
+        } @else {
+          @for (msg of messages(); track msg.id) {
+            <div class="msg-row" [class.msg-row--mine]="isMine(msg)">
+              @if (!isMine(msg)) {
+                <div class="msg-avatar">{{ initials(msg.senderName) }}</div>
+              }
+              <div class="bubble" [class.bubble--mine]="isMine(msg)">
+                @if (!isMine(msg)) {
+                  <span class="bubble-sender">{{ msg.senderName }}</span>
+                }
+                <p class="bubble-text">{{ msg.text }}</p>
+                <span class="bubble-time">{{ msg.sentAt | date:'shortTime' }}</span>
+              </div>
+            </div>
+          }
+        }
+      </div>
+
+      <div class="compose">
+        <textarea class="compose-input" [(ngModel)]="text" rows="2"
+                  [placeholder]="'OWNER.MESSAGES.PLACEHOLDER' | translate"
+                  (keydown)="onKeydown($event)"></textarea>
+        <button class="btn-send" (click)="send()" [disabled]="sending() || !text.trim()">
+          @if (sending()) {
+            <i class="fa-solid fa-spinner fa-spin"></i>
+          } @else {
+            <i class="fa-solid fa-paper-plane"></i>
+          }
+        </button>
+      </div>
+    }
+  </div>
+
+</div>

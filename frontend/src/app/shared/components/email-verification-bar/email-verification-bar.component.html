@@ -1,0 +1,38 @@
+@if (show()) {
+  <div class="verify-bar" role="alert">
+    <div class="verify-bar__msg">
+      <i class="fa-solid fa-envelope-circle-check verify-bar__icon"></i>
+      <span>
+        {{ 'VERIFY_BAR.MESSAGE' | translate }}
+        @if (email()) { <strong class="verify-bar__email">{{ email() }}</strong> }
+      </span>
+    </div>
+
+    <div class="verify-bar__action">
+      @if (sent() && countdown() === 0) {
+        <span class="verify-bar__sent"><i class="fa-solid fa-circle-check me-1"></i>{{ 'VERIFY_BAR.SENT' | translate }}</span>
+      }
+      <button type="button" class="verify-bar__btn" (click)="send()"
+              [disabled]="loading() || countdown() > 0">
+        @if (loading()) {
+          <span class="spinner-border spinner-border-sm me-1"></span>{{ 'VERIFY_BAR.SENDING' | translate }}
+        } @else if (countdown() > 0) {
+          <i class="fa-regular fa-clock me-1"></i>{{ 'VERIFY_BAR.RESEND_IN' | translate:{ n: countdown() } }}
+        } @else {
+          <i class="fa-solid fa-paper-plane me-1"></i>{{ sent() ? ('VERIFY_BAR.RESEND' | translate) : ('VERIFY_BAR.SEND' | translate) }}
+        }
+      </button>
+      <button type="button" class="verify-bar__link" (click)="checkVerification(true)" [disabled]="checking()">
+        @if (checking()) {
+          <span class="spinner-border spinner-border-sm me-1"></span>{{ 'VERIFY_BAR.CHECKING' | translate }}
+        } @else {
+          {{ 'VERIFY_BAR.ALREADY_VERIFIED' | translate }}
+        }
+      </button>
+
+      @if (error()) {
+        <span class="verify-bar__error">{{ error() }}</span>
+      }
+    </div>
+  </div>
+}

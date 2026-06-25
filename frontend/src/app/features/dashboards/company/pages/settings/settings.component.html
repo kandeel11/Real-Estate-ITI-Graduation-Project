@@ -1,0 +1,242 @@
+<div class="settings-wrap">
+<h2 class="mb-4"><i class="fa-solid fa-gear me-2"></i>{{ 'COMPANY_SETTINGS.TITLE' | translate }}</h2>
+
+@if (loading()) {
+  <div class="d-flex justify-content-center py-5">
+    <div class="spinner-border text-secondary" role="status">
+      <span class="visually-hidden">Loading…</span>
+    </div>
+  </div>
+} @else {
+
+  <!-- Tab bar -->
+  <div class="settings-tabs mb-4">
+    <button class="settings-tab" [class.active]="tab() === 'company'" (click)="tab.set('company')">
+      <i class="fa-solid fa-building me-2"></i>{{ 'COMPANY_SETTINGS.COMPANY_PROFILE_TAB' | translate }}
+    </button>
+    <button class="settings-tab" [class.active]="tab() === 'account'" (click)="tab.set('account')">
+      <i class="fa-regular fa-id-card me-2"></i>{{ 'COMPANY_SETTINGS.MY_ACCOUNT_TAB' | translate }}
+    </button>
+    <button class="settings-tab" [class.active]="tab() === 'password'" (click)="tab.set('password')">
+      <i class="fa-solid fa-key me-2"></i>{{ 'COMPANY_SETTINGS.CHANGE_PASSWORD_TAB' | translate }}
+    </button>
+  </div>
+
+  <!-- ══ COMPANY PROFILE ══ -->
+  @if (tab() === 'company') {
+    @if (saved()) {
+      <div class="alert alert-success">
+        <i class="fa-solid fa-circle-check me-2"></i>{{ 'COMPANY_SETTINGS.PROFILE_SAVED' | translate }}
+      </div>
+    }
+
+    <div class="card p-4 settings-card">
+      <form [formGroup]="form" (ngSubmit)="save()">
+        <!-- Logo -->
+        <div class="d-flex align-items-center gap-3 mb-4">
+          @if (logoPreview()) {
+            <img [src]="logoPreview()" alt="Company logo" class="logo-preview rounded border" />
+          } @else {
+            <div class="logo-preview rounded border bg-light d-flex align-items-center justify-content-center">
+              <i class="fa-solid fa-building text-muted fs-3"></i>
+            </div>
+          }
+          <div>
+            <label class="form-label mb-1">
+              {{ 'COMPANY_SETTINGS.COMPANY_LOGO' | translate }}
+              @if (logoUploading()) {
+                <span class="spinner-border spinner-border-sm ms-2"></span>
+              }
+            </label>
+            <input type="file" class="form-control form-control-sm" accept="image/jpeg,image/png,image/webp,image/svg+xml"
+                   (change)="onLogoSelected($event)" [disabled]="logoUploading()" />
+            @if (logoError()) {
+              <small class="text-danger d-block">{{ logoError() }}</small>
+            } @else {
+              <small class="text-muted">{{ 'COMPANY_SETTINGS.LOGO_HINT' | translate }}</small>
+            }
+          </div>
+        </div>
+
+        <div class="row g-3">
+          <div class="col-md-6">
+            <label class="form-label">{{ 'COMPANY_SETTINGS.COMPANY_NAME' | translate }}</label>
+            <input type="text" class="form-control" formControlName="name"
+                   [class.is-invalid]="name.invalid && name.touched" />
+            @if (name.invalid && name.touched) {
+              <div class="invalid-feedback">{{ 'COMPANY_SETTINGS.ERR_NAME' | translate }}</div>
+            }
+          </div>
+
+          <div class="col-md-6">
+            <label class="form-label">
+              {{ 'COMPANY_SETTINGS.COMMERCIAL_REGISTER' | translate }}
+              <i class="fa-solid fa-lock text-muted ms-1" title="Cannot change after verification"></i>
+            </label>
+            <input type="text" class="form-control" formControlName="commercialRegister" />
+          </div>
+
+          <div class="col-md-6">
+            <label class="form-label">{{ 'COMPANY_SETTINGS.WEBSITE' | translate }}</label>
+            <input type="text" class="form-control" formControlName="website" />
+          </div>
+
+          <div class="col-md-6">
+            <label class="form-label">
+              {{ 'COMPANY_SETTINGS.EMAIL' | translate }}
+              <i class="fa-solid fa-lock text-muted ms-1" title="Contact support to change the account email"></i>
+            </label>
+            <input type="email" class="form-control" formControlName="email" />
+          </div>
+
+          <div class="col-md-6">
+            <label class="form-label">{{ 'COMPANY_SETTINGS.CITY' | translate }}</label>
+            <input type="text" class="form-control" formControlName="city"
+                   [class.is-invalid]="city.invalid && city.touched" />
+            @if (city.invalid && city.touched) {
+              <div class="invalid-feedback">{{ 'COMPANY_SETTINGS.ERR_CITY' | translate }}</div>
+            }
+          </div>
+
+          <div class="col-md-6">
+            <label class="form-label">{{ 'COMPANY_SETTINGS.PHONE' | translate }}</label>
+            <input type="tel" class="form-control" formControlName="phone"
+                   [class.is-invalid]="phone.invalid && phone.touched" />
+            @if (phone.invalid && phone.touched) {
+              <div class="invalid-feedback">{{ 'COMPANY_SETTINGS.ERR_PHONE' | translate }}</div>
+            }
+          </div>
+
+          <div class="col-12">
+            <label class="form-label">{{ 'COMPANY_SETTINGS.ADDRESS' | translate }}</label>
+            <input type="text" class="form-control" formControlName="address"
+                   [class.is-invalid]="address.invalid && address.touched" />
+            @if (address.invalid && address.touched) {
+              <div class="invalid-feedback">{{ 'COMPANY_SETTINGS.ERR_ADDRESS' | translate }}</div>
+            }
+          </div>
+
+          <div class="col-12">
+            <label class="form-label">{{ 'COMPANY_SETTINGS.DESCRIPTION' | translate }}</label>
+            <textarea class="form-control" rows="3" formControlName="description"></textarea>
+          </div>
+        </div>
+
+        <div class="mt-4 text-end">
+          <button type="submit" class="btn btn-dark" [disabled]="saving()">
+            @if (saving()) {
+              <span class="spinner-border spinner-border-sm me-2"></span>
+            }
+            <i class="fa-solid fa-floppy-disk me-1"></i>{{ saving() ? ('COMPANY_SETTINGS.SAVING' | translate) : ('COMPANY_SETTINGS.SAVE_CHANGES' | translate) }}
+          </button>
+        </div>
+      </form>
+    </div>
+  }
+
+  <!-- ══ MY ACCOUNT ══ -->
+  @if (tab() === 'account') {
+    @if (accountSaved()) {
+      <div class="alert alert-success">
+        <i class="fa-solid fa-circle-check me-2"></i>{{ 'COMPANY_SETTINGS.ACCOUNT_SAVED' | translate }}
+      </div>
+    }
+    @if (accountError()) {
+      <div class="alert alert-danger">{{ accountError() }}</div>
+    }
+
+    <div class="card p-4 settings-card">
+      <p class="text-muted small mb-3">{{ 'COMPANY_SETTINGS.MANAGER_DESC' | translate }}</p>
+      <form [formGroup]="accountForm" (ngSubmit)="saveAccount()">
+        <div class="row g-3">
+          <div class="col-md-4">
+            <label class="form-label">{{ 'COMPANY_SETTINGS.FULL_NAME' | translate }}</label>
+            <input type="text" class="form-control" formControlName="fullName"
+                   [class.is-invalid]="accountFullName.invalid && accountFullName.touched" />
+            @if (accountFullName.invalid && accountFullName.touched) {
+              <div class="invalid-feedback">{{ 'COMPANY_SETTINGS.ERR_FULL_NAME' | translate }}</div>
+            }
+          </div>
+          <div class="col-md-4">
+            <label class="form-label">{{ 'COMPANY_SETTINGS.PHONE' | translate }}</label>
+            <input type="tel" class="form-control" formControlName="phone"
+                   [class.is-invalid]="accountPhone.invalid && accountPhone.touched" />
+            @if (accountPhone.invalid && accountPhone.touched) {
+              <div class="invalid-feedback">{{ 'COMPANY_SETTINGS.ERR_PHONE' | translate }}</div>
+            }
+          </div>
+          <div class="col-md-4">
+            <label class="form-label">
+              {{ 'COMPANY_SETTINGS.EMAIL' | translate }}
+              <i class="fa-solid fa-lock text-muted ms-1" title="The account email cannot be changed"></i>
+            </label>
+            <input type="email" class="form-control" formControlName="email" />
+          </div>
+        </div>
+        <div class="mt-4 text-end">
+          <button type="submit" class="btn btn-dark" [disabled]="accountSaving()">
+            @if (accountSaving()) {
+              <span class="spinner-border spinner-border-sm me-2"></span>
+            }
+            <i class="fa-solid fa-floppy-disk me-1"></i>{{ 'COMPANY_SETTINGS.SAVE_ACCOUNT' | translate }}
+          </button>
+        </div>
+      </form>
+    </div>
+  }
+
+  <!-- ══ CHANGE PASSWORD ══ -->
+  @if (tab() === 'password') {
+    @if (passwordSaved()) {
+      <div class="alert alert-success">
+        <i class="fa-solid fa-circle-check me-2"></i>{{ 'COMPANY_SETTINGS.PW_CHANGED' | translate }}
+      </div>
+    }
+    @if (passwordError()) {
+      <div class="alert alert-danger">{{ passwordError() }}</div>
+    }
+
+    <div class="card p-4 settings-card">
+      <form [formGroup]="passwordForm" (ngSubmit)="changePassword()">
+        <div class="row g-3">
+          <div class="col-md-4">
+            <label class="form-label">{{ 'COMPANY_SETTINGS.CURRENT_PASSWORD' | translate }}</label>
+            <input type="password" class="form-control" formControlName="currentPassword"
+                   autocomplete="current-password"
+                   [class.is-invalid]="currentPassword.invalid && currentPassword.touched" />
+            @if (currentPassword.invalid && currentPassword.touched) {
+              <div class="invalid-feedback">{{ 'COMPANY_SETTINGS.ERR_CURRENT_PW' | translate }}</div>
+            }
+          </div>
+          <div class="col-md-4">
+            <label class="form-label">{{ 'COMPANY_SETTINGS.NEW_PASSWORD' | translate }}</label>
+            <input type="password" class="form-control" formControlName="newPassword"
+                   autocomplete="new-password"
+                   [class.is-invalid]="newPassword.invalid && newPassword.touched" />
+            @if (newPassword.invalid && newPassword.touched) {
+              <div class="invalid-feedback">{{ 'COMPANY_SETTINGS.ERR_NEW_PW' | translate }}</div>
+            }
+          </div>
+          <div class="col-md-4">
+            <label class="form-label">{{ 'COMPANY_SETTINGS.CONFIRM_PASSWORD' | translate }}</label>
+            <input type="password" class="form-control" formControlName="confirmNewPassword"
+                   autocomplete="new-password"
+                   [class.is-invalid]="confirmNewPassword.invalid && confirmNewPassword.touched" />
+            @if (confirmNewPassword.invalid && confirmNewPassword.touched) {
+              <div class="invalid-feedback">{{ 'COMPANY_SETTINGS.ERR_CONFIRM_PW' | translate }}</div>
+            }
+          </div>
+        </div>
+        <div class="mt-4 text-end">
+          <button type="submit" class="btn btn-dark" [disabled]="passwordSaving()">
+            @if (passwordSaving()) {
+              <span class="spinner-border spinner-border-sm me-2"></span>
+            }
+            <i class="fa-solid fa-key me-1"></i>{{ passwordSaving() ? ('COMPANY_SETTINGS.CHANGING' | translate) : ('COMPANY_SETTINGS.CHANGE_PW' | translate) }}
+          </button>
+        </div>
+      </form>
+    </div>
+  }
+}
+</div>

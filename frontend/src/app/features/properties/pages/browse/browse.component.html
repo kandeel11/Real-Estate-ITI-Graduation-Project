@@ -1,0 +1,265 @@
+@if (savedSvc.lastError(); as err) {
+  <div class="saved-toast" role="alert">
+    <i class="fa-solid fa-circle-exclamation me-2"></i>
+    <span>{{ err }}</span>
+    <button type="button" class="saved-toast__x" (click)="savedSvc.clearError()" aria-label="Dismiss">
+      <i class="fa-solid fa-xmark"></i>
+    </button>
+  </div>
+}
+
+<main class="browse">
+  <!-- Header -->
+  <section class="browse-head">
+    <div class="container-xl">
+      <div class="browse-head__label mb-2">
+        <i class="fa-solid fa-building fa-xs"></i>
+        <span>{{ 'BROWSE.LABEL' | translate }}</span>
+      </div>
+      <h1 class="browse-head__title mb-2">{{ 'BROWSE.TITLE' | translate }}</h1>
+      <p class="browse-head__subtitle mb-0">{{ 'BROWSE.SUBTITLE' | translate }}</p>
+    </div>
+  </section>
+
+  <div class="container-xl py-4">
+    <div class="row g-4">
+
+      <!-- ══ FILTER SIDEBAR ══ -->
+      <aside class="col-lg-3">
+        <div class="browse-sidebar">
+          <div class="d-flex justify-content-between align-items-center mb-3">
+            <h6 class="mb-0"><i class="fa-solid fa-sliders me-2"></i>{{ 'BROWSE.FILTERS' | translate }}</h6>
+            @if (hasFilters()) {
+              <button class="btn btn-sm btn-link p-0 text-decoration-none" (click)="resetFilters()">{{ 'BROWSE.CLEAR_ALL' | translate }}</button>
+            }
+          </div>
+
+          <!-- Search -->
+          <div class="mb-3">
+            <label class="form-label small fw-semibold">{{ 'BROWSE.SEARCH' | translate }}</label>
+            <div class="input-group input-group-sm">
+              <span class="input-group-text bg-white"><i class="fa-solid fa-magnifying-glass text-muted"></i></span>
+              <input type="search" class="form-control" [placeholder]="'BROWSE.SEARCH_PLACEHOLDER' | translate"
+                     [value]="search()" (input)="setSearch($event)" />
+            </div>
+          </div>
+
+          <!-- Type -->
+          <div class="browse-filter-group">
+            <span class="browse-filter-group__title">{{ 'BROWSE.PROPERTY_TYPE' | translate }}</span>
+            @for (t of typeOptions; track t) {
+              <label class="browse-check">
+                <input type="checkbox" [checked]="types().has(t)" (change)="toggleType(t)" />
+                <span>{{ t }}</span>
+              </label>
+            }
+          </div>
+
+          <!-- Bedrooms -->
+          <div class="browse-filter-group">
+            <span class="browse-filter-group__title">{{ 'BROWSE.BEDROOMS' | translate }}</span>
+            <div class="d-flex flex-wrap gap-2">
+              @for (b of bedOptions; track b) {
+                <button type="button" class="browse-pill" [class.active]="beds().has(b)" (click)="toggleBeds(b)">
+                  {{ b }}+
+                </button>
+              }
+            </div>
+          </div>
+
+          <!-- City -->
+          @if (cityOptions().length) {
+            <div class="browse-filter-group">
+              <span class="browse-filter-group__title">{{ 'BROWSE.CITY' | translate }}</span>
+              <div class="browse-scroll">
+                @for (c of cityOptions(); track c) {
+                  <label class="browse-check">
+                    <input type="checkbox" [checked]="cities().has(c)" (change)="toggleCity(c)" />
+                    <span>{{ c }}</span>
+                  </label>
+                }
+              </div>
+            </div>
+          }
+
+          <!-- Price -->
+          <div class="browse-filter-group">
+            <span class="browse-filter-group__title">{{ 'BROWSE.PRICE' | translate }}</span>
+            <div class="d-flex gap-2">
+              <input type="number" class="form-control form-control-sm" [placeholder]="'BROWSE.PRICE_MIN' | translate"
+                     [value]="minPrice() ?? ''" (input)="setMin($event)" />
+              <input type="number" class="form-control form-control-sm" [placeholder]="'BROWSE.PRICE_MAX' | translate"
+                     [value]="maxPrice() ?? ''" (input)="setMax($event)" />
+            </div>
+          </div>
+
+          <!-- Lifestyle toggles -->
+          <div class="browse-filter-group">
+            <span class="browse-filter-group__title">{{ 'BROWSE.LIFESTYLE' | translate }}</span>
+            <label class="browse-check">
+              <input type="checkbox" [checked]="furnished()" (change)="furnished.set(!furnished())" />
+              <span><i class="fa-solid fa-couch fa-xs me-1"></i>{{ 'BROWSE.FURNISHED' | translate }}</span>
+            </label>
+            <label class="browse-check">
+              <input type="checkbox" [checked]="petsAllowed()" (change)="petsAllowed.set(!petsAllowed())" />
+              <span><i class="fa-solid fa-paw fa-xs me-1"></i>{{ 'BROWSE.PETS_ALLOWED' | translate }}</span>
+            </label>
+            <label class="browse-check">
+              <input type="checkbox" [checked]="featured()" (change)="featured.set(!featured())" />
+              <span><i class="fa-solid fa-star fa-xs me-1"></i>{{ 'BROWSE.FEATURED_ONLY' | translate }}</span>
+            </label>
+          </div>
+
+          <!-- Amenities (dropdown menu) -->
+          <div class="browse-filter-group">
+            <span class="browse-filter-group__title">{{ 'BROWSE.AMENITIES' | translate }}</span>
+            <button type="button" class="browse-amenity-toggle" (click)="amenitiesOpen.set(!amenitiesOpen())">
+              <span>
+                @if (amenityFilter().size) { {{ amenityFilter().size }} selected }
+                @else { {{ 'BROWSE.ADD_AMENITIES' | translate }} }
+              </span>
+              <i class="fa-solid" [class.fa-chevron-down]="!amenitiesOpen()" [class.fa-chevron-up]="amenitiesOpen()"></i>
+            </button>
+            @if (amenitiesOpen()) {
+              <div class="browse-amenity-menu">
+                @for (g of amenityGroups(); track g.category) {
+                  <div class="browse-amenity-cat">{{ g.category }}</div>
+                  @for (a of g.items; track a.id) {
+                    <label class="browse-check">
+                      <input type="checkbox" [checked]="amenityFilter().has(a.id)" (change)="toggleAmenity(a.id)" />
+                      <span>{{ a.name }}</span>
+                    </label>
+                  }
+                } @empty {
+                  <p class="text-muted small mb-0 px-2 py-1">{{ 'BROWSE.NO_AMENITIES' | translate }}</p>
+                }
+              </div>
+            }
+          </div>
+        </div>
+      </aside>
+
+      <!-- ══ RESULTS ══ -->
+      <div class="col-lg-9">
+        @if (loading()) {
+          <div class="d-flex justify-content-center py-5">
+            <div class="spinner-border text-primary" role="status">
+              <span class="visually-hidden">Loading…</span>
+            </div>
+          </div>
+        } @else if (error()) {
+          <div class="alert alert-danger d-flex justify-content-between align-items-center">
+            <span><i class="fa-solid fa-triangle-exclamation me-2"></i>{{ error() }}</span>
+            <button class="btn btn-sm btn-outline-danger" (click)="load()">{{ 'COMMON.RETRY' | translate }}</button>
+          </div>
+        } @else {
+          <!-- Active filter chips -->
+          @if (chips().length) {
+            <div class="browse-chips mb-3">
+              @for (chip of chips(); track chip.kind + chip.value) {
+                <span class="browse-chip">
+                  {{ chip.label }}
+                  <button type="button" class="browse-chip__x" (click)="removeChip(chip)" aria-label="Remove">
+                    <i class="fa-solid fa-xmark"></i>
+                  </button>
+                </span>
+              }
+            </div>
+          }
+
+          <div class="d-flex justify-content-between align-items-center mb-3">
+            <span class="text-muted">{{ 'BROWSE.SHOWING' | translate: { filtered: filtered().length, total: all().length } }}</span>
+            @if (totalPages() > 1) {
+              <span class="text-muted small">{{ 'BROWSE.PAGE' | translate: { page: page(), total: totalPages() } }}</span>
+            }
+          </div>
+
+          @if (filtered().length === 0) {
+            <div class="card p-5 text-center text-muted">
+              <i class="fa-solid fa-house-circle-xmark fs-1 mb-3"></i>
+              <p class="mb-2">{{ 'BROWSE.NO_RESULTS' | translate }}</p>
+              @if (hasFilters()) {
+                <div><button class="btn btn-sm btn-outline-primary" (click)="resetFilters()">{{ 'BROWSE.CLEAR_ALL' | translate }}</button></div>
+              }
+            </div>
+          } @else {
+            <div class="row g-4">
+              @for (p of paged(); track p.id) {
+                <div class="col-12 col-md-6 col-xl-4">
+                  <a class="browse-card" [routerLink]="['/properties', p.id]">
+                    <div class="browse-card__img">
+                      @if (p.primaryImageUrl) {
+                        <img [src]="p.primaryImageUrl" [alt]="p.title" />
+                      } @else {
+                        <div class="browse-card__img-placeholder"><i class="fa-regular fa-image"></i></div>
+                      }
+                      <span class="browse-card__badge">
+                        <i [class]="typeIcon(p.propertyType) + ' fa-xs'"></i>&nbsp;{{ p.propertyType }}
+                      </span>
+                      @if (p.isFeatured) {
+                        <span class="browse-card__featured"><i class="fa-solid fa-star fa-xs"></i>&nbsp;{{ 'BROWSE.FEATURED' | translate }}</span>
+                      }
+                      @if (isTenant()) {
+                        <button type="button" class="browse-card__save"
+                                [class.saved]="savedSvc.isSaved(p.id)"
+                                (click)="toggleSave(p, $event)"
+                                [attr.aria-pressed]="savedSvc.isSaved(p.id)"
+                                [attr.aria-label]="(savedSvc.isSaved(p.id) ? 'BROWSE.UNSAVE' : 'BROWSE.SAVE') | translate"
+                                [title]="(savedSvc.isSaved(p.id) ? 'BROWSE.UNSAVE' : 'BROWSE.SAVE') | translate">
+                          <i [class]="savedSvc.isSaved(p.id) ? 'fa-solid fa-heart' : 'fa-regular fa-heart'"></i>
+                        </button>
+                      }
+                    </div>
+                    <div class="browse-card__body">
+                      <h3 class="browse-card__name">{{ p.title }}</h3>
+                      <p class="browse-card__loc">
+                        <i class="fa-solid fa-location-dot fa-xs"></i>&nbsp;{{ p.district }}, {{ p.city }}
+                      </p>
+                      <div class="browse-card__chips">
+                        <span class="browse-card__chip"><i class="fa-solid fa-bed fa-xs"></i>&nbsp;{{ p.bedrooms }}</span>
+                        <span class="browse-card__chip"><i class="fa-solid fa-bath fa-xs"></i>&nbsp;{{ p.bathrooms }}</span>
+                        <span class="browse-card__chip"><i class="fa-solid fa-ruler-combined fa-xs"></i>&nbsp;{{ p.areaSqm }} m²</span>
+                      </div>
+                      @if (p.listingDisplayName) {
+                        <div class="browse-card__agent">
+                          <i class="fa-solid fa-circle-user"></i>
+                          <span>{{ p.listingDisplayName }}</span>
+                        </div>
+                      }
+                      <div class="browse-card__footer">
+                        <div>
+                          <span class="browse-card__price-label">{{ 'BROWSE.MONTHLY' | translate }}</span>
+                          <span class="browse-card__price">{{ p.price | number }} EGP</span>
+                        </div>
+                        <span class="browse-card__cta">{{ 'BROWSE.VIEW' | translate }} <i class="fa-solid fa-arrow-right fa-xs"></i></span>
+                      </div>
+                    </div>
+                  </a>
+                </div>
+              }
+            </div>
+
+            <!-- Pagination -->
+            @if (totalPages() > 1) {
+              <nav class="d-flex justify-content-center mt-4">
+                <ul class="pagination mb-0">
+                  <li class="page-item" [class.disabled]="page() === 1">
+                    <button class="page-link" (click)="goToPage(page() - 1)"><i class="fa-solid fa-chevron-left"></i></button>
+                  </li>
+                  @for (n of pageNumbers(); track n) {
+                    <li class="page-item" [class.active]="n === page()">
+                      <button class="page-link" (click)="goToPage(n)">{{ n }}</button>
+                    </li>
+                  }
+                  <li class="page-item" [class.disabled]="page() === totalPages()">
+                    <button class="page-link" (click)="goToPage(page() + 1)"><i class="fa-solid fa-chevron-right"></i></button>
+                  </li>
+                </ul>
+              </nav>
+            }
+          }
+        }
+      </div>
+    </div>
+  </div>
+</main>
