@@ -24,6 +24,7 @@ public sealed record PropertySearchItem(
     decimal Price,
     string ListingType,
     string? Description,
-    string? MainImageUrl,   // SAS URL
-    double MatchScore      // how well it matches the query
+    string? MainImageUrl,
+    IReadOnlyList<string> ImageUrls,
+    double MatchScore
 );
