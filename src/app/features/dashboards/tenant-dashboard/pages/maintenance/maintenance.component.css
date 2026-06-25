@@ -18,6 +18,63 @@
 
 .page-title { font-size: 22px; font-weight: 700; color: var(--color-on-surface); margin: 0; }
 
+/* ── Locked state (independent broker — no maintenance) ──────────────────── */
+.locked-state {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 14px;
+  padding: 5rem 1rem;
+  text-align: center;
+}
+.locked-icon {
+  width: 72px; height: 72px;
+  border-radius: 50%;
+  background: #fef3c7;
+  color: #d97706;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 30px;
+}
+.locked-title {
+  font-size: 1.25rem;
+  font-weight: 800;
+  color: var(--color-on-surface);
+  margin: 0;
+}
+.locked-desc {
+  font-size: 14px;
+  color: var(--color-on-surface-variant);
+  max-width: 420px;
+  line-height: 1.6;
+  margin: 0;
+}
+.locked-badges {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  justify-content: center;
+  margin-top: 4px;
+}
+.locked-badge {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  font-size: 12.5px;
+  font-weight: 600;
+  padding: 6px 14px;
+  border-radius: var(--radius-full);
+  background: #fef3c7;
+  color: #92400e;
+  border: 1px solid #fde68a;
+}
+.locked-badge-tip {
+  background: #f0f9ff;
+  color: #0369a1;
+  border-color: #bae6fd;
+}
+
 /* ── PILLS ─────────────────────────────────────── */
 .pills-row { display: flex; gap: 8px; background: var(--color-surface-container-low); padding: 4px; border-radius: var(--radius-lg); }
 .pill { padding: 7px 18px; border-radius: var(--radius-md); font-size: 14px; font-weight: 500; cursor: pointer; background: none; border: none; color: var(--color-on-surface-variant); transition: all 0.15s; }

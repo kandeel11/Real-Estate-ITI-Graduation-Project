@@ -24,6 +24,17 @@
   <!-- ── Content ────────────────────────────────────────────────── -->
   @if (!loading() && ticket(); as t) {
 
+    <!-- ── Routed-to-company banner ──────────────────────────────── -->
+    @if (t.routedToCompanyId) {
+      <div class="routed-banner">
+        <i class="fa-solid fa-building-circle-check"></i>
+        <div>
+          <strong>Handled by your management company</strong>
+          <span>This ticket was automatically assigned to your property's management company. No action needed from you.</span>
+        </div>
+      </div>
+    }
+
     <!-- ══ 1. HEADER ══════════════════════════════════════════════ -->
     <div class="detail-card mb-4">
       <div class="detail-header">
@@ -265,10 +276,26 @@
         @if (pay.transactionId) {
           <p class="text-muted small">{{ 'TICKET_DETAIL.TX_ID' | translate }} {{ pay.transactionId }}</p>
         }
+        @if (pay.commissionAmount != null && pay.netAmount != null) {
+          <div class="commission-breakdown">
+            <div class="commission-row">
+              <span class="commission-label"><i class="fa-solid fa-percent me-1"></i>Platform commission (2%)</span>
+              <span class="commission-val commission-fee">{{ formatCurrency(pay.commissionAmount, pay.currency) }}</span>
+            </div>
+            <div class="commission-row">
+              <span class="commission-label"><i class="fa-solid fa-wrench me-1"></i>Net to vendor (98%)</span>
+              <span class="commission-val commission-net">{{ formatCurrency(pay.netAmount, pay.currency) }}</span>
+            </div>
+          </div>
+        }
 
         @if (pay.status !== 'Paid') {
-          <button class="btn btn-primary mt-3" (click)="showPayModal.set(true)">
-            <i class="fa-solid fa-money-bill-wave me-2"></i>{{ 'TICKET_DETAIL.PAY_NOW' | translate }}
+          <button class="btn btn-primary mt-3" (click)="payViaCheckout()" [disabled]="payRedirectLoading()">
+            @if (payRedirectLoading()) {
+              <span class="spinner-border spinner-border-sm me-2" role="status"></span>Redirecting…
+            } @else {
+              <i class="fa-brands fa-stripe me-2"></i>Pay with Stripe
+            }
           </button>
         }
       </div>
@@ -349,32 +376,3 @@
   </div>
 }
 
-<!-- ── PAYMENT MODAL ───────────────────────────────────────────── -->
-@if (showPayModal()) {
-  <div class="modal-overlay" (click)="showPayModal.set(false)">
-    <div class="pay-modal" (click)="$event.stopPropagation()">
-      <div class="pay-modal-header">
-        <h3><i class="fa-solid fa-money-bill-wave me-2 text-primary"></i>{{ 'TICKET_DETAIL.PAY_MODAL_TITLE' | translate }}</h3>
-        <button class="modal-close-btn" (click)="showPayModal.set(false)"><i class="fa-solid fa-xmark"></i></button>
-      </div>
-      <div class="pay-modal-body">
-        <p class="text-muted small mb-3">{{ 'TICKET_DETAIL.PAY_MODAL_HINT' | translate }}</p>
-        <div class="form-group">
-          <label class="pay-label">{{ 'TICKET_DETAIL.TRANSACTION_ID' | translate }} <span style="color:var(--color-error)">*</span></label>
-          <input type="text" class="form-control" [(ngModel)]="transactionId"
-                 placeholder="e.g. TXN-123456789" />
-        </div>
-      </div>
-      <div class="pay-modal-footer">
-        <button class="btn btn-outline-secondary" (click)="showPayModal.set(false)" [disabled]="payLoading()">{{ 'COMMON.CANCEL' | translate }}</button>
-        <button class="btn btn-primary" (click)="pay()" [disabled]="!transactionId.trim() || payLoading()">
-          @if (payLoading()) {
-            <span class="spinner-border spinner-border-sm me-2" role="status"></span>{{ 'TICKET_DETAIL.PROCESSING' | translate }}
-          } @else {
-            <i class="fa-solid fa-check me-2"></i>{{ 'TICKET_DETAIL.CONFIRM_PAYMENT' | translate }}
-          }
-        </button>
-      </div>
-    </div>
-  </div>
-}

@@ -199,6 +199,28 @@
   gap: 6px;
 }
 
+.reject-notes-form {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  min-width: 200px;
+}
+
+.reject-notes-input {
+  padding: 6px 10px;
+  border: 1.5px solid #fca5a5;
+  border-radius: 7px;
+  font-size: 12px;
+  font-family: inherit;
+  outline: none;
+  &:focus { border-color: #ef4444; }
+}
+
+.reject-form-btns {
+  display: flex;
+  gap: 6px;
+}
+
 .btn-action {
   display: inline-flex;
   align-items: center;

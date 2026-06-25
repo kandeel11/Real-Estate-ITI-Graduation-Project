@@ -52,10 +52,10 @@ export class WalletService {
     );
   }
 
-  rejectWithdrawal(id: string): Observable<void> {
+  rejectWithdrawal(id: string, notes: string): Observable<void> {
     return this.http.put<void>(
       `${this.base}${API_ENDPOINTS.WALLET.REJECT_WITHDRAWAL(id)}`,
-      {},
+      { notes },
     );
   }
 }

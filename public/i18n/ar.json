@@ -877,8 +877,11 @@
   "COMPANY_NAV": {
     "BRAND": "مركز الشركة",
     "OVERVIEW": "نظرة عامة",
+    "PIPELINE": "خط العملاء",
     "PROPERTIES": "العقارات",
     "BROKERS": "الوسطاء",
+    "LEASES": "عقود الإيجار",
+    "TICKETS": "تذاكر الصيانة",
     "PAYMENTS": "المدفوعات",
     "PERFORMANCE": "الأداء",
     "INQUIRIES": "الاستفسارات",
@@ -1166,7 +1169,11 @@
     "IN_PROGRESS": "قيد التنفيذ",
     "AWAITING_PAYMENT": "في انتظار الدفع",
     "COMPLETED": "مكتمل",
-    "CANCELLED": "ملغى"
+    "CANCELLED": "ملغى",
+    "LOCKED_TITLE": "الصيانة غير متاحة",
+    "LOCKED_DESC": "عقارك تحت إدارة وسيط مستقل. طلبات الصيانة متاحة فقط للعقارات التي تديرها شركة.",
+    "LOCKED_BROKER_ONLY": "وسيط مستقل — بدون إدارة شركة",
+    "LOCKED_TIP": "تواصل مع وسيطك مباشرةً لأي احتياجات صيانة"
   },
   "NOTIFICATIONS": {
     "TITLE": "الإشعارات",
@@ -1624,7 +1631,8 @@
     "MAINTENANCE": "الصيانة",
     "TICKETS": "التذاكر",
     "PAYMENTS": "المدفوعات",
-    "WITHDRAWALS": "طلبات السحب"
+    "WITHDRAWALS": "طلبات السحب",
+    "PLATFORM": "لوحة إيرادات المنصة"
   },
   "ADMIN": {
     "SIDEBAR": {

@@ -1,4 +1,40 @@
 <div class="maintenance-page">
+
+  <!-- ── Checking lease flag ────────────────────────────────────── -->
+  @if (maintenanceEnabled() === null) {
+    <div class="skeleton-list">
+      @for (_ of [1, 2]; track $index) {
+        <div class="skeleton-card">
+          <div class="skel skel-title"></div>
+          <div class="skel skel-line mt-2"></div>
+        </div>
+      }
+    </div>
+  }
+
+  <!-- ── Maintenance locked (independent broker) ────────────────── -->
+  @else if (maintenanceEnabled() === false) {
+    <div class="locked-state">
+      <div class="locked-icon">
+        <i class="fa-solid fa-lock"></i>
+      </div>
+      <h2 class="locked-title">{{ 'MAINTENANCE.LOCKED_TITLE' | translate }}</h2>
+      <p class="locked-desc">{{ 'MAINTENANCE.LOCKED_DESC' | translate }}</p>
+      <div class="locked-badges">
+        <span class="locked-badge">
+          <i class="fa-solid fa-user-tie"></i>
+          {{ 'MAINTENANCE.LOCKED_BROKER_ONLY' | translate }}
+        </span>
+        <span class="locked-badge locked-badge-tip">
+          <i class="fa-solid fa-circle-info"></i>
+          {{ 'MAINTENANCE.LOCKED_TIP' | translate }}
+        </span>
+      </div>
+    </div>
+  }
+
+  <!-- ── Normal maintenance view ───────────────────────────────── -->
+  @else {
   <div class="page-header">
     <h1 class="page-title"><i class="fa-solid fa-screwdriver-wrench me-2"></i>{{ 'MAINTENANCE.TITLE' | translate }}</h1>
     <a routerLink="/dashboard/maintenance-requests/create" class="btn btn-primary">
@@ -108,4 +144,5 @@
       </div>
     }
   }
+  } <!-- end @else (maintenance enabled) -->
 </div>

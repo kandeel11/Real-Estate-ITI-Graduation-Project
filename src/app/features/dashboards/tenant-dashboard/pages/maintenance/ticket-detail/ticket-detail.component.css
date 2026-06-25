@@ -8,6 +8,23 @@
 /* ── Page layout ───────────────────────────────────── */
 .detail-page { padding: 28px; max-width: 860px; margin: 0 auto; }
 
+/* ── Company routing banner ────────────────────────── */
+.routed-banner {
+  display: flex;
+  align-items: flex-start;
+  gap: 14px;
+  background: #eff6ff;
+  border: 1px solid #bfdbfe;
+  border-radius: 10px;
+  padding: 14px 18px;
+  margin-bottom: 20px;
+  font-size: 13.5px;
+}
+.routed-banner i { color: #2563eb; font-size: 20px; margin-top: 2px; flex-shrink: 0; }
+.routed-banner div { display: flex; flex-direction: column; gap: 3px; }
+.routed-banner strong { color: #1e40af; font-weight: 700; }
+.routed-banner span { color: #3b82f6; }
+
 .back-link {
   display: inline-flex;
   align-items: center;
@@ -304,6 +321,26 @@
 /* ── Payment ───────────────────────────────────────── */
 .payment-row { display: flex; align-items: center; gap: 12px; flex-wrap: wrap; }
 .payment-amount { font-size: 28px; font-weight: 700; color: var(--color-on-surface); }
+
+.commission-breakdown {
+  margin-top: 12px;
+  border: 1px solid #e2e8f0;
+  border-radius: 10px;
+  overflow: hidden;
+}
+.commission-row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 9px 14px;
+  font-size: 13px;
+  &:not(:last-child) { border-bottom: 1px solid #f1f5f9; }
+  &:nth-child(odd) { background: #fafbfc; }
+}
+.commission-label { color: #64748b; display: flex; align-items: center; }
+.commission-val { font-weight: 700; }
+.commission-fee { color: #b45309; }
+.commission-net { color: #16a34a; }
 
 /* ── Lightbox ──────────────────────────────────────── */
 .lightbox-overlay {

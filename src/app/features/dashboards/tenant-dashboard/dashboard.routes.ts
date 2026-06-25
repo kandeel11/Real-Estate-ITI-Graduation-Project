@@ -82,6 +82,20 @@ export const dashboardRoutes: Routes = [
         loadComponent: () =>
           import('./pages/my-payments/my-payments.component').then(m => m.MyPaymentsComponent),
       },
+      {
+        path: 'maintenance-payment-success',
+        loadComponent: () =>
+          import('./pages/maintenance/payment-success/payment-success.component').then(
+            m => m.MaintenancePaymentSuccessComponent
+          ),
+      },
+      {
+        path: 'maintenance-payment-cancelled',
+        loadComponent: () =>
+          import('./pages/maintenance/payment-cancelled/payment-cancelled.component').then(
+            m => m.MaintenancePaymentCancelledComponent
+          ),
+      },
     ],
   },
 ];

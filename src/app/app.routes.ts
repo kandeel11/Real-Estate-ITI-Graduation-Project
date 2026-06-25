@@ -226,6 +226,13 @@ export const routes: Routes = [
               ),
           },
           {
+            path: 'tickets',
+            loadComponent: () =>
+              import('./features/dashboards/company/pages/tickets/tickets.component').then(
+                (m) => m.CompanyTicketsComponent,
+              ),
+          },
+          {
             path: 'payments',
             loadComponent: () =>
               import('./features/dashboards/company/pages/payments/payments.component').then(
@@ -244,6 +251,13 @@ export const routes: Routes = [
             loadComponent: () =>
               import('./features/dashboards/company/pages/settings/settings.component').then(
                 (m) => m.SettingsComponent,
+              ),
+          },
+          {
+            path: 'pipeline',
+            loadComponent: () =>
+              import('./features/dashboards/company/pages/pipeline/pipeline.component').then(
+                (m) => m.PipelineComponent,
               ),
           },
         ],

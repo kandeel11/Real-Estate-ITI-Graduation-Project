@@ -1,7 +1,7 @@
 import { Component, inject, signal, computed, OnInit } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
-import { PaymentService } from '../../../../../core/services/payment.service';
+import { PaymentService, PaymentSummaryDto } from '../../../../../core/services/payment.service';
 import { RentPayment, PaymentStatus } from '../../../../../core/models/payment.model';
 
 type Tab = 'all' | 'overdue';
@@ -27,6 +27,7 @@ export class AdminPaymentsComponent implements OnInit {
   statusFilter = signal<PaymentStatus | 'All'>('All');
   generating = signal(false);
   generateResult = signal<{ generatedCount: number; skippedCount: number } | null>(null);
+  summary = signal<PaymentSummaryDto | null>(null);
 
   filteredPayments = computed(() => {
     let list = this.payments();
@@ -56,6 +57,13 @@ export class AdminPaymentsComponent implements OnInit {
   ngOnInit() {
     this.loadPayments();
     this.loadOverdue();
+    this.loadSummary();
+  }
+
+  loadSummary() {
+    this.paymentService.getPaymentSummary().subscribe({
+      next: (s) => this.summary.set(s),
+    });
   }
 
   loadPayments() {

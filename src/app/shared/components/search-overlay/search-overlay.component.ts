@@ -38,6 +38,32 @@ export class SearchOverlayComponent implements AfterViewInit {
   totalResults = signal(0);
   parsedQuery = signal<ParsedQuery | null>(null);
 
+  /** Active image index per card, keyed by propertyId. */
+  protected activeImgIdx = signal<Record<string, number>>({});
+
+  protected getActiveImg(p: PropertyResult): string | null {
+    const idx = this.activeImgIdx()[p.propertyId] ?? 0;
+    if (p.imageUrls?.length) return p.imageUrls[idx] ?? p.mainImageUrl;
+    return p.mainImageUrl;
+  }
+
+  protected getActiveIdx(p: PropertyResult): number {
+    return this.activeImgIdx()[p.propertyId] ?? 0;
+  }
+
+  protected stepImg(p: PropertyResult, dir: 1 | -1, e: Event): void {
+    e.stopPropagation();
+    const urls = p.imageUrls;
+    if (!urls?.length || urls.length <= 1) return;
+    const cur = this.getActiveIdx(p);
+    this.activeImgIdx.update(m => ({ ...m, [p.propertyId]: (cur + dir + urls.length) % urls.length }));
+  }
+
+  protected jumpImg(p: PropertyResult, idx: number, e: Event): void {
+    e.stopPropagation();
+    this.activeImgIdx.update(m => ({ ...m, [p.propertyId]: idx }));
+  }
+
   readonly suggestions = [
     'Villa with pool in New Cairo',
     '2 bedroom apartment near Metro',

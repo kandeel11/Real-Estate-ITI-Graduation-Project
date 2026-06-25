@@ -84,10 +84,8 @@ export class TicketDetailComponent implements OnInit {
   // Lightbox
   protected lightboxUrl = signal<string | null>(null);
 
-  // Payment modal
-  protected showPayModal = signal(false);
-  protected transactionId = '';
-  protected payLoading = signal(false);
+  // Stripe Checkout redirect for maintenance payment
+  protected payRedirectLoading = signal(false);
 
   // Vendor rating
   protected vendorRating = signal<RatingResponse | null>(null);
@@ -253,20 +251,15 @@ export class TicketDetailComponent implements OnInit {
       });
   }
 
-  pay(): void {
-    const t = this.ticket();
-    if (!t?.payment?.id || !this.transactionId.trim()) return;
-    this.payLoading.set(true);
-    this.maintenanceService.payTicket(t.payment.id, this.transactionId.trim())
-      .pipe(finalize(() => this.payLoading.set(false)))
+  payViaCheckout(): void {
+    const id = this.ticket()?.id;
+    if (!id || this.payRedirectLoading()) return;
+    this.payRedirectLoading.set(true);
+    this.maintenanceService.createMaintenanceCheckout(id)
+      .pipe(finalize(() => this.payRedirectLoading.set(false)))
       .subscribe({
-        next: () => {
-          this.toast.success('Payment submitted successfully.');
-          this.showPayModal.set(false);
-          this.transactionId = '';
-          this.refresh();
-        },
-        error: () => this.toast.error('Payment failed. Please try again.'),
+        next: ({ checkoutUrl }) => { window.location.href = checkoutUrl; },
+        error: () => this.toast.error('Could not start payment. Please try again.'),
       });
   }
 

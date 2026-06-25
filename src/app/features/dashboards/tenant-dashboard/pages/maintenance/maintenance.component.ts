@@ -8,6 +8,7 @@ import {
   TicketListItem,
   TicketPriority,
 } from '../../services/maintenance.service';
+import { LeaseService } from '../../services/lease.service';
 
 @Component({
   selector: 'app-maintenance',
@@ -18,9 +19,17 @@ import {
 })
 export class MaintenanceComponent implements OnInit {
   private readonly maintenanceService = inject(MaintenanceService);
+  private readonly leaseService = inject(LeaseService);
   private readonly router = inject(Router);
 
-  protected loading = signal(true);
+  /**
+   * null  = still checking the active lease
+   * true  = maintenance is enabled (company-managed property)
+   * false = maintenance is locked (independent broker — no company)
+   */
+  protected maintenanceEnabled = signal<boolean | null>(null);
+
+  protected loading = signal(false);
   protected error = signal<string | null>(null);
   protected tickets = signal<TicketListItem[]>([]);
   protected total = signal(0);
@@ -51,7 +60,21 @@ export class MaintenanceComponent implements OnInit {
   });
 
   ngOnInit(): void {
-    this.loadTickets();
+    // Check the active lease's maintenance flag before rendering the ticket list.
+    // Default to enabled (true) when the field is absent so older leases still work.
+    this.leaseService.getActiveLease().subscribe({
+      next: lease => {
+        const enabled = lease.isMaintenanceEnabled !== false;
+        this.maintenanceEnabled.set(enabled);
+        if (enabled) this.loadTickets();
+      },
+      // If there's no active lease the API returns an error — treat as enabled
+      // (the maintenance list itself will just be empty).
+      error: () => {
+        this.maintenanceEnabled.set(true);
+        this.loadTickets();
+      },
+    });
   }
 
   loadTickets(): void {
