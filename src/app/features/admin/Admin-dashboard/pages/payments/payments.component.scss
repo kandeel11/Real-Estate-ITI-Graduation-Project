@@ -76,10 +76,11 @@
   span { font-size: 11px; color: var(--muted); display: block; margin-bottom: 2px; }
   strong { font-size: 15px; font-weight: 800; color: var(--text); }
 
-  &.amber > i { color: #f59e0b; }
-  &.green > i { color: #10b981; }
-  &.red   > i { color: #ef4444; }
+  &.amber  > i { color: #f59e0b; }
+  &.green  > i { color: #10b981; }
+  &.red    > i { color: #ef4444; }
   &.purple > i { color: #7c3aed; }
+  &.indigo > i { color: #4f46e5; }
 }
 
 /* Tabs */

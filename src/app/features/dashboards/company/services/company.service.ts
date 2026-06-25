@@ -72,6 +72,66 @@ const MOCK_BROKERS: Broker[] = [
 
 const MAX_BROKERS = 25;
 
+// ── CRM Lead Pipeline ────────────────────────────────────────────────────────
+
+export interface LeadPipelineItem {
+  id: string;
+  inquiryId: string;
+  propertyId: string;
+  tenantId: string;
+  ownerId: string;
+  status: string;
+  dealValue: number | null;
+  notes: string | null;
+  createdAt: string;
+  updatedAt: string;
+}
+
+export interface BrokerPipeline {
+  new: LeadPipelineItem[];
+  contacted: LeadPipelineItem[];
+  negotiating: LeadPipelineItem[];
+  closedWon: LeadPipelineItem[];
+  closedLost: LeadPipelineItem[];
+}
+
+export interface BrokerPipelineDto {
+  brokerId: string;
+  brokerUserId: string;
+  brokerName: string;
+  brokerEmail: string;
+  totalLeads: number;
+  pipeline: BrokerPipeline;
+}
+
+export interface CompanyLeadPipelineDto {
+  companyId: string;
+  companyName: string;
+  totalBrokers: number;
+  brokers: BrokerPipelineDto[];
+}
+
+// ── Pending lease approval ───────────────────────────────────────────────────
+
+export interface PendingLeaseApproval {
+  id: string;
+  propertyTitle: string;
+  tenantName: string;
+  brokerName: string;
+  managementOptions: string[];
+  uploadedAt: string;
+}
+
+/** Lease the manager already approved — now waiting for the tenant to accept. */
+export interface AwaitingTenantLease {
+  id: string;
+  propertyTitle: string;
+  tenantName: string;
+  brokerName: string;
+  managementOptions: string[];
+  approvedAt: string;
+}
+
 @Injectable({ providedIn: 'root' })
 export class CompanyService {
   private http = inject(HttpClient);
@@ -205,6 +265,33 @@ export class CompanyService {
     return this.http.delete<void>(
       `${this.baseUrl}${API_ENDPOINTS.BROKERS.DELETE_MINE(brokerId)}`
     );
+  }
+
+  /** GET /api/companies/mine/lead-pipeline — all brokers' leads bucketed by status. */
+  getLeadPipeline(): Observable<CompanyLeadPipelineDto> {
+    return this.http.get<CompanyLeadPipelineDto>(`${this.baseUrl}/companies/mine/lead-pipeline`);
+  }
+
+  /** GET /api/companies/mine/leases/pending-approval — leases awaiting manager sign-off. */
+  getPendingApprovals(): Observable<PendingLeaseApproval[]> {
+    return this.http.get<PendingLeaseApproval[]>(
+      `${this.baseUrl}/companies/mine/leases/pending-approval`,
+    );
+  }
+
+  /** GET /api/companies/mine/leases/awaiting-tenant — approved by manager, pending tenant accept. */
+  getAwaitingTenantLeases(): Observable<AwaitingTenantLease[]> {
+    return this.http.get<AwaitingTenantLease[]>(
+      `${this.baseUrl}/companies/mine/leases/awaiting-tenant`,
+    );
+  }
+
+  /** POST /api/leases/{id}/manager-approve — approve or reject a partial-management lease. */
+  approveLease(leaseId: string, isApproved: boolean, notes?: string): Observable<void> {
+    return this.http.post<void>(`${this.baseUrl}/leases/${leaseId}/manager-approve`, {
+      isApproved,
+      notes: notes ?? null,
+    });
   }
 
   /** PUT /api/companies/mine — backend returns 204 No Content. */

@@ -216,12 +216,33 @@
         <!-- Right: contact / inquiry -->
         <div class="col-12 col-lg-4">
           <div class="detail-aside card p-4">
+
+            <!-- Agent / Owner profile card -->
+            @if (p.listingDisplayName) {
+              <div class="detail-agent">
+                <app-agent-avatar
+                  [name]="p.listingDisplayName"
+                  [verified]="!!(p.companyId || p.listingBrokerId)"
+                  size="lg" />
+                <div class="detail-agent__info">
+                  <div class="detail-agent__name">{{ p.listingDisplayName }}</div>
+                  <div class="detail-agent__role">
+                    @if (p.companyId) { Management Company }
+                    @else if (p.listingBrokerId) { Real Estate Broker }
+                    @else { Property Owner }
+                  </div>
+                  @if (p.companyId || p.listingBrokerId) {
+                    <div class="detail-agent__verified">
+                      <i class="fa-solid fa-circle-check"></i> Verified Professional
+                    </div>
+                  }
+                </div>
+              </div>
+              <hr class="detail-agent__divider">
+            }
+
             <h5 class="mb-1">{{ 'DETAIL.INTERESTED' | translate }}</h5>
-            <p class="text-muted small mb-3">
-              {{ 'DETAIL.LISTED_BY' | translate }}
-              <strong>{{ p.companyId ? (p.listingDisplayName || 'the company') : (p.listingBrokerName || p.listingDisplayName || 'the owner') }}</strong>.
-              {{ 'DETAIL.INQUIRY_HINT' | translate }}
-            </p>
+            <p class="text-muted small mb-3">{{ 'DETAIL.INQUIRY_HINT' | translate }}</p>
 
             @if (inquirySent()) {
               <div class="alert alert-success mb-0">

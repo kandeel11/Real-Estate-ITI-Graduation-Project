@@ -148,13 +148,31 @@
           <div class="so-card" (click)="goToProperty(p)" role="button" tabindex="0"
                (keydown.enter)="goToProperty(p)">
             <div class="so-card__img">
-              @if (p.mainImageUrl) {
-                <img [src]="p.mainImageUrl" [alt]="p.title" loading="lazy" />
+              @if (getActiveImg(p); as activeImg) {
+                <img [src]="activeImg" [alt]="p.title" loading="lazy" />
               } @else {
                 <div class="so-card__img-placeholder">
                   <i class="fa-solid fa-house"></i>
                 </div>
               }
+
+              <!-- Prev / Next arrows — only when multiple images exist -->
+              @if ((p.imageUrls?.length ?? 0) > 1) {
+                <button class="so-card__nav so-card__nav--prev" (click)="stepImg(p, -1, $event)" tabindex="-1">
+                  <i class="fa-solid fa-chevron-left"></i>
+                </button>
+                <button class="so-card__nav so-card__nav--next" (click)="stepImg(p, 1, $event)" tabindex="-1">
+                  <i class="fa-solid fa-chevron-right"></i>
+                </button>
+                <!-- Dot indicators -->
+                <div class="so-card__dots">
+                  @for (url of p.imageUrls; track $index) {
+                    <span class="so-card__dot" [class.so-card__dot--active]="getActiveIdx(p) === $index"
+                          (click)="jumpImg(p, $index, $event)"></span>
+                  }
+                </div>
+              }
+
               <span class="so-card__badge so-card__badge--type">{{ p.propertyType }}</span>
               <span class="so-card__badge so-card__badge--listing"
                     [class.so-card__badge--rent]="p.listingType === 'For Rent'"

@@ -6,6 +6,7 @@ import { SearchService } from '../../features/ai/Search/Services/search-service'
 import { ParsedQuery, PropertyResult } from '../../features/ai/Search/models';
 import { PropertyService } from '../../features/properties/services/property.service';
 import { Property } from '../../features/properties/models/property.model';
+import { AgentAvatarComponent } from '../../shared/components/agent-avatar/agent-avatar.component';
 
 type SearchMode = 'regular' | 'smart';
 
@@ -14,7 +15,7 @@ const MAX_FEATURED = 15;
 
 @Component({
   selector: 'app-home',
-  imports: [InViewDirective, RouterLink, TranslatePipe],
+  imports: [InViewDirective, RouterLink, TranslatePipe, AgentAvatarComponent],
   templateUrl: './home.html',
   styleUrl: './home.scss',
 })

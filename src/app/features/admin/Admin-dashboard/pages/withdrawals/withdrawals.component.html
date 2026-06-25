@@ -99,20 +99,36 @@
                 <td class="muted">{{ formatDate(w.requestedAt ?? '') }}</td>
                 <td>
                   @if (w.status === 'Pending') {
-                    <div class="action-btns">
-                      <button class="btn-action approve" (click)="approve(w)"
-                        [disabled]="processing() !== null">
-                        @if (processing() === w.id) {
-                          <i class="fa-solid fa-spinner fa-spin"></i>
-                        } @else {
-                          <i class="fa-solid fa-check"></i> Approve
-                        }
-                      </button>
-                      <button class="btn-action reject" (click)="reject(w)"
-                        [disabled]="processing() !== null">
-                        <i class="fa-solid fa-xmark"></i> Reject
-                      </button>
-                    </div>
+                    @if (rejectingId() === w.id) {
+                      <div class="reject-notes-form">
+                        <input class="reject-notes-input" type="text" placeholder="Rejection reason (required)…"
+                               [(ngModel)]="rejectNotes" />
+                        <div class="reject-form-btns">
+                          <button class="btn-action approve" (click)="confirmReject(w)"
+                            [disabled]="!rejectNotes.trim()">
+                            <i class="fa-solid fa-check"></i> Confirm
+                          </button>
+                          <button class="btn-action reject" (click)="cancelReject()">
+                            <i class="fa-solid fa-xmark"></i> Cancel
+                          </button>
+                        </div>
+                      </div>
+                    } @else {
+                      <div class="action-btns">
+                        <button class="btn-action approve" (click)="approve(w)"
+                          [disabled]="processing() !== null">
+                          @if (processing() === w.id) {
+                            <i class="fa-solid fa-spinner fa-spin"></i>
+                          } @else {
+                            <i class="fa-solid fa-check"></i> Approve
+                          }
+                        </button>
+                        <button class="btn-action reject" (click)="openReject(w)"
+                          [disabled]="processing() !== null">
+                          <i class="fa-solid fa-xmark"></i> Reject
+                        </button>
+                      </div>
+                    }
                   } @else {
                     <span class="muted">{{ w.status === 'Completed' ? formatDate(w.processedAt ?? '') : '—' }}</span>
                   }

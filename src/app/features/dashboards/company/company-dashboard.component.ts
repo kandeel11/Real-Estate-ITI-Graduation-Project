@@ -43,15 +43,18 @@ export class CompanyDashboardComponent {
   private readonly router = inject(Router);
 
   readonly navItems: NavItem[] = [
-    { id: 'overview',      label: 'COMPANY_NAV.OVERVIEW',      icon: 'fa-solid fa-gauge-high',    route: '/dashboard/company/overview' },
-    { id: 'properties',    label: 'COMPANY_NAV.PROPERTIES',    icon: 'fa-solid fa-building',      route: '/dashboard/company/properties' },
-    { id: 'brokers',       label: 'COMPANY_NAV.BROKERS',       icon: 'fa-solid fa-users',         route: '/dashboard/company/brokers' },
-    { id: 'payments',      label: 'COMPANY_NAV.PAYMENTS',      icon: 'fa-solid fa-credit-card',   route: '/dashboard/company/payments' },
-    { id: 'performance',   label: 'COMPANY_NAV.PERFORMANCE',   icon: 'fa-solid fa-chart-line',    route: '/dashboard/company/performance' },
-    { id: 'inquiries',     label: 'COMPANY_NAV.INQUIRIES',     icon: 'fa-regular fa-envelope',    route: '/dashboard/company/inquiries' },
-    { id: 'ai',            label: 'COMPANY_NAV.AI_ASSISTANT',  icon: 'fa-solid fa-robot',         route: '/dashboard/company/ai' },
-    { id: 'subscription',  label: 'COMPANY_NAV.SUBSCRIPTION',  icon: 'fa-regular fa-credit-card', route: '/dashboard/company/subscriptions' },
-    { id: 'settings',      label: 'COMPANY_NAV.SETTINGS',      icon: 'fa-solid fa-gear',          route: '/dashboard/company/settings' },
+    { id: 'overview',      label: 'COMPANY_NAV.OVERVIEW',      icon: 'fa-solid fa-gauge-high',      route: '/dashboard/company/overview' },
+    { id: 'pipeline',      label: 'COMPANY_NAV.PIPELINE',      icon: 'fa-solid fa-chart-kanban',    route: '/dashboard/company/pipeline' },
+    { id: 'properties',    label: 'COMPANY_NAV.PROPERTIES',    icon: 'fa-solid fa-building',        route: '/dashboard/company/properties' },
+    { id: 'brokers',       label: 'COMPANY_NAV.BROKERS',       icon: 'fa-solid fa-users',           route: '/dashboard/company/brokers' },
+    { id: 'leases',        label: 'COMPANY_NAV.LEASES',        icon: 'fa-solid fa-file-contract',   route: '/dashboard/company/leases' },
+    { id: 'tickets',       label: 'COMPANY_NAV.TICKETS',       icon: 'fa-solid fa-screwdriver-wrench', route: '/dashboard/company/tickets' },
+    { id: 'payments',      label: 'COMPANY_NAV.PAYMENTS',      icon: 'fa-solid fa-credit-card',     route: '/dashboard/company/payments' },
+    { id: 'performance',   label: 'COMPANY_NAV.PERFORMANCE',   icon: 'fa-solid fa-chart-line',      route: '/dashboard/company/performance' },
+    { id: 'inquiries',     label: 'COMPANY_NAV.INQUIRIES',     icon: 'fa-regular fa-envelope',      route: '/dashboard/company/inquiries' },
+    { id: 'ai',            label: 'COMPANY_NAV.AI_ASSISTANT',  icon: 'fa-solid fa-robot',           route: '/dashboard/company/ai' },
+    { id: 'subscription',  label: 'COMPANY_NAV.SUBSCRIPTION',  icon: 'fa-regular fa-credit-card',   route: '/dashboard/company/subscriptions' },
+    { id: 'settings',      label: 'COMPANY_NAV.SETTINGS',      icon: 'fa-solid fa-gear',            route: '/dashboard/company/settings' },
   ];
 
   get userName(): string {

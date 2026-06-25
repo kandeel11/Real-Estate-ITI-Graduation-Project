@@ -95,6 +95,10 @@ export interface TicketPayment {
   transactionId: string | null;
   paidAt: string | null;
   createdAt: string;
+  /** Platform commission (2% of amount). */
+  commissionAmount?: number | null;
+  /** Net amount paid to the vendor (98% of amount). */
+  netAmount?: number | null;
 }
 
 // ── Full detail ──────────────────────────────────────────────────────────────
@@ -122,6 +126,10 @@ export interface TicketDetail {
   createdAt: string;
   updatedAt: string;
   resolvedAt: string | null;
+  /** Set when the AI pipeline routed this ticket to a management company. */
+  routedToCompanyId?: string | null;
+  /** On company-shadow tickets: ID of the original tenant ticket. */
+  parentTicketId?: string | null;
 }
 
 // ── Request bodies ───────────────────────────────────────────────────────────
@@ -226,5 +234,19 @@ export class MaintenanceService {
   // 13. Get payment info
   getPayment(ticketId: string): Observable<TicketPayment> {
     return this.http.get<TicketPayment>(`${this.base}/maintenance/tickets/${ticketId}/payments`);
+  }
+
+  // 14. Create Stripe Checkout session for maintenance payment (redirect flow)
+  createMaintenanceCheckout(ticketId: string): Observable<{ checkoutUrl: string }> {
+    return this.http.post<{ checkoutUrl: string }>(
+      `${this.base}/maintenance/tickets/${ticketId}/payments/checkout`, {}
+    );
+  }
+
+  // 15. Company manager: tickets routed here by the AI pipeline
+  getRoutedTickets(companyId: string): Observable<TicketDetail[]> {
+    return this.http.get<TicketDetail[]>(
+      `${this.base}/maintenance/tickets/company/${companyId}/routed`
+    );
   }
 }

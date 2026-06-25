@@ -220,6 +220,12 @@
                         <span class="browse-card__chip"><i class="fa-solid fa-bath fa-xs"></i>&nbsp;{{ p.bathrooms }}</span>
                         <span class="browse-card__chip"><i class="fa-solid fa-ruler-combined fa-xs"></i>&nbsp;{{ p.areaSqm }} m²</span>
                       </div>
+                      @if (p.listingDisplayName) {
+                        <div class="browse-card__agent">
+                          <i class="fa-solid fa-circle-user"></i>
+                          <span>{{ p.listingDisplayName }}</span>
+                        </div>
+                      }
                       <div class="browse-card__footer">
                         <div>
                           <span class="browse-card__price-label">{{ 'BROWSE.MONTHLY' | translate }}</span>

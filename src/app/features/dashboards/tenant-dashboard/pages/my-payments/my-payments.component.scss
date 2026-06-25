@@ -379,6 +379,127 @@
   p { margin: 0; font-size: 14px; color: #64748b; }
 }
 
+// ── Pay Now button in table ───────────────────────────────────────────────────
+.btn-pay-now {
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+  padding: 5px 14px;
+  border-radius: 6px;
+  border: none;
+  background: #6366f1;
+  color: #fff;
+  font-size: 12px;
+  font-weight: 600;
+  cursor: pointer;
+  white-space: nowrap;
+  transition: opacity .15s;
+  &:hover { opacity: .85; }
+}
+
+// ── Stripe Elements modal ─────────────────────────────────────────────────────
+.stripe-backdrop {
+  position: fixed;
+  inset: 0;
+  background: rgba(0,0,0,.48);
+  z-index: 1080;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 1rem;
+}
+
+.stripe-modal {
+  background: #fff;
+  border-radius: 16px;
+  width: 100%;
+  max-width: 480px;
+  overflow: hidden;
+  box-shadow: 0 24px 64px rgba(0,0,0,.18);
+}
+
+.stripe-modal-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 1.2rem 1.5rem;
+  border-bottom: 1px solid #eef0f5;
+
+  h3 { font-size: 1rem; font-weight: 700; margin: 0; color: #0f172a; }
+}
+
+.stripe-close {
+  background: none;
+  border: none;
+  cursor: pointer;
+  font-size: 18px;
+  color: #94a3b8;
+  padding: 4px 8px;
+  border-radius: 6px;
+  &:hover { background: #f1f5f9; }
+}
+
+.stripe-modal-body {
+  padding: 1.5rem;
+  min-height: 120px;
+}
+
+.stripe-loading {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  color: #64748b;
+  font-size: 14px;
+  i { font-size: 18px; color: #6366f1; }
+}
+
+.stripe-err {
+  display: flex;
+  align-items: flex-start;
+  gap: 8px;
+  background: #fef2f2;
+  border: 1px solid #fca5a5;
+  border-radius: 8px;
+  padding: 10px 14px;
+  font-size: 13px;
+  color: #b91c1c;
+  margin-top: 12px;
+}
+
+.stripe-modal-footer {
+  display: flex;
+  justify-content: flex-end;
+  gap: 10px;
+  padding: 1rem 1.5rem;
+  border-top: 1px solid #eef0f5;
+}
+
+.btn-stripe-cancel {
+  padding: 9px 20px;
+  border-radius: 8px;
+  border: 1.5px solid #e2e8f0;
+  background: transparent;
+  color: #475569;
+  font-size: 13.5px;
+  font-weight: 600;
+  cursor: pointer;
+  &:disabled { opacity: .5; cursor: not-allowed; }
+}
+
+.btn-stripe-pay {
+  padding: 9px 22px;
+  border-radius: 8px;
+  border: none;
+  background: #6366f1;
+  color: #fff;
+  font-size: 13.5px;
+  font-weight: 600;
+  cursor: pointer;
+  transition: opacity .15s;
+  &:disabled { opacity: .5; cursor: not-allowed; }
+  &:not(:disabled):hover { opacity: .88; }
+}
+
 @media (max-width: 600px) {
   .summary-grid { grid-template-columns: 1fr 1fr; }
   .summary-card.primary { grid-column: 1 / -1; }

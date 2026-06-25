@@ -20,6 +20,9 @@ export class AdminWithdrawalsComponent implements OnInit {
   toast = signal<{ type: 'success' | 'error'; text: string } | null>(null);
   statusFilter = signal<WithdrawalStatus | 'All'>('All');
   searchQuery = signal('');
+  /** ID of the withdrawal currently showing the rejection-notes prompt. */
+  rejectingId = signal<string | null>(null);
+  rejectNotes = '';
 
   filtered = computed(() => {
     let list = this.withdrawals();
@@ -72,12 +75,24 @@ export class AdminWithdrawalsComponent implements OnInit {
     });
   }
 
-  reject(w: WithdrawalRequest) {
+  openReject(w: WithdrawalRequest): void {
+    this.rejectNotes = '';
+    this.rejectingId.set(w.id);
+  }
+
+  cancelReject(): void {
+    this.rejectingId.set(null);
+    this.rejectNotes = '';
+  }
+
+  confirmReject(w: WithdrawalRequest): void {
+    this.rejectingId.set(null);
     this.processing.set(w.id);
-    this.walletService.rejectWithdrawal(w.id).subscribe({
+    this.walletService.rejectWithdrawal(w.id, this.rejectNotes.trim()).subscribe({
       next: () => {
         this.processing.set(null);
         this.showToast('success', 'Withdrawal rejected');
+        this.rejectNotes = '';
         this.load();
       },
       error: (err) => {

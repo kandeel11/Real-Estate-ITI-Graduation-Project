@@ -288,6 +288,15 @@
                       <i [class]="typeIcon(p.propertyType) + ' fa-xs'"></i>&nbsp;{{ p.propertyType }}
                     </span>
                   </div>
+                  @if (p.listingDisplayName) {
+                    <div class="home-properties__agent">
+                      <app-agent-avatar
+                        [name]="p.listingDisplayName"
+                        [verified]="!!(p.companyId || p.listingBrokerId)"
+                        size="sm" />
+                      <span class="home-properties__agent-name">{{ p.listingDisplayName }}</span>
+                    </div>
+                  }
                   <div class="home-properties__card-footer">
                     <div>
                       <p class="home-properties__price-label">{{ 'HOME.FEATURED.PRICE' | translate }}</p>

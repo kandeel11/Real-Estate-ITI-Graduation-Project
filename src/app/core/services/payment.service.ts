@@ -17,6 +17,50 @@ import {
   StartCheckoutOptions,
 } from '../models/payment.model';
 
+// ── Admin platform dashboard ──────────────────────────────────────────────────
+export interface PaymentSummaryDto {
+  totalCollected: number;
+  totalPending: number;
+  totalLateFees: number;
+  totalOverduePayments: number;
+  totalRentCommission: number;
+}
+
+export interface PlatformDashboard {
+  rent: {
+    totalCollected: number;
+    totalCommission: number;
+    commissionRate: string;
+    totalPending: number;
+    overdueCount: number;
+    totalLateFees: number;
+  };
+  maintenance: {
+    totalCollected: number;
+    totalCommission: number;
+    commissionRate: string;
+    totalNetToVendors: number;
+    paidPaymentsCount: number;
+  };
+  withdrawals: {
+    totalWithdrawn: number;
+    totalCommission: number;
+    commissionRate: string;
+    totalNetPaidOut: number;
+    pendingCount: number;
+    pendingAmount: number;
+    completedCount: number;
+  };
+  platform: {
+    totalCommissionEarned: number;
+    breakdown: {
+      fromRent: number;
+      fromMaintenance: number;
+      fromWithdrawals: number;
+    };
+  };
+}
+
 @Injectable({ providedIn: 'root' })
 export class PaymentService {
   private http = inject(HttpClient);
@@ -79,6 +123,17 @@ export class PaymentService {
     return this.http.get<RentPayment[]>(`${this.base}${API_ENDPOINTS.TENANT_PAYMENTS.GET_ALL}`);
   }
 
+  /**
+   * Start a Stripe PaymentIntent for a rent installment.
+   * POST /api/payments/{id}/initiate
+   * Returns the clientSecret + publishableKey to mount Stripe Elements.
+   */
+  initiatePayment(id: string): Observable<{ clientSecret: string; paymentIntentId: string; publishableKey: string }> {
+    return this.http.post<{ clientSecret: string; paymentIntentId: string; publishableKey: string }>(
+      `${this.base}/payments/${id}/initiate`, {}
+    );
+  }
+
   /** Tenant's payment schedule — GET /api/tenant/payments/schedule (no leaseId needed) */
   getTenantPaymentSchedule(): Observable<PaymentSchedule> {
     return this.http.get<PaymentSchedule>(`${this.base}${API_ENDPOINTS.TENANT_PAYMENTS.GET_SCHEDULE}`);
@@ -95,8 +150,13 @@ export class PaymentService {
   }
 
   /** Admin financial summary — GET /api/payments/summary */
-  getPaymentSummary(): Observable<Record<string, unknown>> {
-    return this.http.get<Record<string, unknown>>(`${this.base}${API_ENDPOINTS.PAYMENTS.GET_SUMMARY}`);
+  getPaymentSummary(): Observable<PaymentSummaryDto> {
+    return this.http.get<PaymentSummaryDto>(`${this.base}${API_ENDPOINTS.PAYMENTS.GET_SUMMARY}`);
+  }
+
+  /** Admin platform earnings — GET /api/payments/platform-dashboard */
+  getPlatformDashboard(): Observable<PlatformDashboard> {
+    return this.http.get<PlatformDashboard>(`${this.base}/payments/platform-dashboard`);
   }
 
   /** Admin refund — POST /api/payments/{id}/refund */

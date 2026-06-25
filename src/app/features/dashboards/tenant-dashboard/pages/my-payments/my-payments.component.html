@@ -223,6 +223,7 @@
                 <th>Paid On</th>
                 <th>Status</th>
                 <th>Method</th>
+                <th></th>
               </tr>
             </thead>
             <tbody>
@@ -257,6 +258,13 @@
                       <span class="text-muted">—</span>
                     }
                   </td>
+                  <td>
+                    @if (p.status === 'Pending' || p.status === 'Late' || p.status === 'Overdue') {
+                      <button class="btn-pay-now" (click)="openStripePayment(p.id)">
+                        <i class="fa-brands fa-stripe"></i> Pay Now
+                      </button>
+                    }
+                  </td>
                 </tr>
               }
             </tbody>
@@ -269,3 +277,45 @@
   }
 
 </div>
+
+<!-- ── Stripe Elements Payment Modal ───────────────────────── -->
+@if (stripePaymentId()) {
+  <div class="stripe-backdrop" (click)="closeStripePayment()">
+    <div class="stripe-modal" (click)="$event.stopPropagation()">
+      <div class="stripe-modal-header">
+        <h3><i class="fa-brands fa-stripe me-2"></i>Pay Rent Installment</h3>
+        <button class="stripe-close" (click)="closeStripePayment()"><i class="fa-solid fa-xmark"></i></button>
+      </div>
+
+      <div class="stripe-modal-body">
+        @if (stripeLoading()) {
+          <div class="stripe-loading">
+            <i class="fa-solid fa-spinner fa-spin"></i>
+            <span>Setting up secure payment…</span>
+          </div>
+        } @else {
+          <div #stripeCard id="stripe-card-element"></div>
+        }
+
+        @if (stripeError()) {
+          <div class="stripe-err">
+            <i class="fa-solid fa-circle-exclamation"></i>
+            {{ stripeError() }}
+          </div>
+        }
+      </div>
+
+      <div class="stripe-modal-footer">
+        <button class="btn-stripe-cancel" (click)="closeStripePayment()" [disabled]="stripeConfirming()">Cancel</button>
+        <button class="btn-stripe-pay" (click)="confirmStripePayment()"
+                [disabled]="stripeLoading() || stripeConfirming()">
+          @if (stripeConfirming()) {
+            <i class="fa-solid fa-spinner fa-spin me-1"></i>Processing…
+          } @else {
+            <i class="fa-solid fa-lock me-1"></i>Confirm Payment
+          }
+        </button>
+      </div>
+    </div>
+  </div>
+}

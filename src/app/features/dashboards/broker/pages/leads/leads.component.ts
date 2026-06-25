@@ -1,24 +1,28 @@
 import { Component, OnInit, inject, signal, computed } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
-import { RouterLink } from '@angular/router';
 import { TranslatePipe } from '@ngx-translate/core';
 import { DragDropModule, CdkDragDrop, transferArrayItem, moveItemInArray } from '@angular/cdk/drag-drop';
 import { BrokerDataService } from '../../services/broker-data.service';
 import { Lead } from '../../models/broker.models';
 import { LeaseUploadModalComponent } from '../../components/lease-upload-modal/lease-upload-modal.component';
+import { AuthService } from '../../../../../core/services/auth.service';
 
 interface KanbanColumn { status: Lead['status']; labelKey: string; color: string; leads: Lead[]; }
 
 @Component({
   selector: 'app-broker-leads',
   standalone: true,
-  imports: [CommonModule, FormsModule, RouterLink, TranslatePipe, DragDropModule, LeaseUploadModalComponent],
+  imports: [CommonModule, FormsModule, TranslatePipe, DragDropModule, LeaseUploadModalComponent],
   templateUrl: './leads.component.html',
   styleUrl: './leads.component.css',
 })
 export class LeadsComponent implements OnInit {
   private readonly dataService = inject(BrokerDataService);
+  private readonly auth = inject(AuthService);
+
+  /** True when the logged-in broker belongs to a company — enables lease upload flow. */
+  readonly isCompanyBroker = computed(() => !!this.auth.user()?.companyId);
 
   readonly loading = signal(true);
   readonly selectedLead = signal<Lead | null>(null);
@@ -119,7 +123,8 @@ export class LeadsComponent implements OnInit {
         this.moveLead(lead, 'closed_won');
         this.closingLeadId.set(null);
         this.selectedLead.set(null);
-        this.leaseUploadLead.set(lead);
+        // Only company brokers proceed to the lease upload flow.
+        if (this.isCompanyBroker()) this.leaseUploadLead.set(lead);
       },
       error: () => this.closingLeadId.set(null),
     });

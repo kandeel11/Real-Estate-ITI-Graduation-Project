@@ -877,8 +877,11 @@
   "COMPANY_NAV": {
     "BRAND": "Company Hub",
     "OVERVIEW": "Overview",
+    "PIPELINE": "Lead Pipeline",
     "PROPERTIES": "Properties",
     "BROKERS": "Brokers",
+    "LEASES": "Leases",
+    "TICKETS": "Maintenance Tickets",
     "PAYMENTS": "Payments",
     "PERFORMANCE": "Performance",
     "INQUIRIES": "Inquiries",
@@ -1166,7 +1169,11 @@
     "IN_PROGRESS": "In Progress",
     "AWAITING_PAYMENT": "Awaiting Payment",
     "COMPLETED": "Completed",
-    "CANCELLED": "Cancelled"
+    "CANCELLED": "Cancelled",
+    "LOCKED_TITLE": "Maintenance Not Available",
+    "LOCKED_DESC": "Your property is managed by an independent broker. Maintenance requests are only available when your property is managed by a company.",
+    "LOCKED_BROKER_ONLY": "Independent broker — no company management",
+    "LOCKED_TIP": "Contact your broker directly for maintenance issues"
   },
   "NOTIFICATIONS": {
     "TITLE": "Notifications",
@@ -1624,7 +1631,8 @@
     "MAINTENANCE": "Maintenance",
     "TICKETS": "Tickets",
     "PAYMENTS": "Payments",
-    "WITHDRAWALS": "Withdrawals"
+    "WITHDRAWALS": "Withdrawals",
+    "PLATFORM": "Platform Dashboard"
   },
   "ADMIN": {
     "SIDEBAR": {
