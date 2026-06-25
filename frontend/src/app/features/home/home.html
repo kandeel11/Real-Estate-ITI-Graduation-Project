@@ -1,0 +1,389 @@
+<main>
+
+  <!-- ══════════════════════════════════════════
+       HERO
+  ══════════════════════════════════════════ -->
+  <section class="home-hero">
+    <div class="container-xl">
+      <div class="row align-items-center g-5">
+
+        <!-- Left: Text + Search + Stats -->
+        <div class="col-12 col-lg-6">
+
+          <div class="home-hero__badge mb-4" inView [inViewDelay]="0">
+            <i class="fa-solid fa-star fa-xs"></i>
+            <span>{{ 'HOME.HERO.BADGE' | translate }}</span>
+          </div>
+
+          <h1 class="home-hero__title mb-4" inView [inViewDelay]="100">
+            {{ 'HOME.HERO.TITLE' | translate }}
+            <span class="home-hero__title--accent">{{ 'HOME.HERO.TITLE_ACCENT' | translate }}</span>
+          </h1>
+
+          <p class="home-hero__subtitle mb-5" inView [inViewDelay]="200">
+            {{ 'HOME.HERO.SUBTITLE' | translate }}
+          </p>
+
+          <!-- ===== HERO SEARCH ===== -->
+          <div class="home-hero__search mb-3" inView [inViewDelay]="300">
+            <div class="home-hero__search-field" [class.smart-active]="searchMode() === 'smart'">
+              <i class="home-hero__search-icon fa-solid" [class.fa-magnifying-glass]="searchMode() === 'regular'"
+                [class.fa-wand-magic-sparkles]="searchMode() === 'smart'"></i>
+
+              <input type="text" class="home-hero__search-input" [value]="query()"
+                (input)="query.set($any($event.target).value)" (keydown.enter)="onSubmit()"
+                [placeholder]="searchMode() === 'smart' ? ('HOME.HERO.SEARCH_AI_PLACEHOLDER' | translate) : ('HOME.HERO.SEARCH_PLACEHOLDER' | translate)" />
+
+              <!-- AI Toggle Pill -->
+              <button type="button" class="home-hero__ai-toggle" [class.active]="searchMode() === 'smart'"
+                (click)="toggleMode()" [title]="'HOME.HERO.AI_TOGGLE_TITLE' | translate">
+                <i class="fa-solid fa-wand-magic-sparkles"></i>
+                <span>AI</span>
+              </button>
+            </div>
+
+            <button class="btn btn-primary home-hero__search-btn" (click)="onSubmit()"
+              [disabled]="loading() || !query().trim()">
+              @if (loading()) {
+              <i class="fa-solid fa-spinner fa-spin"></i>
+              } @else {
+              {{ searchMode() === 'smart' ? ('HOME.HERO.ASK_AI' | translate) : ('HOME.HERO.SEARCH_BTN' | translate) }}&nbsp;
+              <i class="fa-solid fa-arrow-right"></i>
+              }
+            </button>
+          </div>
+
+          <!-- ===== SEARCH RESULTS ===== -->
+          @if (hasSearched()) {
+          <div class="home-hero__results mb-5" inView>
+            @if (errorMsg()) {
+            <div class="search-error">
+              <i class="fa-solid fa-circle-exclamation"></i>
+              {{ errorMsg() }}
+            </div>
+            }
+
+            <!-- AI Parsed Chips -->
+            @if (searchMode() === 'smart' && getParsedChips().length > 0) {
+            <div class="parsed-chips">
+              <span class="chips-label">
+                <i class="fa-solid fa-wand-magic-sparkles"></i> {{ 'HOME.HERO.AI_DETECTED' | translate }}
+              </span>
+              @for (chip of getParsedChips(); track chip.label) {
+              <span class="chip">
+                <strong>{{ chip.label }}:</strong> {{ chip.value }}
+              </span>
+              }
+            </div>
+            }
+
+            <!-- Header -->
+            <div class="results-header">
+              <h3>
+                @if (totalResults() > 0) {
+                <strong>{{ totalResults() }}</strong> {{ 'HOME.HERO.FOUND' | translate }}
+                @if (searchMode() === 'smart') {
+                <span class="muted">· Top {{ results().length }} matches</span>
+                }
+                } @else if (!loading()) {
+                <span class="empty">{{ 'HOME.HERO.NO_MATCH' | translate }}</span>
+                }
+              </h3>
+              <button class="btn-clear" (click)="clearResults(); query.set('')">
+                <i class="fa-solid fa-xmark"></i> {{ 'HOME.HERO.CLEAR' | translate }}
+              </button>
+            </div>
+
+            <!-- Results Grid -->
+            @if (results().length > 0) {
+            <div class="results-grid">
+              @for (p of results(); track p.propertyId) {
+              <div class="property-card" (click)="goToProperty(p)">
+                <div class="card-image">
+                  @if (p.mainImageUrl) {
+                  <img [src]="p.mainImageUrl" [alt]="p.title" />
+                  } @else {
+                  <div class="placeholder-img">
+                    <i class="fa-solid fa-house"></i>
+                  </div>
+                  }
+                  <span class="card-badge type">{{ p.propertyType }}</span>
+                  <span class="card-badge listing" [class.rent]="p.listingType === 'For Rent'"
+                    [class.sale]="p.listingType === 'For Sale'">
+                    {{ p.listingType }}
+                  </span>
+                  @if (searchMode() === 'smart' && p.matchScore > 0) {
+                  <span class="match-score">
+                    <i class="fa-solid fa-bullseye"></i>
+                    {{ (p.matchScore * 100).toFixed(0) }}% match
+                  </span>
+                  }
+                </div>
+                <div class="card-content">
+                  <h4>{{ p.title }}</h4>
+                  <p class="location">
+                    <i class="fa-solid fa-location-dot"></i>
+                    {{ p.district }}, {{ p.city }}
+                  </p>
+                  <div class="card-meta">
+                    @if (p.bedrooms) {
+                    <span><i class="fa-solid fa-bed"></i> {{ p.bedrooms }}</span>
+                    }
+                    @if (p.bathrooms) {
+                    <span><i class="fa-solid fa-bath"></i> {{ p.bathrooms }}</span>
+                    }
+                    @if (p.areaInMeters) {
+                    <span><i class="fa-solid fa-vector-square"></i> {{ p.areaInMeters }} m²</span>
+                    }
+                  </div>
+                  <div class="card-price">{{ formatPrice(p.price) }}</div>
+                </div>
+              </div>
+              }
+            </div>
+            }
+
+            <!-- Loading -->
+            @if (loading()) {
+            <div class="loading-state">
+              <div class="big-spinner"></div>
+              <span>
+                @if (searchMode() === 'smart') { {{ 'HOME.HERO.AI_ANALYZING' | translate }} }
+                @else { {{ 'HOME.HERO.SEARCHING' | translate }} }
+              </span>
+            </div>
+            }
+          </div>
+          }
+
+          <div class="home-hero__stats" inView [inViewDelay]="400">
+            <div class="home-hero__stat">
+              <span class="home-hero__stat-value">200+</span>
+              <span class="home-hero__stat-label">{{ 'HOME.HERO.STATS.CUSTOMERS' | translate }}</span>
+            </div>
+            <div class="home-hero__stat-divider"></div>
+            <div class="home-hero__stat">
+              <span class="home-hero__stat-value">10k+</span>
+              <span class="home-hero__stat-label">{{ 'HOME.HERO.STATS.PROPERTIES' | translate }}</span>
+            </div>
+            <div class="home-hero__stat-divider"></div>
+            <div class="home-hero__stat">
+              <span class="home-hero__stat-value">16+</span>
+              <span class="home-hero__stat-label">{{ 'HOME.HERO.STATS.EXPERIENCE' | translate }}</span>
+            </div>
+          </div>
+
+        </div>
+
+        <!-- Right: Image Grid -->
+        <div class="col-12 col-lg-6" inView [inViewDelay]="150">
+          <div class="home-hero__imgs">
+            <div class="home-hero__img-main">
+              <img src="https://images.unsplash.com/photo-1600596542815-ffad4c1539a9?auto=format&fit=crop&w=900&q=80" alt="Modern luxury house" />
+            </div>
+            <div class="home-hero__img-secondary">
+              <img src="https://images.unsplash.com/photo-1600210492486-724fe5c67fb0?auto=format&fit=crop&w=700&q=80" alt="Modern living room" />
+            </div>
+            <div class="home-hero__img-float">
+              <div class="home-hero__img-float-icon">
+                <i class="fa-solid fa-house-chimney"></i>
+              </div>
+              <div>
+                <p class="home-hero__img-float-sub">{{ 'HOME.FEATURED.LABEL' | translate }}</p>
+                <p class="home-hero__img-float-title">{{ 'HOME.FEATURED.TITLE' | translate }}</p>
+              </div>
+            </div>
+          </div>
+        </div>
+
+      </div>
+    </div>
+  </section>
+
+
+  <!-- ══════════════════════════════════════════
+       SERVICE HIGHLIGHTS
+  ══════════════════════════════════════════ -->
+  <section class="home-services">
+    <div class="container-xl">
+      <div class="row g-4">
+        @for (s of services; track s.titleKey; let i = $index) {
+        <div class="col-12 col-sm-6 col-lg-3" inView [inViewDelay]="i * 100">
+          <div class="home-services__card">
+            <div class="home-services__icon-wrap">
+              <i [class]="s.icon"></i>
+            </div>
+            <h3 class="home-services__title">{{ s.titleKey | translate }}</h3>
+            <p class="home-services__desc">{{ s.descKey | translate }}</p>
+            <a href="#" class="home-services__link">
+              {{ 'HOME.SERVICES.LEARN_MORE' | translate }}&nbsp;<i class="fa-solid fa-arrow-right fa-xs"></i>
+            </a>
+          </div>
+        </div>
+        }
+      </div>
+    </div>
+  </section>
+
+
+  <!-- ══════════════════════════════════════════
+       FEATURED PROPERTIES
+  ══════════════════════════════════════════ -->
+  <section class="home-properties">
+    <div class="container-xl">
+
+      <div class="home-properties__header" inView>
+        <div>
+          <div class="home-properties__label mb-3">
+            <i class="fa-solid fa-star fa-xs"></i>
+            <span>{{ 'HOME.FEATURED.LABEL' | translate }}</span>
+          </div>
+          <h2 class="home-properties__title mb-3">{{ 'HOME.FEATURED.TITLE' | translate }}</h2>
+          <p class="home-properties__subtitle">{{ 'HOME.FEATURED.SUBTITLE' | translate }}</p>
+        </div>
+        <a routerLink="/properties" [queryParams]="{ featured: 'true' }" class="btn home-properties__view-all flex-shrink-0">{{ 'HOME.FEATURED.VIEW_ALL' | translate }}</a>
+      </div>
+
+      @if (properties().length) {
+      <!-- Carousel: slides through up to 15 featured listings -->
+      <div class="home-properties__carousel" (mouseenter)="pauseAutoplay()" (mouseleave)="resumeAutoplay()">
+
+        @if (hasCarousel()) {
+        <button type="button" class="home-properties__nav home-properties__nav--prev"
+                (click)="prevSlide()" aria-label="Previous">
+          <i class="fa-solid fa-chevron-left"></i>
+        </button>
+        <button type="button" class="home-properties__nav home-properties__nav--next"
+                (click)="nextSlide()" aria-label="Next">
+          <i class="fa-solid fa-chevron-right"></i>
+        </button>
+        }
+
+        <div class="home-properties__viewport">
+          <div class="home-properties__track" [style.transform]="'translateX(' + trackOffset() + '%)'">
+            @for (p of properties(); track p.id) {
+            <div class="home-properties__slide" [style.flex]="'0 0 ' + (100 / cardsPerView()) + '%'">
+              <div class="home-properties__card hover-lift" (click)="openProperty(p.id)" role="button" tabindex="0">
+                <div class="home-properties__card-img">
+                  @if (p.primaryImageUrl) {
+                    <img [src]="p.primaryImageUrl" [alt]="p.title" />
+                  } @else {
+                    <div class="home-properties__card-img-placeholder"><i class="fa-regular fa-image"></i></div>
+                  }
+                  <span class="home-properties__card-badge">
+                    <i class="fa-solid fa-tag fa-xs"></i>&nbsp;{{ 'HOME.FEATURED.FOR_SALE' | translate }}
+                  </span>
+                </div>
+                <div class="home-properties__card-body">
+                  <h3 class="home-properties__card-name">{{ p.title }}</h3>
+                  <p class="home-properties__card-desc">{{ p.district }}, {{ p.city }}</p>
+                  <div class="home-properties__chips">
+                    <span class="home-properties__chip">
+                      <i class="fa-solid fa-bed fa-xs"></i>&nbsp;{{ p.bedrooms }} {{ 'HOME.FEATURED.BEDS' | translate }}
+                    </span>
+                    <span class="home-properties__chip">
+                      <i class="fa-solid fa-bath fa-xs"></i>&nbsp;{{ p.bathrooms }} {{ 'HOME.FEATURED.BATHS' | translate }}
+                    </span>
+                    <span class="home-properties__chip">
+                      <i [class]="typeIcon(p.propertyType) + ' fa-xs'"></i>&nbsp;{{ p.propertyType }}
+                    </span>
+                  </div>
+                  @if (p.listingDisplayName) {
+                    <div class="home-properties__agent">
+                      <app-agent-avatar
+                        [name]="p.listingDisplayName"
+                        [verified]="!!(p.companyId || p.listingBrokerId)"
+                        size="sm" />
+                      <span class="home-properties__agent-name">{{ p.listingDisplayName }}</span>
+                    </div>
+                  }
+                  <div class="home-properties__card-footer">
+                    <div>
+                      <p class="home-properties__price-label">{{ 'HOME.FEATURED.PRICE' | translate }}</p>
+                      <p class="home-properties__price">{{ formatPrice(p.price) }}</p>
+                    </div>
+                    <button class="btn btn-primary home-properties__details-btn">{{ 'HOME.FEATURED.VIEW_DETAILS' | translate }}</button>
+                  </div>
+                </div>
+              </div>
+            </div>
+            }
+          </div>
+        </div>
+
+        @if (hasCarousel()) {
+        <div class="home-properties__dots">
+          @for (d of slideDots(); track d) {
+          <button type="button" class="home-properties__dot" [class.active]="d === slide()"
+                  (click)="goToSlide(d)" [attr.aria-label]="'Slide ' + (d + 1)"></button>
+          }
+        </div>
+        }
+      </div>
+      } @else if (!propertiesLoading()) {
+      <div class="text-center text-muted py-5">
+        {{ 'HOME.FEATURED.EMPTY' | translate }}
+      </div>
+      }
+
+    </div>
+  </section>
+
+
+  <!-- ══════════════════════════════════════════
+       CTA
+  ══════════════════════════════════════════ -->
+  <section class="home-cta">
+    <div class="container-xl">
+      <div class="home-cta__inner">
+        <div class="home-cta__text" inView>
+          <h2 class="home-cta__title mb-3">{{ 'HOME.CTA.TITLE' | translate }}</h2>
+          <p class="home-cta__subtitle">{{ 'HOME.CTA.SUBTITLE' | translate }}</p>
+        </div>
+        <a routerLink="/properties" class="btn btn-primary home-cta__btn flex-shrink-0" inView [inViewDelay]="150">
+          {{ 'HOME.CTA.BTN' | translate }}
+        </a>
+      </div>
+    </div>
+  </section>
+
+
+  <!-- ══════════════════════════════════════════
+       FAQ
+  ══════════════════════════════════════════ -->
+  <section class="home-faq">
+    <div class="container-xl">
+
+      <div class="text-center mb-5" inView>
+        <div class="home-faq__label mb-3">
+          <i class="fa-regular fa-circle-question"></i>
+          <span>{{ 'HOME.FAQ.LABEL' | translate }}</span>
+        </div>
+        <h2 class="home-faq__title mb-3">{{ 'HOME.FAQ.TITLE' | translate }}</h2>
+        <p class="home-faq__subtitle mx-auto">{{ 'HOME.FAQ.SUBTITLE' | translate }}</p>
+      </div>
+
+      <div class="row justify-content-center">
+        <div class="col-12 col-lg-8">
+          <div class="accordion home-faq__accordion" id="faqAccordion">
+            @for (faq of faqs; track faq.qKey; let i = $index) {
+            <div class="accordion-item home-faq__item" inView [inViewDelay]="i * 80">
+              <h3 class="accordion-header">
+                <button class="accordion-button home-faq__btn" [class.collapsed]="i !== 0" type="button"
+                  data-bs-toggle="collapse" [attr.data-bs-target]="'#faq-' + i" [attr.aria-expanded]="i === 0"
+                  [attr.aria-controls]="'faq-' + i">{{ faq.qKey | translate }}</button>
+              </h3>
+              <div [id]="'faq-' + i" class="accordion-collapse collapse" [class.show]="i === 0"
+                data-bs-parent="#faqAccordion">
+                <div class="accordion-body home-faq__body">{{ faq.aKey | translate }}</div>
+              </div>
+            </div>
+            }
+          </div>
+        </div>
+      </div>
+
+    </div>
+  </section>
+
+</main>

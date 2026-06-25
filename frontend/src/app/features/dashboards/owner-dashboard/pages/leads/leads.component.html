@@ -1,0 +1,135 @@
+<div class="page">
+  <div class="page-header">
+    <div>
+      <h1 class="page-title">{{ 'OWNER.LEADS.TITLE' | translate }}</h1>
+      <p class="page-subtitle">{{ 'OWNER.LEADS.SUBTITLE' | translate }}</p>
+    </div>
+  </div>
+
+  @if (loading()) {
+    <div class="kanban">
+      @for (i of [1,2,3,4,5]; track i) {
+        <div class="skeleton-col">
+          <div class="skeleton" style="height:32px;border-radius:8px;margin-bottom:12px"></div>
+          <div class="skeleton" style="height:90px;border-radius:10px;margin-bottom:8px"></div>
+          <div class="skeleton" style="height:90px;border-radius:10px"></div>
+        </div>
+      }
+    </div>
+  } @else {
+    <div class="kanban" cdkDropListGroup>
+      @for (col of columns(); track col.status) {
+        <div class="kanban-col">
+          <div class="col-header" [style.border-top-color]="col.color">
+            <span class="col-title">{{ col.labelKey | translate }}</span>
+            <span class="col-count" [style.background]="col.color + '20'" [style.color]="col.color">
+              {{ col.leads.length }}
+            </span>
+          </div>
+          <div class="col-body"
+               cdkDropList
+               [id]="col.status"
+               [cdkDropListData]="col.leads"
+               [cdkDropListConnectedTo]="connectedIds()"
+               (cdkDropListDropped)="drop($event, col)">
+            @if (col.leads.length === 0) {
+              <div class="col-empty">{{ 'OWNER.LEADS.EMPTY_COL' | translate }}</div>
+            }
+            @for (lead of col.leads; track lead.id) {
+              <div class="lead-card" cdkDrag (click)="openDetail(lead)">
+                <p class="lead-name">{{ lead.tenantName }}</p>
+                <p class="lead-prop">{{ lead.propertyTitle }}</p>
+                <div class="lead-meta">
+                  <span class="lead-time">{{ timeInStage(lead.stageEnteredAt) }}</span>
+                  @if (lead.dealValue) {
+                    <span class="lead-deal">{{ lead.dealValue }}</span>
+                  }
+                </div>
+                @if (col.status === 'closed_won') {
+                  @if (hasLease(lead)) {
+                    <span class="lease-created">
+                      <i class="fa-solid fa-circle-check"></i>
+                      {{ 'OWNER.LEADS.LEASE_CREATED' | translate }}
+                    </span>
+                  } @else if (lead.draftLeaseId) {
+                    <button class="btn-lease" (click)="$event.stopPropagation(); openResume(lead)">
+                      <i class="fa-solid fa-pen-to-square"></i>
+                      {{ 'OWNER.LEADS.RESUME_LEASE' | translate }}
+                    </button>
+                  } @else {
+                    <button class="btn-lease" (click)="$event.stopPropagation(); leaseUploadLead.set(lead)">
+                      <i class="fa-solid fa-file-contract"></i>
+                      {{ 'OWNER.LEADS.CREATE_LEASE' | translate }}
+                    </button>
+                  }
+                }
+              </div>
+            }
+          </div>
+        </div>
+      }
+    </div>
+  }
+</div>
+
+<!-- Lead detail modal -->
+@if (selectedLead(); as lead) {
+  <div class="modal-backdrop" (click)="closeDetail()">
+    <div class="lead-dialog" (click)="$event.stopPropagation()">
+      <div class="modal-header">
+        <h2>{{ 'OWNER.LEADS.DETAIL_TITLE' | translate }}</h2>
+        <button class="modal-close" (click)="closeDetail()"><i class="fa-solid fa-xmark"></i></button>
+      </div>
+      <div class="modal-body">
+        <p><strong>{{ lead.tenantName }}</strong> — {{ lead.propertyTitle }}</p>
+        @if (lead.dealValue) {
+          <p class="modal-deal">{{ 'OWNER.LEADS.DEAL_VALUE' | translate:{ value: lead.dealValue } }}</p>
+        }
+
+        @if (canClose(lead)) {
+          <label class="modal-label">{{ 'OWNER.LEADS.STAGE_LABEL' | translate }}</label>
+          <div class="stage-buttons">
+            @for (s of openStages; track s.status) {
+              <button class="stage-btn" [class.active]="lead.status === s.status"
+                      [disabled]="movingStage() || (lead.status !== s.status && !canMoveTo(lead, s.status))"
+                      (click)="moveToStage(lead, s.status)">
+                {{ s.labelKey | translate }}
+              </button>
+            }
+          </div>
+        }
+
+        <label class="modal-label">{{ 'OWNER.LEADS.NOTES_LABEL' | translate }}</label>
+        <textarea class="modal-textarea" [(ngModel)]="noteText"
+          [placeholder]="'OWNER.LEADS.NOTES_PLACEHOLDER' | translate" rows="4"></textarea>
+      </div>
+      <div class="modal-footer">
+        <button class="btn btn-outline" (click)="closeDetail()">{{ 'OWNER.LEADS.CLOSE' | translate }}</button>
+        @if (canClose(lead)) {
+          <button class="btn btn-danger" (click)="closeLost(lead)" [disabled]="isClosing(lead)">
+            @if (isClosing(lead)) { <i class="fa-solid fa-spinner fa-spin"></i> }
+            @else { <i class="fa-solid fa-xmark-circle"></i> }
+            {{ 'OWNER.LEADS.CLOSE_LOST' | translate }}
+          </button>
+          <button class="btn btn-success" (click)="closeWon(lead)" [disabled]="isClosing(lead)">
+            @if (isClosing(lead)) { <i class="fa-solid fa-spinner fa-spin"></i> }
+            @else { <i class="fa-solid fa-trophy"></i> }
+            {{ 'OWNER.LEADS.CLOSE_WON' | translate }}
+          </button>
+        } @else {
+          <button class="btn btn-primary" (click)="saveNotes()">{{ 'OWNER.LEADS.SAVE_NOTES' | translate }}</button>
+        }
+      </div>
+    </div>
+  </div>
+}
+
+<!-- Lease upload modal (opens after Close Won) -->
+@if (leaseUploadLead()) {
+  <app-owner-lease-upload-modal
+    [lead]="leaseUploadLead()!"
+    [resumeLeaseId]="resumeLeaseId()"
+    (closed)="closeLeaseModal()"
+    (leaseCreated)="onLeaseCreated()"
+  />
+}

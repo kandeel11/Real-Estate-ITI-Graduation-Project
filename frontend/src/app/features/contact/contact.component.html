@@ -1,0 +1,283 @@
+<main class="ct-page">
+
+  <!-- ═══════════════════════════════════════════════════════════════
+       HERO
+  ═══════════════════════════════════════════════════════════════ -->
+  <section class="ct-hero">
+    <div class="container-xl">
+      <div class="ct-hero__inner">
+        <span class="page-badge" inView [inViewDelay]="0">
+          <i class="fa-solid fa-paper-plane fa-xs"></i> Contact Us
+        </span>
+        <h1 class="ct-hero__title" inView [inViewDelay]="100">
+          Let's Start a<br>
+          <span class="accent">Conversation</span>
+        </h1>
+        <p class="ct-hero__subtitle" inView [inViewDelay]="200">
+          Whether you have a question about our services, need help with your account, or want to
+          explore a partnership — our team is here and ready to help.
+        </p>
+      </div>
+    </div>
+    <div class="ct-hero__bg-ring ct-hero__bg-ring--1"></div>
+    <div class="ct-hero__bg-ring ct-hero__bg-ring--2"></div>
+  </section>
+
+  <!-- ═══════════════════════════════════════════════════════════════
+       CONTACT INFO CARDS
+  ═══════════════════════════════════════════════════════════════ -->
+  <section class="ct-info-section">
+    <div class="container-xl">
+      <div class="ct-info-grid">
+        @for (info of contactInfo; track info.label) {
+          <div class="ct-info-card" inView [inViewDelay]="$index * 80">
+            <div class="ct-info-card__icon" [style.background]="info.bg" [style.color]="info.color">
+              <i class="fa-solid {{ info.icon }}"></i>
+            </div>
+            <div class="ct-info-card__body">
+              <p class="ct-info-card__label">{{ info.label }}</p>
+              <p class="ct-info-card__value">{{ info.value }}</p>
+              <p class="ct-info-card__sub">{{ info.sub }}</p>
+            </div>
+          </div>
+        }
+      </div>
+    </div>
+  </section>
+
+  <!-- ═══════════════════════════════════════════════════════════════
+       CONTACT FORM + SIDE INFO
+  ═══════════════════════════════════════════════════════════════ -->
+  <section class="ct-form-section">
+    <div class="container-xl">
+      <div class="ct-form-grid">
+
+        <!-- Form column -->
+        <div class="ct-form-col" inView [inViewDelay]="0">
+          <div class="ct-form-card">
+
+            @if (sent()) {
+              <!-- Success state -->
+              <div class="ct-success">
+                <div class="ct-success__icon">
+                  <i class="fa-solid fa-circle-check"></i>
+                </div>
+                <h3 class="ct-success__title">Message Sent!</h3>
+                <p class="ct-success__sub">
+                  Thanks for reaching out. We'll get back to you within 24 hours.
+                </p>
+                <button type="button" class="btn-primary-solid" (click)="resetForm()">
+                  Send Another Message
+                </button>
+              </div>
+            } @else {
+              <div class="ct-form-card__header">
+                <h2 class="ct-form-card__title">Send Us a Message</h2>
+                <p class="ct-form-card__sub">Fill in the form below and we'll respond promptly.</p>
+              </div>
+
+              <form [formGroup]="form" (ngSubmit)="onSubmit()" novalidate class="ct-form">
+
+                <div class="ct-form__row">
+                  <!-- Full Name -->
+                  <div class="ct-field">
+                    <label class="ct-field__label" for="cf-name">Full Name <span>*</span></label>
+                    <div class="ct-field__wrap" [class.ct-field__wrap--err]="fullName.touched && fullName.invalid">
+                      <i class="fa-solid fa-user ct-field__icon"></i>
+                      <input id="cf-name" type="text" class="ct-field__input" formControlName="fullName"
+                        placeholder="Your full name" />
+                    </div>
+                    @if (fullName.touched && fullName.errors?.['required']) {
+                      <p class="ct-field__err">Name is required.</p>
+                    }
+                  </div>
+
+                  <!-- Email -->
+                  <div class="ct-field">
+                    <label class="ct-field__label" for="cf-email">Email Address <span>*</span></label>
+                    <div class="ct-field__wrap" [class.ct-field__wrap--err]="email.touched && email.invalid">
+                      <i class="fa-solid fa-envelope ct-field__icon"></i>
+                      <input id="cf-email" type="email" class="ct-field__input" formControlName="email"
+                        placeholder="you@example.com" />
+                    </div>
+                    @if (email.touched && email.errors) {
+                      <p class="ct-field__err">
+                        @if (email.errors?.['required']) { Email is required. }
+                        @else { Please enter a valid email. }
+                      </p>
+                    }
+                  </div>
+                </div>
+
+                <div class="ct-form__row">
+                  <!-- Phone -->
+                  <div class="ct-field">
+                    <label class="ct-field__label" for="cf-phone">Phone <span class="optional">(optional)</span></label>
+                    <div class="ct-field__wrap">
+                      <i class="fa-solid fa-phone ct-field__icon"></i>
+                      <input id="cf-phone" type="tel" class="ct-field__input" formControlName="phone"
+                        placeholder="+20 1xx xxx xxxx" />
+                    </div>
+                  </div>
+
+                  <!-- Subject -->
+                  <div class="ct-field">
+                    <label class="ct-field__label" for="cf-subject">Subject <span>*</span></label>
+                    <div class="ct-field__wrap ct-field__wrap--select" [class.ct-field__wrap--err]="subject.touched && subject.invalid">
+                      <i class="fa-solid fa-tag ct-field__icon"></i>
+                      <select id="cf-subject" class="ct-field__input" formControlName="subject">
+                        <option value="" disabled selected>Select a subject…</option>
+                        @for (s of subjects; track s) {
+                          <option [value]="s">{{ s }}</option>
+                        }
+                      </select>
+                      <i class="fa-solid fa-chevron-down ct-field__chevron"></i>
+                    </div>
+                    @if (subject.touched && subject.errors?.['required']) {
+                      <p class="ct-field__err">Please select a subject.</p>
+                    }
+                  </div>
+                </div>
+
+                <!-- Message -->
+                <div class="ct-field">
+                  <label class="ct-field__label" for="cf-msg">Message <span>*</span></label>
+                  <div class="ct-field__wrap ct-field__wrap--textarea" [class.ct-field__wrap--err]="message.touched && message.invalid">
+                    <textarea id="cf-msg" class="ct-field__input" formControlName="message" rows="5"
+                      placeholder="Tell us how we can help you…"></textarea>
+                  </div>
+                  @if (message.touched && message.errors) {
+                    <p class="ct-field__err">
+                      @if (message.errors?.['required']) { Message is required. }
+                      @else { Message must be at least 20 characters. }
+                    </p>
+                  }
+                </div>
+
+                @if (errorMsg()) {
+                  <div class="ct-alert ct-alert--error">
+                    <i class="fa-solid fa-circle-exclamation"></i> {{ errorMsg() }}
+                  </div>
+                }
+
+                <button type="submit" class="btn-primary-solid ct-submit" [disabled]="sending()">
+                  @if (sending()) {
+                    <span class="ct-spinner"></span> Sending…
+                  } @else {
+                    <i class="fa-solid fa-paper-plane"></i> Send Message
+                  }
+                </button>
+
+              </form>
+            }
+
+          </div>
+        </div>
+
+        <!-- Side info column -->
+        <div class="ct-side-col" inView [inViewDelay]="100">
+          <div class="ct-side-card">
+            <h3 class="ct-side-card__title">Why Choose Estatein?</h3>
+            <ul class="ct-side-list">
+              <li><i class="fa-solid fa-check-circle"></i> Trusted by 200+ property owners across Egypt</li>
+              <li><i class="fa-solid fa-check-circle"></i> AI-powered smart search for tenants and brokers</li>
+              <li><i class="fa-solid fa-check-circle"></i> Full property lifecycle management in one platform</li>
+              <li><i class="fa-solid fa-check-circle"></i> Secure digital lease agreements and payments</li>
+              <li><i class="fa-solid fa-check-circle"></i> Dedicated customer success for every account</li>
+            </ul>
+
+            <div class="ct-side-divider"></div>
+
+            <h3 class="ct-side-card__title">Quick Links</h3>
+            <div class="ct-quick-links">
+              <a routerLink="/auth/register" class="ct-quick-link">
+                <i class="fa-solid fa-user-plus"></i>
+                <span>Create Account</span>
+                <i class="fa-solid fa-chevron-right ct-quick-link__arr"></i>
+              </a>
+              <a routerLink="/properties" class="ct-quick-link">
+                <i class="fa-solid fa-house-chimney"></i>
+                <span>Browse Properties</span>
+                <i class="fa-solid fa-chevron-right ct-quick-link__arr"></i>
+              </a>
+              <a routerLink="/services" class="ct-quick-link">
+                <i class="fa-solid fa-layer-group"></i>
+                <span>Explore Services</span>
+                <i class="fa-solid fa-chevron-right ct-quick-link__arr"></i>
+              </a>
+            </div>
+          </div>
+
+          <!-- Map placeholder -->
+          <div class="ct-map-card">
+            <div class="ct-map-placeholder">
+              <i class="fa-solid fa-map-location-dot"></i>
+              <p>Smart Village, Cairo</p>
+              <span>Building B3, 6th Floor</span>
+            </div>
+          </div>
+        </div>
+
+      </div>
+    </div>
+  </section>
+
+  <!-- ═══════════════════════════════════════════════════════════════
+       TEAM SECTION
+  ═══════════════════════════════════════════════════════════════ -->
+  <section class="team-section">
+    <div class="container-xl">
+
+      <div class="section-header" inView>
+        <span class="section-badge">Our Team</span>
+        <h2 class="section-title">The People Behind Estatein</h2>
+        <p class="section-sub">
+          A passionate team of engineers, designers, and real estate experts — united by one goal:
+          making property management effortless.
+        </p>
+      </div>
+
+      <div class="team-grid">
+        @for (member of team; track member.name) {
+          <div class="team-card" inView [inViewDelay]="$index * 70">
+            <div class="team-card__avatar-wrap">
+              <div class="team-card__avatar" [style.background]="member.gradient">
+                {{ member.initials }}
+              </div>
+            </div>
+            <div class="team-card__body">
+              <h3 class="team-card__name">{{ member.name }}</h3>
+              <p class="team-card__role">{{ member.role }}</p>
+              <p class="team-card__bio">{{ member.bio }}</p>
+            </div>
+            <div class="team-card__social">
+              <a [href]="member.social.linkedin" class="team-card__social-btn" title="LinkedIn">
+                <i class="fa-brands fa-linkedin-in"></i>
+              </a>
+              <a [href]="member.social.twitter" class="team-card__social-btn" title="Twitter">
+                <i class="fa-brands fa-x-twitter"></i>
+              </a>
+            </div>
+          </div>
+        }
+      </div>
+
+    </div>
+  </section>
+
+  <!-- ═══════════════════════════════════════════════════════════════
+       CTA
+  ═══════════════════════════════════════════════════════════════ -->
+  <section class="ct-cta">
+    <div class="container-xl">
+      <div class="ct-cta__inner" inView>
+        <h2 class="ct-cta__title">Ready to Get Started?</h2>
+        <p class="ct-cta__sub">Join the Estatein community and experience the future of real estate management.</p>
+        <a routerLink="/auth/register" class="btn-white-solid">
+          Create Free Account <i class="fa-solid fa-arrow-right"></i>
+        </a>
+      </div>
+    </div>
+  </section>
+
+</main>

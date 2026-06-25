@@ -1,0 +1,152 @@
+<div class="withdrawals-page">
+
+  <!-- Header -->
+  <div class="page-head">
+    <div>
+      <h1><i class="fa-solid fa-arrow-up-from-bracket"></i> Withdrawal Requests</h1>
+      <p>Review and approve owner withdrawal requests. A 1% commission is deducted on each payout.</p>
+    </div>
+    <button class="btn-outline" (click)="load()">
+      <i class="fa-solid fa-arrows-rotate"></i> Refresh
+    </button>
+  </div>
+
+  <!-- Stats -->
+  <div class="stats-row">
+    <div class="stat-card">
+      <i class="fa-solid fa-list"></i>
+      <div><span>Total Requests</span><strong>{{ stats().total }}</strong></div>
+    </div>
+    <div class="stat-card amber">
+      <i class="fa-solid fa-clock"></i>
+      <div><span>Pending</span><strong>{{ stats().pending }}</strong></div>
+    </div>
+    <div class="stat-card green">
+      <i class="fa-solid fa-circle-check"></i>
+      <div><span>Completed</span><strong>{{ stats().completed }}</strong></div>
+    </div>
+    <div class="stat-card red">
+      <i class="fa-solid fa-circle-xmark"></i>
+      <div><span>Rejected</span><strong>{{ stats().rejected }}</strong></div>
+    </div>
+    <div class="stat-card purple">
+      <i class="fa-solid fa-coins"></i>
+      <div><span>Total Paid Out</span><strong>{{ formatCurrency(stats().totalVolume) }}</strong></div>
+    </div>
+  </div>
+
+  <!-- Filters -->
+  <div class="filters-row">
+    <div class="search-box">
+      <i class="fa-solid fa-magnifying-glass"></i>
+      <input type="text" placeholder="Search by owner name or IBAN..." [value]="searchQuery()"
+        (input)="searchQuery.set($any($event.target).value)" />
+      @if (searchQuery()) {
+        <button class="clear-btn" (click)="searchQuery.set('')"><i class="fa-solid fa-xmark"></i></button>
+      }
+    </div>
+    <select [value]="statusFilter()" (change)="statusFilter.set($any($event.target).value)">
+      <option value="All">All Status</option>
+      <option value="Pending">Pending</option>
+      <option value="Completed">Completed</option>
+      <option value="Rejected">Rejected</option>
+    </select>
+  </div>
+
+  <!-- Table -->
+  <div class="card">
+    @if (loading()) {
+      <div class="loading-state"><i class="fa-solid fa-spinner fa-spin"></i> Loading withdrawals...</div>
+    } @else if (filtered().length === 0) {
+      <div class="empty-state">
+        <i class="fa-solid fa-arrow-up-from-bracket"></i>
+        <p>No withdrawal requests found.</p>
+      </div>
+    } @else {
+      <div class="table-wrap">
+        <table class="data-table">
+          <thead>
+            <tr>
+              <th>Owner</th>
+              <th>Requested</th>
+              <th>Commission (1%)</th>
+              <th>Net Payout</th>
+              <th>Bank / IBAN</th>
+              <th>Status</th>
+              <th>Requested At</th>
+              <th>Actions</th>
+            </tr>
+          </thead>
+          <tbody>
+            @for (w of filtered(); track w.id) {
+              <tr [class.processing-row]="processing() === w.id">
+                <td>
+                  <div class="person-cell">
+                    <div class="avatar">{{ (w.ownerName || '?').charAt(0).toUpperCase() }}</div>
+                    <div>
+                      <strong>{{ w.ownerName || 'Owner' }}</strong>
+                      <small class="owner-id">{{ w.ownerId }}</small>
+                    </div>
+                  </div>
+                </td>
+                <td><strong>{{ formatCurrency(w.amount) }}</strong></td>
+                <td class="text-red">- {{ formatCurrency(w.commissionAmount) }}</td>
+                <td><strong class="text-green">{{ formatCurrency(w.netAmount) }}</strong></td>
+                <td class="bank-cell">{{ w.bankAccountDetails }}</td>
+                <td>
+                  <span class="badge" [attr.data-color]="statusColor(w.status)">{{ w.status }}</span>
+                </td>
+                <td class="muted">{{ formatDate(w.requestedAt ?? '') }}</td>
+                <td>
+                  @if (w.status === 'Pending') {
+                    @if (rejectingId() === w.id) {
+                      <div class="reject-notes-form">
+                        <input class="reject-notes-input" type="text" placeholder="Rejection reason (required)…"
+                               [(ngModel)]="rejectNotes" />
+                        <div class="reject-form-btns">
+                          <button class="btn-action approve" (click)="confirmReject(w)"
+                            [disabled]="!rejectNotes.trim()">
+                            <i class="fa-solid fa-check"></i> Confirm
+                          </button>
+                          <button class="btn-action reject" (click)="cancelReject()">
+                            <i class="fa-solid fa-xmark"></i> Cancel
+                          </button>
+                        </div>
+                      </div>
+                    } @else {
+                      <div class="action-btns">
+                        <button class="btn-action approve" (click)="approve(w)"
+                          [disabled]="processing() !== null">
+                          @if (processing() === w.id) {
+                            <i class="fa-solid fa-spinner fa-spin"></i>
+                          } @else {
+                            <i class="fa-solid fa-check"></i> Approve
+                          }
+                        </button>
+                        <button class="btn-action reject" (click)="openReject(w)"
+                          [disabled]="processing() !== null">
+                          <i class="fa-solid fa-xmark"></i> Reject
+                        </button>
+                      </div>
+                    }
+                  } @else {
+                    <span class="muted">{{ w.status === 'Completed' ? formatDate(w.processedAt ?? '') : '—' }}</span>
+                  }
+                </td>
+              </tr>
+            }
+          </tbody>
+        </table>
+      </div>
+    }
+  </div>
+
+  <!-- Toast -->
+  @if (toast(); as t) {
+    <div class="toast" [class.success]="t.type === 'success'" [class.error]="t.type === 'error'">
+      <i class="fa-solid" [class.fa-circle-check]="t.type === 'success'" [class.fa-circle-xmark]="t.type === 'error'"></i>
+      {{ t.text }}
+    </div>
+  }
+
+</div>

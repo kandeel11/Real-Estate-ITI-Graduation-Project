@@ -1,0 +1,123 @@
+@if (show) {
+  <div class="modal-overlay" (click)="close()">
+    <div class="rating-modal" (click)="$event.stopPropagation()" role="dialog" aria-modal="true">
+
+      <!-- ── Header ── -->
+      <div class="modal-hdr">
+        <div>
+          <h3 class="modal-ttl">
+            <i class="fa-regular fa-star me-2"></i>
+            {{ mode === 'create' ? 'Write a Review' : 'Edit Review' }}
+          </h3>
+          @if (mode === 'edit') {
+            <p class="modal-sub">
+              <i class="fa-solid fa-circle-info me-1"></i>
+              Reviews can only be edited within 24 hours of submission.
+            </p>
+          }
+        </div>
+        <button class="modal-close-btn" type="button" (click)="close()" aria-label="Close">
+          <i class="fa-solid fa-xmark"></i>
+        </button>
+      </div>
+
+      <!-- ── Body ── -->
+      <div class="modal-bdy">
+
+        <!-- Property selector (when opened from ratings page without pre-filled target) -->
+        @if (needsPropertySelection) {
+          <div class="form-grp">
+            <label class="form-lbl">
+              Select Property <span class="req">*</span>
+            </label>
+            @if (propertiesLoading()) {
+              <div class="d-flex align-items-center gap-2 py-2">
+                <span class="spinner-border spinner-border-sm text-primary" role="status"></span>
+                <span class="text-muted small">Loading your properties…</span>
+              </div>
+            } @else if (rentedProperties().length === 0) {
+              <p class="no-props-note">
+                <i class="fa-solid fa-circle-info me-1"></i>
+                You have no active rented properties to rate.
+              </p>
+            } @else {
+              <select
+                class="form-select"
+                [value]="selectedPropertyId()"
+                (change)="selectedPropertyId.set($any($event.target).value)">
+                <option value="" disabled selected>— Choose a property —</option>
+                @for (prop of rentedProperties(); track prop.id) {
+                  <option [value]="prop.id">{{ prop.title }}</option>
+                }
+              </select>
+            }
+          </div>
+        } @else {
+          <!-- Pre-filled target chip (from property page or ticket detail) -->
+          <div class="target-chip">
+            <i class="fa-solid {{ targetIcon }} me-2"></i>
+            Rating for: <strong>{{ targetLabel }}</strong>
+          </div>
+        }
+
+        <!-- Star selector -->
+        <div class="form-grp">
+          <label class="form-lbl">Rating <span class="req">*</span></label>
+          <div class="star-row-wrap">
+            <app-star-rating
+              [value]="starValue()"
+              [interactive]="true"
+              size="lg"
+              (valueChange)="starValue.set($event)" />
+            @if (starValue() > 0) {
+              <span class="star-val-label">{{ starValue() }}/5</span>
+            }
+          </div>
+        </div>
+
+        <!-- Review text -->
+        <div class="form-grp">
+          <label class="form-lbl">
+            Review
+            <span class="opt">(optional, max 500 characters)</span>
+          </label>
+          <textarea
+            class="form-control"
+            rows="4"
+            maxlength="500"
+            [formControl]="form.controls.reviewText"
+            placeholder="Share your experience…">
+          </textarea>
+          <div class="char-count" [class.char-warn]="charCount > 450">
+            {{ charCount }}/500
+          </div>
+        </div>
+
+        <!-- Error -->
+        @if (errorMsg()) {
+          <div class="modal-err">
+            <i class="fa-solid fa-triangle-exclamation me-2"></i>{{ errorMsg() }}
+          </div>
+        }
+
+      </div>
+
+      <!-- ── Footer ── -->
+      <div class="modal-ftr">
+        <button class="btn btn-outline-secondary" type="button" (click)="close()" [disabled]="loading()">
+          Cancel
+        </button>
+        <button class="btn btn-primary" type="button" (click)="submit()" [disabled]="loading() || !isSubmittable">
+          @if (loading()) {
+            <span class="spinner-border spinner-border-sm me-2" role="status"></span>
+            {{ mode === 'create' ? 'Submitting…' : 'Saving…' }}
+          } @else {
+            <i class="fa-solid fa-paper-plane me-2"></i>
+            {{ mode === 'create' ? 'Submit Review' : 'Save Changes' }}
+          }
+        </button>
+      </div>
+
+    </div>
+  </div>
+}

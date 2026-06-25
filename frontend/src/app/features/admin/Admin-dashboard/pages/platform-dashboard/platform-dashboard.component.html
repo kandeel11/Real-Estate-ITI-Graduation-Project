@@ -1,0 +1,166 @@
+<div class="platform-page">
+
+  <!-- Header -->
+  <div class="page-head">
+    <div>
+      <h1><i class="fa-solid fa-chart-pie"></i> Platform Dashboard</h1>
+      <p>Commission earnings and financial summary across all platform streams.</p>
+    </div>
+    <button class="btn-refresh" (click)="load()" [disabled]="loading()">
+      <i class="fa-solid fa-arrows-rotate" [class.fa-spin]="loading()"></i> Refresh
+    </button>
+  </div>
+
+  <!-- Loading -->
+  @if (loading()) {
+    <div class="loading-state">
+      <div class="spinner-border text-primary" role="status"><span class="visually-hidden">Loading…</span></div>
+      <p>Loading platform data…</p>
+    </div>
+  }
+
+  <!-- Error -->
+  @if (!loading() && error()) {
+    <div class="error-banner">
+      <i class="fa-solid fa-triangle-exclamation"></i>
+      <span>{{ error() }}</span>
+      <button class="btn-retry" (click)="load()">Retry</button>
+    </div>
+  }
+
+  <!-- Content -->
+  @if (!loading() && data(); as d) {
+
+    <!-- Platform earnings (highlighted) -->
+    <div class="platform-highlight">
+      <div class="platform-highlight-left">
+        <div class="platform-icon"><i class="fa-solid fa-sack-dollar"></i></div>
+        <div>
+          <div class="platform-label">Total Platform Commission Earned</div>
+          <div class="platform-amount">{{ fmt(d.platform.totalCommissionEarned) }}</div>
+        </div>
+      </div>
+      <div class="platform-breakdown">
+        <div class="breakdown-item">
+          <span class="breakdown-dot dot-rent"></span>
+          <span class="breakdown-label">From Rent</span>
+          <span class="breakdown-val">{{ fmt(d.platform.breakdown.fromRent) }}</span>
+          <span class="breakdown-pct">{{ pct(d.platform.breakdown.fromRent, d.platform.totalCommissionEarned) }}%</span>
+        </div>
+        <div class="breakdown-item">
+          <span class="breakdown-dot dot-maintenance"></span>
+          <span class="breakdown-label">From Maintenance</span>
+          <span class="breakdown-val">{{ fmt(d.platform.breakdown.fromMaintenance) }}</span>
+          <span class="breakdown-pct">{{ pct(d.platform.breakdown.fromMaintenance, d.platform.totalCommissionEarned) }}%</span>
+        </div>
+        <div class="breakdown-item">
+          <span class="breakdown-dot dot-withdrawals"></span>
+          <span class="breakdown-label">From Withdrawals</span>
+          <span class="breakdown-val">{{ fmt(d.platform.breakdown.fromWithdrawals) }}</span>
+          <span class="breakdown-pct">{{ pct(d.platform.breakdown.fromWithdrawals, d.platform.totalCommissionEarned) }}%</span>
+        </div>
+      </div>
+    </div>
+
+    <!-- 3 stream cards -->
+    <div class="cards-grid">
+
+      <!-- Rent -->
+      <div class="stream-card card-rent">
+        <div class="stream-head">
+          <div class="stream-icon"><i class="fa-solid fa-house-chimney"></i></div>
+          <div>
+            <div class="stream-title">Rent Payments</div>
+            <div class="stream-rate">Commission rate: {{ d.rent.commissionRate }}</div>
+          </div>
+        </div>
+        <div class="stream-stats">
+          <div class="stat-row">
+            <span class="stat-label">Total Collected</span>
+            <span class="stat-val">{{ fmt(d.rent.totalCollected) }}</span>
+          </div>
+          <div class="stat-row highlight">
+            <span class="stat-label"><i class="fa-solid fa-percent"></i> Commission Earned</span>
+            <span class="stat-val accent">{{ fmt(d.rent.totalCommission) }}</span>
+          </div>
+          <div class="stat-row">
+            <span class="stat-label">Total Pending</span>
+            <span class="stat-val muted">{{ fmt(d.rent.totalPending) }}</span>
+          </div>
+          <div class="stat-row">
+            <span class="stat-label">Overdue Payments</span>
+            <span class="stat-val danger">{{ d.rent.overdueCount }}</span>
+          </div>
+          <div class="stat-row">
+            <span class="stat-label">Late Fees Collected</span>
+            <span class="stat-val">{{ fmt(d.rent.totalLateFees) }}</span>
+          </div>
+        </div>
+      </div>
+
+      <!-- Maintenance -->
+      <div class="stream-card card-maintenance">
+        <div class="stream-head">
+          <div class="stream-icon"><i class="fa-solid fa-screwdriver-wrench"></i></div>
+          <div>
+            <div class="stream-title">Maintenance Payments</div>
+            <div class="stream-rate">Commission rate: {{ d.maintenance.commissionRate }}</div>
+          </div>
+        </div>
+        <div class="stream-stats">
+          <div class="stat-row">
+            <span class="stat-label">Total Collected</span>
+            <span class="stat-val">{{ fmt(d.maintenance.totalCollected) }}</span>
+          </div>
+          <div class="stat-row highlight">
+            <span class="stat-label"><i class="fa-solid fa-percent"></i> Commission Earned</span>
+            <span class="stat-val accent">{{ fmt(d.maintenance.totalCommission) }}</span>
+          </div>
+          <div class="stat-row">
+            <span class="stat-label">Net to Vendors</span>
+            <span class="stat-val muted">{{ fmt(d.maintenance.totalNetToVendors) }}</span>
+          </div>
+          <div class="stat-row">
+            <span class="stat-label">Paid Tickets</span>
+            <span class="stat-val">{{ d.maintenance.paidPaymentsCount }}</span>
+          </div>
+        </div>
+      </div>
+
+      <!-- Withdrawals -->
+      <div class="stream-card card-withdrawals">
+        <div class="stream-head">
+          <div class="stream-icon"><i class="fa-solid fa-arrow-up-from-bracket"></i></div>
+          <div>
+            <div class="stream-title">Wallet Withdrawals</div>
+            <div class="stream-rate">Commission rate: {{ d.withdrawals.commissionRate }}</div>
+          </div>
+        </div>
+        <div class="stream-stats">
+          <div class="stat-row">
+            <span class="stat-label">Total Requested</span>
+            <span class="stat-val">{{ fmt(d.withdrawals.totalWithdrawn) }}</span>
+          </div>
+          <div class="stat-row highlight">
+            <span class="stat-label"><i class="fa-solid fa-percent"></i> Commission Earned</span>
+            <span class="stat-val accent">{{ fmt(d.withdrawals.totalCommission) }}</span>
+          </div>
+          <div class="stat-row">
+            <span class="stat-label">Net Paid to Owners</span>
+            <span class="stat-val muted">{{ fmt(d.withdrawals.totalNetPaidOut) }}</span>
+          </div>
+          <div class="stat-row">
+            <span class="stat-label">Pending Requests</span>
+            <span class="stat-val danger">{{ d.withdrawals.pendingCount }} ({{ fmt(d.withdrawals.pendingAmount) }})</span>
+          </div>
+          <div class="stat-row">
+            <span class="stat-label">Completed</span>
+            <span class="stat-val">{{ d.withdrawals.completedCount }}</span>
+          </div>
+        </div>
+      </div>
+
+    </div>
+  }
+
+</div>

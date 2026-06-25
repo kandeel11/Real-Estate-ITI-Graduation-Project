@@ -1,0 +1,30 @@
+@if (show) {
+  <div class="cm-overlay" (click)="cancelled.emit()">
+    <div class="cm-box" (click)="$event.stopPropagation()">
+
+      <div class="cm-header">
+        <h3 class="cm-title">{{ title }}</h3>
+        <button class="cm-close" (click)="cancelled.emit()" [disabled]="loading">
+          <i class="fa-solid fa-xmark"></i>
+        </button>
+      </div>
+
+      @if (message) {
+        <p class="cm-message">{{ message }}</p>
+      }
+
+      <div class="cm-footer">
+        <button class="btn btn-outline-secondary" (click)="cancelled.emit()" [disabled]="loading">
+          {{ 'COMMON.CANCEL' | translate }}
+        </button>
+        <button class="btn {{ confirmClass }}" (click)="confirmed.emit()" [disabled]="loading">
+          @if (loading) {
+            <span class="spinner-border spinner-border-sm me-2" role="status"></span>
+          }
+          {{ confirmLabel }}
+        </button>
+      </div>
+
+    </div>
+  </div>
+}

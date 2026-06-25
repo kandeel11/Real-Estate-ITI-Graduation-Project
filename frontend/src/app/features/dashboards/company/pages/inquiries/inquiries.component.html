@@ -1,0 +1,75 @@
+<h2 class="mb-1">{{ 'COMPANY_INQUIRIES.TITLE' | translate }}</h2>
+<p class="text-muted mb-3">{{ 'COMPANY_INQUIRIES.SUBTITLE' | translate }}</p>
+
+<ul class="nav nav-pills mb-3">
+  @for (tab of tabs; track tab.value) {
+    <li class="nav-item">
+      <button class="nav-link" [class.active]="statusFilter() === tab.value"
+              (click)="statusFilter.set(tab.value)">
+        {{ tab.label | translate }}
+        <span class="badge bg-light text-dark ms-1">{{ counts()[tab.value] }}</span>
+      </button>
+    </li>
+  }
+</ul>
+
+@if (loading()) {
+  <div class="d-flex justify-content-center py-5">
+    <div class="spinner-border text-secondary" role="status">
+      <span class="visually-hidden">Loading…</span>
+    </div>
+  </div>
+} @else if (error()) {
+  <div class="alert alert-danger d-flex justify-content-between align-items-center">
+    <span><i class="fa-solid fa-triangle-exclamation me-2"></i>{{ error() }}</span>
+    <button class="btn btn-sm btn-outline-danger" (click)="load()">{{ 'COMMON.RETRY' | translate }}</button>
+  </div>
+} @else if (filtered().length === 0) {
+  <div class="card p-5 text-center text-muted">
+    <i class="fa-regular fa-envelope fs-1 mb-3"></i>
+    <p class="mb-0">{{ 'COMPANY_INQUIRIES.NO_INQUIRIES' | translate }}</p>
+  </div>
+} @else {
+  <div class="card">
+    <div class="table-responsive">
+      <table class="table table-hover align-middle mb-0">
+        <thead class="table-light">
+          <tr>
+            <th>{{ 'COMPANY_INQUIRIES.COL_PROPERTY' | translate }}</th>
+            <th>{{ 'COMPANY_INQUIRIES.COL_FROM' | translate }}</th>
+            <th>{{ 'COMPANY_INQUIRIES.COL_HANDLED' | translate }}</th>
+            <th>{{ 'COMMON.STATUS' | translate }}</th>
+            <th>{{ 'COMPANY_INQUIRIES.COL_RECEIVED' | translate }}</th>
+            <th>{{ 'COMPANY_INQUIRIES.COL_ACCEPTED' | translate }}</th>
+          </tr>
+        </thead>
+        <tbody>
+          @for (inq of filtered(); track inq.id) {
+            <tr>
+              <td class="fw-semibold">{{ inq.propertyTitle }}</td>
+              <td>
+                <i class="fa-regular fa-user text-muted me-1"></i>{{ inq.tenantName }}
+              </td>
+              <td>
+                @if (inq.brokerName) {
+                  <i class="fa-solid fa-user-tie text-muted me-1"></i>{{ inq.brokerName }}
+                } @else {
+                  <span class="text-muted">{{ 'COMPANY_INQUIRIES.UNASSIGNED' | translate }}</span>
+                }
+              </td>
+              <td><span [class]="badgeClass(inq.status)">{{ inq.status }}</span></td>
+              <td class="text-nowrap">{{ inq.createdAt | date: 'MMM d, HH:mm' }}</td>
+              <td class="text-nowrap">
+                @if (inq.acceptedAt) {
+                  {{ inq.acceptedAt | date: 'MMM d, HH:mm' }}
+                } @else {
+                  <span class="text-muted">—</span>
+                }
+              </td>
+            </tr>
+          }
+        </tbody>
+      </table>
+    </div>
+  </div>
+}

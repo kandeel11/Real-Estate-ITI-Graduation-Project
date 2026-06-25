@@ -1,0 +1,289 @@
+<div class="plans-page">
+
+  <!-- ── HEADER ──────────────────────────────────────── -->
+  <div class="plans-header">
+    <h1 class="plans-title"><i class="fa-solid fa-crown me-2"></i>Subscription Plans</h1>
+    <p class="plans-subtitle">Choose the plan that fits your needs</p>
+  </div>
+
+  <!-- ── CHECKOUT FEEDBACK ─────────────────────────────── -->
+  @if (checkoutSuccess()) {
+    <div class="alert alert-success d-flex align-items-center gap-2">
+      <i class="fa-solid fa-circle-check"></i>
+      <span>{{ checkoutSuccess() }}</span>
+    </div>
+  }
+  @if (checkoutError()) {
+    <div class="alert alert-danger d-flex align-items-center gap-2">
+      <i class="fa-solid fa-triangle-exclamation"></i>
+      <span>{{ checkoutError() }}</span>
+    </div>
+  }
+
+  <!-- ── LOADING SKELETON ─────────────────────────────── -->
+  @if (loading()) {
+    <div class="skeleton billing-skeleton mb-5"></div>
+    <div class="row g-4">
+      @for (n of [1, 2]; track $index) {
+        <div class="col-12 col-md-6">
+          <div class="skeleton-card">
+            <div class="skeleton mb-3" style="width:90px;height:22px;border-radius:99px;"></div>
+            <div class="skeleton mb-2" style="width:110px;height:30px;"></div>
+            <div class="skeleton mb-1" style="width:140px;height:52px;"></div>
+            <div class="skeleton mb-4" style="width:100px;height:16px;"></div>
+            @for (r of skeletonRows; track $index) {
+              <div class="skeleton mb-2" style="height:17px;" [style.width]="(60 + ($index * 7) % 35) + '%'"></div>
+            }
+            <div class="skeleton mt-4" style="height:44px;border-radius:10px;"></div>
+          </div>
+        </div>
+      }
+    </div>
+  }
+
+  <!-- ── ERROR ────────────────────────────────────────── -->
+  @if (!loading() && error()) {
+    <div class="alert alert-danger d-flex align-items-center gap-2">
+      <i class="fa-solid fa-triangle-exclamation"></i>
+      <span>{{ error() }}</span>
+      <button class="btn btn-sm btn-outline-danger ms-2" (click)="loadPlans()">Try again</button>
+    </div>
+  }
+
+  <!-- ── CONTENT ───────────────────────────────────────── -->
+  @if (!loading() && !error()) {
+
+    <!-- Billing Toggle -->
+    <div class="billing-toggle-wrap mb-5">
+      <div class="billing-toggle">
+        <button class="billing-pill" [class.billing-pill-active]="billingCycle() === 'monthly'"
+                (click)="setBilling('monthly')">
+          Monthly
+        </button>
+        <button class="billing-pill" [class.billing-pill-active]="billingCycle() === 'annual'"
+                (click)="setBilling('annual')">
+          Annual &nbsp;<span class="save-tag">Save 16%</span>
+        </button>
+      </div>
+    </div>
+
+    <!-- Plan Cards -->
+    <div class="row g-4 mb-5">
+
+      <!-- Free Plan -->
+      @if (freePlan(); as free) {
+        <div class="col-12 col-md-6">
+          <div class="plan-card" [class.plan-card--current]="isCurrent(free)">
+            @if (isCurrent(free)) {
+              <span class="plan-badge badge-current">
+                <i class="fa-solid fa-circle-check me-1"></i>Current Plan
+              </span>
+            } @else {
+              <span class="plan-badge badge-free">Free</span>
+            }
+            <h2 class="plan-name">Free</h2>
+            <div class="price-area" [style.opacity]="priceOpacity()">
+              <p class="plan-price">Free</p>
+              <p class="price-sub">No credit card required</p>
+            </div>
+            <ul class="feature-list">
+              <li class="feature-item">
+                <i class="fa-solid fa-check feature-icon-yes"></i>
+                <span>{{ free.maxAiRequestsPerMonth }} AI requests / month</span>
+              </li>
+              <li class="feature-item">
+                <i class="fa-solid fa-check feature-icon-yes"></i>
+                <span>AI Chatbot</span>
+              </li>
+              <li class="feature-item">
+                <i class="fa-solid fa-xmark feature-icon-no"></i>
+                <span class="feature-text-muted">AI Price Estimation</span>
+              </li>
+              <li class="feature-item">
+                <i class="fa-solid fa-check feature-icon-yes"></i>
+                <span>{{ formatValue(free.maxSavedListings) }} saved listings</span>
+              </li>
+              <li class="feature-item">
+                <i class="fa-solid fa-check feature-icon-yes"></i>
+                <span>{{ formatValue(free.maxSavedSearches) }} saved searches</span>
+              </li>
+              <li class="feature-item">
+                <i class="fa-solid fa-check feature-icon-yes"></i>
+                <span>{{ formatValue(free.maxInquiriesPerMonth) }} inquiries / month</span>
+              </li>
+              <li class="feature-item">
+                <i class="fa-solid fa-xmark feature-icon-no"></i>
+                <span class="feature-text-muted">Early access listings</span>
+              </li>
+              <li class="feature-item">
+                <i class="fa-solid fa-xmark feature-icon-no"></i>
+                <span class="feature-text-muted">Priority broker response</span>
+              </li>
+            </ul>
+            <button class="btn plan-btn plan-btn-current" disabled>
+              <i class="fa-solid fa-circle-check me-1"></i>{{ isCurrent(free) ? 'Current Plan' : 'Free Plan' }}
+            </button>
+          </div>
+        </div>
+      }
+
+      <!-- Premium Plan -->
+      @if (premiumPlan(); as premium) {
+        <div class="col-12 col-md-6">
+          <div class="plan-card plan-card--premium" [class.plan-card--current]="isCurrent(premium)">
+            @if (isCurrent(premium)) {
+              <span class="plan-badge badge-current">
+                <i class="fa-solid fa-circle-check me-1"></i>Current Plan
+              </span>
+            } @else {
+              <span class="plan-badge badge-popular">
+                <i class="fa-solid fa-star me-1"></i>Most Popular
+              </span>
+            }
+            <h2 class="plan-name">Premium</h2>
+            <div class="price-area" [style.opacity]="priceOpacity()">
+              @if (billingCycle() === 'monthly') {
+                <p class="plan-price">EGP {{ premium.priceMonthly }}</p>
+                <p class="price-sub">per month</p>
+              } @else {
+                <p class="plan-price">EGP {{ premium.priceAnnual }}</p>
+                <p class="price-sub">per year &nbsp;·&nbsp; EGP {{ annualMonthly(premium) }} / month</p>
+              }
+            </div>
+            <ul class="feature-list">
+              <li class="feature-item">
+                <i class="fa-solid fa-check feature-icon-yes"></i>
+                <span>{{ premium.maxAiRequestsPerMonth }} AI requests / month</span>
+              </li>
+              <li class="feature-item">
+                <i class="fa-solid fa-check feature-icon-yes"></i>
+                <span>AI Chatbot</span>
+              </li>
+              <li class="feature-item">
+                <i class="fa-solid fa-check feature-icon-yes"></i>
+                <span>AI Price Estimation</span>
+              </li>
+              <li class="feature-item">
+                <i class="fa-solid fa-check feature-icon-yes"></i>
+                <span>{{ formatValue(premium.maxSavedListings) }} saved listings</span>
+              </li>
+              <li class="feature-item">
+                <i class="fa-solid fa-check feature-icon-yes"></i>
+                <span>{{ formatValue(premium.maxSavedSearches) }} saved searches</span>
+              </li>
+              <li class="feature-item">
+                <i class="fa-solid fa-check feature-icon-yes"></i>
+                <span>{{ formatValue(premium.maxInquiriesPerMonth) }} inquiries / month</span>
+              </li>
+              <li class="feature-item">
+                <i class="fa-solid fa-check feature-icon-yes"></i>
+                <span>Early access listings</span>
+              </li>
+              <li class="feature-item">
+                <i class="fa-solid fa-check feature-icon-yes"></i>
+                <span>Priority broker response</span>
+              </li>
+            </ul>
+            @if (isCurrent(premium)) {
+              <button class="btn plan-btn plan-btn-current" disabled>
+                <i class="fa-solid fa-circle-check me-1"></i>Current Plan
+              </button>
+              <button class="btn plan-btn-cancel" (click)="showCancelConfirm.set(true)">
+                Cancel subscription
+              </button>
+            } @else {
+              <button class="btn plan-btn plan-btn-upgrade"
+                      [disabled]="checkingOut()"
+                      (click)="upgradeTo(premium)">
+                @if (checkingOut()) {
+                  <i class="fa-solid fa-spinner fa-spin me-1"></i>Redirecting to checkout…
+                } @else {
+                  <i class="fa-solid fa-crown me-1"></i>Upgrade to Premium
+                }
+              </button>
+            }
+          </div>
+        </div>
+      }
+    </div>
+
+    <!-- Feature Comparison Table -->
+    @if (freePlan(); as free) {
+      @if (premiumPlan(); as premium) {
+        <div class="section-card">
+          <h2 class="section-title mb-4">
+            <i class="fa-solid fa-table-list me-2"></i>Full Feature Comparison
+          </h2>
+          <div class="table-responsive">
+            <table class="comparison-table">
+              <thead>
+                <tr>
+                  <th class="col-feature">Feature</th>
+                  <th class="col-plan text-center">Free</th>
+                  <th class="col-plan col-plan-premium text-center">
+                    <i class="fa-solid fa-crown me-1"></i>Premium
+                  </th>
+                </tr>
+              </thead>
+              <tbody>
+                <tr>
+                  <td>AI Requests / month</td>
+                  <td class="text-center">{{ free.maxAiRequestsPerMonth }}</td>
+                  <td class="text-center col-plan-premium-cell">{{ premium.maxAiRequestsPerMonth }}</td>
+                </tr>
+                <tr>
+                  <td>AI Chatbot</td>
+                  <td class="text-center"><i class="fa-solid fa-check check-yes"></i></td>
+                  <td class="text-center col-plan-premium-cell"><i class="fa-solid fa-check check-yes"></i></td>
+                </tr>
+                <tr>
+                  <td>AI Price Estimation</td>
+                  <td class="text-center"><i class="fa-solid fa-xmark check-no"></i></td>
+                  <td class="text-center col-plan-premium-cell"><i class="fa-solid fa-check check-yes"></i></td>
+                </tr>
+                <tr>
+                  <td>Saved Listings</td>
+                  <td class="text-center">{{ formatValue(free.maxSavedListings) }}</td>
+                  <td class="text-center col-plan-premium-cell">{{ formatValue(premium.maxSavedListings) }}</td>
+                </tr>
+                <tr>
+                  <td>Saved Searches</td>
+                  <td class="text-center">{{ formatValue(free.maxSavedSearches) }}</td>
+                  <td class="text-center col-plan-premium-cell">{{ formatValue(premium.maxSavedSearches) }}</td>
+                </tr>
+                <tr>
+                  <td>Inquiries / month</td>
+                  <td class="text-center">{{ formatValue(free.maxInquiriesPerMonth) }}</td>
+                  <td class="text-center col-plan-premium-cell">{{ formatValue(premium.maxInquiriesPerMonth) }}</td>
+                </tr>
+                <tr>
+                  <td>Early Access Listings</td>
+                  <td class="text-center"><i class="fa-solid fa-xmark check-no"></i></td>
+                  <td class="text-center col-plan-premium-cell"><i class="fa-solid fa-check check-yes"></i></td>
+                </tr>
+                <tr>
+                  <td>Priority Broker Response</td>
+                  <td class="text-center"><i class="fa-solid fa-xmark check-no"></i></td>
+                  <td class="text-center col-plan-premium-cell"><i class="fa-solid fa-check check-yes"></i></td>
+                </tr>
+              </tbody>
+            </table>
+          </div>
+        </div>
+      }
+    }
+
+  }
+</div>
+
+<!-- ── CANCEL CONFIRMATION ───────────────────────────── -->
+<app-confirm-modal
+  [show]="showCancelConfirm()"
+  title="Cancel subscription"
+  message="Cancel your Premium plan? You'll drop back to the Free tier and lose premium features at the end of your billing access."
+  confirmLabel="Cancel subscription"
+  confirmClass="btn-danger"
+  [loading]="cancelling()"
+  (confirmed)="confirmCancel()"
+  (cancelled)="showCancelConfirm.set(false)"
+/>

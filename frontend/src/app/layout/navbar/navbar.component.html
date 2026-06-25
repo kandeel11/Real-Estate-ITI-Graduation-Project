@@ -1,0 +1,114 @@
+@if (searchOpen()) {
+<app-search-overlay (closed)="closeSearch()" />
+}
+
+<nav class="navbar navbar-expand-md site-navbar sticky-top" [class.site-navbar--scrolled]="scrolled()">
+    <div class="container-xl">
+
+        <!-- Brand -->
+        <a class="navbar-brand site-navbar__brand" routerLink="/">
+            <i class="fa-solid fa-house-chimney site-navbar__brand-icon"></i>
+            <span class="site-navbar__brand-name">Estatein</span>
+        </a>
+
+        <!-- Mobile toggle -->
+        <button class="navbar-toggler site-navbar__toggler" type="button" data-bs-toggle="collapse"
+            data-bs-target="#navMenu" aria-controls="navMenu" aria-expanded="false" aria-label="Toggle navigation">
+            <i class="fa-solid fa-bars"></i>
+        </button>
+
+        <!-- Collapsible content -->
+        <div class="collapse navbar-collapse" id="navMenu">
+
+            <!-- Center links -->
+            <ul class="navbar-nav mx-auto gap-2">
+                <li class="nav-item">
+                    <a class="nav-link site-navbar__link" routerLink="/" routerLinkActive="active"
+                        [routerLinkActiveOptions]="{exact: true}">
+                        {{ 'NAVBAR.HOME' | translate }}
+                    </a>
+                </li>
+                <li class="nav-item">
+                    <a class="nav-link site-navbar__link" routerLink="/properties" routerLinkActive="active">
+                        {{ 'NAVBAR.PROPERTIES' | translate }}
+                    </a>
+                </li>
+                <li class="nav-item">
+                    <a class="nav-link site-navbar__link" routerLink="/services" routerLinkActive="active">
+                        {{ 'NAVBAR.SERVICES' | translate }}
+                    </a>
+                </li>
+                <li class="nav-item">
+                    <a class="nav-link site-navbar__link" routerLink="/contact" routerLinkActive="active">
+                        {{ 'NAVBAR.CONTACT' | translate }}
+                    </a>
+                </li>
+            </ul>
+
+            <!-- Right actions -->
+            <div class="site-navbar__actions">
+
+                <!-- Language toggle -->
+                <button class="site-navbar__lang-btn" (click)="lang.toggle()"
+                    [title]="lang.isRtl() ? 'Switch to English' : 'التبديل إلى العربية'">
+                    <i class="fa-solid fa-globe"></i>
+                    <span>{{ lang.isRtl() ? 'EN' : 'ع' }}</span>
+                </button>
+
+                <button class="site-navbar__icon-btn" aria-label="Search" (click)="openSearch()">
+                    <i class="fa-solid fa-magnifying-glass"></i>
+                </button>
+                @if (authenticated()) {
+                <button class="site-navbar__icon-btn site-navbar__bell" aria-label="Notifications"
+                    routerLink="/dashboard/notifications">
+                    <i class="fa-regular fa-bell"></i>
+                    @if (notifService.unreadCount() > 0) {
+                    <span class="bell-badge">{{ notifService.unreadCount() }}</span>
+                    }
+                </button>
+                } @else {
+                <button class="site-navbar__icon-btn" aria-label="Notifications">
+                    <i class="fa-regular fa-bell"></i>
+                </button>
+                }
+
+                @if (authenticated()) {
+                @if (isTenant()) {
+                <div class="site-navbar__user" (click)="$event.stopPropagation()">
+                    <button class="site-navbar__avatar" (click)="toggleMenu($event)" aria-label="Account menu"
+                        [attr.aria-expanded]="menuOpen()">
+                        {{ initials() }}
+                    </button>
+
+                    @if (menuOpen()) {
+                    <div class="site-navbar__menu shadow">
+                        <div class="site-navbar__menu-header">
+                            <div class="site-navbar__menu-name">{{ user()?.fullName }}</div>
+                            <div class="site-navbar__menu-email">{{ user()?.email }}</div>
+                        </div>
+                        <div class="site-navbar__menu-divider"></div>
+                        <a class="site-navbar__menu-item" [routerLink]="dashboardRoute()" (click)="closeMenu()">
+                            <i class="fa-solid fa-gauge"></i>{{ 'NAVBAR.MY_DASHBOARD' | translate }}
+                        </a>
+                        <div class="site-navbar__menu-divider"></div>
+                        <button class="site-navbar__menu-item site-navbar__menu-item--danger" (click)="logout()">
+                            <i class="fa-solid fa-arrow-right-from-bracket"></i>{{ 'NAVBAR.LOGOUT' | translate }}
+                        </button>
+                    </div>
+                    }
+                </div>
+                } @else {
+                <button class="btn btn-outline-danger site-navbar__cta" (click)="logout()">
+                    <i class="fa-solid fa-arrow-right-from-bracket me-1"></i>{{ 'NAVBAR.LOGOUT' | translate }}
+                </button>
+                }
+                } @else {
+                <a routerLink="/auth/login" class="btn btn-primary site-navbar__cta">
+                    {{ 'NAVBAR.LOGIN' | translate }}
+                </a>
+                }
+            </div>
+
+        </div>
+    </div>
+</nav>

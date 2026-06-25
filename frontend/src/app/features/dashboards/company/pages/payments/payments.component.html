@@ -1,0 +1,287 @@
+<div class="cp-page">
+
+  <div class="page-head">
+    <div>
+      <h1><i class="fa-solid fa-credit-card"></i> Company Payments</h1>
+      <p>Rent payments and schedules across all company properties.</p>
+    </div>
+    <div class="pills-row">
+      <button class="pill" [class.pill-active]="activeTab() === 'payments'" (click)="activeTab.set('payments')">
+        <i class="fa-solid fa-list me-1"></i> All Payments
+      </button>
+      <button class="pill" [class.pill-active]="activeTab() === 'schedule'" (click)="activeTab.set('schedule')">
+        <i class="fa-solid fa-calendar-days me-1"></i> Schedules
+      </button>
+    </div>
+  </div>
+
+  <!-- ══════════════════ PAYMENTS TAB ══════════════════ -->
+  @if (activeTab() === 'payments') {
+
+    @if (paymentsLoading()) {
+      <div class="loading-state">
+        <i class="fa-solid fa-spinner fa-spin"></i>
+        <p>Loading payments...</p>
+      </div>
+    } @else if (paymentsError()) {
+      <div class="empty-state">
+        <i class="fa-solid fa-circle-info"></i>
+        <p>{{ paymentsError() }}</p>
+      </div>
+    } @else if (payments().length === 0) {
+      <div class="empty-state">
+        <i class="fa-solid fa-receipt"></i>
+        <p>No payment records found yet.</p>
+      </div>
+    } @else {
+
+      <!-- Summary Stats -->
+      <div class="summary-grid">
+        <div class="summary-card primary">
+          <div class="sc-icon"><i class="fa-solid fa-coins"></i></div>
+          <div>
+            <span>Total Volume</span>
+            <strong>{{ formatCurrency(paymentStats().totalAmount) }}</strong>
+            <small>{{ paymentStats().total }} payments</small>
+          </div>
+        </div>
+        <div class="summary-card">
+          <div class="sc-icon green"><i class="fa-solid fa-check-circle"></i></div>
+          <div>
+            <span>Paid</span>
+            <strong>{{ paymentStats().paid }}</strong>
+          </div>
+        </div>
+        <div class="summary-card">
+          <div class="sc-icon amber"><i class="fa-solid fa-clock"></i></div>
+          <div>
+            <span>Pending</span>
+            <strong>{{ paymentStats().pending }}</strong>
+          </div>
+        </div>
+        <div class="summary-card">
+          <div class="sc-icon red"><i class="fa-solid fa-circle-exclamation"></i></div>
+          <div>
+            <span>Overdue / Late</span>
+            <strong>{{ paymentStats().overdue }}</strong>
+          </div>
+        </div>
+      </div>
+
+      <!-- Per-Property Breakdown -->
+      @if (propertyEntries().length > 1) {
+        <div class="property-breakdown">
+          <div class="section-label">
+            <i class="fa-solid fa-building"></i> Breakdown by Property
+          </div>
+          <div class="property-grid">
+            @for (entry of propertyEntries(); track entry[0]) {
+              <div class="property-row">
+                <div class="prop-name">{{ entry[0] }}</div>
+                <div class="prop-stats">
+                  <span class="badge" data-color="green">{{ entry[1].paid }} paid</span>
+                  <span class="badge" data-color="amber">{{ entry[1].pending }} pending</span>
+                  <span class="prop-amount">{{ formatCurrency(entry[1].amount) }}</span>
+                </div>
+              </div>
+            }
+          </div>
+        </div>
+      }
+
+      <!-- Full Payments Table -->
+      <div class="schedule-card">
+        <div class="schedule-head">
+          <h3><i class="fa-solid fa-table-list"></i> All Payment Records</h3>
+          <span class="record-count">{{ payments().length }} records</span>
+        </div>
+        <div class="table-wrap">
+          <table class="data-table">
+            <thead>
+              <tr>
+                <th>Property</th>
+                <th>Tenant</th>
+                <th>Due Date</th>
+                <th>Amount</th>
+                <th>Late Fee</th>
+                <th>Paid On</th>
+                <th>Status</th>
+              </tr>
+            </thead>
+            <tbody>
+              @for (p of payments(); track p.id) {
+                <tr>
+                  <td>{{ p.propertyTitle || '—' }}</td>
+                  <td>{{ p.tenantName || p.tenantId || '—' }}</td>
+                  <td>{{ formatDate(p.dueDate) }}</td>
+                  <td><strong>{{ formatCurrency(p.amount) }}</strong></td>
+                  <td>
+                    @if (p.lateFee && p.lateFee > 0) {
+                      <span class="late-fee">+{{ formatCurrency(p.lateFee) }}</span>
+                    } @else {
+                      <span class="muted">—</span>
+                    }
+                  </td>
+                  <td>{{ p.paidAt ? formatDate(p.paidAt) : '—' }}</td>
+                  <td>
+                    <span class="badge" [attr.data-color]="statusColor(p.status)">
+                      @switch (p.status) {
+                        @case ('Paid') { <i class="fa-solid fa-check"></i> }
+                        @case ('Pending') { <i class="fa-solid fa-clock"></i> }
+                        @case ('Late') { <i class="fa-solid fa-triangle-exclamation"></i> }
+                        @case ('Overdue') { <i class="fa-solid fa-circle-exclamation"></i> }
+                        @case ('Refunded') { <i class="fa-solid fa-rotate-left"></i> }
+                      }
+                      {{ p.status }}
+                    </span>
+                  </td>
+                </tr>
+              }
+            </tbody>
+          </table>
+        </div>
+      </div>
+
+    }
+
+  }
+
+  <!-- ══════════════════ SCHEDULE TAB ══════════════════ -->
+  @if (activeTab() === 'schedule') {
+
+    @if (scheduleLoading()) {
+      <div class="loading-state">
+        <i class="fa-solid fa-spinner fa-spin"></i>
+        <p>Loading schedules...</p>
+      </div>
+    } @else if (scheduleError()) {
+      <div class="empty-state">
+        <i class="fa-solid fa-circle-info"></i>
+        <p>{{ scheduleError() }}</p>
+      </div>
+    } @else if (leaseSchedules().length === 0) {
+      <div class="empty-state">
+        <i class="fa-solid fa-calendar-xmark"></i>
+        <p>No active lease schedules found.</p>
+      </div>
+    } @else {
+
+      <div class="lease-selector">
+        @for (ls of leaseSchedules(); track ls.leaseId) {
+          <button class="lease-card" [class.active]="selectedLeaseId() === ls.leaseId"
+            (click)="selectLease(ls.leaseId)">
+            <div class="lc-title">{{ ls.propertyTitle }}</div>
+            <div class="lc-meta">{{ formatDate(ls.startDate) }} — {{ formatDate(ls.endDate) }}</div>
+            <div class="lc-progress">
+              <div class="lc-progress-fill" [style.width.%]="progressPercent(ls)"></div>
+            </div>
+            <div class="lc-pct">{{ progressPercent(ls) }}% complete</div>
+          </button>
+        }
+      </div>
+
+      @if (selectedLeaseSchedule(); as ls) {
+        @let s = ls.schedule;
+
+        <div class="summary-grid">
+          <div class="summary-card primary">
+            <div class="sc-icon"><i class="fa-solid fa-money-bill-wave"></i></div>
+            <div>
+              <span>Monthly Installment</span>
+              <strong>{{ formatCurrency(s.installmentAmount) }}</strong>
+            </div>
+          </div>
+          <div class="summary-card">
+            <div class="sc-icon green"><i class="fa-solid fa-check-circle"></i></div>
+            <div>
+              <span>Paid So Far</span>
+              <strong>{{ formatCurrency(s.summary.amountDueSoFar) }}</strong>
+              <small>{{ s.summary.pastInstallments }} / {{ s.summary.totalInstallments }}</small>
+            </div>
+          </div>
+          <div class="summary-card">
+            <div class="sc-icon amber"><i class="fa-solid fa-hourglass-half"></i></div>
+            <div>
+              <span>Remaining</span>
+              <strong>{{ formatCurrency(s.summary.amountRemaining) }}</strong>
+              <small>{{ s.summary.totalInstallments - s.summary.pastInstallments }} left</small>
+            </div>
+          </div>
+          <div class="summary-card">
+            <div class="sc-icon blue"><i class="fa-solid fa-coins"></i></div>
+            <div>
+              <span>Total Rent</span>
+              <strong>{{ formatCurrency(s.summary.totalAmount) }}</strong>
+              <small>{{ s.durationInMonths }} months</small>
+            </div>
+          </div>
+        </div>
+
+        <div class="progress-card">
+          <div class="progress-head">
+            <span>{{ ls.propertyTitle }}</span>
+            <strong>{{ progressPercent(ls) }}% complete</strong>
+          </div>
+          <div class="progress-bar">
+            <div class="progress-fill" [style.width.%]="progressPercent(ls)"></div>
+          </div>
+          <div class="progress-dates">
+            <span>{{ formatDate(s.startDate) }}</span>
+            <span>{{ formatDate(s.endDate) }}</span>
+          </div>
+        </div>
+
+        <div class="schedule-card">
+          <div class="schedule-head">
+            <h3><i class="fa-solid fa-table-list"></i> Installment Schedule</h3>
+            <span class="record-count">{{ s.summary.totalInstallments }} installments · Read-only</span>
+          </div>
+          <div class="table-wrap">
+            <table class="data-table">
+              <thead>
+                <tr>
+                  <th>#</th>
+                  <th>Period</th>
+                  <th>Due Date</th>
+                  <th>Amount</th>
+                  <th>Status</th>
+                </tr>
+              </thead>
+              <tbody>
+                @for (p of visiblePeriods(); track p.periodNumber) {
+                  <tr [class.row-current]="p.isCurrent" [class.row-past]="p.isPast">
+                    <td class="num-cell">{{ p.periodNumber }}</td>
+                    <td class="period-cell">{{ formatDate(p.periodStart) }} — {{ formatDate(p.periodEnd) }}</td>
+                    <td>{{ formatDate(p.dueDate) }}</td>
+                    <td><strong>{{ formatCurrency(p.amount) }}</strong></td>
+                    <td>
+                      <span class="badge" [attr.data-color]="periodColor(p)">
+                        @if (p.isPast) { <i class="fa-solid fa-check"></i> }
+                        @if (p.isCurrent) { <i class="fa-solid fa-circle-dot"></i> }
+                        @if (p.isNext) { <i class="fa-solid fa-clock"></i> }
+                        @if (!p.isPast && !p.isCurrent && !p.isNext) { <i class="fa-solid fa-calendar"></i> }
+                        {{ periodStatusLabel(p) }}
+                      </span>
+                    </td>
+                  </tr>
+                }
+              </tbody>
+            </table>
+          </div>
+          @if (!showAll() && s.allPeriods.length > 6) {
+            <div class="show-more">
+              <button class="btn-outline" (click)="showAll.set(true)">
+                <i class="fa-solid fa-chevron-down"></i>
+                Show all {{ s.allPeriods.length }} installments
+              </button>
+            </div>
+          }
+        </div>
+
+      }
+
+    }
+
+  }
+
+</div>

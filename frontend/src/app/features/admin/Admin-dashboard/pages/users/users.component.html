@@ -1,0 +1,221 @@
+<div class="usr-page">
+
+    @if (toast(); as t) {
+    <div class="usr-toast" [class.success]="t.type === 'success'" [class.error]="t.type === 'error'">
+        <i class="fa-solid" [class]="t.type === 'success' ? 'fa-circle-check' : 'fa-circle-xmark'"></i>
+        {{ t.text }}
+    </div>
+    }
+
+    <div class="usr-header">
+        <div class="usr-header__left">
+            <div class="usr-header-icon"><i class="fa-solid fa-users"></i></div>
+            <div>
+                <h1>{{ 'ADMIN.USERS.PAGE_TITLE' | translate }}</h1>
+                <p>{{ 'ADMIN.USERS.REGISTERED' | translate: { n: total() } }}</p>
+            </div>
+        </div>
+    </div>
+
+    <div class="usr-status-tabs">
+        @for (opt of STATUS_OPTIONS; track opt.key) {
+        <button class="usr-status-tab" [class.active]="statusFilter() === opt.key" (click)="setStatus(opt.key)">
+            <i class="fa-solid" [class]="opt.icon"></i>
+            {{ opt.labelKey | translate }}
+        </button>
+        }
+    </div>
+
+    <div class="usr-filters">
+        <div class="usr-role-pills">
+            @for (r of ROLE_OPTIONS; track r.key) {
+            <button class="usr-role-pill" [class.active]="roleFilter() === r.key" [attr.data-color]="r.color"
+                (click)="setRole(r.key)">
+                <i class="fa-solid" [class]="r.icon"></i>
+                {{ r.label }}
+            </button>
+            }
+        </div>
+        <div class="usr-search-wrap">
+            <i class="fa-solid fa-magnifying-glass"></i>
+            <input type="text" [value]="searchQuery()" (input)="onSearch($event)"
+                [placeholder]="'ADMIN.USERS.SEARCH_PLACEHOLDER' | translate" />
+            @if (searchQuery()) {
+            <button class="usr-clear-search" (click)="clearSearch()">
+                <i class="fa-solid fa-xmark"></i>
+            </button>
+            }
+        </div>
+        @if (hasFilters()) {
+        <button class="usr-clear-all" (click)="clearFilters()">
+            <i class="fa-solid fa-filter-circle-xmark"></i> {{ 'ADMIN.USERS.CLEAR' | translate }}
+        </button>
+        }
+    </div>
+
+    <div class="usr-table-wrap">
+        @if (loading()) {
+        <div class="usr-loading">
+            <i class="fa-solid fa-spinner fa-spin"></i> {{ 'ADMIN.USERS.LOADING' | translate }}
+        </div>
+        } @else if (users().length === 0) {
+        <div class="usr-empty">
+            <i class="fa-solid fa-users-slash"></i>
+            <strong>{{ 'ADMIN.USERS.NO_USERS' | translate }}</strong>
+            <span>{{ 'ADMIN.USERS.NO_USERS_HINT' | translate }}</span>
+            @if (hasFilters()) {
+            <button (click)="clearFilters()">{{ 'ADMIN.USERS.CLEAR_FILTERS' | translate }}</button>
+            }
+        </div>
+        } @else {
+        <table class="usr-table">
+            <thead>
+                <tr>
+                    <th>{{ 'ADMIN.USERS.COL_USER' | translate }}</th>
+                    <th>{{ 'ADMIN.USERS.COL_ROLE' | translate }}</th>
+                    <th>{{ 'ADMIN.USERS.COL_STATUS' | translate }}</th>
+                    <th>{{ 'ADMIN.USERS.COL_VERIFIED' | translate }}</th>
+                    <th>{{ 'ADMIN.USERS.COL_LAST_LOGIN' | translate }}</th>
+                    <th>{{ 'ADMIN.USERS.COL_JOINED' | translate }}</th>
+                    <th>{{ 'ADMIN.USERS.COL_ACTIONS' | translate }}</th>
+                </tr>
+            </thead>
+            <tbody>
+                @for (user of users(); track user.id) {
+                <tr class="usr-row" [class.banned-row]="isBanned(user)"
+                    [class.banning-open]="banningUserId() === user.id">
+                    <td class="usr-user-cell">
+                        <div class="usr-avatar" [attr.data-color]="roleInfo(user.role).color">
+                            {{ avatarLetter(user.fullName) }}
+                        </div>
+                        <div class="usr-user-info">
+                            <strong> {{ user.fullName }} </strong>
+                            <span> {{ user.email }} </span>
+                            @if (user.phone) {
+                            <span class="usr-phone"><i class="fa-solid fa-phone"></i> {{ user.phone }}</span>
+                            }
+                        </div>
+                    </td>
+                    <td>
+                        <span class="usr-role-badge" [attr.data-color]="roleInfo(user.role).color">
+                            <i class="fa-solid" [class]="roleInfo(user.role).icon"></i>
+                            {{ roleInfo(user.role).label }}
+                        </span>
+                    </td>
+                    <td>
+                        @if (isBanned(user)) {
+                        <span class="usr-status-badge banned">
+                            <i class="fa-solid fa-ban"></i> {{ 'ADMIN.USERS.STATUS_BANNED' | translate }}
+                        </span>
+                        } @else {
+                        <span class="usr-status-badge active">
+                            <i class="fa-solid fa-circle-check"></i> {{ 'ADMIN.USERS.STATUS_ACTIVE' | translate }}
+                        </span>
+                        }
+                    </td>
+                    <td>
+                        @if (user.isEmailVerified) {
+                        <span class="usr-verified">
+                            <i class="fa-solid fa-envelope-circle-check"></i> {{ 'ADMIN.USERS.VERIFIED' | translate }}
+                        </span>
+                        } @else {
+                        <span class="usr-unverified">
+                            <i class="fa-solid fa-envelope"></i> {{ 'ADMIN.USERS.UNVERIFIED' | translate }}
+                        </span>
+                        }
+                    </td>
+                    <td class="usr-date"> {{ formatDateTime(user.lastLoginAt) }} </td>
+                    <td class="usr-date"> {{ formatDate(user.createdAt) }} </td>
+                    <td class="usr-actions-cell">
+                        @if (processing() === user.id) {
+                        <span class="usr-processing"><i class="fa-solid fa-spinner fa-spin"></i></span>
+                        } @else if (isBanned(user)) {
+                        <button class="usr-btn-unban" (click)="confirmUnban(user)">
+                            <i class="fa-solid fa-circle-check"></i> {{ 'ADMIN.USERS.UNBAN' | translate }}
+                        </button>
+                        } @else if (user.role !== 'admin') {
+                        <button class="usr-btn-ban" [class.active]="banningUserId() === user.id"
+                            (click)="toggleBanForm(user.id)">
+                            <i class="fa-solid"
+                                [class]="banningUserId() === user.id ? 'fa-xmark' : 'fa-ban'"></i>
+                            {{ banningUserId() === user.id
+                                ? ('ADMIN.USERS.CANCEL' | translate)
+                                : ('ADMIN.USERS.BAN' | translate) }}
+                        </button>
+                        }
+                    </td>
+                </tr>
+
+                @if (banningUserId() === user.id) {
+                <tr class="usr-ban-row">
+                    <td colspan="7">
+                        <div class="usr-ban-form">
+                            <div class="usr-ban-form__icon"><i class="fa-solid fa-ban"></i></div>
+                            <div class="usr-ban-form__content">
+                                <p>
+                                    {{ 'ADMIN.USERS.ABOUT_TO_BAN' | translate }}
+                                    <strong> {{ user.fullName }} </strong>
+                                    <span>({{ user.email }})</span>
+                                </p>
+                                <div class="usr-ban-input-wrap">
+                                    <input type="text" [value]="banReasonInput()"
+                                        (input)="banReasonInput.set($any($event.target).value)"
+                                        [placeholder]="'ADMIN.USERS.BAN_REASON_PLACEHOLDER' | translate"
+                                        class="usr-ban-input" />
+                                    <button class="usr-btn-confirm-ban" (click)="confirmBan(user)"
+                                        [disabled]="banReasonInput().trim().length < 5">
+                                        <i class="fa-solid fa-ban"></i> {{ 'ADMIN.USERS.CONFIRM_BAN' | translate }}
+                                    </button>
+                                    <button class="usr-btn-cancel-ban" (click)="cancelBan()">
+                                        {{ 'ADMIN.USERS.CANCEL' | translate }}
+                                    </button>
+                                </div>
+                                @if (banReasonInput().trim().length > 0 && banReasonInput().trim().length < 5) {
+                                <small class="usr-ban-err">{{ 'ADMIN.USERS.BAN_MIN_CHARS' | translate }}</small>
+                                }
+                            </div>
+                        </div>
+                    </td>
+                </tr>
+                }
+
+                @if (isBanned(user) && user.banReason) {
+                <tr class="usr-banned-detail-row">
+                    <td colspan="7">
+                        <div class="usr-ban-info">
+                            <i class="fa-solid fa-triangle-exclamation"></i>
+                            <span>{{ 'ADMIN.USERS.BAN_REASON' | translate }} <strong> {{ user.banReason }} </strong></span>
+                            @if (user.bannedAt) {
+                            <span class="usr-ban-date">{{ 'ADMIN.USERS.BANNED_ON' | translate }} {{ formatDate(user.bannedAt) }}</span>
+                            }
+                        </div>
+                    </td>
+                </tr>
+                }
+                }
+            </tbody>
+        </table>
+
+        <div class="usr-pagination">
+            <span class="usr-pag-info">
+                {{ 'ADMIN.USERS.SHOWING' | translate: { from: pageStart(), to: pageEnd(), total: total() } }}
+            </span>
+            <div class="usr-pag-controls">
+                <button class="usr-pag-btn" (click)="prevPage()" [disabled]="currentPage() === 1">
+                    <i class="fa-solid fa-chevron-left"></i>
+                </button>
+                @for (p of visiblePages(); track $index) {
+                @if (p === '...') {
+                <span class="usr-pag-ellipsis">…</span>
+                } @else {
+                <button class="usr-pag-btn" [class.active]="currentPage() === p" (click)="goToPage(p)"> {{ p }}</button>
+                }
+                }
+                <button class="usr-pag-btn" (click)="nextPage()" [disabled]="currentPage() === totalPages()">
+                    <i class="fa-solid fa-chevron-right"></i>
+                </button>
+            </div>
+        </div>
+        }
+    </div>
+</div>
