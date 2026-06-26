@@ -443,8 +443,19 @@ public class CompaniesController(
             return BadRequest(new { error = "No company is associated with your account." });
 
         var brokers = await mediator.Send(new GetCompanyBrokersDetailsQuery(companyId.Value), ct);
+
+        var company = await mediator.Send(
+            new Identity.Application.Queries.GetCompanyDetails.GetCompanyDetailsQuery(companyId.Value), ct);
+        var companyName = company?.Name ?? string.Empty;
+
         if (brokers.Count == 0)
-            return Ok(new { companyId, brokers = Array.Empty<object>() });
+            return Ok(new
+            {
+                companyId,
+                companyName,
+                totalBrokers = 0,
+                brokers = Array.Empty<object>()
+            });
 
         var brokerUserIds = brokers.Select(b => b.UserId).ToList();
         var pipelines = await mediator.Send(new GetBrokerLeadPipelineQuery(brokerUserIds), ct);
@@ -453,14 +464,21 @@ public class CompaniesController(
 
         var result = pipelines.Select(p => new
         {
-            brokerId = p.BrokerUserId,
-            brokerName = brokerNameById.GetValueOrDefault(p.BrokerUserId, "Unknown"),
-            totalLeads = p.TotalLeads,
-            closedWon = p.ClosedWon,
-            kanban = p.Kanban
+            brokerId     = p.BrokerUserId,
+            brokerUserId = p.BrokerUserId,
+            brokerName   = brokerNameById.GetValueOrDefault(p.BrokerUserId, "Unknown"),
+            totalLeads   = p.TotalLeads,
+            closedWon    = p.ClosedWon,
+            pipeline     = p.Kanban        // renamed: frontend reads "pipeline", not "kanban"
         });
 
-        return Ok(new { companyId, brokers = result });
+        return Ok(new
+        {
+            companyId,
+            companyName,
+            totalBrokers = brokers.Count,
+            brokers      = result
+        });
     }
 
     /// <summary>

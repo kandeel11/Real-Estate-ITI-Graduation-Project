@@ -31,6 +31,10 @@ public static class PropertyDataSeed
 
     private const string BlobContainer = "property-media";
 
+    // Returns true when at least one seed user is already in the DB.
+    public static Task<bool> IsSeededAsync(IdentityDbContext identityDb)
+        => identityDb.Users.AnyAsync(u => SeedEmails.Contains(u.Email));
+
     // ─────────────────────────────────────────────────────────────────────────
     public static async Task SeedAsync(
         PropertyDbContext propertyDb,

@@ -34,22 +34,22 @@ A full-featured real estate platform that manages the complete lifecycle of prop
 
 ## Technology Stack
 
-| Layer | Technology |
-|---|---|
-| Runtime | .NET 10 / ASP.NET Core |
-| ORM | Entity Framework Core 10 |
-| Database | SQL Server (Azure SQL in production) |
-| Cache | Redis (Memurai on Windows dev, Azure Cache for Redis in production) |
-| Payments | Stripe (PaymentIntent + Checkout Sessions + Webhooks) |
-| AI / LLM | Azure OpenAI Embeddings + Groq (llama-3.3-70b) via Semantic Kernel |
-| AI Workflows | n8n webhook (`ticket-evaluate` + ownership verification) |
-| Vector Store | Qdrant (property semantic search) |
-| Document OCR | Azure Document Intelligence |
-| File Storage | Azure Blob Storage |
-| Email | SMTP via Gmail (dev) / production SMTP |
-| Messaging | MediatR (CQRS + in-process notifications) |
-| Frontend | Angular (separate repository) |
-| CI/CD | GitHub Actions → Azure App Service |
+| Layer        | Technology                                                          |
+| ------------ | ------------------------------------------------------------------- |
+| Runtime      | .NET 10 / ASP.NET Core                                              |
+| ORM          | Entity Framework Core 10                                            |
+| Database     | SQL Server (Azure SQL in production)                                |
+| Cache        | Redis (Memurai on Windows dev, Azure Cache for Redis in production) |
+| Payments     | Stripe (PaymentIntent + Checkout Sessions + Webhooks)               |
+| AI / LLM     | Azure OpenAI Embeddings + Groq (llama-3.3-70b) via Semantic Kernel  |
+| AI Workflows | n8n webhook (`ticket-evaluate` + ownership verification)            |
+| Vector Store | Qdrant (property semantic search)                                   |
+| Document OCR | Azure Document Intelligence                                         |
+| File Storage | Azure Blob Storage                                                  |
+| Email        | SMTP via Gmail (dev) / production SMTP                              |
+| Messaging    | MediatR (CQRS + in-process notifications)                           |
+| Frontend     | Angular (separate repository)                                       |
+| CI/CD        | GitHub Actions → Azure App Service                                  |
 
 ---
 
@@ -74,6 +74,7 @@ A full-featured real estate platform that manages the complete lifecycle of prop
 ```
 
 **Cross-module communication rules:**
+
 - Modules do **not** reference each other at the project level.
 - Queries that span modules use **Host-layer adapters** (e.g. `PropertyManagementCheckerAdapter`) that implement interfaces defined in the consuming module.
 - Long-running integration (e.g. subscription activation after payment) uses the **Outbox pattern** so consistency is guaranteed even if the downstream handler is temporarily unavailable.
@@ -82,16 +83,16 @@ A full-featured real estate platform that manages the complete lifecycle of prop
 
 ## Module Breakdown
 
-| Module | Responsibility |
-|---|---|
-| **Identity** | Users, companies, authentication (JWT), roles |
-| **Property** | Listings, verification, AI duplicate detection, full-management config |
-| **Maintenance** | Tickets, AI evaluation, vendor assignment, payments, routing |
-| **Payment** | Rent & subscription payments, Stripe integration, outbox events |
-| **Subscription** | Company subscription plans, activation via outbox event |
-| **Document** | Lease contracts, OCR verification, digital signing |
-| **AI** | Chat assistant (Semantic Kernel), property QA, session storage |
-| **Shared.Kernel** | Base entities, domain events, integration events |
+| Module            | Responsibility                                                         |
+| ----------------- | ---------------------------------------------------------------------- |
+| **Identity**      | Users, companies, authentication (JWT), roles                          |
+| **Property**      | Listings, verification, AI duplicate detection, full-management config |
+| **Maintenance**   | Tickets, AI evaluation, vendor assignment, payments, routing           |
+| **Payment**       | Rent & subscription payments, Stripe integration, outbox events        |
+| **Subscription**  | Company subscription plans, activation via outbox event                |
+| **Document**      | Lease contracts, OCR verification, digital signing                     |
+| **AI**            | Chat assistant (Semantic Kernel), property QA, session storage         |
+| **Shared.Kernel** | Base entities, domain events, integration events                       |
 
 ---
 
@@ -136,13 +137,13 @@ Tenant submits ticket
 
 ### Entities
 
-| Field | Entity | Purpose |
-|---|---|---|
-| `RoutedToCompanyId` | `MaintenanceTicket` | Set on tenant ticket when routed |
-| `ParentTicketId` | `MaintenanceTicket` | Set on company ticket, references original |
-| `ResponsibleParty` | `MaintenanceTicket` | `Owner` or `Tenant` (set by AI) |
-| `IsFullManagement` | `Property` | Company manages all operations for this property |
-| `IsMaintenanceEnabled` | `Property` | Maintenance specifically is delegated to company |
+| Field                  | Entity              | Purpose                                          |
+| ---------------------- | ------------------- | ------------------------------------------------ |
+| `RoutedToCompanyId`    | `MaintenanceTicket` | Set on tenant ticket when routed                 |
+| `ParentTicketId`       | `MaintenanceTicket` | Set on company ticket, references original       |
+| `ResponsibleParty`     | `MaintenanceTicket` | `Owner` or `Tenant` (set by AI)                  |
+| `IsFullManagement`     | `Property`          | Company manages all operations for this property |
+| `IsMaintenanceEnabled` | `Property`          | Maintenance specifically is delegated to company |
 
 ---
 
@@ -202,32 +203,36 @@ Stripe calls webhook: checkout.session.completed
 
 ### Stripe Metadata Keys
 
-| Key | Flow | Consumer |
-|---|---|---|
-| `payment_id` | Rent / Subscription | `Payment.Infrastructure` |
-| `maintenance_payment_id` | Maintenance fee | `Maintenance.Application` (via event) |
-| `user_id` | Subscription | `Payment.Infrastructure` (activation) |
+| Key                      | Flow                | Consumer                              |
+| ------------------------ | ------------------- | ------------------------------------- |
+| `payment_id`             | Rent / Subscription | `Payment.Infrastructure`              |
+| `maintenance_payment_id` | Maintenance fee     | `Maintenance.Application` (via event) |
+| `user_id`                | Subscription        | `Payment.Infrastructure` (activation) |
 
 ---
 
 ## Background Jobs
 
 ### `OutboxPublisherJob`
+
 **`Payment.Infrastructure/Outbox/OutboxPublisherJob.cs`**
 
 Polls `outbox_messages` every **10 seconds**. Deserializes pending `INotification` records, publishes via MediatR, and marks each message `Processed`. Failed deliveries increment `RetryCount` (max 5 retries). This guarantees at-least-once delivery of `RentPaymentSucceededEvent` and `SubscriptionPaymentSucceededEvent` across restarts.
 
 ### `MonthlyPaymentGenerationJob`
+
 **`Payment.Infrastructure/BackgroundJobs/MonthlyPaymentGenerationJob.cs`**
 
 Runs **daily**. Reads all active leases and creates `Payment` records for installments due today. Idempotent — skips leases that already have a payment for the current period.
 
 ### `OverduePaymentsJob`
+
 **`Payment.Infrastructure/BackgroundJobs/OverduePaymentsJob.cs`**
 
 Runs **daily**. Marks unpaid rent past the due date as `Overdue`. Optionally sends SMS reminders controlled by `"OverdueJob:SendSmsReminders": true/false`.
 
 ### `LeaseExpiryBackgroundService`
+
 **`Host/RealEstate.Host/Jobs/LeaseExpiryBackgroundService.cs`**
 
 Runs **daily**. Fires expiry notifications for leases within 30 days of end date and marks expired leases.
@@ -237,24 +242,26 @@ Runs **daily**. Fires expiry notifications for leases within 30 days of end date
 ## Caching Strategy
 
 ### Query Cache — `CachingBehavior`
+
 **`Host/RealEstate.Host/Behaviors/CachingBehavior.cs`**
 
 MediatR `IPipelineBehavior` that intercepts registered read queries, checks Redis first, and caches handler results on miss.
 
 **Cache key format:** `q:{QueryTypeName}:{MD5(JSON-serialized-params)}`
 
-| Query | TTL |
-|---|---|
-| `GetPropertiesByCompanyQuery` | 60 s |
+| Query                           | TTL   |
+| ------------------------------- | ----- |
+| `GetPropertiesByCompanyQuery`   | 60 s  |
 | `GetCompanyBrokersDetailsQuery` | 120 s |
-| `GetCompanyDetailsQuery` | 5 min |
-| `GetLeasesByPropertyIdsQuery` | 60 s |
-| `GetPendingApprovalLeasesQuery` | 30 s |
-| `GetAwaitingTenantLeasesQuery` | 30 s |
+| `GetCompanyDetailsQuery`        | 5 min |
+| `GetLeasesByPropertyIdsQuery`   | 60 s  |
+| `GetPendingApprovalLeasesQuery` | 30 s  |
+| `GetAwaitingTenantLeasesQuery`  | 30 s  |
 
 Redis failures are **non-fatal** — a cache error falls through to the database automatically.
 
 ### AI Session Store — `RedisSessionStore`
+
 **`AI.Infrastructure/Services/RedisSessionStore.cs`**
 
 Implements Semantic Kernel's `ISessionStore` via `IDistributedCache`. Keys: `ai:session:{guid}`, sliding **30-minute** expiry. Enables stateful multi-turn AI conversations without in-memory session state.
@@ -273,14 +280,14 @@ Implements Semantic Kernel's `ISessionStore` via `IDistributedCache`. Keys: `ai:
 
 ### Azure Infrastructure
 
-| Service | Purpose |
-|---|---|
-| **Azure App Service** (`realestate-ai-app`) | Hosts the .NET 10 API |
-| **Azure SQL Database** | Primary relational store (per-module schemas in one database) |
-| **Azure Cache for Redis** | Distributed query cache + AI session store |
-| **Azure Blob Storage** | Lease documents, property images, attachments |
-| **Azure Document Intelligence** | OCR for lease document verification |
-| **Azure OpenAI** | Text embeddings (`text-embedding-ada-002`) |
+| Service                                     | Purpose                                                       |
+| ------------------------------------------- | ------------------------------------------------------------- |
+| **Azure App Service** (`realestate-ai-app`) | Hosts the .NET 10 API                                         |
+| **Azure SQL Database**                      | Primary relational store (per-module schemas in one database) |
+| **Azure Cache for Redis**                   | Distributed query cache + AI session store                    |
+| **Azure Blob Storage**                      | Lease documents, property images, attachments                 |
+| **Azure Document Intelligence**             | OCR for lease document verification                           |
+| **Azure OpenAI**                            | Text embeddings (`text-embedding-ada-002`)                    |
 
 ### CI/CD Pipeline
 
@@ -351,25 +358,25 @@ Swagger UI: `https://localhost:7240/swagger`
 
 ### Maintenance Tickets
 
-| Method | Route | Description |
-|---|---|---|
-| `POST` | `/api/maintenance/tickets` | Create ticket (tenant only) |
-| `POST` | `/api/maintenance/tickets/{id}/submit` | Submit + trigger AI evaluation |
-| `GET` | `/api/maintenance/tickets/{id}/ai-evaluation` | Poll AI result |
-| `POST` | `/api/maintenance/tickets/{id}/decision` | Owner/tenant chooses resolution method |
-| `POST` | `/api/maintenance/tickets/{id}/assign-vendor` | Assign maintenance company |
-| `POST` | `/api/maintenance/tickets/{id}/payments` | Vendor sets price |
-| `POST` | `/api/maintenance/tickets/{id}/payments/checkout` | Generate Stripe Checkout URL |
-| `GET` | `/api/maintenance/tickets/company/{companyId}/routed` | Company sees auto-routed tickets |
+| Method | Route                                                 | Description                            |
+| ------ | ----------------------------------------------------- | -------------------------------------- |
+| `POST` | `/api/maintenance/tickets`                            | Create ticket (tenant only)            |
+| `POST` | `/api/maintenance/tickets/{id}/submit`                | Submit + trigger AI evaluation         |
+| `GET`  | `/api/maintenance/tickets/{id}/ai-evaluation`         | Poll AI result                         |
+| `POST` | `/api/maintenance/tickets/{id}/decision`              | Owner/tenant chooses resolution method |
+| `POST` | `/api/maintenance/tickets/{id}/assign-vendor`         | Assign maintenance company             |
+| `POST` | `/api/maintenance/tickets/{id}/payments`              | Vendor sets price                      |
+| `POST` | `/api/maintenance/tickets/{id}/payments/checkout`     | Generate Stripe Checkout URL           |
+| `GET`  | `/api/maintenance/tickets/company/{companyId}/routed` | Company sees auto-routed tickets       |
 
 ### Payments
 
-| Method | Route | Description |
-|---|---|---|
-| `POST` | `/api/payments/{id}/initiate` | Create PaymentIntent for rent |
-| `POST` | `/api/stripe/webhook` | Stripe webhook receiver |
-| `GET` | `/api/payments/checkout/success` | Success-redirect confirmation |
+| Method | Route                            | Description                   |
+| ------ | -------------------------------- | ----------------------------- |
+| `POST` | `/api/payments/{id}/initiate`    | Create PaymentIntent for rent |
+| `POST` | `/api/stripe/webhook`            | Stripe webhook receiver       |
+| `GET`  | `/api/payments/checkout/success` | Success-redirect confirmation |
 
 ---
 
-*ITI Graduation Project — 2026*
+_ITI Graduation Project — 2026_
