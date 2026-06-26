@@ -1,5 +1,7 @@
+using Document.Application.Commands.Lead.ManagerConfirmNoManagement;
 using Document.Application.Queries.Inquiry;
 using Document.Application.Queries.Lead.GetBrokerLeadPipeline;
+using Document.Application.Queries.Lead.GetNoManagementPendingLeads;
 using Document.Application.Queries.Lease;
 using Document.Application.Queries.Lease.GetLeasePaymentSchedule;
 using Document.Application.Queries.Rating;
@@ -548,6 +550,60 @@ public class CompaniesController(
         });
 
         return Ok(result);
+    }
+
+    /// <summary>
+    /// Deals closed by company brokers without management, waiting for manager confirmation.
+    /// After confirming, the property is marked Rented and the tenant is notified.
+    /// </summary>
+    [HttpGet("mine/leads/no-management-pending")]
+    [Authorize(Policy = "CompanyManager")]
+    public async Task<IActionResult> GetNoManagementPending(CancellationToken ct)
+    {
+        var managerId = currentUser.UserId;
+        if (managerId is null)
+            return Unauthorized();
+
+        var items = await mediator.Send(
+            new GetNoManagementPendingLeadsQuery(managerId.Value), ct);
+
+        if (items.Count == 0) return Ok(Array.Empty<object>());
+
+        var userIds = items.Select(i => i.TenantId).Distinct().ToList();
+        var names = await mediator.Send(new GetUserNamesQuery(userIds), ct);
+
+        var result = items.Select(i => new
+        {
+            leadId      = i.LeadId,
+            propertyId  = i.PropertyId,
+            tenantId    = i.TenantId,
+            tenantName  = names.GetValueOrDefault(i.TenantId, "Unknown"),
+            dealValue   = i.DealValue,
+            pendingAt   = i.PendingAt
+        });
+
+        return Ok(result);
+    }
+
+    /// <summary>
+    /// Company manager confirms a broker's "no management" deal close.
+    /// Marks the property as Rented and notifies the tenant.
+    /// </summary>
+    [HttpPost("mine/leads/{leadId}/confirm-no-management")]
+    [Authorize(Policy = "CompanyManager")]
+    public async Task<IActionResult> ConfirmNoManagement(Guid leadId, CancellationToken ct)
+    {
+        var managerId = currentUser.UserId;
+        if (managerId is null) return Unauthorized();
+        try
+        {
+            await mediator.Send(
+                new ManagerConfirmNoManagementCommand(leadId, managerId.Value), ct);
+            return NoContent();
+        }
+        catch (KeyNotFoundException ex)       { return NotFound(new { error = ex.Message }); }
+        catch (InvalidOperationException ex)  { return BadRequest(new { error = ex.Message }); }
+        catch (UnauthorizedAccessException ex){ return StatusCode(403, new { error = ex.Message }); }
     }
 
     /// <summary>

@@ -190,7 +190,8 @@ public class BrokerDashboardController(
                 dealValue = l.DealValue?.ToString(),
                 notes = l.Notes,
                 hasLease = st?.HasSentLease ?? false,
-                draftLeaseId = st?.DraftLeaseId
+                draftLeaseId = st?.DraftLeaseId,
+                noManagementPending = l.NoManagementPendingAt.HasValue
             };
         });
 
