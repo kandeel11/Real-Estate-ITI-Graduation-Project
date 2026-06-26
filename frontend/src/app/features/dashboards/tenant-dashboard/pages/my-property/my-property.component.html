@@ -117,13 +117,19 @@
 
         <!-- Action Buttons -->
         <div class="d-flex gap-2 mb-3 flex-wrap">
-          <a class="btn btn-primary btn-sm" routerLink="/dashboard/lease">
-            <i class="fa-solid fa-file-contract me-1"></i>{{ 'MY_PROPERTY.VIEW_LEASE' | translate }}
-          </a>
-          <a class="btn btn-outline-primary btn-sm" routerLink="/dashboard/maintenance-requests/create">
-            <i class="fa-solid fa-screwdriver-wrench me-1"></i>{{ 'MY_PROPERTY.NEW_TICKET' | translate }}
-          </a>
-          @if (prop.isActive) {
+          @if (!prop.noManagement) {
+            <a class="btn btn-primary btn-sm" routerLink="/dashboard/lease">
+              <i class="fa-solid fa-file-contract me-1"></i>{{ 'MY_PROPERTY.VIEW_LEASE' | translate }}
+            </a>
+            <a class="btn btn-outline-primary btn-sm" routerLink="/dashboard/maintenance-requests/create">
+              <i class="fa-solid fa-screwdriver-wrench me-1"></i>{{ 'MY_PROPERTY.NEW_TICKET' | translate }}
+            </a>
+          } @else {
+            <span class="badge bg-secondary fs-7 px-3 py-2">
+              <i class="fa-solid fa-circle-info me-1"></i>No management service — contact owner directly
+            </span>
+          }
+          @if (prop.isActive && !prop.noManagement) {
             <button class="btn btn-outline-warning btn-sm" (click)="openRatingModal(prop)">
               <i class="fa-regular fa-star me-1"></i>Write a Review
             </button>

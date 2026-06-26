@@ -8,7 +8,7 @@ import { RatingModalComponent } from '../../../../../shared/components/rating-mo
 
 interface PropertyView {
   id: string;
-  leaseId: string;
+  leaseId: string | null;
   title: string;
   fullAddress: string;
   type: string;
@@ -18,11 +18,12 @@ interface PropertyView {
   isFurnished: boolean;
   petsAllowed: boolean;
   mainImage: string;
-  monthlyRent: number;
+  monthlyRent: number | null;
   isActive: boolean;
-  startDate: string;
-  endDate: string;
-  daysUntilExpiry: number;
+  startDate: string | null;
+  endDate: string | null;
+  daysUntilExpiry: number | null;
+  noManagement: boolean;
   media: ApiPropertyMedia[];
   amenities: ApiAmenity[];
   lightboxUrl: string | null;
@@ -85,6 +86,7 @@ export class MyPropertyComponent implements OnInit {
       startDate: item.startDate,
       endDate: item.endDate,
       daysUntilExpiry: item.daysUntilExpiry,
+      noManagement: item.noManagement ?? false,
       media: p.media,
       amenities: p.amenities,
       lightboxUrl: null,
@@ -100,6 +102,7 @@ export class MyPropertyComponent implements OnInit {
   }
 
   openRatingModal(prop: PropertyView): void {
+    if (!prop.leaseId) return;
     this.ratingPropertyId.set(prop.id);
     this.ratingLeaseId.set(prop.leaseId);
     this.showRatingModal.set(true);

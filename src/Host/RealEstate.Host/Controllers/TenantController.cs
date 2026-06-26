@@ -2,6 +2,7 @@
 using Document.Application.Commands.Lease.TenantAcceptLease;
 using Document.Application.Commands.Lease.RequestRenewal;
 using Document.Application.Queries.Lead.GetMyLeads;
+using Document.Application.Queries.Lead.GetTenantNoManagementRented;
 using Document.Application.Queries.Lease.GetLeaseById;
 using Document.Application.Queries.Lease;
 using Document.Application.Queries.Lease.GetLeasePaymentSchedule;
@@ -70,10 +71,11 @@ public class TenantController(
     public async Task<IActionResult> GetRentedProperties(CancellationToken ct)
     {
         var leases = await sender.Send(new GetMyLeasesQuery(UserId), ct);
-        var propertyIds = leases.Select(l => l.PropertyId).Distinct().ToList();
         var result = new List<object>();
 
-        foreach (var pid in propertyIds)
+        // Lease-based rented properties (full-management or standard path)
+        var leasePropertyIds = leases.Select(l => l.PropertyId).Distinct().ToList();
+        foreach (var pid in leasePropertyIds)
         {
             var prop = await sender.Send(new GetPropertyByIdQuery(pid), ct);
             if (prop is null) continue;
@@ -97,7 +99,29 @@ public class TenantController(
                 startDate = lease.StartDate,
                 endDate = lease.EndDate,
                 isActive = lease.IsActive,
-                daysUntilExpiry = daysLeft
+                daysUntilExpiry = daysLeft,
+                noManagement = false
+            });
+        }
+
+        // No-management rented properties (no lease document, deal closed directly)
+        var noMgmtPropertyIds = await sender.Send(new GetTenantNoManagementRentedQuery(UserId), ct);
+        foreach (var pid in noMgmtPropertyIds.Where(pid => !leasePropertyIds.Contains(pid)))
+        {
+            var prop = await sender.Send(new GetPropertyByIdQuery(pid), ct);
+            if (prop is null) continue;
+            await enrichment.EnrichAsync(prop, ct);
+
+            result.Add(new
+            {
+                property = prop,
+                leaseId = (Guid?)null,
+                installmentAmount = (decimal?)null,
+                startDate = (DateOnly?)null,
+                endDate = (DateOnly?)null,
+                isActive = true,
+                daysUntilExpiry = (int?)null,
+                noManagement = true
             });
         }
 
