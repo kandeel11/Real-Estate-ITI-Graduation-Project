@@ -16,6 +16,7 @@ public sealed class GetNoManagementPendingLeadsHandler
         => await _db.Leads
             .Where(l => l.NoManagementManagerId == request.ManagerUserId
                      && l.NoManagementPendingAt != null)
+            .OrderBy(l => l.NoManagementPendingAt)
             .Select(l => new NoManagementPendingLeadDto(
                 l.Id,
                 l.PropertyId,
@@ -23,6 +24,5 @@ public sealed class GetNoManagementPendingLeadsHandler
                 l.OwnerId,
                 l.DealValue,
                 l.NoManagementPendingAt!.Value))
-            .OrderBy(l => l.PendingAt)
             .ToListAsync(ct);
 }

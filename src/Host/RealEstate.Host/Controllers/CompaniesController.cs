@@ -545,8 +545,9 @@ public class CompaniesController(
             managerApprovalStatus = l.ManagerApprovalStatus,
             managerNotes         = l.ManagerNotes,
             isFullManagement     = l.IsFullManagement,
-            managementOptions    = l.ManagementOptions,
-            createdAt            = l.CreatedAt
+            managementOptions    = ParseManagementOptions(l.ManagementOptions),
+            uploadedAt           = l.CreatedAt,
+            contractFileUrl      = l.ContractFileUrl
         });
 
         return Ok(result);
@@ -650,14 +651,71 @@ public class CompaniesController(
             endDate              = l.EndDate,
             paymentDayOfMonth    = l.PaymentDayOfMonth,
             managerApprovalStatus = l.ManagerApprovalStatus,
-            managerApprovedAt    = l.ManagerApprovedAt,
+            approvedAt           = l.ManagerApprovedAt,
             managerNotes         = l.ManagerNotes,
             isFullManagement     = l.IsFullManagement,
-            managementOptions    = l.ManagementOptions,
-            createdAt            = l.CreatedAt
+            managementOptions    = ParseManagementOptions(l.ManagementOptions),
+            uploadedAt           = l.CreatedAt,
+            contractFileUrl      = l.ContractFileUrl
         });
 
         return Ok(result);
+    }
+
+    /// <summary>
+    /// Active leases under the company's properties — tenant has accepted and lease is live.
+    /// </summary>
+    [HttpGet("mine/leases/active")]
+    [Authorize(Policy = "CompanyManager")]
+    public async Task<IActionResult> GetActiveLeases(CancellationToken ct)
+    {
+        var companyId = currentUser.CompanyId;
+        if (companyId is null)
+            return BadRequest(new { error = "No company is associated with your account." });
+
+        var properties = await mediator.Send(new GetPropertiesByCompanyQuery(companyId.Value), ct);
+        if (properties.Count == 0) return Ok(Array.Empty<object>());
+
+        var propertyIds = properties.Select(p => p.Id).ToList();
+        var leases = await mediator.Send(new GetActiveCompanyLeasesQuery(propertyIds), ct);
+        if (leases.Count == 0) return Ok(Array.Empty<object>());
+
+        var userIds = leases.Select(l => l.TenantId)
+            .Concat(leases.Where(l => l.BrokerId.HasValue).Select(l => l.BrokerId!.Value))
+            .Distinct().ToList();
+        var names = await mediator.Send(new GetUserNamesQuery(userIds), ct);
+        var titlesById = properties.ToDictionary(p => p.Id, p => p.Title);
+
+        var result = leases.Select(l => new
+        {
+            id                = l.Id,
+            propertyId        = l.PropertyId,
+            propertyTitle     = titlesById.GetValueOrDefault(l.PropertyId, string.Empty),
+            tenantId          = l.TenantId,
+            tenantName        = names.GetValueOrDefault(l.TenantId, "Unknown"),
+            brokerId          = l.BrokerId,
+            brokerName        = l.BrokerId.HasValue ? names.GetValueOrDefault(l.BrokerId.Value) : null,
+            installmentAmount = l.InstallmentAmount,
+            paymentFrequency  = l.PaymentFrequency,
+            totalRentAmount   = l.TotalRentAmount,
+            durationInMonths  = l.DurationInMonths,
+            securityDeposit   = l.SecurityDeposit,
+            startDate         = l.StartDate,
+            endDate           = l.EndDate,
+            isFullManagement  = l.IsFullManagement,
+            managementOptions = ParseManagementOptions(l.ManagementOptions),
+            activeSince       = l.TenantConfirmedAt,
+            uploadedAt        = l.CreatedAt
+        });
+
+        return Ok(result);
+    }
+
+    private static string[] ParseManagementOptions(string? raw)
+    {
+        if (string.IsNullOrWhiteSpace(raw)) return [];
+        try { return System.Text.Json.JsonSerializer.Deserialize<string[]>(raw) ?? []; }
+        catch { return raw.Split(',', StringSplitOptions.RemoveEmptyEntries | StringSplitOptions.TrimEntries); }
     }
 }
 

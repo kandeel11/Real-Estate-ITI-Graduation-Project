@@ -29,6 +29,9 @@
 .btn-review { background: var(--color-primary-container); color: var(--color-primary); border: 1.5px solid transparent; }
 .btn-review:hover { background: var(--color-primary); color: #fff; }
 .btn-cancel { background: transparent; color: var(--color-on-surface-variant); border: 1.5px solid var(--color-outline-variant); }
+.btn-download-pdf { display: inline-flex; align-items: center; gap: 6px; padding: 6px 14px; border-radius: var(--radius-md); font-size: 13px; font-weight: 600; cursor: pointer; border: 1.5px solid #fca5a5; background: #fff0f0; color: #b91c1c; transition: all .15s; }
+.btn-download-pdf:hover:not(:disabled) { background: #fee2e2; }
+.btn-download-pdf:disabled { opacity: .55; cursor: not-allowed; }
 .btn-cancel:hover:not(:disabled) { background: var(--color-surface-container); }
 .btn-reject { background: #fee2e2; color: #b91c1c; border: 1.5px solid #fca5a5; }
 .btn-reject:hover:not(:disabled) { background: #dc2626; color: #fff; border-color: #dc2626; }
@@ -58,11 +61,19 @@
 .label-icon--awaiting { color: #3b82f6; }
 .section-count { background: #fef3c7; color: #92400e; font-size: 11.5px; font-weight: 700; border-radius: 999px; padding: 1px 9px; }
 .section-count--awaiting { background: #dbeafe; color: #1e40af; }
+.section-count--active   { background: #dcfce7; color: #166534; }
 
 /* Awaiting-tenant card variant */
 .approval-card--awaiting { border-color: #bfdbfe; background: #f8faff; }
 .card-icon--awaiting { background: #dbeafe; color: #2563eb; }
 .awaiting-badge { display: inline-flex; align-items: center; gap: 6px; font-size: 12px; font-weight: 600; color: #2563eb; background: #dbeafe; border: 1px solid #bfdbfe; border-radius: 999px; padding: 5px 14px; white-space: nowrap; }
+
+/* Active lease card variant */
+.approval-card--active { border-color: #86efac; background: #f0fdf4; }
+.card-icon--active { background: #dcfce7; color: #16a34a; }
+.active-badge { display: inline-flex; align-items: center; gap: 6px; font-size: 12px; font-weight: 600; color: #16a34a; background: #dcfce7; border: 1px solid #86efac; border-radius: 999px; padding: 5px 14px; white-space: nowrap; }
+.label-icon--active { color: #16a34a; }
+.option-badge--full { background: #fef9c3; color: #854d0e; border-color: #fde68a; }
 
 /* Compact empty state */
 .empty-state--sm { padding: 2rem 1rem; }
@@ -74,12 +85,12 @@
 
 /* Dialog */
 .modal-backdrop { position: fixed; inset: 0; background: rgba(0,0,0,.45); z-index: 1060; display: flex; align-items: center; justify-content: center; padding: 1rem; }
-.approval-dialog { background: var(--color-surface-container-lowest); border-radius: 16px; width: 100%; max-width: 520px; overflow: hidden; }
+.approval-dialog { background: var(--color-surface-container-lowest); border-radius: 16px; width: 100%; max-width: 580px; max-height: 90vh; overflow-y: auto; }
 .dialog-header { display: flex; align-items: center; justify-content: space-between; padding: 1.25rem 1.5rem; border-bottom: 1px solid var(--color-outline-variant); }
 .dialog-header h2 { font-size: 1.1rem; font-weight: 700; margin: 0; }
 .modal-close { background: none; border: none; cursor: pointer; font-size: 18px; color: var(--color-on-surface-variant); padding: 4px 8px; border-radius: var(--radius-sm); }
 .modal-close:hover { background: var(--color-surface-container); }
-.dialog-body { padding: 1.25rem 1.5rem; display: flex; flex-direction: column; gap: 10px; }
+.dialog-body { padding: 1.25rem 1.5rem; display: flex; flex-direction: column; gap: 10px; overflow-y: auto; }
 .dialog-detail { display: flex; gap: 12px; font-size: 13.5px; }
 .detail-label { min-width: 90px; font-weight: 600; color: var(--color-on-surface-variant); flex-shrink: 0; }
 .detail-value { color: var(--color-on-surface); }

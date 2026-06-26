@@ -24,8 +24,55 @@ public record ManagementLeaseDto(
     bool IsFullManagement,
     string? ManagementOptions,
     string ExtractionStatus,
+    DateTime CreatedAt,
+    string? ContractFileUrl
+);
+
+public record ActiveManagementLeaseDto(
+    Guid Id,
+    Guid PropertyId,
+    Guid TenantId,
+    Guid OwnerId,
+    Guid? BrokerId,
+    decimal? InstallmentAmount,
+    string? PaymentFrequency,
+    decimal? TotalRentAmount,
+    int? DurationInMonths,
+    decimal? SecurityDeposit,
+    DateOnly? StartDate,
+    DateOnly? EndDate,
+    bool IsFullManagement,
+    string? ManagementOptions,
+    DateTime? TenantConfirmedAt,
     DateTime CreatedAt
 );
+
+/// <summary>Active leases under the company's properties (tenant accepted).</summary>
+public record GetActiveCompanyLeasesQuery(List<Guid> PropertyIds) : IRequest<List<ActiveManagementLeaseDto>>;
+
+public class GetActiveCompanyLeasesHandler(IDocumentDbContext db)
+    : IRequestHandler<GetActiveCompanyLeasesQuery, List<ActiveManagementLeaseDto>>
+{
+    public async Task<List<ActiveManagementLeaseDto>> Handle(GetActiveCompanyLeasesQuery q, CancellationToken ct)
+    {
+        if (q.PropertyIds.Count == 0) return [];
+
+        var leases = await db.Leases
+            .Where(l =>
+                q.PropertyIds.Contains(l.PropertyId) &&
+                l.DeletedAt == null &&
+                l.IsActive)
+            .OrderByDescending(l => l.TenantConfirmedAt)
+            .ToListAsync(ct);
+
+        return leases.Select(l => new ActiveManagementLeaseDto(
+            l.Id, l.PropertyId, l.TenantId, l.OwnerId, l.BrokerId,
+            l.InstallmentAmount, l.PaymentFrequency?.ToString(), l.TotalRentAmount, l.DurationInMonths,
+            l.SecurityDeposit, l.StartDate, l.EndDate,
+            l.IsFullManagement, l.ManagementOptions, l.TenantConfirmedAt, l.CreatedAt
+        )).ToList();
+    }
+}
 
 /// <summary>
 /// Leases under the company's properties that are awaiting manager approval.
@@ -54,7 +101,8 @@ public class GetPendingApprovalLeasesHandler(IDocumentDbContext db)
             l.InstallmentAmount, l.PaymentFrequency?.ToString(), l.TotalRentAmount, l.DurationInMonths,
             l.SecurityDeposit, l.StartDate, l.EndDate, l.PaymentDayOfMonth,
             l.ManagerApprovalStatus, l.ManagerNotes, l.ManagerApprovedAt,
-            l.IsFullManagement, l.ManagementOptions, l.ExtractionStatus, l.CreatedAt
+            l.IsFullManagement, l.ManagementOptions, l.ExtractionStatus, l.CreatedAt,
+            l.ContractFileUrl
         )).ToList();
     }
 }
@@ -87,7 +135,8 @@ public class GetAwaitingTenantLeasesHandler(IDocumentDbContext db)
             l.InstallmentAmount, l.PaymentFrequency?.ToString(), l.TotalRentAmount, l.DurationInMonths,
             l.SecurityDeposit, l.StartDate, l.EndDate, l.PaymentDayOfMonth,
             l.ManagerApprovalStatus, l.ManagerNotes, l.ManagerApprovedAt,
-            l.IsFullManagement, l.ManagementOptions, l.ExtractionStatus, l.CreatedAt
+            l.IsFullManagement, l.ManagementOptions, l.ExtractionStatus, l.CreatedAt,
+            l.ContractFileUrl
         )).ToList();
     }
 }

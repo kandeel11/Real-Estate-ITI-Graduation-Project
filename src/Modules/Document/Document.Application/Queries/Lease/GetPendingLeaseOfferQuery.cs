@@ -19,7 +19,8 @@ public class GetPendingLeaseOfferHandler(IDocumentDbContext db)
                 !x.IsActive &&
                 x.ExtractionStatus == "extracted" &&
                 x.TenantConfirmedAt == null &&
-                x.RejectionReason == null)
+                x.RejectionReason == null &&
+                (x.ManagerApprovalStatus == null || x.ManagerApprovalStatus == "Approved"))
             .OrderByDescending(x => x.CreatedAt)
             .FirstOrDefaultAsync(ct);
 

@@ -115,11 +115,23 @@ export interface CompanyLeadPipelineDto {
 
 export interface PendingLeaseApproval {
   id: string;
+  propertyId: string;
   propertyTitle: string;
+  tenantId: string;
   tenantName: string;
-  brokerName: string;
+  brokerId: string | null;
+  brokerName: string | null;
+  installmentAmount: number | null;
+  paymentFrequency: string | null;
+  totalRentAmount: number | null;
+  durationInMonths: number | null;
+  securityDeposit: number | null;
+  startDate: string | null;
+  endDate: string | null;
+  isFullManagement: boolean;
   managementOptions: string[];
   uploadedAt: string;
+  contractFileUrl: string | null;
 }
 
 /** Deal closed by broker without management, waiting for manager confirmation. */
@@ -137,9 +149,37 @@ export interface AwaitingTenantLease {
   id: string;
   propertyTitle: string;
   tenantName: string;
-  brokerName: string;
+  brokerName: string | null;
+  installmentAmount: number | null;
+  paymentFrequency: string | null;
+  startDate: string | null;
+  endDate: string | null;
   managementOptions: string[];
   approvedAt: string;
+  uploadedAt: string;
+  contractFileUrl: string | null;
+}
+
+/** Lease that is currently active (tenant accepted). */
+export interface ActiveCompanyLease {
+  id: string;
+  propertyId: string;
+  propertyTitle: string;
+  tenantId: string;
+  tenantName: string;
+  brokerId: string | null;
+  brokerName: string | null;
+  installmentAmount: number | null;
+  paymentFrequency: string | null;
+  totalRentAmount: number | null;
+  durationInMonths: number | null;
+  securityDeposit: number | null;
+  startDate: string | null;
+  endDate: string | null;
+  isFullManagement: boolean;
+  managementOptions: string[];
+  activeSince: string | null;
+  uploadedAt: string;
 }
 
 @Injectable({ providedIn: 'root' })
@@ -294,6 +334,18 @@ export class CompanyService {
     return this.http.get<AwaitingTenantLease[]>(
       `${this.baseUrl}/companies/mine/leases/awaiting-tenant`,
     );
+  }
+
+  /** GET /api/companies/mine/leases/active — tenant-accepted active leases. */
+  getActiveLeases(): Observable<ActiveCompanyLease[]> {
+    return this.http.get<ActiveCompanyLease[]>(
+      `${this.baseUrl}/companies/mine/leases/active`,
+    );
+  }
+
+  /** GET /api/leases/{id}/download — returns a time-limited SAS URL for the uploaded PDF. */
+  downloadLeaseContract(leaseId: string): Observable<{ contractFileUrl: string }> {
+    return this.http.get<{ contractFileUrl: string }>(`${this.baseUrl}/leases/${leaseId}/download`);
   }
 
   /** POST /api/leases/{id}/manager-approve — approve or reject a partial-management lease. */

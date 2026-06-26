@@ -101,14 +101,14 @@ export class MyLeaseComponent implements OnInit, OnDestroy {
       .pipe(finalize(() => this.loading.set(false)))
       .subscribe({
         next: ({ leases, properties }) => {
-          // Build leaseId → address map from rented-properties
+          // Build leaseId → address map from rented-properties (no-management entries have null leaseId — skip them)
           const addressMap = new Map<string, string>(
-            properties.map((p) => {
-              const parts = [p.property.address, p.property.district, p.property.city].filter(
-                Boolean,
-              );
-              return [p.leaseId, parts.join(', ')];
-            }),
+            properties
+              .filter((p): p is typeof p & { leaseId: string } => p.leaseId != null)
+              .map((p) => {
+                const parts = [p.property.address, p.property.district, p.property.city].filter(Boolean);
+                return [p.leaseId, parts.join(', ')] as [string, string];
+              }),
           );
 
           const views = leases.map((l) => this.toView(l, addressMap.get(l.id)));

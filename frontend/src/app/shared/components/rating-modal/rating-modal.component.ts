@@ -14,7 +14,7 @@ import { ToastService } from '../toast/toast.service';
 interface PropertyOption {
   id: string;
   title: string;
-  leaseId: string;
+  leaseId: string | null;
 }
 
 @Component({

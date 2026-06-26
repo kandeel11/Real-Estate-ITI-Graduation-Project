@@ -46,7 +46,7 @@
         <span class="lease-badge" [class.badge-active]="prop.isActive" [class.badge-past]="!prop.isActive">
           {{ prop.isActive ? ('MY_PROPERTY.ACTIVE' | translate) : ('MY_PROPERTY.PAST' | translate) }}
         </span>
-        @if (prop.isActive && prop.daysUntilExpiry <= 60) {
+        @if (prop.isActive && prop.daysUntilExpiry !== null && prop.daysUntilExpiry <= 60) {
           <span class="expiry-badge">
             <i class="fa-regular fa-clock me-1"></i>{{ prop.daysUntilExpiry }}{{ 'MY_PROPERTY.DAYS_LEFT' | translate }}
           </span>
@@ -109,7 +109,7 @@
           </div>
           <div class="lease-meta-item">
             <span class="meta-label">{{ 'MY_PROPERTY.DAYS_REMAINING' | translate }}</span>
-            <span class="meta-value" [class.expiry-warn]="prop.daysUntilExpiry <= 60">
+            <span class="meta-value" [class.expiry-warn]="prop.daysUntilExpiry !== null && prop.daysUntilExpiry <= 60">
               {{ prop.daysUntilExpiry }}
             </span>
           </div>
