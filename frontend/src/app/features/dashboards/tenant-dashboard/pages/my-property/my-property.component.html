@@ -125,9 +125,13 @@
               <i class="fa-solid fa-screwdriver-wrench me-1"></i>{{ 'MY_PROPERTY.NEW_TICKET' | translate }}
             </a>
           } @else {
-            <span class="badge bg-secondary fs-7 px-3 py-2">
-              <i class="fa-solid fa-circle-info me-1"></i>No management service — contact owner directly
-            </span>
+            <!-- No-management deal: show lease & maintenance as locked (no formal lease or company support) -->
+            <button class="btn btn-primary btn-sm" disabled title="No lease document — deal closed directly by broker">
+              <i class="fa-solid fa-lock me-1"></i>No Lease
+            </button>
+            <button class="btn btn-outline-primary btn-sm" disabled title="Maintenance is not available — no management service for this property">
+              <i class="fa-solid fa-lock me-1"></i>{{ 'MY_PROPERTY.NEW_TICKET' | translate }}
+            </button>
           }
           @if (prop.isActive && !prop.noManagement) {
             <button class="btn btn-outline-warning btn-sm" (click)="openRatingModal(prop)">

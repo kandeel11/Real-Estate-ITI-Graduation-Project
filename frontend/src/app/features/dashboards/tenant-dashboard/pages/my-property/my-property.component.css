@@ -291,3 +291,11 @@
   .property-hero { height: 200px; }
   .lease-meta { gap: 16px; }
 }
+
+/* Locked buttons for no-management deals */
+.btn:disabled {
+  opacity: 0.55;
+  cursor: not-allowed;
+  pointer-events: auto;
+}
+
