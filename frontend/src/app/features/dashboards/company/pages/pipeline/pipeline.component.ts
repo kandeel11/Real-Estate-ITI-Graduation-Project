@@ -6,6 +6,7 @@ import {
   BrokerPipelineDto,
   BrokerPipeline,
   LeadPipelineItem,
+  NoManagementPendingItem,
 } from '../../services/company.service';
 
 interface PipelineCol {
@@ -29,6 +30,10 @@ export class PipelineComponent implements OnInit {
   readonly error = signal<string | null>(null);
   readonly pipeline = signal<CompanyLeadPipelineDto | null>(null);
   readonly selectedBrokerId = signal<string>('all');
+
+  /** No-management deals waiting for this manager's confirmation. */
+  readonly noMgmtPending = signal<NoManagementPendingItem[]>([]);
+  readonly confirmingLeadId = signal<string | null>(null);
 
   readonly COLUMNS: PipelineCol[] = [
     { key: 'new',         label: 'New',         color: '#3b82f6', icon: 'fa-solid fa-circle-plus' },
@@ -70,6 +75,7 @@ export class PipelineComponent implements OnInit {
 
   ngOnInit(): void {
     this.loadPipeline();
+    this.loadNoMgmtPending();
   }
 
   loadPipeline(): void {
@@ -78,6 +84,24 @@ export class PipelineComponent implements OnInit {
     this.svc.getLeadPipeline().subscribe({
       next:  data => { this.pipeline.set(data); this.loading.set(false); },
       error: ()   => { this.error.set('Failed to load pipeline data. Please try again.'); this.loading.set(false); },
+    });
+  }
+
+  loadNoMgmtPending(): void {
+    this.svc.getNoManagementPending().subscribe({
+      next: items => this.noMgmtPending.set(items),
+      error: () => {},
+    });
+  }
+
+  confirmNoManagement(item: NoManagementPendingItem): void {
+    this.confirmingLeadId.set(item.leadId);
+    this.svc.confirmNoManagement(item.leadId).subscribe({
+      next: () => {
+        this.confirmingLeadId.set(null);
+        this.noMgmtPending.update(list => list.filter(i => i.leadId !== item.leadId));
+      },
+      error: () => this.confirmingLeadId.set(null),
     });
   }
 

@@ -122,6 +122,16 @@ export interface PendingLeaseApproval {
   uploadedAt: string;
 }
 
+/** Deal closed by broker without management, waiting for manager confirmation. */
+export interface NoManagementPendingItem {
+  leadId: string;
+  propertyId: string;
+  tenantId: string;
+  tenantName: string;
+  dealValue: number | null;
+  pendingAt: string;
+}
+
 /** Lease the manager already approved — now waiting for the tenant to accept. */
 export interface AwaitingTenantLease {
   id: string;
@@ -292,6 +302,21 @@ export class CompanyService {
       isApproved,
       notes: notes ?? null,
     });
+  }
+
+  /** GET /api/companies/mine/leads/no-management-pending — broker closed deals awaiting manager confirmation. */
+  getNoManagementPending(): Observable<NoManagementPendingItem[]> {
+    return this.http.get<NoManagementPendingItem[]>(
+      `${this.baseUrl}/companies/mine/leads/no-management-pending`,
+    );
+  }
+
+  /** POST /api/companies/mine/leads/{leadId}/confirm-no-management — manager confirms the no-management close. */
+  confirmNoManagement(leadId: string): Observable<void> {
+    return this.http.post<void>(
+      `${this.baseUrl}/companies/mine/leads/${leadId}/confirm-no-management`,
+      {},
+    );
   }
 
   /** PUT /api/companies/mine — backend returns 204 No Content. */

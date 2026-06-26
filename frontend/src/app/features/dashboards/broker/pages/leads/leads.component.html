@@ -45,21 +45,44 @@
                     <span class="lead-deal">{{ lead.dealValue }}</span>
                   }
                 </div>
-                @if (col.status === 'closed_won' && isCompanyBroker()) {
-                  @if (hasLease(lead)) {
-                    <span class="lease-created">
+                @if (col.status === 'closed_won') {
+                  @if (lead.noManagementClosed) {
+                    <span class="deal-closed-badge">
                       <i class="fa-solid fa-circle-check"></i>
-                      {{ 'BROKER.LEADS.LEASE_CREATED' | translate }}
+                      Deal Closed
                     </span>
-                  } @else if (lead.draftLeaseId) {
-                    <button class="btn-lease" (click)="$event.stopPropagation(); openResume(lead)">
-                      <i class="fa-solid fa-pen-to-square"></i>
-                      {{ 'BROKER.LEADS.RESUME_LEASE' | translate }}
-                    </button>
+                  } @else if (lead.noManagementPending) {
+                    <span class="deal-pending-badge">
+                      <i class="fa-solid fa-clock"></i>
+                      Pending Manager
+                    </span>
+                  } @else if (isCompanyBroker()) {
+                    @if (hasLease(lead)) {
+                      <span class="lease-created">
+                        <i class="fa-solid fa-circle-check"></i>
+                        {{ 'BROKER.LEADS.LEASE_CREATED' | translate }}
+                      </span>
+                    } @else if (lead.draftLeaseId) {
+                      <button class="btn-lease" (click)="$event.stopPropagation(); openResume(lead)">
+                        <i class="fa-solid fa-pen-to-square"></i>
+                        {{ 'BROKER.LEADS.RESUME_LEASE' | translate }}
+                      </button>
+                    } @else {
+                      <button class="btn-lease" (click)="$event.stopPropagation(); managementChoiceLead.set(lead)">
+                        <i class="fa-solid fa-file-contract"></i>
+                        {{ 'BROKER.LEADS.CREATE_LEASE' | translate }}
+                      </button>
+                    }
                   } @else {
-                    <button class="btn-lease" (click)="$event.stopPropagation(); leaseUploadLead.set(lead)">
-                      <i class="fa-solid fa-file-contract"></i>
-                      {{ 'BROKER.LEADS.CREATE_LEASE' | translate }}
+                    <button class="btn-close-deal"
+                            [disabled]="closingNoMgmt() === lead.id"
+                            (click)="$event.stopPropagation(); closeNoManagement(lead)">
+                      @if (closingNoMgmt() === lead.id) {
+                        <i class="fa-solid fa-spinner fa-spin"></i>
+                      } @else {
+                        <i class="fa-solid fa-handshake"></i>
+                      }
+                      Close Deal
                     </button>
                   }
                 }
@@ -124,7 +147,38 @@
   </div>
 }
 
-<!-- Lease upload modal (opens after Close Won) -->
+<!-- Management choice modal (company broker, after Close Won) -->
+@if (managementChoiceLead(); as lead) {
+  <div class="modal-backdrop" (click)="managementChoiceLead.set(null)">
+    <div class="mgmt-choice-dialog" (click)="$event.stopPropagation()">
+      <div class="modal-header">
+        <h2>Choose Management Option</h2>
+        <button class="modal-close" (click)="managementChoiceLead.set(null)">
+          <i class="fa-solid fa-xmark"></i>
+        </button>
+      </div>
+      <div class="mgmt-choice-body">
+        <p class="mgmt-choice-subtitle">
+          Deal won for <strong>{{ lead.propertyTitle }}</strong>. How should the company handle this property?
+        </p>
+        <div class="mgmt-choice-options">
+          <button class="mgmt-option mgmt-option--full" (click)="selectFullManagement()">
+            <i class="fa-solid fa-building"></i>
+            <span class="mgmt-option-title">Company Full Management</span>
+            <span class="mgmt-option-desc">Upload a lease contract. Company manages rent collection and maintenance.</span>
+          </button>
+          <button class="mgmt-option mgmt-option--none" (click)="selectNoManagement()">
+            <i class="fa-solid fa-handshake-slash"></i>
+            <span class="mgmt-option-title">Company Doesn't Manage</span>
+            <span class="mgmt-option-desc">No management service. The company manager will be notified to confirm, then the tenant will be informed.</span>
+          </button>
+        </div>
+      </div>
+    </div>
+  </div>
+}
+
+<!-- Lease upload modal (opens after Full Management is selected) -->
 @if (leaseUploadLead()) {
   <app-lease-upload-modal
     [lead]="leaseUploadLead()!"

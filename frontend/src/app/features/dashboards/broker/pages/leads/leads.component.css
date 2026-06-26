@@ -59,3 +59,25 @@
 .skeleton { background: linear-gradient(90deg,#f0f0f0 25%,#e0e0e0 50%,#f0f0f0 75%); background-size: 200% 100%; animation: shimmer 1.5s infinite; }
 @keyframes shimmer { 0%{background-position:200% 0} 100%{background-position:-200% 0} }
 .lease-created { display: inline-flex; align-items: center; gap: 5px; margin-top: 8px; font-size: 11px; font-weight: 600; color: #059669; background: #d1fae5; border-radius: var(--radius-sm); padding: 4px 10px; width: 100%; justify-content: center; }
+
+/* No-management / Close Deal badges & buttons */
+.deal-closed-badge { display: inline-flex; align-items: center; gap: 5px; margin-top: 8px; font-size: 11px; font-weight: 600; color: #1d4ed8; background: #dbeafe; border-radius: var(--radius-sm); padding: 4px 10px; width: 100%; justify-content: center; }
+.deal-pending-badge { display: inline-flex; align-items: center; gap: 5px; margin-top: 8px; font-size: 11px; font-weight: 600; color: #92400e; background: #fef3c7; border-radius: var(--radius-sm); padding: 4px 10px; width: 100%; justify-content: center; }
+.btn-close-deal { display: inline-flex; align-items: center; gap: 5px; margin-top: 8px; font-size: 11px; font-weight: 600; color: #fff; background: #0ea5e9; border: none; border-radius: var(--radius-sm); padding: 5px 10px; width: 100%; justify-content: center; cursor: pointer; transition: background .15s; }
+.btn-close-deal:hover:not(:disabled) { background: #0284c7; }
+.btn-close-deal:disabled { opacity: .6; cursor: not-allowed; }
+.btn-lease { display: inline-flex; align-items: center; gap: 5px; margin-top: 8px; font-size: 11px; font-weight: 600; color: #fff; background: var(--color-primary); border: none; border-radius: var(--radius-sm); padding: 5px 10px; width: 100%; justify-content: center; cursor: pointer; transition: background .15s; }
+.btn-lease:hover { background: var(--color-primary-container); }
+
+/* Management choice modal */
+.mgmt-choice-dialog { position: relative; z-index: 1; background: var(--color-surface-container-lowest); border-radius: 16px; width: 100%; max-width: 560px; overflow: hidden; }
+.mgmt-choice-body { padding: 1.5rem; }
+.mgmt-choice-subtitle { font-size: 14px; color: var(--color-on-surface-variant); margin: 0 0 1.25rem; }
+.mgmt-choice-options { display: flex; flex-direction: column; gap: 1rem; }
+.mgmt-option { display: flex; flex-direction: column; align-items: flex-start; gap: 4px; padding: 1rem 1.25rem; border-radius: 12px; border: 2px solid var(--color-outline-variant); background: var(--color-surface-container-lowest); cursor: pointer; text-align: left; transition: border-color .15s, background .15s; width: 100%; }
+.mgmt-option:hover { border-color: var(--color-primary); background: var(--color-primary-fixed); }
+.mgmt-option i { font-size: 1.5rem; margin-bottom: 4px; }
+.mgmt-option--full i { color: #059669; }
+.mgmt-option--none i { color: #dc2626; }
+.mgmt-option-title { font-size: 15px; font-weight: 700; color: var(--color-on-surface); }
+.mgmt-option-desc { font-size: 13px; color: var(--color-on-surface-variant); }

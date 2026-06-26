@@ -31,6 +31,10 @@ export class LeadsComponent implements OnInit {
   readonly leaseUploadLead = signal<Lead | null>(null);
   /** Set when resuming an un-sent lease so the modal skips upload and loads it directly. */
   readonly resumeLeaseId = signal<string | null>(null);
+  /** Company broker: waiting for management choice (Full Management / No Management). */
+  readonly managementChoiceLead = signal<Lead | null>(null);
+  /** Set while a no-management close request is in flight. */
+  readonly closingNoMgmt = signal<string | null>(null);
 
   readonly columns = signal<KanbanColumn[]>([
     { status: 'new',          labelKey: 'BROKER.LEADS.COL_NEW',          color: '#3b82f6', leads: [] },
@@ -123,10 +127,48 @@ export class LeadsComponent implements OnInit {
         this.moveLead(lead, 'closed_won');
         this.closingLeadId.set(null);
         this.selectedLead.set(null);
-        // Only company brokers proceed to the lease upload flow.
-        if (this.isCompanyBroker()) this.leaseUploadLead.set(lead);
+        if (this.isCompanyBroker()) {
+          // Company broker: ask for management preference before uploading a lease.
+          this.managementChoiceLead.set(lead);
+        }
+        // Independent broker: shows "Close Deal" button on the card — no action needed here.
       },
       error: () => this.closingLeadId.set(null),
+    });
+  }
+
+  /** Company broker chose "Full Management" — proceed to lease upload. */
+  selectFullManagement(): void {
+    const lead = this.managementChoiceLead();
+    this.managementChoiceLead.set(null);
+    if (lead) this.leaseUploadLead.set(lead);
+  }
+
+  /** Company broker chose "No Management" — notify manager and await confirmation. */
+  selectNoManagement(): void {
+    const lead = this.managementChoiceLead();
+    if (!lead) return;
+    this.managementChoiceLead.set(null);
+    this.closeNoManagement(lead);
+  }
+
+  /**
+   * Independent broker "Close Deal" — or company broker "No Management" path.
+   * Marks the property as Rented without a lease; tenant notified.
+   */
+  closeNoManagement(lead: Lead): void {
+    this.closingNoMgmt.set(lead.id);
+    this.dataService.closeNoManagement(lead.id).subscribe({
+      next: res => {
+        this.closingNoMgmt.set(null);
+        if (res.status === 'pending_manager_confirmation') {
+          lead.noManagementPending = true;
+        } else {
+          lead.noManagementClosed = true;
+        }
+        this.refreshColumns();
+      },
+      error: () => this.closingNoMgmt.set(null),
     });
   }
 

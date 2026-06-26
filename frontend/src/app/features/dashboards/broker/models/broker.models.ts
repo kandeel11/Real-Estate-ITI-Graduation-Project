@@ -52,6 +52,10 @@ export interface Lead {
   hasLease?: boolean;
   /** An uploaded-but-not-yet-sent lease for this lead — offer "Resume" to finish it. */
   draftLeaseId?: string | null;
+  /** True when broker chose "no management" and is waiting for company manager confirmation. */
+  noManagementPending?: boolean;
+  /** True when the no-management deal has been fully closed (property rented, tenant notified). */
+  noManagementClosed?: boolean;
 }
 
 export interface ChatMessage {
