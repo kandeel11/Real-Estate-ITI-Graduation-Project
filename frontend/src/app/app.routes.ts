@@ -260,6 +260,13 @@ export const routes: Routes = [
                 (m) => m.PipelineComponent,
               ),
           },
+          {
+            path: 'wallet',
+            loadComponent: () =>
+              import('./features/dashboards/company/pages/wallet/wallet.component').then(
+                (m) => m.CompanyWalletComponent,
+              ),
+          },
         ],
       },
 

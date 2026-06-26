@@ -717,6 +717,63 @@ public class CompaniesController(
         try { return System.Text.Json.JsonSerializer.Deserialize<string[]>(raw) ?? []; }
         catch { return raw.Split(',', StringSplitOptions.RemoveEmptyEntries | StringSplitOptions.TrimEntries); }
     }
+
+    // ── Company Wallet ────────────────────────────────────────────────────────
+
+    [HttpGet("mine/wallet/balance")]
+    [Authorize(Policy = "CompanyManager")]
+    public async Task<IActionResult> GetWalletBalance(CancellationToken ct)
+    {
+        var companyId = currentUser.CompanyId;
+        if (companyId is null) return BadRequest(new { error = "No company associated with your account." });
+
+        var result = await mediator.Send(new Wallet.Application.Queries.GetCompanyWalletBalance.GetCompanyWalletBalanceQuery(companyId.Value), ct);
+        return result is null
+            ? Ok(new { companyId, balance = 0m, currency = "AED" })
+            : Ok(result);
+    }
+
+    [HttpGet("mine/wallet/ledger")]
+    [Authorize(Policy = "CompanyManager")]
+    public async Task<IActionResult> GetWalletLedger(
+        [FromQuery] int page = 1,
+        [FromQuery] int pageSize = 20,
+        CancellationToken ct = default)
+    {
+        var companyId = currentUser.CompanyId;
+        if (companyId is null) return BadRequest(new { error = "No company associated with your account." });
+
+        var result = await mediator.Send(new Wallet.Application.Queries.GetCompanyLedger.GetCompanyLedgerQuery(companyId.Value, page, pageSize), ct);
+        return Ok(result);
+    }
+
+    [HttpGet("mine/wallet/withdrawals")]
+    [Authorize(Policy = "CompanyManager")]
+    public async Task<IActionResult> GetWalletWithdrawals(CancellationToken ct)
+    {
+        var companyId = currentUser.CompanyId;
+        if (companyId is null) return BadRequest(new { error = "No company associated with your account." });
+
+        var result = await mediator.Send(new Wallet.Application.Queries.GetCompanyWithdrawals.GetCompanyWithdrawalsQuery(companyId.Value), ct);
+        return Ok(result);
+    }
+
+    [HttpPost("mine/wallet/withdraw")]
+    [Authorize(Policy = "CompanyManager")]
+    public async Task<IActionResult> RequestWithdrawal([FromBody] CompanyWithdrawalRequest body, CancellationToken ct)
+    {
+        var companyId = currentUser.CompanyId;
+        if (companyId is null) return BadRequest(new { error = "No company associated with your account." });
+
+        try
+        {
+            var id = await mediator.Send(
+                new Wallet.Application.Commands.RequestCompanyWithdrawal.RequestCompanyWithdrawalCommand(
+                    companyId.Value, body.Amount, body.BankAccountDetails), ct);
+            return Created($"/api/companies/mine/wallet/withdrawals/{id}", new { withdrawalId = id });
+        }
+        catch (InvalidOperationException ex) { return BadRequest(new { error = ex.Message }); }
+    }
 }
 
 public record UpdateCompanyRequest(
@@ -759,3 +816,5 @@ public class UploadLogoRequest
 {
     public IFormFile? File { get; init; }
 }
+
+public record CompanyWithdrawalRequest(decimal Amount, string BankAccountDetails);

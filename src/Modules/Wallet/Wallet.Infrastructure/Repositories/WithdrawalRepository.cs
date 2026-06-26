@@ -24,6 +24,12 @@ public class WithdrawalRepository : IWithdrawalRepository
             .OrderByDescending(w => w.RequestedAt)
             .ToListAsync(ct);
 
+    public async Task<List<WithdrawalRequest>> GetByCompanyIdAsync(Guid companyId, CancellationToken ct = default)
+        => await _context.WithdrawalRequests
+            .Where(w => w.CompanyId == companyId)
+            .OrderByDescending(w => w.RequestedAt)
+            .ToListAsync(ct);
+
     public async Task<List<WithdrawalRequest>> GetAllAsync(CancellationToken ct = default)
         => await _context.WithdrawalRequests
             .OrderByDescending(w => w.RequestedAt)

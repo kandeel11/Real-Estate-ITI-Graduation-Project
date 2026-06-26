@@ -382,4 +382,68 @@ export class CompanyService {
       changes
     );
   }
+
+  // ── Company Wallet ──────────────────────────────────────────────────────────
+
+  getWalletBalance(): Observable<CompanyWalletBalance> {
+    return this.http.get<CompanyWalletBalance>(`${this.baseUrl}/companies/mine/wallet/balance`);
+  }
+
+  getWalletLedger(page = 1, pageSize = 20): Observable<CompanyLedgerResponse> {
+    return this.http.get<CompanyLedgerResponse>(
+      `${this.baseUrl}/companies/mine/wallet/ledger?page=${page}&pageSize=${pageSize}`,
+    );
+  }
+
+  getWalletWithdrawals(): Observable<CompanyWithdrawal[]> {
+    return this.http.get<CompanyWithdrawal[]>(`${this.baseUrl}/companies/mine/wallet/withdrawals`);
+  }
+
+  requestWithdrawal(amount: number, bankAccountDetails: string): Observable<{ withdrawalId: string }> {
+    return this.http.post<{ withdrawalId: string }>(
+      `${this.baseUrl}/companies/mine/wallet/withdraw`,
+      { amount, bankAccountDetails },
+    );
+  }
+}
+
+// ── Company Wallet models ──────────────────────────────────────────────────────
+
+export interface CompanyWalletBalance {
+  walletId: string;
+  ownerId: string;
+  balance: number;
+  currency: string;
+  updatedAt: string;
+}
+
+export type CompanyLedgerEntryType = 'Credit' | 'Debit';
+
+export interface CompanyLedgerEntry {
+  id: string;
+  type: CompanyLedgerEntryType;
+  amount: number;
+  description: string;
+  occurredAt: string;
+}
+
+export interface CompanyLedgerResponse {
+  items: CompanyLedgerEntry[];
+  totalCount: number;
+  page: number;
+  pageSize: number;
+}
+
+export interface CompanyWithdrawal {
+  id: string;
+  companyId: string;
+  amount: number;
+  commissionAmount: number;
+  netAmount: number;
+  currency: string;
+  bankAccountDetails: string;
+  status: 'Pending' | 'Processing' | 'Completed' | 'Rejected';
+  requestedAt: string;
+  processedAt?: string;
+  notes?: string;
 }

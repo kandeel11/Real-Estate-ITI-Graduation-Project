@@ -4,6 +4,8 @@ public class WalletBalance
 {
     public Guid Id { get; private set; }
     public Guid OwnerId { get; private set; }
+    /// <summary>Set only for company wallets — null for owner wallets.</summary>
+    public Guid? CompanyId { get; private set; }
     public decimal Balance { get; private set; }
     public string Currency { get; private set; } = "AED";
     public DateTime CreatedAt { get; private set; }
@@ -16,6 +18,18 @@ public class WalletBalance
         {
             Id = Guid.NewGuid(),
             OwnerId = ownerId,
+            Balance = 0m,
+            Currency = "AED",
+            CreatedAt = DateTime.UtcNow,
+            UpdatedAt = DateTime.UtcNow
+        };
+
+    public static WalletBalance CreateForCompany(Guid companyId)
+        => new()
+        {
+            Id = Guid.NewGuid(),
+            OwnerId = companyId,
+            CompanyId = companyId,
             Balance = 0m,
             Currency = "AED",
             CreatedAt = DateTime.UtcNow,

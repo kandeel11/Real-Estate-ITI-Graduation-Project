@@ -25,11 +25,36 @@ public class WalletRepository : IWalletRepository
         return wallet;
     }
 
+    public async Task<WalletBalance?> GetByCompanyIdAsync(Guid companyId, CancellationToken ct = default)
+        => await _context.Wallets.FirstOrDefaultAsync(w => w.CompanyId == companyId, ct);
+
+    public async Task<WalletBalance> GetOrCreateForCompanyAsync(Guid companyId, CancellationToken ct = default)
+    {
+        var wallet = await _context.Wallets.FirstOrDefaultAsync(w => w.CompanyId == companyId, ct);
+        if (wallet is not null)
+            return wallet;
+
+        wallet = WalletBalance.CreateForCompany(companyId);
+        await _context.Wallets.AddAsync(wallet, ct);
+        return wallet;
+    }
+
     public async Task AddLedgerEntryAsync(LedgerEntry entry, CancellationToken ct = default)
         => await _context.LedgerEntries.AddAsync(entry, ct);
 
     public async Task<bool> LedgerEntryExistsAsync(Guid paymentId, CancellationToken ct = default)
         => await _context.LedgerEntries.AnyAsync(e => e.PaymentId == paymentId, ct);
+
+    public async Task<bool> CompanyLedgerEntryExistsAsync(Guid paymentId, CancellationToken ct = default)
+    {
+        // For company wallets, idempotency checks by walletId+paymentId to avoid collisions with owner entries
+        var companyWalletIds = await _context.Wallets
+            .Where(w => w.CompanyId != null)
+            .Select(w => w.Id)
+            .ToListAsync(ct);
+        return await _context.LedgerEntries
+            .AnyAsync(e => e.PaymentId == paymentId && companyWalletIds.Contains(e.WalletId), ct);
+    }
 
     public async Task<List<LedgerEntry>> GetLedgerByOwnerIdAsync(Guid ownerId, int skip, int take, CancellationToken ct = default)
     {
@@ -53,6 +78,37 @@ public class WalletRepository : IWalletRepository
     {
         var walletId = await _context.Wallets
             .Where(w => w.OwnerId == ownerId)
+            .Select(w => w.Id)
+            .FirstOrDefaultAsync(ct);
+
+        if (walletId == Guid.Empty)
+            return 0;
+
+        return await _context.LedgerEntries.CountAsync(e => e.WalletId == walletId, ct);
+    }
+
+    public async Task<List<LedgerEntry>> GetLedgerByCompanyIdAsync(Guid companyId, int skip, int take, CancellationToken ct = default)
+    {
+        var walletId = await _context.Wallets
+            .Where(w => w.CompanyId == companyId)
+            .Select(w => w.Id)
+            .FirstOrDefaultAsync(ct);
+
+        if (walletId == Guid.Empty)
+            return [];
+
+        return await _context.LedgerEntries
+            .Where(e => e.WalletId == walletId)
+            .OrderByDescending(e => e.OccurredAt)
+            .Skip(skip)
+            .Take(take)
+            .ToListAsync(ct);
+    }
+
+    public async Task<int> GetLedgerCountForCompanyAsync(Guid companyId, CancellationToken ct = default)
+    {
+        var walletId = await _context.Wallets
+            .Where(w => w.CompanyId == companyId)
             .Select(w => w.Id)
             .FirstOrDefaultAsync(ct);
 
