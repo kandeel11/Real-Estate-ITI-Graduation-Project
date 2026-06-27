@@ -156,6 +156,7 @@ public class Program
         builder.Services.AddScoped<Property.Application.Interfaces.IAdminEmailService, PropertyAdminEmailAdapter>();
         builder.Services.AddScoped<Maintenance.Application.Interfaces.IPropertyManagementChecker, PropertyManagementCheckerAdapter>();
         builder.Services.AddScoped<Maintenance.Application.Interfaces.IMaintenancePaymentLinkService, MaintenancePaymentLinkAdapter>();
+        builder.Services.AddScoped<Maintenance.Application.Interfaces.ILeaseDetailsAdapter, LeaseDetailsForDisputeAdapter>();
 
         builder.Services.AddPaymentModule(builder.Configuration);
         builder.Services.AddWalletModule(builder.Configuration);

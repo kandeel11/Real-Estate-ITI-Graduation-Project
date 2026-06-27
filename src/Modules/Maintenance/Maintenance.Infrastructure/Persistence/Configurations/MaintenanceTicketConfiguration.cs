@@ -39,6 +39,12 @@ public class MaintenanceTicketConfiguration : IEntityTypeConfiguration<Maintenan
         b.Property(x => x.RoutedToCompanyId);
         b.Property(x => x.ParentTicketId);
 
+        b.Property(x => x.DisputeReason);
+        b.Property(x => x.DisputedById);
+        b.Property(x => x.DisputedByRole).HasMaxLength(100);
+        b.Property(x => x.DisputeDate);
+        b.Property(x => x.AdminNotes);
+
         b.HasIndex(x => x.TenantId);
         b.HasIndex(x => x.OwnerId);
         b.HasIndex(x => x.PropertyId);

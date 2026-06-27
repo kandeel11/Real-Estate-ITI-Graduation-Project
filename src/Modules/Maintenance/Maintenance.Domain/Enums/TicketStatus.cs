@@ -13,6 +13,12 @@ namespace Maintenance.Domain.Enums
         AiEvaluated,
         WaitingForOwnerDecision,
         WaitingForTenantDecision,
+        /// <summary>
+        /// A Tenant, Owner, or Company Manager has disputed the AI's responsibility decision.
+        /// An Admin must resolve the dispute via ResolveTicketDisputeCommand before the
+        /// ticket can continue its normal lifecycle.
+        /// </summary>
+        Disputed,
         AssignedToVendor,
         VendorAccepted,
         InProgress,
