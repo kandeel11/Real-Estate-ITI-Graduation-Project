@@ -76,13 +76,15 @@ public sealed class ProcessPaymentHandler
             if (payment.PaymentType == PaymentType.Rent && payment.RentDetails is not null)
             {
                 var details = payment.RentDetails;
+                var leaseDto = await _leaseService.GetLeaseByIdAsync(details.LeaseId, cancellationToken);
                 await _outboxWriter.AddAsync(new RentPaymentSucceededEvent(
                     PaymentId: payment.Id,
                     OwnerId: details.LandlordId,
                     TenantId: details.TenantId,
                     LeaseId: details.LeaseId,
                     PropertyId: details.PropertyId,
-                    Amount: payment.Amount
+                    Amount: payment.Amount,
+                    CompanyId: leaseDto?.CompanyId
                 ), cancellationToken);
                 await _repository.SaveChangesAsync(cancellationToken);
             }

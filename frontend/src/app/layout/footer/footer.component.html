@@ -1,0 +1,105 @@
+<footer class="site-footer">
+  <div class="container-xl">
+
+    <!-- ── Top grid ── -->
+    <div class="row g-4 site-footer__grid">
+
+      <!-- Brand + tagline + socials -->
+      <div class="col-12 col-md-6 col-lg-4">
+
+        <a class="site-footer__brand" routerLink="/">
+          <i class="fa-solid fa-house-chimney site-footer__brand-icon"></i>
+          <span class="site-footer__brand-name">Estatein</span>
+        </a>
+
+        <p class="site-footer__tagline mt-3">
+          {{ 'FOOTER.TAGLINE' | translate }}
+        </p>
+
+        <!-- Newsletter mini CTA -->
+        <div class="site-footer__newsletter mt-4">
+          <p class="site-footer__nl-label">Stay updated with new listings</p>
+          <div class="site-footer__nl-row">
+            <input type="email" class="site-footer__nl-input" placeholder="Your email address" />
+            <button class="site-footer__nl-btn">Subscribe</button>
+          </div>
+        </div>
+
+        <div class="site-footer__socials mt-4">
+          @for (s of socials; track s.label) {
+            <a [href]="s.href" class="site-footer__social-btn"
+               [attr.aria-label]="s.label" target="_blank" rel="noopener noreferrer">
+              <i [class]="s.icon"></i>
+            </a>
+          }
+        </div>
+      </div>
+
+      <!-- Navigate -->
+      <div class="col-6 col-sm-4 col-md-2 col-lg-2 offset-lg-1">
+        <h4 class="site-footer__col-title">Navigate</h4>
+        <ul class="site-footer__links">
+          @for (link of navLinks; track link.label) {
+            <li>
+              <a [routerLink]="link.path">
+                <i class="fa-solid fa-chevron-right fa-xs site-footer__link-arrow"></i>
+                {{ link.label }}
+              </a>
+            </li>
+          }
+        </ul>
+      </div>
+
+      <!-- Properties -->
+      <div class="col-6 col-sm-4 col-md-2 col-lg-2">
+        <h4 class="site-footer__col-title">Properties</h4>
+        <ul class="site-footer__links">
+          @for (link of propertyLinks; track link.label) {
+            <li>
+              <a [routerLink]="link.path" [queryParams]="link.params">
+                <i class="fa-solid fa-chevron-right fa-xs site-footer__link-arrow"></i>
+                {{ link.label }}
+              </a>
+            </li>
+          }
+        </ul>
+      </div>
+
+      <!-- Contact info -->
+      <div class="col-12 col-sm-4 col-md-6 col-lg-3">
+        <h4 class="site-footer__col-title">Contact Us</h4>
+        <ul class="site-footer__contact-list">
+          @for (item of contactInfo; track item.text) {
+            <li class="site-footer__contact-item">
+              <span class="site-footer__contact-icon">
+                <i [class]="item.icon"></i>
+              </span>
+              @if (item.href) {
+                <a [href]="item.href" class="site-footer__contact-link">{{ item.text }}</a>
+              } @else {
+                <span>{{ item.text }}</span>
+              }
+            </li>
+          }
+        </ul>
+      </div>
+
+    </div><!-- /row -->
+
+    <!-- ── Divider ── -->
+    <div class="site-footer__divider"></div>
+
+    <!-- ── Bottom bar ── -->
+    <div class="site-footer__bottom">
+      <p class="site-footer__copy">
+        &copy; {{ currentYear }} Estatein. All rights reserved.
+      </p>
+      <div class="site-footer__legal">
+        @for (link of legalLinks; track link.label) {
+          <a [routerLink]="link.path">{{ link.label }}</a>
+        }
+      </div>
+    </div>
+
+  </div>
+</footer>

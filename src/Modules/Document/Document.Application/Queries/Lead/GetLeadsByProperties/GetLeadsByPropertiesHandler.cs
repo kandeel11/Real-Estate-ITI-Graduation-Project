@@ -24,7 +24,8 @@ public class GetLeadsByPropertiesHandler
                 l.Id, l.InquiryId, l.PropertyId,
                 l.TenantId, l.OwnerId,
                 l.Status.ToString(), l.DealValue,
-                l.Notes, l.CreatedAt, l.UpdatedAt))
+                l.Notes, l.CreatedAt, l.UpdatedAt,
+                l.NoManagementPendingAt, l.NoManagementManagerId))
             .ToListAsync(ct);
     }
 }

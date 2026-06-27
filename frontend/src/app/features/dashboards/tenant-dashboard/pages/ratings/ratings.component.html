@@ -1,0 +1,127 @@
+<div class="ratings-page">
+
+  <!-- ── Header ────────────────────────────────────────── -->
+  <div class="page-header">
+    <div>
+      <h1 class="page-title"><i class="fa-regular fa-star me-2"></i>Ratings &amp; Reviews</h1>
+      <p class="page-subtitle">Manage your reviews and rate properties or services.</p>
+    </div>
+    <button class="btn btn-primary" (click)="openCreate()">
+      <i class="fa-solid fa-plus me-2"></i>Write a Review
+    </button>
+  </div>
+
+  <!-- ── Skeleton ──────────────────────────────────────── -->
+  @if (loading()) {
+    <div class="skeleton-list">
+      @for (_ of skeletonRows; track $index) {
+        <div class="skeleton-card">
+          <div class="skel-row-top">
+            <div class="skel skel-title"></div>
+            <div class="skel skel-chip"></div>
+          </div>
+          <div class="skel skel-stars mt-3 mb-2"></div>
+          <div class="skel skel-line mb-1"></div>
+          <div class="skel skel-line-short mt-1"></div>
+        </div>
+      }
+    </div>
+  }
+
+  <!-- ── Error ─────────────────────────────────────────── -->
+  @if (!loading() && error()) {
+    <div class="alert alert-danger d-flex align-items-center gap-2">
+      <i class="fa-solid fa-triangle-exclamation"></i>
+      <span>{{ error() }}</span>
+      <button class="btn btn-sm btn-outline-danger ms-auto" (click)="loadRatings()">Try again</button>
+    </div>
+  }
+
+  <!-- ── Empty ─────────────────────────────────────────── -->
+  @if (!loading() && !error() && ratings().length === 0) {
+    <div class="empty-state">
+      <i class="fa-regular fa-star empty-icon"></i>
+      <p class="empty-title">No Reviews Yet</p>
+      <p class="empty-desc">You haven't submitted any reviews yet.</p>
+      <button class="btn btn-primary btn-sm mt-3" (click)="openCreate()">
+        <i class="fa-solid fa-plus me-1"></i>Rate a Property
+      </button>
+    </div>
+  }
+
+  <!-- ── Review Cards ───────────────────────────────────── -->
+  @if (!loading() && !error() && ratings().length > 0) {
+    <div class="reviews-list">
+      @for (r of ratings(); track r.id) {
+        <div class="review-card" [class.review-card--rejected]="r.moderationStatus === 'Rejected'">
+
+          <!-- Card header: target info + status badge -->
+          <div class="review-header">
+            <div class="review-meta">
+              <span class="review-target-type">
+                <i class="fa-solid {{ targetIcon(r) }} me-1"></i>{{ targetLabel(r) }}
+              </span>
+              <span class="review-target-id" title="{{ targetId(r) }}">{{ targetName(r) }}</span>
+            </div>
+            <span class="status-badge {{ statusBadgeClass(r.moderationStatus) }}">
+              <i class="fa-solid {{ statusIcon(r.moderationStatus) }} me-1"></i>
+              {{ statusLabel(r.moderationStatus) }}
+            </span>
+          </div>
+
+          <!-- Stars -->
+          <div class="review-stars">
+            <app-star-rating [value]="r.ratingValue" size="md" />
+            <span class="review-score">{{ r.ratingValue }}/5</span>
+          </div>
+
+          <!-- Review text or rejected note -->
+          @if (r.moderationStatus === 'Rejected') {
+            <p class="rejected-note">
+              <i class="fa-solid fa-circle-info me-1"></i>
+              This review was not approved by our moderation team.
+            </p>
+          } @else if (r.reviewText) {
+            <p class="review-text">{{ r.reviewText }}</p>
+          } @else {
+            <p class="review-text review-text--empty">No review text provided.</p>
+          }
+
+          <!-- Footer: date + actions -->
+          <div class="review-footer">
+            <span class="review-date">
+              <i class="fa-regular fa-calendar me-1"></i>{{ r.createdAt | date:'mediumDate' }}
+            </span>
+            <div class="review-actions">
+              @if (isEditable(r)) {
+                <button class="btn btn-sm btn-outline-primary" (click)="openEdit(r)">
+                  <i class="fa-regular fa-pen-to-square me-1"></i>Edit
+                </button>
+              }
+              @if (isDeletable(r)) {
+                @if (deleteLoadingId() === r.id) {
+                  <span class="spinner-border spinner-border-sm text-danger" role="status"></span>
+                } @else {
+                  <button class="btn btn-sm btn-outline-danger" (click)="deleteRating(r)">
+                    <i class="fa-regular fa-trash-can me-1"></i>Delete
+                  </button>
+                }
+              }
+            </div>
+          </div>
+
+        </div>
+      }
+    </div>
+  }
+
+</div>
+
+<!-- ── Rating Modal ──────────────────────────────────────── -->
+<app-rating-modal
+  [show]="showModal()"
+  [mode]="modalMode()"
+  [editRating]="editTarget()"
+  [leaseId]="leaseId()"
+  (closed)="showModal.set(false)"
+  (saved)="onSaved($event)" />

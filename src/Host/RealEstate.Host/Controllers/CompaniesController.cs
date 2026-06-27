@@ -1,5 +1,7 @@
+using Document.Application.Commands.Lead.ManagerConfirmNoManagement;
 using Document.Application.Queries.Inquiry;
 using Document.Application.Queries.Lead.GetBrokerLeadPipeline;
+using Document.Application.Queries.Lead.GetNoManagementPendingLeads;
 using Document.Application.Queries.Lease;
 using Document.Application.Queries.Lease.GetLeasePaymentSchedule;
 using Document.Application.Queries.Rating;
@@ -443,8 +445,19 @@ public class CompaniesController(
             return BadRequest(new { error = "No company is associated with your account." });
 
         var brokers = await mediator.Send(new GetCompanyBrokersDetailsQuery(companyId.Value), ct);
+
+        var company = await mediator.Send(
+            new Identity.Application.Queries.GetCompanyDetails.GetCompanyDetailsQuery(companyId.Value), ct);
+        var companyName = company?.Name ?? string.Empty;
+
         if (brokers.Count == 0)
-            return Ok(new { companyId, brokers = Array.Empty<object>() });
+            return Ok(new
+            {
+                companyId,
+                companyName,
+                totalBrokers = 0,
+                brokers = Array.Empty<object>()
+            });
 
         var brokerUserIds = brokers.Select(b => b.UserId).ToList();
         var pipelines = await mediator.Send(new GetBrokerLeadPipelineQuery(brokerUserIds), ct);
@@ -453,14 +466,21 @@ public class CompaniesController(
 
         var result = pipelines.Select(p => new
         {
-            brokerId = p.BrokerUserId,
-            brokerName = brokerNameById.GetValueOrDefault(p.BrokerUserId, "Unknown"),
-            totalLeads = p.TotalLeads,
-            closedWon = p.ClosedWon,
-            kanban = p.Kanban
+            brokerId     = p.BrokerUserId,
+            brokerUserId = p.BrokerUserId,
+            brokerName   = brokerNameById.GetValueOrDefault(p.BrokerUserId, "Unknown"),
+            totalLeads   = p.TotalLeads,
+            closedWon    = p.ClosedWon,
+            pipeline     = p.Kanban        // renamed: frontend reads "pipeline", not "kanban"
         });
 
-        return Ok(new { companyId, brokers = result });
+        return Ok(new
+        {
+            companyId,
+            companyName,
+            totalBrokers = brokers.Count,
+            brokers      = result
+        });
     }
 
     /// <summary>
@@ -525,11 +545,66 @@ public class CompaniesController(
             managerApprovalStatus = l.ManagerApprovalStatus,
             managerNotes         = l.ManagerNotes,
             isFullManagement     = l.IsFullManagement,
-            managementOptions    = l.ManagementOptions,
-            createdAt            = l.CreatedAt
+            managementOptions    = ParseManagementOptions(l.ManagementOptions),
+            uploadedAt           = l.CreatedAt,
+            contractFileUrl      = l.ContractFileUrl
         });
 
         return Ok(result);
+    }
+
+    /// <summary>
+    /// Deals closed by company brokers without management, waiting for manager confirmation.
+    /// After confirming, the property is marked Rented and the tenant is notified.
+    /// </summary>
+    [HttpGet("mine/leads/no-management-pending")]
+    [Authorize(Policy = "CompanyManager")]
+    public async Task<IActionResult> GetNoManagementPending(CancellationToken ct)
+    {
+        var managerId = currentUser.UserId;
+        if (managerId is null)
+            return Unauthorized();
+
+        var items = await mediator.Send(
+            new GetNoManagementPendingLeadsQuery(managerId.Value), ct);
+
+        if (items.Count == 0) return Ok(Array.Empty<object>());
+
+        var userIds = items.Select(i => i.TenantId).Distinct().ToList();
+        var names = await mediator.Send(new GetUserNamesQuery(userIds), ct);
+
+        var result = items.Select(i => new
+        {
+            leadId      = i.LeadId,
+            propertyId  = i.PropertyId,
+            tenantId    = i.TenantId,
+            tenantName  = names.GetValueOrDefault(i.TenantId, "Unknown"),
+            dealValue   = i.DealValue,
+            pendingAt   = i.PendingAt
+        });
+
+        return Ok(result);
+    }
+
+    /// <summary>
+    /// Company manager confirms a broker's "no management" deal close.
+    /// Marks the property as Rented and notifies the tenant.
+    /// </summary>
+    [HttpPost("mine/leads/{leadId}/confirm-no-management")]
+    [Authorize(Policy = "CompanyManager")]
+    public async Task<IActionResult> ConfirmNoManagement(Guid leadId, CancellationToken ct)
+    {
+        var managerId = currentUser.UserId;
+        if (managerId is null) return Unauthorized();
+        try
+        {
+            await mediator.Send(
+                new ManagerConfirmNoManagementCommand(leadId, managerId.Value), ct);
+            return NoContent();
+        }
+        catch (KeyNotFoundException ex)       { return NotFound(new { error = ex.Message }); }
+        catch (InvalidOperationException ex)  { return BadRequest(new { error = ex.Message }); }
+        catch (UnauthorizedAccessException ex){ return StatusCode(403, new { error = ex.Message }); }
     }
 
     /// <summary>
@@ -576,14 +651,128 @@ public class CompaniesController(
             endDate              = l.EndDate,
             paymentDayOfMonth    = l.PaymentDayOfMonth,
             managerApprovalStatus = l.ManagerApprovalStatus,
-            managerApprovedAt    = l.ManagerApprovedAt,
+            approvedAt           = l.ManagerApprovedAt,
             managerNotes         = l.ManagerNotes,
             isFullManagement     = l.IsFullManagement,
-            managementOptions    = l.ManagementOptions,
-            createdAt            = l.CreatedAt
+            managementOptions    = ParseManagementOptions(l.ManagementOptions),
+            uploadedAt           = l.CreatedAt,
+            contractFileUrl      = l.ContractFileUrl
         });
 
         return Ok(result);
+    }
+
+    /// <summary>
+    /// Active leases under the company's properties — tenant has accepted and lease is live.
+    /// </summary>
+    [HttpGet("mine/leases/active")]
+    [Authorize(Policy = "CompanyManager")]
+    public async Task<IActionResult> GetActiveLeases(CancellationToken ct)
+    {
+        var companyId = currentUser.CompanyId;
+        if (companyId is null)
+            return BadRequest(new { error = "No company is associated with your account." });
+
+        var properties = await mediator.Send(new GetPropertiesByCompanyQuery(companyId.Value), ct);
+        if (properties.Count == 0) return Ok(Array.Empty<object>());
+
+        var propertyIds = properties.Select(p => p.Id).ToList();
+        var leases = await mediator.Send(new GetActiveCompanyLeasesQuery(propertyIds), ct);
+        if (leases.Count == 0) return Ok(Array.Empty<object>());
+
+        var userIds = leases.Select(l => l.TenantId)
+            .Concat(leases.Where(l => l.BrokerId.HasValue).Select(l => l.BrokerId!.Value))
+            .Distinct().ToList();
+        var names = await mediator.Send(new GetUserNamesQuery(userIds), ct);
+        var titlesById = properties.ToDictionary(p => p.Id, p => p.Title);
+
+        var result = leases.Select(l => new
+        {
+            id                = l.Id,
+            propertyId        = l.PropertyId,
+            propertyTitle     = titlesById.GetValueOrDefault(l.PropertyId, string.Empty),
+            tenantId          = l.TenantId,
+            tenantName        = names.GetValueOrDefault(l.TenantId, "Unknown"),
+            brokerId          = l.BrokerId,
+            brokerName        = l.BrokerId.HasValue ? names.GetValueOrDefault(l.BrokerId.Value) : null,
+            installmentAmount = l.InstallmentAmount,
+            paymentFrequency  = l.PaymentFrequency,
+            totalRentAmount   = l.TotalRentAmount,
+            durationInMonths  = l.DurationInMonths,
+            securityDeposit   = l.SecurityDeposit,
+            startDate         = l.StartDate,
+            endDate           = l.EndDate,
+            isFullManagement  = l.IsFullManagement,
+            managementOptions = ParseManagementOptions(l.ManagementOptions),
+            activeSince       = l.TenantConfirmedAt,
+            uploadedAt        = l.CreatedAt
+        });
+
+        return Ok(result);
+    }
+
+    private static string[] ParseManagementOptions(string? raw)
+    {
+        if (string.IsNullOrWhiteSpace(raw)) return [];
+        try { return System.Text.Json.JsonSerializer.Deserialize<string[]>(raw) ?? []; }
+        catch { return raw.Split(',', StringSplitOptions.RemoveEmptyEntries | StringSplitOptions.TrimEntries); }
+    }
+
+    // ── Company Wallet ────────────────────────────────────────────────────────
+
+    [HttpGet("mine/wallet/balance")]
+    [Authorize(Policy = "CompanyManager")]
+    public async Task<IActionResult> GetWalletBalance(CancellationToken ct)
+    {
+        var companyId = currentUser.CompanyId;
+        if (companyId is null) return BadRequest(new { error = "No company associated with your account." });
+
+        var result = await mediator.Send(new Wallet.Application.Queries.GetCompanyWalletBalance.GetCompanyWalletBalanceQuery(companyId.Value), ct);
+        return result is null
+            ? Ok(new { companyId, balance = 0m, currency = "AED" })
+            : Ok(result);
+    }
+
+    [HttpGet("mine/wallet/ledger")]
+    [Authorize(Policy = "CompanyManager")]
+    public async Task<IActionResult> GetWalletLedger(
+        [FromQuery] int page = 1,
+        [FromQuery] int pageSize = 20,
+        CancellationToken ct = default)
+    {
+        var companyId = currentUser.CompanyId;
+        if (companyId is null) return BadRequest(new { error = "No company associated with your account." });
+
+        var result = await mediator.Send(new Wallet.Application.Queries.GetCompanyLedger.GetCompanyLedgerQuery(companyId.Value, page, pageSize), ct);
+        return Ok(result);
+    }
+
+    [HttpGet("mine/wallet/withdrawals")]
+    [Authorize(Policy = "CompanyManager")]
+    public async Task<IActionResult> GetWalletWithdrawals(CancellationToken ct)
+    {
+        var companyId = currentUser.CompanyId;
+        if (companyId is null) return BadRequest(new { error = "No company associated with your account." });
+
+        var result = await mediator.Send(new Wallet.Application.Queries.GetCompanyWithdrawals.GetCompanyWithdrawalsQuery(companyId.Value), ct);
+        return Ok(result);
+    }
+
+    [HttpPost("mine/wallet/withdraw")]
+    [Authorize(Policy = "CompanyManager")]
+    public async Task<IActionResult> RequestWithdrawal([FromBody] CompanyWithdrawalRequest body, CancellationToken ct)
+    {
+        var companyId = currentUser.CompanyId;
+        if (companyId is null) return BadRequest(new { error = "No company associated with your account." });
+
+        try
+        {
+            var id = await mediator.Send(
+                new Wallet.Application.Commands.RequestCompanyWithdrawal.RequestCompanyWithdrawalCommand(
+                    companyId.Value, body.Amount, body.BankAccountDetails), ct);
+            return Created($"/api/companies/mine/wallet/withdrawals/{id}", new { withdrawalId = id });
+        }
+        catch (InvalidOperationException ex) { return BadRequest(new { error = ex.Message }); }
     }
 }
 
@@ -627,3 +816,5 @@ public class UploadLogoRequest
 {
     public IFormFile? File { get; init; }
 }
+
+public record CompanyWithdrawalRequest(decimal Amount, string BankAccountDetails);

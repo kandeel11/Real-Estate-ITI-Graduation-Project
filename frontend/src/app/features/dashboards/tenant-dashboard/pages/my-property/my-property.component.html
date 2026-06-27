@@ -1,0 +1,176 @@
+<div class="my-property-page">
+  <div class="page-header">
+    <h1 class="page-title"><i class="fa-solid fa-building me-2"></i>{{ 'MY_PROPERTY.TITLE' | translate }}</h1>
+  </div>
+
+  <!-- ── LOADING ──────────────────────────────────── -->
+  @if (loading()) {
+    <div class="loading-state">
+      <div class="spinner-border text-primary" role="status">
+        <span class="visually-hidden">Loading…</span>
+      </div>
+    </div>
+  }
+
+  <!-- ── ERROR ────────────────────────────────────── -->
+  @if (!loading() && error()) {
+    <div class="alert alert-danger d-flex align-items-center gap-2">
+      <i class="fa-solid fa-triangle-exclamation"></i>
+      <span>{{ error() }}</span>
+      <button class="btn btn-sm btn-outline-danger ms-2" (click)="loadData()">{{ 'MY_PROPERTY.TRY_AGAIN' | translate }}</button>
+    </div>
+  }
+
+  <!-- ── EMPTY ─────────────────────────────────────── -->
+  @if (!loading() && !error() && properties().length === 0) {
+    <div class="empty-state">
+      <i class="fa-solid fa-house-circle-xmark empty-icon"></i>
+      <p class="empty-title">{{ 'MY_PROPERTY.NO_PROPERTIES' | translate }}</p>
+      <p class="empty-desc">{{ 'MY_PROPERTY.NO_PROPERTIES_DESC' | translate }}</p>
+    </div>
+  }
+
+  <!-- ── PROPERTY CARDS ─────────────────────────────── -->
+  @for (prop of properties(); track prop.id) {
+    <div class="property-card mb-4">
+
+      <!-- Hero Image -->
+      <div class="property-hero">
+        @if (prop.mainImage) {
+          <img [src]="prop.mainImage" [alt]="prop.title" class="hero-img" />
+        } @else {
+          <div class="hero-placeholder">
+            <i class="fa-solid fa-building"></i>
+          </div>
+        }
+        <span class="lease-badge" [class.badge-active]="prop.isActive" [class.badge-past]="!prop.isActive">
+          {{ prop.isActive ? ('MY_PROPERTY.ACTIVE' | translate) : ('MY_PROPERTY.PAST' | translate) }}
+        </span>
+        @if (prop.isActive && prop.daysUntilExpiry !== null && prop.daysUntilExpiry <= 60) {
+          <span class="expiry-badge">
+            <i class="fa-regular fa-clock me-1"></i>{{ prop.daysUntilExpiry }}{{ 'MY_PROPERTY.DAYS_LEFT' | translate }}
+          </span>
+        }
+      </div>
+
+      <!-- Property Body -->
+      <div class="property-body">
+        <div class="property-header">
+          <div>
+            <h2 class="property-title">{{ prop.title }}</h2>
+            <p class="property-address">
+              <i class="fa-solid fa-location-dot me-1"></i>{{ prop.fullAddress }}
+            </p>
+          </div>
+          <span class="type-badge">{{ prop.type }}</span>
+        </div>
+
+        <!-- Feature chips -->
+        <div class="amenity-chips mb-3">
+          <span class="amenity-chip">
+            <i class="fa-solid fa-bed"></i> {{ prop.bedrooms }} bd
+          </span>
+          <span class="amenity-chip">
+            <i class="fa-solid fa-bath"></i> {{ prop.bathrooms }} ba
+          </span>
+          <span class="amenity-chip">
+            <i class="fa-solid fa-vector-square"></i> {{ prop.area }} m²
+          </span>
+          @if (prop.isFurnished) {
+            <span class="amenity-chip">
+              <i class="fa-solid fa-couch"></i> {{ 'MY_PROPERTY.FURNISHED' | translate }}
+            </span>
+          }
+          @if (prop.petsAllowed) {
+            <span class="amenity-chip">
+              <i class="fa-solid fa-paw"></i> {{ 'MY_PROPERTY.PETS_ALLOWED' | translate }}
+            </span>
+          }
+          @for (a of prop.amenities; track a.id) {
+            <span class="amenity-chip">
+              <i [class]="a.icon"></i> {{ a.name }}
+            </span>
+          }
+        </div>
+
+        <!-- Rent + Dates -->
+        <div class="lease-meta mb-3">
+          <div class="lease-meta-item">
+            <span class="meta-label">{{ 'MY_PROPERTY.MONTHLY_RENT' | translate }}</span>
+            <span class="meta-value rent">{{ prop.monthlyRent | currency:'EGP':'symbol':'1.0-0' }}</span>
+          </div>
+          <div class="lease-meta-item">
+            <span class="meta-label">{{ 'MY_PROPERTY.LEASE_START' | translate }}</span>
+            <span class="meta-value">{{ prop.startDate | date:'mediumDate' }}</span>
+          </div>
+          <div class="lease-meta-item">
+            <span class="meta-label">{{ 'MY_PROPERTY.LEASE_END' | translate }}</span>
+            <span class="meta-value">{{ prop.endDate | date:'mediumDate' }}</span>
+          </div>
+          <div class="lease-meta-item">
+            <span class="meta-label">{{ 'MY_PROPERTY.DAYS_REMAINING' | translate }}</span>
+            <span class="meta-value" [class.expiry-warn]="prop.daysUntilExpiry !== null && prop.daysUntilExpiry <= 60">
+              {{ prop.daysUntilExpiry }}
+            </span>
+          </div>
+        </div>
+
+        <!-- Action Buttons -->
+        <div class="d-flex gap-2 mb-3 flex-wrap">
+          @if (!prop.noManagement) {
+            <a class="btn btn-primary btn-sm" routerLink="/dashboard/lease">
+              <i class="fa-solid fa-file-contract me-1"></i>{{ 'MY_PROPERTY.VIEW_LEASE' | translate }}
+            </a>
+            <a class="btn btn-outline-primary btn-sm" routerLink="/dashboard/maintenance-requests/create">
+              <i class="fa-solid fa-screwdriver-wrench me-1"></i>{{ 'MY_PROPERTY.NEW_TICKET' | translate }}
+            </a>
+          } @else {
+            <!-- No-management deal: show lease & maintenance as locked (no formal lease or company support) -->
+            <button class="btn btn-primary btn-sm" disabled title="No lease document — deal closed directly by broker">
+              <i class="fa-solid fa-lock me-1"></i>No Lease
+            </button>
+            <button class="btn btn-outline-primary btn-sm" disabled title="Maintenance is not available — no management service for this property">
+              <i class="fa-solid fa-lock me-1"></i>{{ 'MY_PROPERTY.NEW_TICKET' | translate }}
+            </button>
+          }
+          @if (prop.isActive && !prop.noManagement) {
+            <button class="btn btn-outline-warning btn-sm" (click)="openRatingModal(prop)">
+              <i class="fa-regular fa-star me-1"></i>Write a Review
+            </button>
+          }
+        </div>
+
+        <!-- Photo Gallery -->
+        @if (prop.media.length > 0) {
+          <div class="gallery-label">{{ 'MY_PROPERTY.PHOTOS' | translate }}</div>
+          <div class="photo-gallery">
+            @for (m of prop.media; track m.id) {
+              <button class="gallery-thumb" (click)="openLightbox(m.mediaUrl)">
+                <img [src]="m.mediaUrl" [alt]="prop.title" />
+              </button>
+            }
+          </div>
+        }
+      </div>
+    </div>
+  }
+
+  <!-- ── LIGHTBOX ───────────────────────────────────── -->
+  @if (lightboxUrl()) {
+    <div class="lightbox-overlay" (click)="closeLightbox()">
+      <button class="lightbox-close" (click)="closeLightbox()" aria-label="Close">
+        <i class="fa-solid fa-xmark"></i>
+      </button>
+      <img [src]="lightboxUrl()!" class="lightbox-img" (click)="$event.stopPropagation()" />
+    </div>
+  }
+</div>
+
+<!-- ── Rating Modal ──────────────────────────────────── -->
+<app-rating-modal
+  [show]="showRatingModal()"
+  mode="create"
+  [propertyId]="ratingPropertyId()"
+  [leaseId]="ratingLeaseId()"
+  (closed)="showRatingModal.set(false)"
+  (saved)="showRatingModal.set(false)" />

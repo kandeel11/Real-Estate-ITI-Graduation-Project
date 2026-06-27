@@ -1,0 +1,405 @@
+@if (savedSvc.lastError(); as err) {
+  <div class="saved-toast" role="alert">
+    <i class="fa-solid fa-circle-exclamation me-2"></i>
+    <span>{{ err }}</span>
+    <button type="button" class="saved-toast__x" (click)="savedSvc.clearError()" aria-label="Dismiss">
+      <i class="fa-solid fa-xmark"></i>
+    </button>
+  </div>
+}
+
+<main class="browse">
+
+  <!-- ══ COMPACT HEADER ══ -->
+  <section class="browse-head">
+    <div class="container-xl browse-head__inner">
+      <div>
+        <div class="browse-head__crumb">
+          <i class="fa-solid fa-house fa-xs"></i>
+          <span>{{ 'BROWSE.LABEL' | translate }}</span>
+        </div>
+        <h1 class="browse-head__title">{{ 'BROWSE.TITLE' | translate }}</h1>
+      </div>
+      @if (!loading()) {
+        <div class="browse-head__count">
+          <span class="browse-head__count-num">{{ filtered().length | number }}</span>
+          <span class="browse-head__count-lbl">properties</span>
+        </div>
+      }
+    </div>
+  </section>
+
+  <!-- ══ STICKY FILTER BAR ══ -->
+  <div class="browse-filterbar">
+    <div class="container-xl">
+
+      <!-- Row 1: Search -->
+      <div class="browse-filterbar__search-row">
+        <div class="browse-filterbar__search-wrap">
+          <i class="fa-solid fa-magnifying-glass bfsearch-icon"></i>
+          <input type="search" class="browse-filterbar__search-input"
+                 [placeholder]="'BROWSE.SEARCH_PLACEHOLDER' | translate"
+                 [value]="search()" (input)="setSearch($event)" />
+          @if (search()) {
+            <button class="bfsearch-clear" (click)="search.set('')" aria-label="Clear search">
+              <i class="fa-solid fa-xmark"></i>
+            </button>
+          }
+        </div>
+      </div>
+
+      <!-- Row 2: Dropdown filter pills -->
+      <div class="browse-filterbar__drop-row">
+
+        <!-- ── Property Type ── -->
+        <div class="bfdrop-wrap" (click)="$event.stopPropagation()">
+          <button class="bfdrop-btn"
+                  [class.bfdrop-btn--active]="types().size > 0"
+                  [class.bfdrop-btn--open]="openDrop() === 'type'"
+                  (click)="toggleDrop('type')">
+            @if (types().size) {
+              <span class="bfdrop-btn__val">{{ typeLabel() }}</span>
+            } @else {
+              <span>Property Type</span>
+            }
+            <i class="fa-solid fa-chevron-down fa-xs bfdrop-caret"></i>
+          </button>
+          @if (openDrop() === 'type') {
+            <div class="bfdrop-panel">
+              <p class="bfdrop-panel__label">Property Type</p>
+              <div class="bfdrop-chips">
+                @for (t of typeOptions; track t) {
+                  <button class="bfchip" [class.bfchip--active]="types().has(t)" (click)="toggleType(t)">
+                    <i [class]="typeIcon(t) + ' fa-xs'"></i> {{ t }}
+                  </button>
+                }
+              </div>
+            </div>
+          }
+        </div>
+
+        <!-- ── Bedrooms ── -->
+        <div class="bfdrop-wrap" (click)="$event.stopPropagation()">
+          <button class="bfdrop-btn"
+                  [class.bfdrop-btn--active]="beds().size > 0"
+                  [class.bfdrop-btn--open]="openDrop() === 'beds'"
+                  (click)="toggleDrop('beds')">
+            @if (beds().size) {
+              <span class="bfdrop-btn__val">{{ bedsLabel() }} Beds</span>
+            } @else {
+              <span>Bedrooms</span>
+            }
+            <i class="fa-solid fa-chevron-down fa-xs bfdrop-caret"></i>
+          </button>
+          @if (openDrop() === 'beds') {
+            <div class="bfdrop-panel">
+              <p class="bfdrop-panel__label">Number of Bedrooms</p>
+              <div class="bfdrop-chips">
+                @for (b of bedOptions; track b) {
+                  <button class="bfchip" [class.bfchip--active]="beds().has(b)" (click)="toggleBeds(b)">
+                    {{ b }}+
+                  </button>
+                }
+              </div>
+            </div>
+          }
+        </div>
+
+        <!-- ── Price ── -->
+        <div class="bfdrop-wrap" (click)="$event.stopPropagation()">
+          <button class="bfdrop-btn"
+                  [class.bfdrop-btn--active]="minPrice() !== null || maxPrice() !== null"
+                  [class.bfdrop-btn--open]="openDrop() === 'price'"
+                  (click)="toggleDrop('price')">
+            @if (minPrice() !== null || maxPrice() !== null) {
+              <span class="bfdrop-btn__val">{{ priceLabel() }}</span>
+            } @else {
+              <span>Price (EGP)</span>
+            }
+            <i class="fa-solid fa-chevron-down fa-xs bfdrop-caret"></i>
+          </button>
+          @if (openDrop() === 'price') {
+            <div class="bfdrop-panel bfdrop-panel--price" (click)="$event.stopPropagation()">
+              <p class="bfdrop-panel__label">Price Range (EGP / month)</p>
+
+              <!-- Current value labels -->
+              <div class="price-range__vals">
+                <span class="price-range__val">
+                  {{ (minPrice() ?? PRICE_MIN) | number }} EGP
+                </span>
+                <span class="price-range__val">
+                  {{ maxPrice() !== null ? ((maxPrice()!) | number) + ' EGP' : 'No max' }}
+                </span>
+              </div>
+
+              <!-- Dual range slider -->
+              <div class="price-range">
+                <!-- Track background -->
+                <div class="price-range__track">
+                  <div class="price-range__fill"
+                       [style.left.%]="minPercent()"
+                       [style.right.%]="100 - maxPercent()"></div>
+                </div>
+
+                <!-- Min handle -->
+                <input type="range" class="price-range__input"
+                       [min]="PRICE_MIN" [max]="PRICE_MAX" [step]="PRICE_STEP"
+                       [value]="minPrice() ?? PRICE_MIN"
+                       (input)="onMinRangeChange($event)" />
+
+                <!-- Max handle -->
+                <input type="range" class="price-range__input"
+                       [min]="PRICE_MIN" [max]="PRICE_MAX" [step]="PRICE_STEP"
+                       [value]="maxPrice() ?? PRICE_MAX"
+                       (input)="onMaxRangeChange($event)" />
+              </div>
+
+              <!-- Min / Max axis labels -->
+              <div class="price-range__axis">
+                <span>{{ PRICE_MIN | number }} EGP</span>
+                <span>{{ PRICE_MAX | number }} EGP</span>
+              </div>
+            </div>
+          }
+        </div>
+
+        <!-- ── More Filters ── -->
+        <div class="bfdrop-wrap bfdrop-wrap--right" (click)="$event.stopPropagation()">
+          <button class="bfdrop-btn"
+                  [class.bfdrop-btn--active]="moreFiltersCount() > 0"
+                  [class.bfdrop-btn--open]="openDrop() === 'more'"
+                  (click)="toggleDrop('more')">
+            <i class="fa-solid fa-sliders fa-xs"></i>
+            <span>More Filters</span>
+            @if (moreFiltersCount() > 0) {
+              <span class="bfdrop-btn__count">{{ moreFiltersCount() }}</span>
+            }
+            <i class="fa-solid fa-chevron-down fa-xs bfdrop-caret"></i>
+          </button>
+          @if (openDrop() === 'more') {
+            <div class="bfdrop-panel bfdrop-panel--more">
+
+              <!-- City -->
+              @if (cityOptions().length) {
+                <div class="bfdrop-section">
+                  <p class="bfdrop-panel__label">City</p>
+                  <div class="bfdrop-chips bfdrop-chips--wrap">
+                    @for (c of cityOptions(); track c) {
+                      <button class="bfchip" [class.bfchip--active]="cities().has(c)" (click)="toggleCity(c)">
+                        {{ c }}
+                      </button>
+                    }
+                  </div>
+                </div>
+              }
+
+              <!-- Lifestyle -->
+              <div class="bfdrop-section">
+                <p class="bfdrop-panel__label">Lifestyle</p>
+                <div class="bfdrop-chips">
+                  <button class="bfchip" [class.bfchip--active]="furnished()" (click)="furnished.set(!furnished())">
+                    <i class="fa-solid fa-couch fa-xs"></i> Furnished
+                  </button>
+                  <button class="bfchip" [class.bfchip--active]="petsAllowed()" (click)="petsAllowed.set(!petsAllowed())">
+                    <i class="fa-solid fa-paw fa-xs"></i> Pets Allowed
+                  </button>
+                  <button class="bfchip bfchip--star" [class.bfchip--active]="featured()" (click)="featured.set(!featured())">
+                    <i class="fa-solid fa-star fa-xs"></i> Featured Only
+                  </button>
+                </div>
+              </div>
+
+              <!-- Amenities -->
+              @if (amenityGroups().length) {
+                <div class="bfdrop-section">
+                  <p class="bfdrop-panel__label">
+                    Amenities
+                    @if (amenityFilter().size) {
+                      <span class="bfdrop-count-badge">{{ amenityFilter().size }}</span>
+                    }
+                  </p>
+                  <div class="bfdrop-amenities">
+                    @for (g of amenityGroups(); track g.category) {
+                      <div class="bfdrop-amenity-cat">{{ g.category }}</div>
+                      @for (a of g.items; track a.id) {
+                        <label class="bfdrop-check">
+                          <input type="checkbox" [checked]="amenityFilter().has(a.id)" (change)="toggleAmenity(a.id)" />
+                          <span>{{ a.name }}</span>
+                        </label>
+                      }
+                    }
+                  </div>
+                </div>
+              }
+
+            </div>
+          }
+        </div>
+
+        @if (hasFilters()) {
+          <div class="bfdrop-divider"></div>
+          <button class="bfclear" (click)="resetFilters()">
+            <i class="fa-solid fa-xmark fa-xs"></i> Clear all
+          </button>
+        }
+
+      </div><!-- /drop-row -->
+    </div><!-- /container -->
+  </div><!-- /browse-filterbar -->
+
+  <!-- ══ RESULTS ══ -->
+  <div class="container-xl py-4">
+
+    @if (loading()) {
+      <div class="d-flex justify-content-center py-5">
+        <div class="spinner-border text-primary" role="status">
+          <span class="visually-hidden">Loading…</span>
+        </div>
+      </div>
+
+    } @else if (error()) {
+      <div class="alert alert-danger d-flex justify-content-between align-items-center">
+        <span><i class="fa-solid fa-triangle-exclamation me-2"></i>{{ error() }}</span>
+        <button class="btn btn-sm btn-outline-danger" (click)="load()">{{ 'COMMON.RETRY' | translate }}</button>
+      </div>
+
+    } @else {
+
+      <!-- Active chips -->
+      @if (chips().length) {
+        <div class="browse-chips mb-3">
+          @for (chip of chips(); track chip.kind + chip.value) {
+            <span class="browse-chip">
+              {{ chip.label }}
+              <button type="button" class="browse-chip__x" (click)="removeChip(chip)" aria-label="Remove">
+                <i class="fa-solid fa-xmark"></i>
+              </button>
+            </span>
+          }
+        </div>
+      }
+
+      <!-- Results count -->
+      <div class="browse-results-meta mb-4">
+        <span class="browse-results-count">
+          {{ 'BROWSE.SHOWING' | translate: { filtered: filtered().length, total: all().length } }}
+        </span>
+        @if (totalPages() > 1) {
+          <span class="browse-results-page">
+            {{ 'BROWSE.PAGE' | translate: { page: page(), total: totalPages() } }}
+          </span>
+        }
+      </div>
+
+      @if (filtered().length === 0) {
+        <div class="browse-empty">
+          <i class="fa-solid fa-house-circle-xmark browse-empty__icon"></i>
+          <p class="browse-empty__text">{{ 'BROWSE.NO_RESULTS' | translate }}</p>
+          @if (hasFilters()) {
+            <button class="btn btn-sm btn-outline-primary" (click)="resetFilters()">
+              {{ 'BROWSE.CLEAR_ALL' | translate }}
+            </button>
+          }
+        </div>
+
+      } @else {
+
+        <div class="row g-4">
+          @for (p of paged(); track p.id) {
+            <div class="col-12 col-sm-6 col-lg-4 col-xl-3">
+              <a class="browse-card" [routerLink]="['/properties', p.id]">
+
+                <!-- Image area -->
+                <div class="browse-card__img">
+                  @if (p.primaryImageUrl) {
+                    <img [src]="p.primaryImageUrl" [alt]="p.title" />
+                  } @else {
+                    <div class="browse-card__img-placeholder">
+                      <i class="fa-regular fa-image"></i>
+                    </div>
+                  }
+
+                  <!-- Type badge top-left -->
+                  <span class="browse-card__badge">
+                    <i [class]="typeIcon(p.propertyType) + ' fa-xs'"></i>&nbsp;{{ p.propertyType }}
+                  </span>
+
+                  <!-- Featured badge top-right -->
+                  @if (p.isFeatured) {
+                    <span class="browse-card__featured">
+                      <i class="fa-solid fa-star fa-xs"></i>&nbsp;{{ 'BROWSE.FEATURED' | translate }}
+                    </span>
+                  }
+
+                  <!-- Save heart (tenant only) -->
+                  @if (isTenant()) {
+                    <button type="button" class="browse-card__save"
+                            [class.saved]="savedSvc.isSaved(p.id)"
+                            (click)="toggleSave(p, $event)"
+                            [attr.aria-pressed]="savedSvc.isSaved(p.id)"
+                            [attr.aria-label]="(savedSvc.isSaved(p.id) ? 'BROWSE.UNSAVE' : 'BROWSE.SAVE') | translate">
+                      <i [class]="savedSvc.isSaved(p.id) ? 'fa-solid fa-heart' : 'fa-regular fa-heart'"></i>
+                    </button>
+                  }
+                </div>
+
+                <!-- Card body -->
+                <div class="browse-card__body">
+                  <div class="browse-card__price">{{ p.price | number }} EGP</div>
+                  <h3 class="browse-card__name">{{ p.title }}</h3>
+                  <p class="browse-card__loc">
+                    <i class="fa-solid fa-location-dot fa-xs"></i>&nbsp;{{ p.district }}, {{ p.city }}
+                  </p>
+
+                  <div class="browse-card__amenities">
+                    <span class="browse-card__amenity-item">
+                      <i class="fa-solid fa-bed"></i> {{ p.bedrooms }}
+                    </span>
+                    <span class="browse-card__amenity-item">
+                      <i class="fa-solid fa-bath"></i> {{ p.bathrooms }}
+                    </span>
+                    <span class="browse-card__amenity-item">
+                      <i class="fa-solid fa-ruler-combined"></i> {{ p.areaSqm }} m²
+                    </span>
+                  </div>
+
+                  @if (p.listingDisplayName) {
+                    <div class="browse-card__agent">
+                      <i class="fa-solid fa-circle-user"></i>
+                      <span>{{ p.listingDisplayName }}</span>
+                    </div>
+                  }
+                </div>
+
+              </a>
+            </div>
+          }
+        </div>
+
+        <!-- Pagination -->
+        @if (totalPages() > 1) {
+          <nav class="d-flex justify-content-center mt-5">
+            <ul class="pagination mb-0">
+              <li class="page-item" [class.disabled]="page() === 1">
+                <button class="page-link" (click)="goToPage(page() - 1)">
+                  <i class="fa-solid fa-chevron-left"></i>
+                </button>
+              </li>
+              @for (n of pageNumbers(); track n) {
+                <li class="page-item" [class.active]="n === page()">
+                  <button class="page-link" (click)="goToPage(n)">{{ n }}</button>
+                </li>
+              }
+              <li class="page-item" [class.disabled]="page() === totalPages()">
+                <button class="page-link" (click)="goToPage(page() + 1)">
+                  <i class="fa-solid fa-chevron-right"></i>
+                </button>
+              </li>
+            </ul>
+          </nav>
+        }
+
+      }
+    }
+  </div><!-- /container -->
+</main>

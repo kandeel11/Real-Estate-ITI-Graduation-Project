@@ -6,6 +6,8 @@ public class WithdrawalRequest
 {
     public Guid Id { get; private set; }
     public Guid OwnerId { get; private set; }
+    /// <summary>Set only for company withdrawals — null for owner withdrawals.</summary>
+    public Guid? CompanyId { get; private set; }
     public decimal Amount { get; private set; }
     public decimal CommissionAmount { get; private set; }
     public decimal NetAmount { get; private set; }
@@ -19,7 +21,7 @@ public class WithdrawalRequest
     private WithdrawalRequest() { }
 
     public static WithdrawalRequest Create(Guid ownerId, decimal amount, string bankAccountDetails,
-        decimal commissionRate = 0.01m)
+        decimal commissionRate = 0.01m, Guid? companyId = null)
     {
         if (amount <= 0)
             throw new ArgumentException("Withdrawal amount must be positive.", nameof(amount));
@@ -30,6 +32,7 @@ public class WithdrawalRequest
         {
             Id = Guid.NewGuid(),
             OwnerId = ownerId,
+            CompanyId = companyId,
             Amount = amount,
             CommissionAmount = commission,
             NetAmount = amount - commission,

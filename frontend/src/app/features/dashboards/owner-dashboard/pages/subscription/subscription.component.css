@@ -1,0 +1,480 @@
+:host {
+  --color-success:    #16a34a;
+  --color-success-bg: #dcfce7;
+}
+
+.plans-page {
+  padding: 28px;
+  animation: fadeInUp 0.22s ease-out both;
+}
+
+@keyframes fadeInUp {
+  from { opacity: 0; transform: translateY(14px); }
+  to   { opacity: 1; transform: translateY(0); }
+}
+
+/* ── HEADER ─────────────────────────────────────── */
+.plans-header { margin-bottom: 28px; }
+
+.plans-title {
+  font-size: 22px;
+  font-weight: 700;
+  color: var(--color-on-surface);
+  margin: 0 0 6px;
+}
+
+.plans-subtitle {
+  font-size: 14px;
+  color: var(--color-on-surface-variant);
+  margin: 0;
+}
+
+/* ── COMPANY NOTICE ─────────────────────────────── */
+.company-notice {
+  display: flex;
+  align-items: flex-start;
+  gap: 12px;
+  background: var(--color-primary-fixed);
+  border: 1px solid var(--color-outline-variant);
+  border-radius: var(--radius-lg);
+  padding: 16px 20px;
+  margin-bottom: 24px;
+}
+
+.notice-icon {
+  font-size: 20px;
+  color: var(--color-primary);
+  flex-shrink: 0;
+  margin-top: 2px;
+}
+
+.notice-title {
+  font-size: 14px;
+  font-weight: 600;
+  color: var(--color-on-surface);
+  margin: 0 0 2px;
+}
+
+.notice-sub {
+  font-size: 13px;
+  color: var(--color-on-surface-variant);
+  margin: 0;
+}
+
+/* ── ALERTS ─────────────────────────────────────── */
+.alert-success-bar {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  background: var(--color-success-bg);
+  color: var(--color-success);
+  border-radius: var(--radius-md);
+  padding: 12px 16px;
+  font-size: 14px;
+  font-weight: 500;
+  margin-bottom: 24px;
+}
+
+.alert-error-bar {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  background: #fef2f2;
+  color: #dc2626;
+  border-radius: var(--radius-md);
+  padding: 12px 16px;
+  font-size: 14px;
+  margin-bottom: 24px;
+}
+
+.retry-btn {
+  margin-left: auto;
+  background: none;
+  border: 1px solid #dc2626;
+  color: #dc2626;
+  border-radius: var(--radius-sm);
+  padding: 4px 10px;
+  font-size: 13px;
+  cursor: pointer;
+}
+
+/* ── SKELETON ───────────────────────────────────── */
+@keyframes skeleton-pulse {
+  0%, 100% { opacity: 1; }
+  50%       { opacity: 0.45; }
+}
+
+.skeleton {
+  background: var(--color-surface-container);
+  border-radius: var(--radius-sm);
+  display: block;
+  animation: skeleton-pulse 1.6s ease-in-out infinite;
+}
+
+.billing-skeleton {
+  width: 220px;
+  height: 42px;
+  border-radius: var(--radius-lg);
+}
+
+.skeleton-card {
+  background: var(--color-surface-container-lowest);
+  border-radius: var(--radius-lg);
+  box-shadow: var(--shadow-soft);
+  padding: 28px;
+  height: 100%;
+}
+
+/* ── BILLING TOGGLE ─────────────────────────────── */
+.billing-toggle-wrap { display: flex; justify-content: center; }
+
+.billing-toggle {
+  display: inline-flex;
+  gap: 4px;
+  background: var(--color-surface-container-low);
+  border: 1px solid var(--color-outline-variant);
+  border-radius: var(--radius-lg);
+  padding: 4px;
+}
+
+.billing-pill {
+  padding: 8px 20px;
+  border-radius: var(--radius-md);
+  font-size: 14px;
+  font-weight: 500;
+  cursor: pointer;
+  border: none;
+  background: transparent;
+  color: var(--color-on-surface-variant);
+  transition: background 0.15s, color 0.15s, box-shadow 0.15s;
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  white-space: nowrap;
+}
+
+.billing-pill-active {
+  background: var(--color-surface-container-lowest);
+  color: var(--color-on-surface);
+  font-weight: 600;
+  box-shadow: 0 1px 4px rgba(0,0,0,0.08);
+}
+
+.save-tag {
+  background: var(--color-success-bg);
+  color: var(--color-success);
+  font-size: 11px;
+  font-weight: 700;
+  padding: 2px 7px;
+  border-radius: var(--radius-full);
+}
+
+/* ── PLAN CARDS ─────────────────────────────────── */
+.plan-card {
+  background: var(--color-surface-container-lowest);
+  border-radius: var(--radius-lg);
+  box-shadow: var(--shadow-soft);
+  padding: 28px;
+  border: 2px solid transparent;
+  transition: box-shadow 0.2s ease, transform 0.2s ease;
+  height: 100%;
+  display: flex;
+  flex-direction: column;
+}
+
+.plan-card:hover {
+  transform: translateY(-2px);
+  box-shadow: var(--shadow-hover);
+}
+
+.plan-card--premium {
+  border-color: var(--color-primary);
+  box-shadow: var(--shadow-hover);
+}
+
+.plan-card--current {
+  border-color: var(--color-outline-variant);
+}
+
+/* ── BADGE ──────────────────────────────────────── */
+.plan-badge {
+  display: inline-flex;
+  align-items: center;
+  padding: 4px 12px;
+  border-radius: var(--radius-full);
+  font-size: 12px;
+  font-weight: 600;
+  margin-bottom: 16px;
+  align-self: flex-start;
+}
+
+.badge-current {
+  background: var(--color-surface-container);
+  color: var(--color-on-surface-variant);
+}
+
+.badge-popular {
+  background: var(--color-primary-fixed);
+  color: var(--color-primary);
+}
+
+.badge-free {
+  background: var(--color-surface-container-low);
+  color: var(--color-on-surface-variant);
+}
+
+/* ── PLAN NAME & PRICE ──────────────────────────── */
+.plan-name {
+  font-size: 24px;
+  font-weight: 700;
+  color: var(--color-on-surface);
+  margin: 0 0 8px;
+}
+
+.price-area {
+  margin-bottom: 24px;
+  transition: opacity 0.15s ease;
+}
+
+.plan-price {
+  font-size: 44px;
+  font-weight: 800;
+  color: var(--color-primary);
+  line-height: 1;
+  margin: 0 0 4px;
+  letter-spacing: -0.02em;
+}
+
+.price-sub {
+  font-size: 13px;
+  color: var(--color-on-surface-variant);
+  margin: 0;
+}
+
+/* ── FEATURES ───────────────────────────────────── */
+.feature-list {
+  list-style: none;
+  padding: 0;
+  margin: 0 0 28px;
+  display: flex;
+  flex-direction: column;
+  gap: 11px;
+  flex: 1;
+}
+
+.feature-item {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  font-size: 14px;
+  color: var(--color-on-surface);
+}
+
+.feature-icon-yes {
+  color: var(--color-success);
+  width: 16px;
+  text-align: center;
+  flex-shrink: 0;
+  font-size: 13px;
+}
+
+.feature-icon-no {
+  color: var(--color-on-surface-variant);
+  opacity: 0.35;
+  width: 16px;
+  text-align: center;
+  flex-shrink: 0;
+  font-size: 13px;
+}
+
+.feature-text-muted { color: var(--color-on-surface-variant); }
+
+/* ── BUTTONS ─────────────────────────────────────── */
+.plan-btn {
+  width: 100%;
+  padding: 12px;
+  border-radius: var(--radius-md);
+  font-size: 15px;
+  font-weight: 600;
+  letter-spacing: 0.01em;
+}
+
+.plan-btn-current {
+  background: var(--color-surface-container-low);
+  border: 1px solid var(--color-outline-variant);
+  color: var(--color-on-surface-variant);
+  cursor: not-allowed;
+}
+
+.plan-btn-upgrade {
+  background: var(--color-primary);
+  border: none;
+  color: var(--color-on-primary);
+  transition: background 0.15s, box-shadow 0.15s, transform 0.15s;
+}
+
+.plan-btn-upgrade:hover {
+  background: var(--color-primary-container);
+  box-shadow: 0 4px 14px rgba(53, 37, 205, 0.35);
+  transform: translateY(-1px);
+  color: var(--color-on-primary);
+}
+
+/* ── COMPARISON TABLE ───────────────────────────── */
+.section-card {
+  background: var(--color-surface-container-lowest);
+  border-radius: var(--radius-lg);
+  box-shadow: var(--shadow-soft);
+  padding: 24px;
+}
+
+.section-title {
+  font-size: 16px;
+  font-weight: 600;
+  color: var(--color-on-surface);
+  margin: 0;
+}
+
+.comparison-table {
+  width: 100%;
+  border-collapse: collapse;
+  min-width: 440px;
+}
+
+.comparison-table thead th {
+  padding: 12px 16px;
+  font-size: 13px;
+  font-weight: 600;
+  color: var(--color-on-surface-variant);
+  background: var(--color-surface-container-low);
+  border-bottom: 2px solid var(--color-outline-variant);
+}
+
+.col-feature { text-align: left; width: 50%; }
+.col-plan    { width: 25%; }
+
+.col-plan-premium {
+  color: var(--color-primary);
+  background: var(--color-primary-fixed);
+}
+
+.comparison-table tbody td {
+  padding: 12px 16px;
+  font-size: 14px;
+  color: var(--color-on-surface);
+  border-bottom: 1px solid var(--color-outline-variant);
+}
+
+.comparison-table tbody tr:last-child td { border-bottom: none; }
+
+.comparison-table tbody tr:hover td { background: var(--color-surface-container-low); }
+
+.col-plan-premium-cell {
+  background: rgba(53, 37, 205, 0.03);
+  font-weight: 600;
+  color: var(--color-primary);
+}
+
+.check-yes { color: var(--color-success); font-size: 15px; }
+.check-no  { color: var(--color-on-surface-variant); opacity: 0.35; font-size: 15px; }
+
+/* ── MODAL ──────────────────────────────────────── */
+.modal-overlay {
+  position: fixed;
+  inset: 0;
+  background: rgba(11, 28, 48, 0.45);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: 1050;
+  padding: 16px;
+  animation: fadeIn 0.15s ease;
+}
+
+@keyframes fadeIn {
+  from { opacity: 0; }
+  to   { opacity: 1; }
+}
+
+.modal-box {
+  background: var(--color-surface-container-lowest);
+  border-radius: var(--radius-lg);
+  box-shadow: 0 20px 60px rgba(0, 0, 0, 0.2);
+  padding: 36px 32px;
+  max-width: 420px;
+  width: 100%;
+  text-align: center;
+  animation: slideUp 0.2s ease;
+}
+
+@keyframes slideUp {
+  from { opacity: 0; transform: translateY(16px); }
+  to   { opacity: 1; transform: translateY(0); }
+}
+
+.modal-icon-wrap {
+  width: 60px;
+  height: 60px;
+  border-radius: var(--radius-full);
+  background: var(--color-primary-fixed);
+  color: var(--color-primary);
+  font-size: 24px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  margin: 0 auto 20px;
+}
+
+.modal-title {
+  font-size: 20px;
+  font-weight: 700;
+  color: var(--color-on-surface);
+  margin: 0 0 12px;
+}
+
+.modal-desc {
+  font-size: 14px;
+  color: var(--color-on-surface-variant);
+  line-height: 1.6;
+  margin: 0 0 20px;
+}
+
+.modal-plan-info {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 12px;
+  background: var(--color-surface-container-low);
+  border-radius: var(--radius-md);
+  padding: 12px 16px;
+  margin-bottom: 24px;
+}
+
+.modal-plan-badge {
+  background: var(--color-primary-fixed);
+  color: var(--color-primary);
+  font-size: 13px;
+  font-weight: 600;
+  padding: 3px 10px;
+  border-radius: var(--radius-full);
+}
+
+.modal-plan-price {
+  font-size: 14px;
+  font-weight: 600;
+  color: var(--color-on-surface);
+}
+
+.modal-actions {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+
+/* ── RESPONSIVE ─────────────────────────────────── */
+@media (max-width: 576px) {
+  .plans-page { padding: 16px; }
+  .plan-card  { padding: 20px; }
+  .plan-price { font-size: 36px; }
+  .modal-box  { padding: 24px 20px; }
+}

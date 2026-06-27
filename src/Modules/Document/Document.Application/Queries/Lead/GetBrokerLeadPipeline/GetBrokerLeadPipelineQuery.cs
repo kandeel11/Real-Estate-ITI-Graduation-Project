@@ -20,7 +20,7 @@ public sealed record PipelineKanbanDto(
 );
 
 public sealed record LeadCardDto(
-    Guid LeadId,
+    Guid Id,
     Guid InquiryId,
     Guid PropertyId,
     Guid TenantId,

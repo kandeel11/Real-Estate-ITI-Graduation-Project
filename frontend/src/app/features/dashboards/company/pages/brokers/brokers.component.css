@@ -1,0 +1,8 @@
+.search-box {
+  max-width: 260px;
+}
+
+.modal.d-block {
+  background: transparent;
+  z-index: 1055;
+}

@@ -1,0 +1,138 @@
+export type PaymentStatus = 'Pending' | 'Paid' | 'Late' | 'Overdue' | 'Refunded';
+export type PaymentMethod = 'BankTransfer' | 'Stripe' | 'Other';
+
+export interface RentPayment {
+  id: string;
+  leaseId: string;
+  amount: number;
+  dueDate: string;
+  paidAt?: string | null;
+  status: PaymentStatus;
+  paymentMethod?: PaymentMethod | null;
+  transactionId?: string | null;
+  lateFee?: number;
+  aiPredictedLate?: boolean;
+  receiptUrl?: string | null;
+  notes?: string | null;
+  createdAt?: string;
+  updatedAt?: string;
+  // enrichment fields — now returned by all endpoints
+  propertyId?: string;
+  tenantId?: string;
+  landlordId?: string;
+  tenantName?: string;
+  landlordName?: string;
+  propertyTitle?: string;
+}
+
+export interface ProcessPaymentRequest {
+  paymentMethod: PaymentMethod;
+  cardToken?: string | null;
+}
+
+/** Matches the backend BillingCycle enum (Monthly=0, Quarterly=1, Annual=2). */
+export type BillingCycle = 0 | 1 | 2;
+export const BILLING_MONTHLY: BillingCycle = 0;
+export const BILLING_ANNUAL: BillingCycle = 2;
+
+export interface SubscriptionCheckoutRequest {
+  userId: string;
+  subscriptionId?: string | null;
+  planId: string;
+  billingCycle: BillingCycle;
+  successRedirectUrl: string;
+  cancelRedirectUrl: string;
+}
+
+export interface SubscriptionCheckoutResponse {
+  paymentId: string;
+  checkoutUrl: string;
+  checkoutSessionId: string;
+}
+
+/** Body for POST /api/subscriptions/select-plan (step 1 of the payment flow). */
+export interface SelectPlanRequest {
+  userId: string;
+  companyId?: string | null;
+  planId: string;
+  billingCycle: BillingCycle;
+}
+
+/** Result of select-plan — carries the new PendingPayment subscription id. */
+export interface SelectPlanResponse {
+  subscriptionId: string;
+  planId: string;
+  billingCycle: string;
+  status: string;
+}
+
+/** Options for the full two-step subscription checkout flow. */
+export interface StartCheckoutOptions {
+  userId: string;
+  companyId?: string | null;
+  planId: string;
+  billingCycle: BillingCycle;
+  successRedirectUrl: string;
+  cancelRedirectUrl: string;
+}
+
+export interface ProcessPaymentResponse {
+  isSuccess: boolean;
+  transactionId?: string;
+  receiptUrl?: string;
+  errorMessage?: string;
+}
+
+export interface GenerateMonthlyResponse {
+  generatedCount: number;
+  skippedCount: number;
+  errors: string[];
+}
+
+// Payment schedule (from /api/leases/{id}/payment-schedule)
+export interface PaymentPeriod {
+  periodNumber: number;
+  periodStart: string;
+  periodEnd: string;
+  dueDate: string;
+  amount: number;
+  isCurrent: boolean;
+  isNext: boolean;
+  isPast: boolean;
+}
+
+export interface PaymentScheduleSummary {
+  totalInstallments: number;
+  pastInstallments: number;
+  currentInstallments: number;
+  futureInstallments: number;
+  totalAmount: number;
+  amountDueSoFar: number;
+  amountRemaining: number;
+}
+
+/** Shape returned by GET /api/brokers/me/payments/schedule and GET /api/companies/mine/payments/schedule */
+export interface BrokerLeaseSchedule {
+  leaseId: string;
+  propertyId: string;
+  propertyTitle: string;
+  tenantId: string;
+  startDate: string;
+  endDate: string;
+  schedule: PaymentSchedule;
+}
+
+export interface PaymentSchedule {
+  leaseId: string;
+  installmentAmount: number;
+  paymentFrequency: string;
+  totalRentAmount: number;
+  durationInMonths: number;
+  startDate: string;
+  endDate: string;
+  paymentDayOfMonth: number;
+  currentPeriod: PaymentPeriod | null;
+  nextPeriod: PaymentPeriod | null;
+  allPeriods: PaymentPeriod[];
+  summary: PaymentScheduleSummary;
+}

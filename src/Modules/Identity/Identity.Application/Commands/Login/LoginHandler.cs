@@ -11,17 +11,20 @@ public class LoginHandler : IRequestHandler<LoginCommand, AuthResponseDto>
     private readonly IRefreshTokenRepository _refreshTokenRepo;
     private readonly IPasswordHasher _hasher;
     private readonly IJwtService _jwt;
+    private readonly IBrokerRepository _brokerRepo;
 
     public LoginHandler(
         IUserRepository userRepo,
         IRefreshTokenRepository refreshTokenRepo,
         IPasswordHasher hasher,
-        IJwtService jwt)
+        IJwtService jwt,
+        IBrokerRepository brokerRepo)
     {
         _userRepo = userRepo;
         _refreshTokenRepo = refreshTokenRepo;
         _hasher = hasher;
         _jwt = jwt;
+        _brokerRepo = brokerRepo;
     }
 
     public async Task<AuthResponseDto> Handle(LoginCommand request, CancellationToken cancellationToken)
@@ -34,6 +37,18 @@ public class LoginHandler : IRequestHandler<LoginCommand, AuthResponseDto>
 
         if (!_hasher.Verify(request.Password, user.PasswordHash))
             throw new UnauthorizedAccessException("Invalid credentials.");
+
+        // Brokers store their company on the Broker record, not on User.CompanyId.
+        // Backfill CompanyId on the User so the JWT and response include it.
+        if (user.Role == "broker" && user.CompanyId is null)
+        {
+            var broker = await _brokerRepo.GetByUserIdAsync(user.Id, cancellationToken);
+            if (broker?.CompanyId is Guid cid)
+            {
+                user.SetCompany(cid);
+                await _userRepo.SaveChangesAsync(cancellationToken);
+            }
+        }
 
         var accessToken = _jwt.GenerateAccessToken(user);
         var refreshTokenValue = _jwt.GenerateRefreshToken();

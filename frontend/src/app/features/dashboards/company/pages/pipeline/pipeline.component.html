@@ -1,0 +1,231 @@
+<div class="pipeline-page">
+
+  <!-- ── Header ────────────────────────────────────────────────────────── -->
+  <div class="page-header">
+    <div class="header-left">
+      <div class="page-eyebrow">
+        <i class="fa-solid fa-chart-kanban"></i>
+        CRM Dashboard
+      </div>
+      <h1 class="page-title">Broker Lead Pipeline</h1>
+      <p class="page-subtitle">
+        @if (pipeline()) {
+          {{ pipeline()!.companyName }} &mdash; {{ pipeline()!.totalBrokers }} broker{{ pipeline()!.totalBrokers === 1 ? '' : 's' }}
+        } @else {
+          Real-time CRM view across all company brokers
+        }
+      </p>
+    </div>
+    <button class="btn-refresh" (click)="loadPipeline()" [disabled]="loading()">
+      <i class="fa-solid fa-rotate-right" [class.fa-spin]="loading()"></i>
+      Refresh
+    </button>
+  </div>
+
+  <!-- ── Loading skeleton ──────────────────────────────────────────────── -->
+  @if (loading()) {
+    <div class="stats-bar stats-bar-sk">
+      @for (i of [1,2,3,4,5]; track i) {
+        <div class="stat-card skeleton" style="height:76px"></div>
+      }
+    </div>
+    <div class="broker-tabs-sk">
+      @for (i of [1,2,3]; track i) {
+        <div class="skeleton" style="height:44px;width:130px;border-radius:22px"></div>
+      }
+    </div>
+    <div class="kanban">
+      @for (i of [1,2,3,4,5]; track i) {
+        <div class="kanban-col skeleton-col">
+          <div class="skeleton" style="height:36px;border-radius:8px;margin-bottom:10px"></div>
+          <div class="skeleton" style="height:88px;border-radius:10px;margin-bottom:8px"></div>
+          <div class="skeleton" style="height:72px;border-radius:10px;margin-bottom:8px"></div>
+          <div class="skeleton" style="height:88px;border-radius:10px"></div>
+        </div>
+      }
+    </div>
+  }
+
+  <!-- ── Error state ───────────────────────────────────────────────────── -->
+  @else if (error()) {
+    <div class="error-banner">
+      <i class="fa-solid fa-triangle-exclamation"></i>
+      {{ error() }}
+      <button class="btn-retry" (click)="loadPipeline()">Retry</button>
+    </div>
+  }
+
+  <!-- ── Pipeline view ─────────────────────────────────────────────────── -->
+  @else if (pipeline()) {
+
+    <!-- Stats bar -->
+    <div class="stats-bar">
+      <div class="stat-card">
+        <div class="stat-icon" style="background:#eff6ff;color:#3b82f6">
+          <i class="fa-solid fa-users"></i>
+        </div>
+        <div class="stat-body">
+          <div class="stat-value">{{ stats().total }}</div>
+          <div class="stat-label">Total Leads</div>
+        </div>
+      </div>
+      <div class="stat-card">
+        <div class="stat-icon" style="background:#fef3c7;color:#f59e0b">
+          <i class="fa-solid fa-fire"></i>
+        </div>
+        <div class="stat-body">
+          <div class="stat-value">{{ stats().active }}</div>
+          <div class="stat-label">Active</div>
+        </div>
+      </div>
+      <div class="stat-card">
+        <div class="stat-icon" style="background:#dcfce7;color:#10b981">
+          <i class="fa-solid fa-circle-check"></i>
+        </div>
+        <div class="stat-body">
+          <div class="stat-value">{{ stats().won }}</div>
+          <div class="stat-label">Deals Won</div>
+        </div>
+      </div>
+      <div class="stat-card">
+        <div class="stat-icon" style="background:#fee2e2;color:#ef4444">
+          <i class="fa-solid fa-circle-xmark"></i>
+        </div>
+        <div class="stat-body">
+          <div class="stat-value">{{ stats().lost }}</div>
+          <div class="stat-label">Lost</div>
+        </div>
+      </div>
+      <div class="stat-card stat-card-value">
+        <div class="stat-icon" style="background:#f5f3ff;color:#8b5cf6">
+          <i class="fa-solid fa-money-bill-wave"></i>
+        </div>
+        <div class="stat-body">
+          <div class="stat-value stat-value-egp">{{ stats().value | number }}</div>
+          <div class="stat-label">Pipeline Value (EGP)</div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Broker tabs -->
+    <div class="broker-tabs">
+      <button class="broker-tab" [class.active]="selectedBrokerId() === 'all'"
+              (click)="selectedBrokerId.set('all')">
+        <span class="tab-avatar tab-all">
+          <i class="fa-solid fa-layer-group"></i>
+        </span>
+        <span class="tab-name">All Brokers</span>
+        <span class="tab-badge">{{ totalLeadsForAll() }}</span>
+      </button>
+
+      @for (broker of brokers(); track broker.brokerId; let i = $index) {
+        <button class="broker-tab" [class.active]="selectedBrokerId() === broker.brokerId"
+                (click)="selectedBrokerId.set(broker.brokerId)">
+          <span class="tab-avatar" [style.background]="'hsl(' + (i * 67) + ',65%,88%)'">
+            {{ initials(broker.brokerName) }}
+          </span>
+          <span class="tab-name">{{ broker.brokerName }}</span>
+          <span class="tab-badge">{{ broker.totalLeads }}</span>
+        </button>
+      }
+    </div>
+
+    <!-- Kanban board -->
+    <div class="kanban">
+      @for (col of COLUMNS; track col.key) {
+        @let leads = colLeads(col.key);
+        <div class="kanban-col">
+          <div class="col-header" [style.border-top-color]="col.color">
+            <div class="col-title-row">
+              <i [class]="col.icon" [style.color]="col.color"></i>
+              <span class="col-title">{{ col.label }}</span>
+            </div>
+            <span class="col-count"
+                  [style.background]="col.color + '20'"
+                  [style.color]="col.color">
+              {{ leads.length }}
+            </span>
+          </div>
+
+          <div class="col-body">
+            @if (leads.length === 0) {
+              <div class="col-empty">
+                <i class="fa-regular fa-folder-open"></i>
+                <span>No leads here</span>
+              </div>
+            }
+
+            @for (lead of leads; track lead.id) {
+              <div class="lead-card">
+                <div class="card-head">
+                  <span class="lead-shortid">{{ shortId(lead.id) }}</span>
+                  <span class="lead-age">{{ leadAge(lead.createdAt) }}</span>
+                </div>
+
+                @if (lead.dealValue) {
+                  <div class="lead-value">
+                    <i class="fa-solid fa-tag"></i>
+                    EGP {{ lead.dealValue | number }}
+                  </div>
+                }
+
+                @if (lead.notes) {
+                  <p class="lead-notes">{{ lead.notes }}</p>
+                }
+
+                <div class="card-footer">
+                  <span class="updated-label">Updated</span>
+                  <span class="updated-date">{{ lead.updatedAt | date:'d MMM' }}</span>
+                </div>
+              </div>
+            }
+          </div>
+        </div>
+      }
+    </div>
+
+  }
+
+  <!-- ── Empty company (no brokers yet) ──────────────────────────────── -->
+  @else {
+    <div class="empty-state">
+      <i class="fa-solid fa-chart-kanban"></i>
+      <p>No pipeline data yet. Add brokers to start tracking leads.</p>
+    </div>
+  }
+
+  <!-- ── No-Management Pending Confirmations ──────────────────────────── -->
+  @if (noMgmtPending().length > 0) {
+    <div class="no-mgmt-section">
+      <div class="no-mgmt-header">
+        <i class="fa-solid fa-handshake-slash"></i>
+        <h3>No-Management Deals Awaiting Confirmation</h3>
+        <span class="no-mgmt-count">{{ noMgmtPending().length }}</span>
+      </div>
+      <div class="no-mgmt-list">
+        @for (item of noMgmtPending(); track item.leadId) {
+          <div class="no-mgmt-item">
+            <div class="no-mgmt-info">
+              <span class="no-mgmt-tenant"><i class="fa-solid fa-user"></i> {{ item.tenantName }}</span>
+              @if (item.dealValue) {
+                <span class="no-mgmt-value">EGP {{ item.dealValue | number }}</span>
+              }
+              <span class="no-mgmt-age">{{ leadAge(item.pendingAt) }} ago</span>
+            </div>
+            <button class="btn-confirm-no-mgmt"
+                    [disabled]="confirmingLeadId() === item.leadId"
+                    (click)="confirmNoManagement(item)">
+              @if (confirmingLeadId() === item.leadId) {
+                <i class="fa-solid fa-spinner fa-spin"></i>
+              } @else {
+                <i class="fa-solid fa-circle-check"></i>
+              }
+              Confirm No Management
+            </button>
+          </div>
+        }
+      </div>
+    </div>
+  }
+
+</div>

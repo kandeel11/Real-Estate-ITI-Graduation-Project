@@ -1,0 +1,139 @@
+/* ── Role picker card ─────────────────────────── */
+.rp-card { max-width: 520px; }
+
+.rp-grid {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+
+.rp-item {
+  display: flex;
+  align-items: center;
+  gap: 16px;
+  padding: 16px 18px;
+  border: 1.5px solid rgba(199, 196, 216, .35);
+  border-radius: var(--radius-md);
+  background: var(--color-surface-container-low);
+  cursor: pointer;
+  text-align: left;
+  width: 100%;
+  transition: border-color .18s ease, background .18s ease, transform .18s ease, box-shadow .18s ease;
+}
+.rp-item:hover {
+  border-color: var(--color-primary);
+  background: rgba(79, 70, 229, .05);
+  transform: translateX(6px);
+  box-shadow: 0 4px 20px rgba(79, 70, 229, .12);
+}
+
+.rp-item__icon {
+  width: 48px;
+  height: 48px;
+  border-radius: 12px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: #fff;
+  font-size: 18px;
+  flex-shrink: 0;
+}
+
+.rp-item__body {
+  flex: 1;
+  min-width: 0;
+}
+.rp-item__body strong {
+  display: block;
+  font-size: 14px;
+  font-weight: 700;
+  color: var(--color-on-surface);
+}
+.rp-item__body span {
+  display: block;
+  font-size: 12px;
+  color: var(--color-on-surface-variant);
+  margin-top: 2px;
+}
+
+.rp-item__arrow {
+  color: var(--color-outline);
+  font-size: 12px;
+  flex-shrink: 0;
+  transition: transform .18s ease, color .18s ease;
+}
+.rp-item:hover .rp-item__arrow {
+  transform: translateX(4px);
+  color: var(--color-primary);
+}
+
+/* ── Back button ──────────────────────────────── */
+.rp-back {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  background: none;
+  border: none;
+  padding: 0 0 10px;
+  font-size: 13px;
+  font-weight: 600;
+  color: var(--color-on-surface-variant);
+  cursor: pointer;
+  transition: color .18s;
+}
+.rp-back:hover { color: var(--color-primary); }
+
+/* ── Role badge ───────────────────────────────── */
+.rp-role-badge {
+  display: inline-flex;
+  align-items: center;
+  gap: 7px;
+  padding: 5px 14px;
+  border-radius: 100px;
+  font-size: 12px;
+  font-weight: 700;
+  color: #fff;
+  margin-bottom: 10px;
+  letter-spacing: .02em;
+}
+.rp-role-badge i { font-size: 11px; }
+
+/* ── Section divider label ────────────────────── */
+.rp-section-label {
+  font-size: 11px;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: .08em;
+  color: var(--color-on-surface-variant);
+  margin: 4px 0 -4px;
+  padding-bottom: 10px;
+  border-bottom: 1px solid rgba(199, 196, 216, .4);
+  display: flex;
+  align-items: center;
+  gap: 6px;
+}
+
+/* ── Two-column row ───────────────────────────── */
+.rp-row {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 14px;
+}
+
+/* ── Wide card for company form ───────────────── */
+.login-card--wide { max-width: 560px; }
+
+/* ── Allow form panel to scroll on short screens ─ */
+.login-form-panel {
+  justify-content: flex-start;
+  padding-top: 48px;
+  padding-bottom: 48px;
+  overflow-y: auto;
+}
+
+/* ── Responsive ───────────────────────────────── */
+@media (max-width: 600px) {
+  .rp-row { grid-template-columns: 1fr; }
+  .login-card--wide { max-width: 100%; }
+  .rp-card { max-width: 100%; }
+}

@@ -1,0 +1,209 @@
+<div class="so-backdrop" (click)="close()"></div>
+
+<div class="so-panel" role="dialog" aria-modal="true" aria-label="Search properties">
+
+  <!-- ── Header ─────────────────────────────────────────────────────────── -->
+  <div class="so-header">
+    <div class="so-header__left">
+      <i class="fa-solid fa-house-chimney so-header__logo-icon"></i>
+      <span class="so-header__title">Search Properties</span>
+      @if (searchMode() === 'smart') {
+        <span class="so-header__ai-badge">
+          <i class="fa-solid fa-wand-magic-sparkles"></i> AI Mode
+        </span>
+      }
+    </div>
+    <button class="so-close" (click)="close()" aria-label="Close search">
+      <i class="fa-solid fa-xmark"></i>
+    </button>
+  </div>
+
+  <!-- ── Search field ───────────────────────────────────────────────────── -->
+  <div class="so-field-wrap" [class.so-field-wrap--ai]="searchMode() === 'smart'">
+    <div class="so-field">
+      <i class="so-field__icon fa-solid"
+         [class.fa-magnifying-glass]="searchMode() === 'regular'"
+         [class.fa-wand-magic-sparkles]="searchMode() === 'smart'"></i>
+
+      <input
+        #searchInput
+        class="so-field__input"
+        type="text"
+        autocomplete="off"
+        spellcheck="false"
+        [value]="query()"
+        (input)="query.set($any($event.target).value)"
+        (keydown.enter)="onSubmit()"
+        [placeholder]="searchMode() === 'smart'
+          ? 'Describe what you\'re looking for… e.g. 3 bedroom villa near Rehab City'
+          : 'Search by location, type, or keyword…'" />
+
+      @if (query().trim()) {
+        <button class="so-field__clear" (click)="query.set(''); clearResults(); searchInputRef.nativeElement.focus()" aria-label="Clear">
+          <i class="fa-solid fa-xmark"></i>
+        </button>
+      }
+
+      <!-- AI toggle -->
+      <button
+        class="so-ai-toggle"
+        [class.so-ai-toggle--on]="searchMode() === 'smart'"
+        (click)="toggleMode()"
+        title="Toggle AI search">
+        <i class="fa-solid fa-wand-magic-sparkles"></i>
+        <span>AI</span>
+      </button>
+    </div>
+
+    <button
+      class="so-submit"
+      [class.so-submit--ai]="searchMode() === 'smart'"
+      (click)="onSubmit()"
+      [disabled]="loading() || !query().trim()">
+      @if (loading()) {
+        <i class="fa-solid fa-spinner fa-spin"></i>
+      } @else if (searchMode() === 'smart') {
+        <i class="fa-solid fa-wand-magic-sparkles"></i> Ask AI
+      } @else {
+        <i class="fa-solid fa-magnifying-glass"></i> Search
+      }
+    </button>
+  </div>
+
+  <!-- ── AI hint ────────────────────────────────────────────────────────── -->
+  @if (searchMode() === 'smart' && !hasSearched() && !loading()) {
+    <p class="so-ai-hint">
+      <i class="fa-solid fa-circle-info"></i>
+      AI mode understands natural language — describe what you need in plain words.
+    </p>
+  }
+
+  <!-- ── Suggestions (idle state) ──────────────────────────────────────── -->
+  @if (!hasSearched() && !loading() && !query().trim()) {
+    <div class="so-suggestions">
+      <p class="so-suggestions__label">
+        <i class="fa-solid fa-bolt-lightning"></i> Try asking
+      </p>
+      <div class="so-suggestions__chips">
+        @for (s of suggestions; track s) {
+          <button class="so-sugg-chip" (click)="useSuggestion(s)">
+            <i class="fa-solid fa-wand-magic-sparkles"></i> {{ s }}
+          </button>
+        }
+      </div>
+    </div>
+  }
+
+  <!-- ── Loading state ──────────────────────────────────────────────────── -->
+  @if (loading()) {
+    <div class="so-loading">
+      <div class="so-loading__ring"></div>
+      <p>
+        @if (searchMode() === 'smart') { AI is analysing your request… }
+        @else { Searching properties… }
+      </p>
+    </div>
+  }
+
+  <!-- ── Error ──────────────────────────────────────────────────────────── -->
+  @if (errorMsg() && !loading()) {
+    <div class="so-error">
+      <i class="fa-solid fa-circle-exclamation"></i> {{ errorMsg() }}
+    </div>
+  }
+
+  <!-- ── Results ────────────────────────────────────────────────────────── -->
+  @if (hasSearched() && !loading()) {
+
+    <!-- AI parsed chips -->
+    @if (searchMode() === 'smart' && getParsedChips().length > 0) {
+      <div class="so-chips">
+        <span class="so-chips__label">
+          <i class="fa-solid fa-wand-magic-sparkles"></i> AI detected
+        </span>
+        @for (chip of getParsedChips(); track chip.label) {
+          <span class="so-chip"><strong>{{ chip.label }}:</strong> {{ chip.value }}</span>
+        }
+      </div>
+    }
+
+    <!-- Results header -->
+    <div class="so-results-header">
+      @if (totalResults() > 0) {
+        <span><strong>{{ totalResults() }}</strong> properties found
+          @if (searchMode() === 'smart') { · showing top {{ results().length }} matches }
+        </span>
+      } @else {
+        <span class="so-results-header__empty">No properties matched your search.</span>
+      }
+      <button class="so-results-header__clear" (click)="clearResults(); query.set('')">
+        <i class="fa-solid fa-rotate-left"></i> Clear
+      </button>
+    </div>
+
+    <!-- Results grid -->
+    @if (results().length > 0) {
+      <div class="so-results">
+        @for (p of results(); track p.propertyId) {
+          <div class="so-card" (click)="goToProperty(p)" role="button" tabindex="0"
+               (keydown.enter)="goToProperty(p)">
+            <div class="so-card__img">
+              @if (getActiveImg(p); as activeImg) {
+                <img [src]="activeImg" [alt]="p.title" loading="lazy" />
+              } @else {
+                <div class="so-card__img-placeholder">
+                  <i class="fa-solid fa-house"></i>
+                </div>
+              }
+
+              <!-- Prev / Next arrows — only when multiple images exist -->
+              @if ((p.imageUrls?.length ?? 0) > 1) {
+                <button class="so-card__nav so-card__nav--prev" (click)="stepImg(p, -1, $event)" tabindex="-1">
+                  <i class="fa-solid fa-chevron-left"></i>
+                </button>
+                <button class="so-card__nav so-card__nav--next" (click)="stepImg(p, 1, $event)" tabindex="-1">
+                  <i class="fa-solid fa-chevron-right"></i>
+                </button>
+                <!-- Dot indicators -->
+                <div class="so-card__dots">
+                  @for (url of p.imageUrls; track $index) {
+                    <span class="so-card__dot" [class.so-card__dot--active]="getActiveIdx(p) === $index"
+                          (click)="jumpImg(p, $index, $event)"></span>
+                  }
+                </div>
+              }
+
+              <span class="so-card__badge so-card__badge--type">{{ p.propertyType }}</span>
+              <span class="so-card__badge so-card__badge--listing"
+                    [class.so-card__badge--rent]="p.listingType === 'For Rent'"
+                    [class.so-card__badge--sale]="p.listingType === 'For Sale'">
+                {{ p.listingType }}
+              </span>
+              @if (searchMode() === 'smart' && p.matchScore > 0) {
+                <span class="so-card__match">
+                  <i class="fa-solid fa-bullseye"></i>
+                  {{ (p.matchScore * 100).toFixed(0) }}%
+                </span>
+              }
+            </div>
+
+            <div class="so-card__body">
+              <h4 class="so-card__title">{{ p.title }}</h4>
+              <p class="so-card__loc">
+                <i class="fa-solid fa-location-dot"></i>
+                {{ p.district }}, {{ p.city }}
+              </p>
+              <div class="so-card__meta">
+                @if (p.bedrooms) { <span><i class="fa-solid fa-bed"></i> {{ p.bedrooms }}</span> }
+                @if (p.bathrooms) { <span><i class="fa-solid fa-bath"></i> {{ p.bathrooms }}</span> }
+                @if (p.areaInMeters) { <span><i class="fa-solid fa-vector-square"></i> {{ p.areaInMeters }} m²</span> }
+              </div>
+              <div class="so-card__price">{{ formatPrice(p.price) }}</div>
+            </div>
+          </div>
+        }
+      </div>
+    }
+  }
+
+</div>

@@ -1,0 +1,75 @@
+<div class="page">
+  <h1 class="page-title">{{ 'OWNER.PERFORMANCE.TITLE' | translate }}</h1>
+
+  @if (loading()) {
+    <div class="stats-grid">
+      @for (i of [1,2,3,4,5]; track i) {
+        <div class="skeleton" style="height:110px;border-radius:12px"></div>
+      }
+    </div>
+  } @else if (stats(); as s) {
+    <div class="stats-grid">
+      <div class="kpi-card">
+        <div class="kpi-icon blue"><i class="fa-solid fa-handshake"></i></div>
+        <div class="kpi-value">{{ s.dealsClosedThisMonth }}</div>
+        <div class="kpi-label">{{ 'OWNER.PERFORMANCE.DEALS_MONTH' | translate }}</div>
+      </div>
+      <div class="kpi-card">
+        <div class="kpi-icon amber"><i class="fa-solid fa-clock"></i></div>
+        <div class="kpi-value">{{ s.avgResponseTimeMinutes | number:'1.1-1' }}<small>{{ 'OWNER.PERFORMANCE.MIN' | translate }}</small></div>
+        <div class="kpi-label">{{ 'OWNER.PERFORMANCE.RESPONSE_TIME' | translate }}</div>
+      </div>
+      <div class="kpi-card">
+        <div class="kpi-icon green"><i class="fa-solid fa-arrow-trend-up"></i></div>
+        <div class="kpi-value">{{ s.conversionRate }}%</div>
+        <div class="kpi-label">{{ 'OWNER.PERFORMANCE.CONVERSION' | translate }}</div>
+      </div>
+      <div class="kpi-card">
+        <div class="kpi-icon purple"><i class="fa-solid fa-star"></i></div>
+        <div class="kpi-value">{{ s.rating | number:'1.1-1' }}</div>
+        <div class="kpi-label">{{ 'OWNER.PERFORMANCE.RATING' | translate }}</div>
+      </div>
+      <div class="kpi-card">
+        <div class="kpi-icon rose"><i class="fa-solid fa-ranking-star"></i></div>
+        <div class="kpi-value">#{{ s.rankInCompany }}<small>/{{ s.totalBrokers }}</small></div>
+        <div class="kpi-label">{{ 'OWNER.PERFORMANCE.RANK' | translate }}</div>
+      </div>
+    </div>
+
+    <!-- Bar chart -->
+    <div class="card">
+      <h2 class="card-title">{{ 'OWNER.PERFORMANCE.CHART_TITLE' | translate }}</h2>
+      <div class="bar-chart">
+        @for (m of s.monthlyDeals; track m.month) {
+          <div class="bar-col">
+            <div class="bar-fill" [style.height.%]="(m.deals / maxDeals()) * 100">
+              <span class="bar-val">{{ m.deals }}</span>
+            </div>
+            <span class="bar-label">{{ m.month }}</span>
+          </div>
+        }
+      </div>
+    </div>
+
+    <!-- Ratings -->
+    <div class="card">
+      <h2 class="card-title">{{ 'OWNER.PERFORMANCE.RATINGS_TITLE' | translate }}</h2>
+      @if (ratings().length === 0) {
+        <p class="empty-hint">{{ 'OWNER.PERFORMANCE.NO_RATINGS' | translate }}</p>
+      } @else {
+        <div class="ratings-list">
+          @for (r of ratings(); track r.id) {
+            <div class="rating-item">
+              <div class="rating-stars">
+                @for (s of stars(r.stars); track s) { <i class="fa-solid fa-star"></i> }
+                @for (s of stars(5 - r.stars); track s) { <i class="fa-regular fa-star"></i> }
+              </div>
+              <p class="rating-comment">{{ r.comment }}</p>
+              <span class="rating-reviewer">— {{ r.reviewer }}</span>
+            </div>
+          }
+        </div>
+      }
+    </div>
+  }
+</div>

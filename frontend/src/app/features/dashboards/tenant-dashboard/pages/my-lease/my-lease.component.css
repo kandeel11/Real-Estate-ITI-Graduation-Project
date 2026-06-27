@@ -1,0 +1,487 @@
+:host {
+  --badge-active-bg:   #dcfce7;
+  --badge-active-text: #15803d;
+  --badge-ended-bg:    var(--color-surface-container);
+  --badge-ended-text:  var(--color-on-surface-variant);
+}
+
+.my-lease-page { padding: 28px; }
+
+.page-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  flex-wrap: wrap;
+  gap: 12px;
+  margin-bottom: 24px;
+}
+
+.page-title {
+  font-size: 22px;
+  font-weight: 700;
+  color: var(--color-on-surface);
+  margin: 0;
+}
+
+/* ── PILLS ─────────────────────────────────────── */
+.pills-row {
+  display: flex;
+  gap: 8px;
+  background: var(--color-surface-container-low);
+  padding: 4px;
+  border-radius: var(--radius-lg);
+}
+
+.pill {
+  padding: 7px 18px;
+  border-radius: var(--radius-md);
+  font-size: 14px;
+  font-weight: 500;
+  cursor: pointer;
+  background: none;
+  border: none;
+  color: var(--color-on-surface-variant);
+  transition: all 0.15s;
+}
+
+.pill-active {
+  background: var(--color-surface-container-lowest);
+  color: var(--color-primary);
+  box-shadow: var(--shadow-soft);
+  font-weight: 600;
+}
+
+/* ── PENDING OFFER ─────────────────────────────── */
+.pending-offer-card {
+  background: linear-gradient(135deg, #fffbeb 0%, #fef3c7 100%);
+  border: 1.5px solid #fbbf24;
+  border-radius: 16px;
+  padding: 20px 24px;
+  margin-bottom: 24px;
+}
+
+.offer-header {
+  display: flex;
+  align-items: center;
+  gap: 14px;
+  margin-bottom: 16px;
+}
+
+.offer-icon {
+  font-size: 28px;
+  color: #d97706;
+  flex-shrink: 0;
+}
+
+.offer-title {
+  font-size: 15px;
+  font-weight: 700;
+  color: #92400e;
+  margin: 0 0 2px;
+}
+
+.offer-property {
+  font-size: 13px;
+  color: #78350f;
+  margin: 0;
+}
+
+.offer-terms {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(160px, 1fr));
+  gap: 10px 20px;
+  margin-bottom: 18px;
+}
+
+.offer-term { display: flex; flex-direction: column; gap: 2px; }
+.term-label { font-size: 11px; font-weight: 500; color: #92400e; text-transform: uppercase; letter-spacing: .04em; }
+.term-value { font-size: 14px; font-weight: 600; color: #1c1917; }
+.term-value.rent { color: #15803d; font-size: 15px; }
+
+.offer-actions {
+  display: flex;
+  gap: 10px;
+  justify-content: flex-end;
+  flex-wrap: wrap;
+}
+
+.btn { display: inline-flex; align-items: center; gap: 6px; padding: 9px 20px; border-radius: var(--radius-md); font-size: 14px; font-weight: 600; cursor: pointer; border: 1.5px solid transparent; transition: all .15s; }
+.btn-success { background: #dcfce7; color: #15803d; border-color: #86efac; }
+.btn-success:hover { background: #16a34a; color: #fff; border-color: #16a34a; }
+.btn-outline-secondary { background: transparent; color: #6b7280; border-color: #d1d5db; }
+.btn-outline-secondary:hover { background: #f3f4f6; }
+.btn:disabled { opacity: .55; cursor: not-allowed; }
+
+/* ── LOADING / EMPTY ───────────────────────────── */
+.loading-state {
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  min-height: 300px;
+}
+
+.empty-state {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  padding: 60px 20px;
+  gap: 8px;
+  color: var(--color-on-surface-variant);
+  text-align: center;
+}
+
+.empty-icon { font-size: 3.5rem; opacity: 0.3; margin-bottom: 8px; }
+.empty-title { font-size: 18px; font-weight: 600; color: var(--color-on-surface); margin: 0; }
+.empty-desc { font-size: 14px; margin: 0; }
+
+/* ── EXPIRY BANNER ─────────────────────────────── */
+.expiry-banner {
+  background: #fef3c7;
+  color: #92400e;
+  border: 1px solid #fcd34d;
+  border-radius: var(--radius-md);
+  padding: 12px 16px;
+  font-size: 14px;
+  margin-bottom: 20px;
+}
+
+/* ── STATUS BADGES ─────────────────────────────── */
+.status-badge {
+  padding: 3px 10px;
+  border-radius: var(--radius-full);
+  font-size: 12px;
+  font-weight: 600;
+}
+
+.badge-active  { background: var(--badge-active-bg); color: var(--badge-active-text); }
+.badge-ended   { background: var(--badge-ended-bg);  color: var(--badge-ended-text); }
+.badge-pending { background: #fef3c7; color: #92400e; }
+
+/* ── LEASE CARD ────────────────────────────────── */
+.lease-card {
+  background: var(--color-surface-container-lowest);
+  border-radius: var(--radius-lg);
+  box-shadow: var(--shadow-soft);
+  padding: 1.5rem;
+}
+
+.lease-card-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: flex-start;
+  flex-wrap: wrap;
+  gap: 12px;
+  margin-bottom: 20px;
+}
+
+.lease-property {
+  font-size: 16px;
+  font-weight: 700;
+  color: var(--color-on-surface);
+  margin: 0 0 6px;
+}
+
+.lease-details-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(180px, 1fr));
+  gap: 16px;
+}
+
+.detail-item {
+  display: flex;
+  flex-direction: column;
+  gap: 3px;
+}
+
+.detail-label {
+  font-size: 11px;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+  color: var(--color-on-surface-variant);
+  font-weight: 500;
+}
+
+.detail-value {
+  font-size: 15px;
+  font-weight: 600;
+  color: var(--color-on-surface);
+}
+
+.detail-value.rent {
+  color: var(--color-primary);
+  font-size: 17px;
+}
+
+/* ── PROGRESS BAR ──────────────────────────────── */
+.progress-wrap { }
+
+.progress-header {
+  display: flex;
+  justify-content: space-between;
+  margin-bottom: 6px;
+}
+
+.progress-label { font-size: 12px; color: var(--color-on-surface-variant); }
+.progress-pct   { font-size: 12px; font-weight: 600; color: var(--color-on-surface); }
+
+.progress-track {
+  width: 100%;
+  height: 8px;
+  background: var(--color-surface-container);
+  border-radius: var(--radius-full);
+  overflow: hidden;
+}
+
+.progress-fill {
+  height: 100%;
+  background: var(--color-primary-container);
+  border-radius: var(--radius-full);
+  transition: width 0.6s ease;
+}
+
+/* ── AI CHAT PANEL ─────────────────────────────── */
+.chat-panel {
+  background: var(--color-surface-container-lowest);
+  border-radius: var(--radius-lg);
+  box-shadow: var(--shadow-soft);
+  overflow: hidden;
+}
+
+.chat-panel-header {
+  display: flex;
+  align-items: center;
+  padding: 14px 16px;
+  border-bottom: 1px solid var(--color-outline-variant);
+  font-size: 14px;
+  font-weight: 600;
+  color: var(--color-on-surface);
+  gap: 4px;
+}
+
+.chat-badge {
+  margin-left: auto;
+  background: var(--color-primary-fixed);
+  color: var(--color-on-primary-fixed);
+  font-size: 11px;
+  padding: 2px 8px;
+  border-radius: var(--radius-full);
+  font-weight: 600;
+}
+
+.chat-messages {
+  padding: 16px;
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  max-height: 320px;
+  overflow-y: auto;
+}
+
+.chat-bubble {
+  max-width: 80%;
+  padding: 10px 14px;
+  border-radius: var(--radius-lg);
+  font-size: 14px;
+  line-height: 1.5;
+}
+
+.bubble-user {
+  background: var(--color-primary-container);
+  color: var(--color-on-primary-container);
+  align-self: flex-end;
+  border-bottom-right-radius: var(--radius-sm);
+}
+
+.bubble-ai {
+  background: var(--color-surface-container-low);
+  color: var(--color-on-surface);
+  border: 1px solid var(--color-outline-variant);
+  align-self: flex-start;
+  border-bottom-left-radius: var(--radius-sm);
+}
+
+/* Typing dots */
+.typing-indicator {
+  display: flex;
+  gap: 5px;
+  align-items: center;
+  padding: 12px 14px;
+}
+
+.typing-indicator span {
+  width: 7px;
+  height: 7px;
+  border-radius: var(--radius-full);
+  background: var(--color-on-surface-variant);
+  animation: typing-bounce 1.2s infinite ease-in-out;
+}
+
+.typing-indicator span:nth-child(2) { animation-delay: 0.2s; }
+.typing-indicator span:nth-child(3) { animation-delay: 0.4s; }
+
+@keyframes typing-bounce {
+  0%, 60%, 100% { transform: translateY(0); opacity: 0.5; }
+  30%           { transform: translateY(-5px); opacity: 1; }
+}
+
+.chat-cursor {
+  display: inline-block;
+  margin-left: 1px;
+  font-weight: 400;
+  animation: cursor-blink 0.7s step-end infinite;
+}
+
+@keyframes cursor-blink {
+  0%, 100% { opacity: 1; }
+  50%       { opacity: 0; }
+}
+
+.chat-input-row {
+  display: flex;
+  gap: 8px;
+  padding: 14px 16px;
+  border-top: 1px solid var(--color-outline-variant);
+}
+
+.chat-input {
+  flex: 1;
+  border: 1px solid var(--color-outline-variant);
+  border-radius: var(--radius-md);
+  padding: 9px 14px;
+  font-size: 14px;
+  background: var(--color-surface);
+  color: var(--color-on-surface);
+  outline: none;
+  font-family: var(--font-family);
+}
+
+.chat-input:focus {
+  border-color: var(--color-primary);
+}
+
+.chat-send {
+  flex-shrink: 0;
+  padding: 9px 14px;
+}
+
+/* ── LEASE HISTORY ─────────────────────────────── */
+.history-card {
+  background: var(--color-surface-container-lowest);
+  border-radius: var(--radius-lg);
+  box-shadow: var(--shadow-soft);
+  overflow: hidden;
+}
+
+.history-card-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 16px 20px;
+  cursor: pointer;
+  gap: 12px;
+  flex-wrap: wrap;
+}
+
+.history-card-header:hover {
+  background: var(--color-surface-container-low);
+}
+
+.history-main { flex: 1; min-width: 0; }
+
+.history-address {
+  font-size: 15px;
+  font-weight: 600;
+  color: var(--color-on-surface);
+  margin-bottom: 3px;
+}
+
+.history-dates {
+  font-size: 13px;
+  color: var(--color-on-surface-variant);
+}
+
+.rent-tag {
+  font-size: 14px;
+  font-weight: 600;
+  color: var(--color-primary);
+  white-space: nowrap;
+}
+
+.history-detail {
+  padding: 16px 20px;
+  border-top: 1px solid var(--color-outline-variant);
+  background: var(--color-surface-container-low);
+}
+
+/* ── CONTRACT PDF VIEWER ───────────────────────── */
+.contract-overlay {
+  position: fixed; inset: 0;
+  background: rgba(0, 0, 0, .6);
+  z-index: 1000;
+  display: flex; align-items: center; justify-content: center;
+  padding: 1rem;
+}
+
+.contract-modal {
+  background: var(--color-surface-container-lowest);
+  border-radius: 16px;
+  width: 100%; max-width: 980px;
+  height: 90vh;
+  display: flex; flex-direction: column;
+  overflow: hidden;
+  box-shadow: 0 24px 60px rgba(0,0,0,.3);
+}
+
+.contract-modal-header {
+  display: flex; align-items: center; justify-content: space-between;
+  padding: .875rem 1.25rem;
+  border-bottom: 1px solid var(--color-outline-variant);
+  font-weight: 600; font-size: 15px; flex-shrink: 0;
+  gap: .75rem;
+}
+
+.contract-modal-actions { display: flex; align-items: center; gap: .5rem; }
+
+.contract-dl-btn {
+  display: inline-flex; align-items: center; justify-content: center;
+  width: 34px; height: 34px; border-radius: var(--radius-sm);
+  color: var(--color-primary);
+  text-decoration: none; transition: background .12s;
+}
+.contract-dl-btn:hover { background: var(--color-primary-fixed); }
+
+.contract-close-btn {
+  background: none; border: none; cursor: pointer;
+  width: 34px; height: 34px; border-radius: var(--radius-sm);
+  font-size: 18px; color: var(--color-on-surface-variant);
+  display: flex; align-items: center; justify-content: center;
+  transition: background .12s;
+}
+.contract-close-btn:hover { background: var(--color-surface-container); }
+
+.contract-embed {
+  flex: 1; width: 100%; border: none;
+}
+
+.contract-body-state {
+  flex: 1; display: flex; flex-direction: column;
+  align-items: center; justify-content: center;
+  gap: 1rem; color: var(--color-on-surface-variant);
+  padding: 2rem;
+}
+.contract-body-state p { margin: 0; font-size: 14px; }
+
+/* ── RESPONSIVE ────────────────────────────────── */
+@media (max-width: 576px) {
+  .my-lease-page { padding: 16px; }
+
+  .page-header {
+    flex-direction: column;
+    align-items: flex-start;
+  }
+
+  .lease-details-grid {
+    grid-template-columns: 1fr 1fr;
+  }
+}

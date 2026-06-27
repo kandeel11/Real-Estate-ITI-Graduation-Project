@@ -1,0 +1,340 @@
+<div class="leases-page">
+
+  <!-- Header -->
+  <div class="page-header">
+    <div>
+      <h1 class="page-title">Lease Approvals</h1>
+      <p class="page-subtitle">Review lease requests and track tenant confirmations</p>
+    </div>
+    <button class="btn-refresh" (click)="load()" [disabled]="loading()">
+      <i class="fa-solid fa-rotate-right" [class.fa-spin]="loading()"></i>
+      Refresh
+    </button>
+  </div>
+
+  @if (loading()) {
+    <div class="skeleton-list">
+      @for (i of [1,2,3]; track i) {
+        <div class="skeleton-row skeleton"></div>
+      }
+    </div>
+  } @else if (error()) {
+    <div class="error-banner">
+      <i class="fa-solid fa-triangle-exclamation"></i>
+      {{ error() }}
+      <button class="btn-retry" (click)="load()">Retry</button>
+    </div>
+  } @else {
+
+    <!-- ── Section 1: Pending manager approval ──────────────────────── -->
+    <div class="section-header">
+      <div class="section-label">
+        <i class="fa-solid fa-hourglass-half label-icon label-icon--pending"></i>
+        Pending Your Approval
+      </div>
+      @if (pending().length > 0) {
+        <span class="section-count">{{ pending().length }}</span>
+      }
+    </div>
+
+    @if (pending().length === 0) {
+      <div class="empty-state empty-state--sm">
+        <i class="fa-solid fa-circle-check"></i>
+        <p>No pending approvals — you're all caught up.</p>
+      </div>
+    } @else {
+      <div class="approval-list">
+        @for (lease of pending(); track lease.id) {
+          <div class="approval-card">
+            <div class="card-body">
+              <div class="card-icon">
+                <i class="fa-solid fa-file-contract"></i>
+              </div>
+              <div class="card-info">
+                <div class="card-title">{{ lease.propertyTitle }}</div>
+                <div class="card-meta">
+                  <span><i class="fa-solid fa-user"></i> {{ lease.tenantName }}</span>
+                  <span><i class="fa-solid fa-user-tie"></i> {{ lease.brokerName }}</span>
+                  <span><i class="fa-regular fa-clock"></i> {{ lease.uploadedAt | date:'d MMM yyyy' }}</span>
+                </div>
+                <div class="options-row">
+                  @for (opt of lease.managementOptions; track opt) {
+                    <span class="option-badge">
+                      <i class="fa-solid fa-circle-check"></i>
+                      {{ opt }}
+                    </span>
+                  }
+                </div>
+              </div>
+            </div>
+            <div class="card-actions">
+              <button class="btn btn-review" (click)="openReview(lease)">
+                <i class="fa-solid fa-eye"></i>
+                Review
+              </button>
+            </div>
+          </div>
+        }
+      </div>
+    }
+
+    <!-- ── Section 2: Awaiting tenant confirmation ──────────────────── -->
+    <div class="section-header section-header--mt">
+      <div class="section-label">
+        <i class="fa-solid fa-paper-plane label-icon label-icon--awaiting"></i>
+        Awaiting Tenant Confirmation
+      </div>
+      @if (awaitingTenant().length > 0) {
+        <span class="section-count section-count--awaiting">{{ awaitingTenant().length }}</span>
+      }
+    </div>
+
+    @if (awaitingTenant().length === 0) {
+      <div class="empty-state empty-state--sm">
+        <i class="fa-solid fa-inbox" style="color: #94a3b8"></i>
+        <p>No leases awaiting tenant response.</p>
+      </div>
+    } @else {
+      <div class="approval-list">
+        @for (lease of awaitingTenant(); track lease.id) {
+          <div class="approval-card approval-card--awaiting">
+            <div class="card-body">
+              <div class="card-icon card-icon--awaiting">
+                <i class="fa-solid fa-paper-plane"></i>
+              </div>
+              <div class="card-info">
+                <div class="card-title">{{ lease.propertyTitle }}</div>
+                <div class="card-meta">
+                  <span><i class="fa-solid fa-user"></i> {{ lease.tenantName }}</span>
+                  @if (lease.brokerName) {
+                    <span><i class="fa-solid fa-user-tie"></i> {{ lease.brokerName }}</span>
+                  }
+                  @if (lease.installmentAmount) {
+                    <span><i class="fa-solid fa-money-bill"></i> EGP {{ lease.installmentAmount | number:'1.0-0' }}/mo</span>
+                  }
+                  @if (lease.startDate && lease.endDate) {
+                    <span><i class="fa-regular fa-calendar"></i> {{ lease.startDate | date:'d MMM yyyy' }} → {{ lease.endDate | date:'d MMM yyyy' }}</span>
+                  }
+                  <span><i class="fa-regular fa-clock"></i> Approved {{ lease.approvedAt | date:'d MMM yyyy' }}</span>
+                </div>
+                <div class="options-row">
+                  @for (opt of lease.managementOptions; track opt) {
+                    <span class="option-badge">
+                      <i class="fa-solid fa-circle-check"></i>
+                      {{ opt }}
+                    </span>
+                  }
+                </div>
+              </div>
+            </div>
+            <div class="card-actions">
+              <span class="awaiting-badge">
+                <i class="fa-solid fa-hourglass-half fa-spin-pulse"></i>
+                Waiting for tenant
+              </span>
+            </div>
+          </div>
+        }
+      </div>
+    }
+
+    <!-- ── Section 3: Active leases ──────────────────────────────────── -->
+    <div class="section-header section-header--mt">
+      <div class="section-label">
+        <i class="fa-solid fa-circle-check label-icon label-icon--active"></i>
+        Active Leases
+      </div>
+      @if (activeLeases().length > 0) {
+        <span class="section-count section-count--active">{{ activeLeases().length }}</span>
+      }
+    </div>
+
+    @if (activeLeases().length === 0) {
+      <div class="empty-state empty-state--sm">
+        <i class="fa-solid fa-file-contract" style="color: #94a3b8"></i>
+        <p>No active leases yet.</p>
+      </div>
+    } @else {
+      <div class="approval-list">
+        @for (lease of activeLeases(); track lease.id) {
+          <div class="approval-card approval-card--active">
+            <div class="card-body">
+              <div class="card-icon card-icon--active">
+                <i class="fa-solid fa-file-contract"></i>
+              </div>
+              <div class="card-info">
+                <div class="card-title">{{ lease.propertyTitle }}</div>
+                <div class="card-meta">
+                  <span><i class="fa-solid fa-user"></i> {{ lease.tenantName }}</span>
+                  @if (lease.brokerName) {
+                    <span><i class="fa-solid fa-user-tie"></i> {{ lease.brokerName }}</span>
+                  }
+                  @if (lease.installmentAmount) {
+                    <span><i class="fa-solid fa-money-bill"></i> EGP {{ lease.installmentAmount | number:'1.0-0' }}/mo</span>
+                  }
+                  @if (lease.startDate && lease.endDate) {
+                    <span><i class="fa-regular fa-calendar"></i> {{ lease.startDate | date:'d MMM yyyy' }} → {{ lease.endDate | date:'d MMM yyyy' }}</span>
+                  }
+                  @if (lease.activeSince) {
+                    <span><i class="fa-solid fa-circle-check" style="color:#16a34a"></i> Active since {{ lease.activeSince | date:'d MMM yyyy' }}</span>
+                  }
+                </div>
+                <div class="options-row">
+                  @if (lease.isFullManagement) {
+                    <span class="option-badge option-badge--full">
+                      <i class="fa-solid fa-star"></i> Full Management
+                    </span>
+                  } @else {
+                    @for (opt of lease.managementOptions; track opt) {
+                      <span class="option-badge">
+                        <i class="fa-solid fa-circle-check"></i>
+                        {{ opt }}
+                      </span>
+                    }
+                  }
+                </div>
+              </div>
+            </div>
+            <div class="card-actions">
+              <span class="active-badge">
+                <i class="fa-solid fa-circle" style="color:#16a34a; font-size:8px"></i>
+                Active
+              </span>
+            </div>
+          </div>
+        }
+      </div>
+    }
+
+  }
+
+</div>
+
+<!-- Approval dialog -->
+@if (reviewing(); as lease) {
+  <div class="modal-backdrop" (click)="closeReview()">
+    <div class="approval-dialog" (click)="$event.stopPropagation()">
+      <div class="dialog-header">
+        <h2>Review Lease Request</h2>
+        <button class="modal-close" (click)="closeReview()">
+          <i class="fa-solid fa-xmark"></i>
+        </button>
+      </div>
+
+      <div class="dialog-body">
+        <div class="dialog-detail">
+          <span class="detail-label">Property</span>
+          <span class="detail-value">{{ lease.propertyTitle }}</span>
+        </div>
+        <div class="dialog-detail">
+          <span class="detail-label">Tenant</span>
+          <span class="detail-value">{{ lease.tenantName }}</span>
+        </div>
+        <div class="dialog-detail">
+          <span class="detail-label">Broker</span>
+          <span class="detail-value">{{ lease.brokerName ?? '—' }}</span>
+        </div>
+        <div class="dialog-detail">
+          <span class="detail-label">Uploaded</span>
+          <span class="detail-value">{{ lease.uploadedAt | date:'d MMM yyyy, h:mm a' }}</span>
+        </div>
+        @if (lease.contractFileUrl) {
+          <div class="dialog-detail">
+            <span class="detail-label">Contract PDF</span>
+            <button class="btn btn-download-pdf"
+                    (click)="downloadContract(lease.id)"
+                    [disabled]="downloadingId() === lease.id">
+              @if (downloadingId() === lease.id) {
+                <i class="fa-solid fa-spinner fa-spin"></i> Downloading…
+              } @else {
+                <i class="fa-solid fa-file-pdf"></i> Download &amp; Review PDF
+              }
+            </button>
+          </div>
+        }
+        <div class="dialog-detail">
+          <span class="detail-label">Monthly Rent</span>
+          <span class="detail-value">{{ lease.installmentAmount ? ('EGP ' + (lease.installmentAmount | number:'1.0-0')) : '—' }}</span>
+        </div>
+        @if (lease.totalRentAmount) {
+          <div class="dialog-detail">
+            <span class="detail-label">Total Rent</span>
+            <span class="detail-value">EGP {{ lease.totalRentAmount | number:'1.0-0' }}</span>
+          </div>
+        }
+        <div class="dialog-detail">
+          <span class="detail-label">Start Date</span>
+          <span class="detail-value">{{ lease.startDate ? (lease.startDate | date:'d MMM yyyy') : '—' }}</span>
+        </div>
+        <div class="dialog-detail">
+          <span class="detail-label">End Date</span>
+          <span class="detail-value">{{ lease.endDate ? (lease.endDate | date:'d MMM yyyy') : '—' }}</span>
+        </div>
+        @if (lease.durationInMonths) {
+          <div class="dialog-detail">
+            <span class="detail-label">Duration</span>
+            <span class="detail-value">{{ lease.durationInMonths }} months</span>
+          </div>
+        }
+        @if (lease.securityDeposit) {
+          <div class="dialog-detail">
+            <span class="detail-label">Security Deposit</span>
+            <span class="detail-value">EGP {{ lease.securityDeposit | number:'1.0-0' }}</span>
+          </div>
+        }
+        @if (lease.paymentFrequency) {
+          <div class="dialog-detail">
+            <span class="detail-label">Payment Frequency</span>
+            <span class="detail-value">{{ lease.paymentFrequency }}</span>
+          </div>
+        }
+        <div class="dialog-detail">
+          <span class="detail-label">Management</span>
+          <div class="detail-badges">
+            @if (lease.isFullManagement) {
+              <span class="option-badge option-badge--full">Full Management</span>
+            } @else if (lease.managementOptions.length > 0) {
+              @for (opt of lease.managementOptions; track opt) {
+                <span class="option-badge">{{ opt }}</span>
+              }
+            } @else {
+              <span class="detail-value">—</span>
+            }
+          </div>
+        </div>
+
+        <div class="approval-flow-hint">
+          <i class="fa-solid fa-circle-info"></i>
+          If approved, the lease offer will be sent to <strong>{{ lease.tenantName }}</strong> for final acceptance.
+        </div>
+
+        <label class="notes-label">Notes (optional — shown to broker on rejection)</label>
+        <textarea class="notes-input" [(ngModel)]="reviewNotes" rows="3"
+                  placeholder="Add a note for the broker…"></textarea>
+
+        @if (actionError()) {
+          <div class="action-error">
+            <i class="fa-solid fa-circle-exclamation"></i>
+            {{ actionError() }}
+          </div>
+        }
+      </div>
+
+      <div class="dialog-footer">
+        <button class="btn btn-cancel" (click)="closeReview()" [disabled]="actionInProgress()">
+          Cancel
+        </button>
+        <button class="btn btn-reject" (click)="decide(false)" [disabled]="actionInProgress()">
+          @if (actionInProgress()) { <i class="fa-solid fa-spinner fa-spin"></i> }
+          @else { <i class="fa-solid fa-xmark"></i> }
+          Reject
+        </button>
+        <button class="btn btn-approve" (click)="decide(true)" [disabled]="actionInProgress()">
+          @if (actionInProgress()) { <i class="fa-solid fa-spinner fa-spin"></i> }
+          @else { <i class="fa-solid fa-check"></i> }
+          Approve &amp; Send to Tenant
+        </button>
+      </div>
+    </div>
+  </div>
+}

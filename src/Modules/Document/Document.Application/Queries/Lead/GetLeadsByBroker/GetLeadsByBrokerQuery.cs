@@ -14,4 +14,6 @@ public record LeadDto(
     decimal? DealValue,
     string? Notes,
     DateTime CreatedAt,
-    DateTime UpdatedAt);
+    DateTime UpdatedAt,
+    DateTime? NoManagementPendingAt = null,
+    Guid? NoManagementManagerId = null);

@@ -1,0 +1,436 @@
+<div class="profile-page">
+  <div class="page-header">
+    <h1 class="page-title"><i class="fa-regular fa-circle-user me-2"></i>{{ 'PROFILE.TITLE' | translate }}</h1>
+  </div>
+
+  <!-- ── LOADING ──────────────────────────────────── -->
+  @if (loading()) {
+    <div class="loading-state">
+      <div class="spinner-border text-primary" role="status"><span class="visually-hidden">Loading…</span></div>
+    </div>
+  }
+
+  <!-- ── ERROR ────────────────────────────────────── -->
+  @if (!loading() && error()) {
+    <div class="alert alert-danger d-flex align-items-center gap-2 mb-4">
+      <i class="fa-solid fa-triangle-exclamation"></i>
+      <span>{{ error() }}</span>
+      <button class="btn btn-sm btn-outline-danger ms-auto" (click)="loadProfile()">{{ 'PROFILE.TRY_AGAIN' | translate }}</button>
+    </div>
+  }
+
+  @if (!loading() && !error() && profile(); as p) {
+
+    <!-- ── EMAIL VERIFICATION BANNER ─────────────────── -->
+    @if (!p.isEmailVerified) {
+      <div class="verification-banner mb-4">
+        <div class="verification-banner-body">
+          <i class="fa-solid fa-envelope-circle-check banner-icon"></i>
+          <div>
+            <p class="banner-title">{{ 'PROFILE.EMAIL_NOT_VERIFIED' | translate }}</p>
+            <p class="banner-desc">{{ 'PROFILE.VERIFY_BEFORE' | translate }} <strong>{{ p.email }}</strong> {{ 'PROFILE.VERIFY_AFTER' | translate }}</p>
+          </div>
+        </div>
+        <div class="banner-action">
+          @if (verificationSent()) {
+            <span class="verification-sent-msg">
+              <i class="fa-solid fa-circle-check me-1"></i>{{ 'PROFILE.VERIFICATION_SENT' | translate }}
+            </span>
+          }
+          <button class="btn btn-sm btn-warning" (click)="sendVerification()"
+                  [disabled]="verificationLoading() || verificationCountdown() > 0">
+            @if (verificationLoading()) {
+              <span class="spinner-border spinner-border-sm me-2" role="status"></span>{{ 'PROFILE.SENDING' | translate }}
+            } @else if (verificationCountdown() > 0) {
+              <i class="fa-regular fa-clock me-1"></i>{{ 'PROFILE.RESEND_IN' | translate:{n: verificationCountdown()} }}
+            } @else {
+              <i class="fa-solid fa-paper-plane me-1"></i>{{ verificationSent() ? ('PROFILE.RESEND_EMAIL' | translate) : ('PROFILE.SEND_VERIFICATION' | translate) }}
+            }
+          </button>
+          @if (verificationError()) {
+            <p class="banner-error mt-1">{{ verificationError() }}</p>
+          }
+        </div>
+      </div>
+    }
+
+    <!-- Section tabs -->
+    <div class="section-tabs mb-4">
+      <button class="section-tab" [class.tab-active]="activeSection() === 'info'" (click)="activeSection.set('info')">
+        <i class="fa-regular fa-id-card me-2"></i>{{ 'PROFILE.PERSONAL_INFO' | translate }}
+      </button>
+      <button class="section-tab" [class.tab-active]="activeSection() === 'plan'" (click)="activeSection.set('plan')">
+        <i class="fa-solid fa-crown me-2"></i>My Plan
+      </button>
+      <button class="section-tab" [class.tab-active]="activeSection() === 'password'" (click)="activeSection.set('password')">
+        <i class="fa-solid fa-key me-2"></i>{{ 'PROFILE.CHANGE_PASSWORD' | translate }}
+      </button>
+      <button class="section-tab tab-danger" [class.tab-active]="activeSection() === 'danger'" (click)="activeSection.set('danger')">
+        <i class="fa-solid fa-triangle-exclamation me-2"></i>{{ 'PROFILE.DANGER_ZONE' | translate }}
+      </button>
+    </div>
+
+    <!-- ══════════════════ PERSONAL INFO ══════════════════ -->
+    @if (activeSection() === 'info') {
+      <div class="profile-card">
+
+        <!-- Avatar -->
+        <div class="avatar-section">
+          <div class="avatar-circle">{{ initials }}</div>
+          <div class="avatar-info">
+            <p class="avatar-name">{{ p.fullName }}</p>
+            <p class="avatar-email">{{ p.email }}</p>
+            <div class="d-flex align-items-center gap-2 mt-1 flex-wrap">
+              <span class="role-badge">{{ 'PROFILE.TENANT' | translate }}</span>
+              <span class="plan-badge-chip">
+                <i class="fa-solid fa-crown me-1"></i>Free Plan
+              </span>
+              @if (p.isEmailVerified) {
+                <span class="verified-badge">
+                  <i class="fa-solid fa-circle-check me-1"></i>{{ 'PROFILE.VERIFIED' | translate }}
+                </span>
+              } @else {
+                <span class="unverified-badge">
+                  <i class="fa-solid fa-circle-xmark me-1"></i>{{ 'PROFILE.UNVERIFIED' | translate }}
+                </span>
+              }
+            </div>
+          </div>
+        </div>
+
+        <hr class="divider" />
+
+        <form [formGroup]="profileForm" (ngSubmit)="saveProfile()">
+
+          <div class="form-group">
+            <label class="form-label">{{ 'PROFILE.FULL_NAME' | translate }} <span class="req">*</span></label>
+            <div class="field-input-wrap">
+              <input type="text" class="form-control"
+                     [class.form-control-readonly]="!isEditing('fullName')"
+                     formControlName="fullName"
+                     [attr.readonly]="isEditing('fullName') ? null : true"
+                     placeholder="Your full name" />
+              <button type="button" class="pen-btn" (click)="toggleEdit('fullName')" [attr.aria-label]="isEditing('fullName') ? 'Lock field' : 'Edit full name'">
+                <i class="fa-solid" [class.fa-pen]="!isEditing('fullName')" [class.fa-lock]="isEditing('fullName')"></i>
+              </button>
+            </div>
+            @if (profileForm.get('fullName')?.invalid && profileForm.get('fullName')?.touched) {
+              <div class="form-error">{{ 'PROFILE.FULL_NAME_ERR' | translate }}</div>
+            }
+          </div>
+
+          <div class="form-group">
+            <label class="form-label">{{ 'PROFILE.EMAIL' | translate }} <span class="req">*</span></label>
+            <div class="field-input-wrap">
+              <input type="email" class="form-control"
+                     [class.form-control-readonly]="!isEditing('email')"
+                     formControlName="email"
+                     [attr.readonly]="isEditing('email') ? null : true"
+                     placeholder="your@email.com" />
+              <button type="button" class="pen-btn" (click)="toggleEdit('email')" [attr.aria-label]="isEditing('email') ? 'Lock field' : 'Edit email'">
+                <i class="fa-solid" [class.fa-pen]="!isEditing('email')" [class.fa-lock]="isEditing('email')"></i>
+              </button>
+            </div>
+            @if (profileForm.get('email')?.invalid && profileForm.get('email')?.touched) {
+              <div class="form-error">{{ 'PROFILE.EMAIL_ERR' | translate }}</div>
+            }
+          </div>
+
+          <div class="form-group">
+            <label class="form-label">{{ 'PROFILE.PHONE_NUMBER' | translate }}</label>
+            <div class="field-input-wrap">
+              <input type="tel" class="form-control"
+                     [class.form-control-readonly]="!isEditing('phone')"
+                     formControlName="phone"
+                     [attr.readonly]="isEditing('phone') ? null : true"
+                     placeholder="+20 100 000 0000" />
+              <button type="button" class="pen-btn" (click)="toggleEdit('phone')" [attr.aria-label]="isEditing('phone') ? 'Lock field' : 'Edit phone'">
+                <i class="fa-solid" [class.fa-pen]="!isEditing('phone')" [class.fa-lock]="isEditing('phone')"></i>
+              </button>
+            </div>
+          </div>
+
+          <div class="d-flex justify-content-end">
+            <button type="submit" class="btn btn-primary" [disabled]="profileForm.invalid || saveLoading()">
+              @if (saveLoading()) {
+                <span class="spinner-border spinner-border-sm me-2" role="status"></span>{{ 'PROFILE.SAVING' | translate }}
+              } @else {
+                <i class="fa-solid fa-floppy-disk me-2"></i>{{ 'PROFILE.SAVE_CHANGES' | translate }}
+              }
+            </button>
+          </div>
+        </form>
+      </div>
+    }
+
+    <!-- ══════════════════ MY PLAN ══════════════════ -->
+    @if (activeSection() === 'plan') {
+
+      <!-- Billing Toggle -->
+      <div class="billing-toggle-wrap mb-4">
+        <div class="billing-toggle">
+          <button class="billing-pill" [class.billing-pill-active]="billingCycle() === 'monthly'"
+                  (click)="setBilling('monthly')">Monthly</button>
+          <button class="billing-pill" [class.billing-pill-active]="billingCycle() === 'annual'"
+                  (click)="setBilling('annual')">
+            Annual&nbsp;<span class="save-tag">Save 16%</span>
+          </button>
+        </div>
+      </div>
+
+      <!-- Loading -->
+      @if (plansLoading()) {
+        <div class="loading-state">
+          <div class="spinner-border text-primary" role="status"><span class="visually-hidden">Loading…</span></div>
+        </div>
+      }
+
+      <!-- Plan Cards -->
+      @if (!plansLoading()) {
+        <div class="row g-4">
+
+          <!-- Free Plan -->
+          @if (freePlan(); as free) {
+            <div class="col-12 col-md-6">
+              <div class="plan-card plan-card--current">
+                <div class="plan-card-top">
+                  <span class="plan-badge-pill badge-current">
+                    <i class="fa-solid fa-circle-check me-1"></i>Current Plan
+                  </span>
+                  <h3 class="plan-name">Free</h3>
+                  <div class="price-area" [style.opacity]="priceOpacity()">
+                    <p class="plan-price">Free</p>
+                    <p class="price-sub">No credit card required</p>
+                  </div>
+                </div>
+                <ul class="feature-list">
+                  <li class="feature-item">
+                    <i class="fa-solid fa-check feat-yes"></i>
+                    <span>{{ free.maxAiRequestsPerMonth }} AI requests / month</span>
+                  </li>
+                  <li class="feature-item">
+                    <i class="fa-solid fa-check feat-yes"></i>
+                    <span>AI Chatbot</span>
+                  </li>
+                  <li class="feature-item">
+                    <i class="fa-solid fa-xmark feat-no"></i>
+                    <span class="feat-muted">AI Price Estimation</span>
+                  </li>
+                  <li class="feature-item">
+                    <i class="fa-solid fa-check feat-yes"></i>
+                    <span>{{ formatValue(free.maxSavedListings) }} saved listings</span>
+                  </li>
+                  <li class="feature-item">
+                    <i class="fa-solid fa-check feat-yes"></i>
+                    <span>{{ formatValue(free.maxSavedSearches) }} saved searches</span>
+                  </li>
+                  <li class="feature-item">
+                    <i class="fa-solid fa-check feat-yes"></i>
+                    <span>{{ formatValue(free.maxInquiriesPerMonth) }} inquiries / month</span>
+                  </li>
+                  <li class="feature-item">
+                    <i class="fa-solid fa-xmark feat-no"></i>
+                    <span class="feat-muted">Early access listings</span>
+                  </li>
+                  <li class="feature-item">
+                    <i class="fa-solid fa-xmark feat-no"></i>
+                    <span class="feat-muted">Priority broker response</span>
+                  </li>
+                </ul>
+                <button class="btn plan-action-btn plan-action-current" disabled>
+                  <i class="fa-solid fa-circle-check me-1"></i>Current Plan
+                </button>
+              </div>
+            </div>
+          }
+
+          <!-- Premium Plan -->
+          @if (premiumPlan(); as premium) {
+            <div class="col-12 col-md-6">
+              <div class="plan-card plan-card--premium">
+                <div class="plan-card-top">
+                  <span class="plan-badge-pill badge-popular">
+                    <i class="fa-solid fa-star me-1"></i>Most Popular
+                  </span>
+                  <h3 class="plan-name">Premium</h3>
+                  <div class="price-area" [style.opacity]="priceOpacity()">
+                    @if (billingCycle() === 'monthly') {
+                      <p class="plan-price">EGP {{ premium.priceMonthly }}</p>
+                      <p class="price-sub">per month</p>
+                    } @else {
+                      <p class="plan-price">EGP {{ premium.priceAnnual }}</p>
+                      <p class="price-sub">per year &nbsp;·&nbsp; EGP {{ annualMonthly(premium) }} / month</p>
+                    }
+                  </div>
+                </div>
+                <ul class="feature-list">
+                  <li class="feature-item">
+                    <i class="fa-solid fa-check feat-yes"></i>
+                    <span>{{ premium.maxAiRequestsPerMonth }} AI requests / month</span>
+                  </li>
+                  <li class="feature-item">
+                    <i class="fa-solid fa-check feat-yes"></i>
+                    <span>AI Chatbot</span>
+                  </li>
+                  <li class="feature-item">
+                    <i class="fa-solid fa-check feat-yes"></i>
+                    <span>AI Price Estimation</span>
+                  </li>
+                  <li class="feature-item">
+                    <i class="fa-solid fa-check feat-yes"></i>
+                    <span>{{ formatValue(premium.maxSavedListings) }} saved listings</span>
+                  </li>
+                  <li class="feature-item">
+                    <i class="fa-solid fa-check feat-yes"></i>
+                    <span>{{ formatValue(premium.maxSavedSearches) }} saved searches</span>
+                  </li>
+                  <li class="feature-item">
+                    <i class="fa-solid fa-check feat-yes"></i>
+                    <span>{{ formatValue(premium.maxInquiriesPerMonth) }} inquiries / month</span>
+                  </li>
+                  <li class="feature-item">
+                    <i class="fa-solid fa-check feat-yes"></i>
+                    <span>Early access listings</span>
+                  </li>
+                  <li class="feature-item">
+                    <i class="fa-solid fa-check feat-yes"></i>
+                    <span>Priority broker response</span>
+                  </li>
+                </ul>
+                <button class="btn plan-action-btn plan-action-upgrade" (click)="showUpgradeModal.set(true)">
+                  <i class="fa-solid fa-crown me-1"></i>Upgrade to Premium
+                </button>
+              </div>
+            </div>
+          }
+
+        </div>
+
+        <p class="plan-compare-link mt-3">
+          <a routerLink="/dashboard/subscription">
+            View full feature comparison <i class="fa-solid fa-arrow-right ms-1" style="font-size:11px;"></i>
+          </a>
+        </p>
+      }
+    }
+
+    <!-- ══════════════════ CHANGE PASSWORD ══════════════════ -->
+    @if (activeSection() === 'password') {
+      <div class="profile-card">
+        <h2 class="section-heading">{{ 'PROFILE.CHANGE_PASSWORD' | translate }}</h2>
+
+        @if (pwError()) {
+          <div class="alert alert-danger d-flex align-items-center gap-2 mb-3">
+            <i class="fa-solid fa-triangle-exclamation"></i> {{ pwError() }}
+          </div>
+        }
+        @if (pwSuccess()) {
+          <div class="alert alert-success d-flex align-items-center gap-2 mb-3">
+            <i class="fa-solid fa-circle-check"></i> {{ 'PROFILE.PW_SUCCESS' | translate }}
+          </div>
+        }
+
+        <form [formGroup]="passwordForm" (ngSubmit)="changePassword()">
+
+          <div class="form-group">
+            <label class="form-label">{{ 'PROFILE.CURRENT_PASSWORD' | translate }} <span class="req">*</span></label>
+            <div class="pw-input-wrap">
+              <input [type]="showCurrentPw() ? 'text' : 'password'" class="form-control" formControlName="currentPassword" />
+              <button type="button" class="pw-toggle" (click)="showCurrentPw.update(v => !v)">
+                <i class="fa-regular" [class.fa-eye]="!showCurrentPw()" [class.fa-eye-slash]="showCurrentPw()"></i>
+              </button>
+            </div>
+          </div>
+
+          <div class="form-group">
+            <label class="form-label">{{ 'PROFILE.NEW_PASSWORD' | translate }} <span class="req">*</span></label>
+            <div class="pw-input-wrap">
+              <input [type]="showNewPw() ? 'text' : 'password'" class="form-control" formControlName="newPassword" />
+              <button type="button" class="pw-toggle" (click)="showNewPw.update(v => !v)">
+                <i class="fa-regular" [class.fa-eye]="!showNewPw()" [class.fa-eye-slash]="showNewPw()"></i>
+              </button>
+            </div>
+            @if (passwordForm.get('newPassword')?.value) {
+              <div class="strength-bar mt-2">
+                @for (i of [1,2,3,4,5]; track i) {
+                  <div class="strength-seg" [class.filled]="i <= pwStrength()" [class]="i <= pwStrength() ? pwStrengthClass : ''"></div>
+                }
+                <span class="strength-label" [class]="pwStrengthClass">{{ pwStrengthLabel | translate }}</span>
+              </div>
+            }
+            @if (passwordForm.get('newPassword')?.invalid && passwordForm.get('newPassword')?.touched) {
+              <div class="form-error">{{ 'PROFILE.PW_MIN_ERR' | translate }}</div>
+            }
+          </div>
+
+          <div class="form-group">
+            <label class="form-label">{{ 'PROFILE.CONFIRM_PASSWORD' | translate }} <span class="req">*</span></label>
+            <input type="password" class="form-control" formControlName="confirmPassword" />
+            @if (passwordForm.get('confirmPassword')?.errors?.['mismatch'] && passwordForm.get('confirmPassword')?.touched) {
+              <div class="form-error">{{ 'PROFILE.PW_MISMATCH_ERR' | translate }}</div>
+            }
+          </div>
+
+          <div class="d-flex justify-content-end">
+            <button type="submit" class="btn btn-primary" [disabled]="passwordForm.invalid || pwLoading()">
+              @if (pwLoading()) {
+                <span class="spinner-border spinner-border-sm me-2" role="status"></span>{{ 'PROFILE.CHANGING' | translate }}
+              } @else {
+                <i class="fa-solid fa-key me-2"></i>{{ 'PROFILE.CHANGE_PW' | translate }}
+              }
+            </button>
+          </div>
+
+        </form>
+      </div>
+    }
+
+    <!-- ══════════════════ DANGER ZONE ══════════════════ -->
+    @if (activeSection() === 'danger') {
+      <div class="profile-card danger-card">
+        <h2 class="section-heading danger-heading">
+          <i class="fa-solid fa-triangle-exclamation me-2"></i>{{ 'PROFILE.DANGER_ZONE' | translate }}
+        </h2>
+        <p class="danger-desc">{{ 'PROFILE.DANGER_DESC' | translate }}</p>
+        <div class="danger-action">
+          <div>
+            <p class="danger-action-title">{{ 'PROFILE.DELETE_ACCOUNT' | translate }}</p>
+            <p class="danger-action-desc">{{ 'PROFILE.DELETE_ACCOUNT_DESC' | translate }}</p>
+          </div>
+          <button class="btn btn-outline-danger btn-sm" disabled>
+            {{ 'PROFILE.DELETE_ACCOUNT' | translate }}
+          </button>
+        </div>
+      </div>
+    }
+
+  }
+</div>
+
+<!-- ── UPGRADE MODAL ──────────────────────────────── -->
+@if (showUpgradeModal()) {
+  <div class="modal-overlay" (click)="showUpgradeModal.set(false)">
+    <div class="modal-box" (click)="$event.stopPropagation()">
+      <div class="modal-icon-wrap">
+        <i class="fa-solid fa-crown"></i>
+      </div>
+      <h3 class="modal-title">Upgrade Coming Soon</h3>
+      <p class="modal-desc">
+        Online upgrade is not available yet. Please contact our support team to upgrade to
+        <strong>Premium</strong> and unlock all features.
+      </p>
+      @if (premiumPlan(); as premium) {
+        <div class="modal-plan-info">
+          <span class="modal-plan-badge"><i class="fa-solid fa-crown me-1"></i>Premium</span>
+          <span class="modal-plan-price">EGP {{ premium.priceMonthly }} / month</span>
+        </div>
+      }
+      <div class="modal-actions">
+        <a href="mailto:support@estatein.com" class="btn plan-action-btn plan-action-upgrade w-100">
+          <i class="fa-solid fa-envelope me-2"></i>Contact Support
+        </a>
+        <button class="btn btn-outline-secondary w-100" (click)="showUpgradeModal.set(false)">Close</button>
+      </div>
+    </div>
+  </div>
+}

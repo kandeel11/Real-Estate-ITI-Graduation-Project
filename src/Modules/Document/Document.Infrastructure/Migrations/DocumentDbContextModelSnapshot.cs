@@ -157,6 +157,12 @@ namespace Document.Infrastructure.Migrations
                     b.Property<Guid>("InquiryId")
                         .HasColumnType("uniqueidentifier");
 
+                    b.Property<Guid?>("NoManagementManagerId")
+                        .HasColumnType("uniqueidentifier");
+
+                    b.Property<DateTime?>("NoManagementPendingAt")
+                        .HasColumnType("datetime2");
+
                     b.Property<string>("Notes")
                         .HasColumnType("nvarchar(max)");
 

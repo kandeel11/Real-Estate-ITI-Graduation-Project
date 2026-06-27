@@ -1,0 +1,714 @@
+// ═══════════════════════════════════════════════════════════
+//  Register — Mobile-first Premium Design
+// ═══════════════════════════════════════════════════════════
+
+// ── Tokens ──────────────────────────────────────────────────
+$indigo-50:  #eef2ff;
+$indigo-100: #e0e7ff;
+$indigo-500: #6366f1;
+$indigo-600: #4f46e5;
+$indigo-700: #4338ca;
+$indigo-800: #3730a3;
+$indigo-900: #312e81;
+
+$slate-50:  #f8fafc;
+$slate-100: #f1f5f9;
+$slate-200: #e2e8f0;
+$slate-300: #cbd5e1;
+$slate-400: #94a3b8;
+$slate-500: #64748b;
+$slate-600: #475569;
+$slate-700: #334155;
+$slate-800: #1e293b;
+$slate-900: #0f172a;
+
+$error:    #ef4444;
+$error-50: #fef2f2;
+$white:    #ffffff;
+
+$radius-sm: 8px;
+$radius-md: 12px;
+$radius-lg: 16px;
+$radius-xl: 20px;
+
+// ── Layout shell ─────────────────────────────────────────────
+:host { display: contents; }
+
+.reg-page {
+  display: flex;
+  min-height: 100vh;
+}
+
+// ═══════════════════════════════════════════════════════════
+//  LEFT PANEL — Brand (desktop only)
+// ═══════════════════════════════════════════════════════════
+.reg-brand {
+  // Mobile-first: hidden by default
+  display: none;
+
+  @media (min-width: 1024px) {
+    display: block;
+    position: sticky;
+    top: 0;
+    width: 42%;
+    height: 100vh;
+    flex-shrink: 0;
+    overflow: hidden;
+    background: linear-gradient(160deg, #1e1b4b 0%, $indigo-900 30%, $indigo-800 65%, $indigo-700 100%);
+
+    &::before {
+      content: '';
+      position: absolute;
+      width: 500px;
+      height: 500px;
+      border-radius: 50%;
+      background: radial-gradient(circle, rgba(99, 102, 241, .25) 0%, transparent 70%);
+      top: -120px;
+      right: -120px;
+      pointer-events: none;
+    }
+
+    &::after {
+      content: '';
+      position: absolute;
+      width: 400px;
+      height: 400px;
+      border-radius: 50%;
+      background: radial-gradient(circle, rgba(165, 180, 252, .12) 0%, transparent 70%);
+      bottom: -80px;
+      left: -80px;
+      pointer-events: none;
+    }
+  }
+
+  &__dots {
+    position: absolute;
+    inset: 0;
+    background-image: radial-gradient(circle, rgba(255,255,255,.06) 1px, transparent 1px);
+    background-size: 32px 32px;
+    pointer-events: none;
+  }
+
+  &__content {
+    position: relative;
+    z-index: 1;
+    display: flex;
+    flex-direction: column;
+    height: 100%;
+    padding: 48px 48px 40px;
+  }
+
+  &__logo {
+    display: inline-flex;
+    align-items: center;
+    gap: 10px;
+    text-decoration: none;
+    color: $white;
+    font-size: 19px;
+    font-weight: 800;
+    letter-spacing: -.025em;
+
+    i {
+      font-size: 24px;
+      color: #a5b4fc;
+      filter: drop-shadow(0 0 8px rgba(165, 180, 252, .5));
+    }
+  }
+
+  &__middle {
+    flex: 1;
+    display: flex;
+    flex-direction: column;
+    justify-content: center;
+    padding: 40px 0;
+  }
+
+  &__tag {
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    background: rgba(165, 180, 252, .15);
+    border: 1px solid rgba(165, 180, 252, .25);
+    padding: 5px 12px;
+    border-radius: 100px;
+    font-size: 11px;
+    font-weight: 700;
+    letter-spacing: .08em;
+    text-transform: uppercase;
+    color: #c7d2fe;
+    margin-bottom: 20px;
+    width: fit-content;
+    i { font-size: 10px; }
+  }
+
+  &__title {
+    font-size: clamp(26px, 2.4vw, 38px);
+    font-weight: 800;
+    line-height: 1.15;
+    color: $white;
+    letter-spacing: -.035em;
+    margin: 0 0 16px;
+  }
+
+  &__sub {
+    font-size: 15px;
+    line-height: 1.7;
+    color: rgba(165, 180, 252, .8);
+    max-width: 320px;
+    margin: 0 0 36px;
+  }
+
+  &__features {
+    display: flex;
+    flex-direction: column;
+    gap: 14px;
+  }
+
+  &__feat {
+    display: flex;
+    align-items: center;
+    gap: 14px;
+
+    &-icon {
+      width: 38px;
+      height: 38px;
+      border-radius: $radius-sm;
+      background: rgba(255,255,255,.1);
+      border: 1px solid rgba(255,255,255,.15);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 14px;
+      color: #c7d2fe;
+      flex-shrink: 0;
+    }
+
+    span {
+      font-size: 14px;
+      color: rgba(199, 210, 254, .9);
+      font-weight: 500;
+      line-height: 1.4;
+    }
+  }
+
+  &__stats {
+    display: flex;
+    gap: 0;
+    border-top: 1px solid rgba(255,255,255,.1);
+    padding-top: 28px;
+  }
+
+  &__stat {
+    flex: 1;
+
+    &:not(:last-child) {
+      border-right: 1px solid rgba(255,255,255,.1);
+      margin-right: 24px;
+      padding-right: 24px;
+    }
+
+    &-value {
+      display: block;
+      font-size: 28px;
+      font-weight: 800;
+      color: $white;
+      letter-spacing: -.04em;
+      line-height: 1;
+    }
+
+    &-label {
+      display: block;
+      font-size: 11px;
+      color: #a5b4fc;
+      margin-top: 5px;
+      font-weight: 500;
+      letter-spacing: .01em;
+    }
+  }
+}
+
+// ═══════════════════════════════════════════════════════════
+//  RIGHT PANEL — Form area
+// ═══════════════════════════════════════════════════════════
+.reg-panel {
+  flex: 1;
+  min-width: 0;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  // Mobile-first: align to top with safe padding
+  justify-content: flex-start;
+  background: $slate-50;
+  overflow-y: auto;
+  // Mobile padding
+  padding: 32px 16px 48px;
+
+  @media (min-width: 480px) {
+    padding: 40px 24px 56px;
+  }
+
+  @media (min-width: 768px) {
+    padding: 56px 32px 64px;
+    justify-content: center;
+  }
+
+  @media (min-width: 1024px) {
+    padding: 56px 48px 64px;
+  }
+}
+
+.reg-mobile-logo {
+  // Mobile-first: visible by default
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  text-decoration: none;
+  color: $indigo-600;
+  font-size: 19px;
+  font-weight: 800;
+  letter-spacing: -.02em;
+  margin-bottom: 28px;
+  align-self: flex-start;
+
+  i { font-size: 22px; color: $indigo-500; }
+
+  @media (min-width: 1024px) { display: none; }
+}
+
+// ═══════════════════════════════════════════════════════════
+//  CARD
+// ═══════════════════════════════════════════════════════════
+.reg-card {
+  width: 100%;
+  // Mobile: full width, flat card feel
+  background: $white;
+  border-radius: $radius-lg;
+  padding: 28px 20px;
+  border: 1px solid $slate-200;
+
+  // At 480px+ start constraining and adding elevation
+  @media (min-width: 480px) {
+    max-width: 560px;
+    padding: 36px 36px;
+    border-radius: $radius-xl;
+    box-shadow:
+      0 1px 3px rgba(0,0,0,.04),
+      0 8px 32px rgba(0,0,0,.06),
+      0 24px 64px rgba(0,0,0,.04);
+  }
+
+  @media (min-width: 640px) {
+    padding: 44px 44px;
+  }
+
+  &--wide {
+    @media (min-width: 480px) {
+      max-width: 640px;
+    }
+
+    @media (min-width: 768px) {
+      max-width: 720px;
+    }
+  }
+}
+
+.reg-card__hd {
+  margin-bottom: 24px;
+
+  @media (min-width: 480px) {
+    margin-bottom: 28px;
+  }
+}
+
+.reg-card__title {
+  font-size: 22px;
+  font-weight: 800;
+  color: $slate-900;
+  letter-spacing: -.04em;
+  margin: 0 0 6px;
+  line-height: 1.2;
+
+  @media (min-width: 480px) {
+    font-size: 26px;
+  }
+}
+
+.reg-card__sub {
+  font-size: 14px;
+  color: $slate-500;
+  margin: 0;
+  line-height: 1.55;
+}
+
+.reg-card__footer {
+  text-align: center;
+  font-size: 13px;
+  color: $slate-500;
+  margin: 20px 0 0;
+
+  @media (min-width: 480px) {
+    margin-top: 24px;
+  }
+
+  a {
+    color: $indigo-600;
+    font-weight: 700;
+    text-decoration: none;
+    &:hover { text-decoration: underline; }
+  }
+}
+
+// ═══════════════════════════════════════════════════════════
+//  ROLE PICKER — starts 1 col, upgrades to 2×2 grid
+// ═══════════════════════════════════════════════════════════
+.rp-grid {
+  display: grid;
+  // Mobile: single column for tappability
+  grid-template-columns: 1fr;
+  gap: 10px;
+  margin-bottom: 4px;
+
+  // At 440px+ show 2 columns
+  @media (min-width: 440px) {
+    grid-template-columns: 1fr 1fr;
+    gap: 12px;
+  }
+}
+
+.rp-item {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  gap: 0;
+  padding: 18px 16px;
+  border: 1.5px solid $slate-200;
+  border-radius: $radius-lg;
+  background: $white;
+  cursor: pointer;
+  text-align: left;
+  position: relative;
+  overflow: hidden;
+  transition: border-color .18s ease, background .18s ease, box-shadow .18s ease, transform .18s ease;
+
+  @media (min-width: 480px) {
+    padding: 20px;
+  }
+
+  &::before {
+    content: '';
+    position: absolute;
+    inset: 0;
+    opacity: 0;
+    background: $indigo-50;
+    transition: opacity .18s ease;
+  }
+
+  &:hover {
+    border-color: $indigo-600;
+    box-shadow: 0 4px 24px rgba(79, 70, 229, .14);
+    transform: translateY(-2px);
+
+    &::before { opacity: 1; }
+    .rp-item__icon { transform: scale(1.06); }
+    .rp-item__arrow { opacity: 1; transform: translateX(0); color: $indigo-600; }
+  }
+
+  &:active { transform: translateY(0) scale(.99); }
+
+  &__icon {
+    position: relative;
+    z-index: 1;
+    width: 44px;
+    height: 44px;
+    border-radius: 12px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    color: $white;
+    font-size: 17px;
+    flex-shrink: 0;
+    margin-bottom: 12px;
+    box-shadow: 0 4px 14px rgba(0,0,0,.18);
+    transition: transform .18s ease;
+  }
+
+  &__label {
+    position: relative;
+    z-index: 1;
+    font-size: 14px;
+    font-weight: 800;
+    color: $slate-900;
+    letter-spacing: -.02em;
+    line-height: 1.25;
+    margin-bottom: 4px;
+  }
+
+  &__desc {
+    position: relative;
+    z-index: 1;
+    font-size: 12px;
+    color: $slate-500;
+    line-height: 1.45;
+  }
+
+  &__arrow {
+    position: absolute;
+    z-index: 1;
+    top: 16px;
+    right: 16px;
+    color: $slate-300;
+    font-size: 11px;
+    opacity: .6;
+    transform: translateX(-4px);
+    transition: opacity .18s ease, transform .18s ease, color .18s ease;
+  }
+}
+
+// ═══════════════════════════════════════════════════════════
+//  FORM STEPS — shared elements
+// ═══════════════════════════════════════════════════════════
+.rp-back {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  background: $slate-100;
+  border: 1px solid $slate-200;
+  padding: 6px 14px;
+  border-radius: 100px;
+  font-size: 12px;
+  font-weight: 600;
+  color: $slate-600;
+  cursor: pointer;
+  margin-bottom: 20px;
+  transition: background .15s, color .15s;
+
+  i { font-size: 10px; }
+  &:hover { background: $slate-200; color: $slate-900; }
+}
+
+.rp-badge {
+  display: inline-flex;
+  align-items: center;
+  gap: 7px;
+  padding: 5px 12px;
+  border-radius: 100px;
+  font-size: 12px;
+  font-weight: 700;
+  color: $white;
+  margin-bottom: 12px;
+  letter-spacing: .01em;
+  box-shadow: 0 2px 8px rgba(0,0,0,.15);
+
+  i { font-size: 11px; }
+}
+
+.rp-section {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  font-size: 11px;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: .09em;
+  color: $slate-400;
+  margin: 4px 0;
+
+  i { font-size: 10px; }
+
+  &::after {
+    content: '';
+    flex: 1;
+    height: 1px;
+    background: $slate-200;
+  }
+}
+
+// Mobile-first 2-col row — critical: min-width:0 prevents grid overflow
+.rp-row {
+  display: grid;
+  // Mobile: 1 column — National ID stays in page
+  grid-template-columns: 1fr;
+  gap: 14px;
+
+  > .lf { min-width: 0; } // prevent grid blowout
+
+  // Upgrade to 2 columns when there's enough room
+  @media (min-width: 540px) {
+    grid-template-columns: 1fr 1fr;
+  }
+}
+
+// ═══════════════════════════════════════════════════════════
+//  FORM FIELDS
+// ═══════════════════════════════════════════════════════════
+.lf-form {
+  display: flex;
+  flex-direction: column;
+  gap: 14px;
+
+  @media (min-width: 480px) {
+    gap: 16px;
+  }
+}
+
+.lf {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  min-width: 0; // always prevent overflow when inside grid
+
+  &__label {
+    font-size: 13px;
+    font-weight: 600;
+    color: $slate-700;
+    margin: 0;
+    letter-spacing: -.01em;
+  }
+
+  &__wrap {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    background: $slate-50;
+    border: 1.5px solid $slate-200;
+    border-radius: $radius-md;
+    padding: 0 14px;
+    transition: border-color .18s ease, background .18s ease, box-shadow .18s ease;
+
+    &:focus-within {
+      border-color: $indigo-600;
+      background: $white;
+      box-shadow: 0 0 0 3.5px rgba(79, 70, 229, .1);
+    }
+
+    &--err {
+      border-color: $error !important;
+      background: $error-50;
+
+      &:focus-within {
+        box-shadow: 0 0 0 3.5px rgba(239, 68, 68, .1) !important;
+      }
+    }
+  }
+
+  &__icon {
+    color: $slate-400;
+    font-size: 14px;
+    flex-shrink: 0;
+    width: 15px;
+    text-align: center;
+    transition: color .18s;
+  }
+
+  &__wrap:focus-within &__icon { color: $indigo-600; }
+
+  &__input {
+    flex: 1;
+    border: none;
+    background: none;
+    padding: 12px 0;
+    font-size: 14px;
+    color: $slate-900;
+    outline: none;
+    min-width: 0; // prevent input from stretching grid cell
+
+    &::placeholder { color: $slate-400; }
+  }
+
+  &__toggle {
+    background: none;
+    border: none;
+    padding: 0;
+    color: $slate-400;
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    font-size: 14px;
+    flex-shrink: 0;
+    transition: color .18s;
+
+    &:hover { color: $indigo-600; }
+  }
+
+  &__error {
+    font-size: 12px;
+    font-weight: 500;
+    color: $error;
+    margin: 0;
+    display: flex;
+    align-items: center;
+    gap: 4px;
+
+    &::before {
+      content: '\f06a';
+      font-family: 'Font Awesome 6 Free';
+      font-weight: 900;
+      font-size: 10px;
+      flex-shrink: 0;
+    }
+  }
+}
+
+// ═══════════════════════════════════════════════════════════
+//  SUBMIT BUTTON
+// ═══════════════════════════════════════════════════════════
+.btn-register {
+  width: 100%;
+  padding: 13px 20px;
+  background: linear-gradient(135deg, $indigo-600 0%, $indigo-800 100%);
+  color: $white;
+  border: none;
+  border-radius: $radius-md;
+  font-size: 15px;
+  font-weight: 700;
+  letter-spacing: -.01em;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  transition: box-shadow .2s ease, transform .2s ease, background .2s ease;
+  box-shadow: 0 4px 16px rgba(79, 70, 229, .35);
+  margin-top: 4px;
+
+  @media (min-width: 480px) {
+    padding: 14px 20px;
+  }
+
+  &:hover:not(:disabled) {
+    box-shadow: 0 8px 28px rgba(79, 70, 229, .45);
+    transform: translateY(-1px);
+    background: linear-gradient(135deg, $indigo-500 0%, $indigo-700 100%);
+  }
+
+  &:active:not(:disabled) {
+    transform: translateY(0);
+    box-shadow: 0 3px 10px rgba(79, 70, 229, .3);
+  }
+
+  &:disabled {
+    opacity: .65;
+    cursor: not-allowed;
+    box-shadow: none;
+    transform: none;
+  }
+}
+
+// ═══════════════════════════════════════════════════════════
+//  ALERT
+// ═══════════════════════════════════════════════════════════
+.reg-alert {
+  display: flex;
+  align-items: flex-start;
+  gap: 10px;
+  padding: 12px 14px;
+  border-radius: $radius-sm;
+  background: $error-50;
+  border: 1px solid #fecaca;
+  color: #b91c1c;
+  font-size: 13px;
+  font-weight: 500;
+  line-height: 1.45;
+
+  i { font-size: 14px; margin-top: 1px; flex-shrink: 0; }
+}

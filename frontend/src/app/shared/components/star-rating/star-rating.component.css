@@ -1,0 +1,48 @@
+:host {
+  --color-star: #f59e0b;
+  display: inline-flex;
+  align-items: center;
+}
+
+.star-row {
+  display: flex;
+  align-items: center;
+  gap: 2px;
+}
+
+.star-btn {
+  background: none;
+  border: none;
+  padding: 0;
+  cursor: default;
+  line-height: 1;
+  display: flex;
+  align-items: center;
+}
+
+.star-btn--interactive {
+  cursor: pointer;
+}
+
+.star-btn i {
+  color: var(--color-star);
+  transition: transform 0.12s ease;
+}
+
+.star-btn i.fa-regular {
+  color: var(--color-outline-variant, #ccc);
+}
+
+.star-btn--interactive:hover i {
+  transform: scale(1.22);
+}
+
+/* Active click bounce */
+.star-btn--interactive:active i {
+  transform: scale(0.9);
+}
+
+/* Sizes */
+.star-row--sm .star-btn i { font-size: 13px; }
+.star-row--md .star-btn i { font-size: 18px; }
+.star-row--lg .star-btn i { font-size: 28px; }

@@ -33,5 +33,6 @@ public sealed record ActiveLeaseDto(
     Guid LandlordId = default,
     DateOnly StartDate = default,
     DateOnly EndDate = default,
-    string? PaymentFrequency = null
+    string? PaymentFrequency = null,
+    Guid? CompanyId = null
 );

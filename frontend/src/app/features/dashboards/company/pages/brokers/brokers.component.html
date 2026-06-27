@@ -1,0 +1,245 @@
+<div class="d-flex justify-content-between align-items-center mb-3">
+  <h2 class="mb-0">{{ 'COMPANY_BROKERS.TITLE' | translate }} ({{ activeCount() }} / {{ maxBrokersLabel() }})</h2>
+  <button class="btn btn-dark" (click)="openModal()">
+    <i class="fa-solid fa-plus me-2"></i>{{ 'COMPANY_BROKERS.ADD_BROKER' | translate }}
+  </button>
+</div>
+
+<app-over-limit-banner [used]="activeCount()" [max]="brokerMax()" label="brokers" />
+
+@if (actionError()) {
+  <div class="alert alert-danger d-flex justify-content-between align-items-center">
+    <span>{{ actionError() }}</span>
+    <a routerLink="/dashboard/company/subscriptions" class="alert-link">{{ 'COMMON.UPGRADE_PLAN' | translate }}</a>
+  </div>
+}
+
+<!-- Filter bar -->
+<div class="d-flex flex-wrap justify-content-between align-items-center gap-2 mb-3">
+  <ul class="nav nav-pills">
+    @for (tab of tabs; track tab.value) {
+      <li class="nav-item">
+        <button
+          class="nav-link"
+          [class.active]="statusFilter() === tab.value"
+          (click)="statusFilter.set(tab.value)"
+        >
+          {{ tab.label | translate }}
+          <span class="badge bg-light text-dark ms-1">{{ counts()[tab.value] }}</span>
+        </button>
+      </li>
+    }
+  </ul>
+  <input
+    type="search"
+    class="form-control search-box"
+    [placeholder]="'COMPANY_BROKERS.SEARCH_PLACEHOLDER' | translate"
+    [value]="search()"
+    (input)="onSearch($event)"
+  />
+</div>
+
+@if (loading()) {
+  <div class="d-flex justify-content-center py-5">
+    <div class="spinner-border text-secondary" role="status">
+      <span class="visually-hidden">Loading…</span>
+    </div>
+  </div>
+} @else {
+  <div class="card">
+    <div class="table-responsive">
+      <table class="table table-hover align-middle mb-0">
+        <thead class="table-light">
+          <tr>
+            <th>{{ 'COMPANY_BROKERS.COL_NAME' | translate }}</th>
+            <th>{{ 'COMPANY_BROKERS.COL_LICENSE' | translate }}</th>
+            <th>{{ 'COMPANY_BROKERS.COL_DEALS' | translate }}</th>
+            <th>{{ 'COMPANY_BROKERS.COL_AVG_RESPONSE' | translate }}</th>
+            <th>{{ 'COMPANY_BROKERS.COL_RATING' | translate }}</th>
+            <th>{{ 'COMMON.STATUS' | translate }}</th>
+            <th class="text-end">{{ 'COMMON.ACTIONS' | translate }}</th>
+          </tr>
+        </thead>
+        <tbody>
+          @for (b of filtered(); track b.id) {
+            <tr [class.table-secondary]="!b.isActive">
+              <td>
+                <div class="fw-semibold">{{ displayName(b) }}</div>
+                @if (b.email) {
+                  <div class="small text-muted">{{ b.email }}</div>
+                }
+              </td>
+              <td>{{ b.licenseNumber }}</td>
+              <td>{{ b.closedDealsCount }}</td>
+              <td>{{ b.avgResponseTimeMinutes }} {{ 'COMPANY_BROKERS.MIN' | translate }}</td>
+              <td>
+                <i class="fa-solid fa-star text-warning"></i>
+                {{ b.ratingAvg }}
+                <span class="text-muted small">({{ b.totalRatings }})</span>
+              </td>
+              <td>
+                @if (b.isActive) {
+                  <span class="badge bg-success">{{ 'COMMON.ACTIVE' | translate }}</span>
+                } @else {
+                  <span class="badge bg-secondary">{{ 'COMMON.INACTIVE' | translate }}</span>
+                }
+              </td>
+              <td class="text-end">
+                @if (b.isActive) {
+                  <button class="btn btn-sm btn-outline-danger" (click)="deactivate(b)">
+                    {{ 'COMPANY_BROKERS.DEACTIVATE' | translate }}
+                  </button>
+                } @else {
+                  <button class="btn btn-sm btn-outline-success me-1" (click)="reactivate(b)"
+                          [disabled]="reactivatingId() === b.id">
+                    @if (reactivatingId() === b.id) {
+                      <span class="spinner-border spinner-border-sm me-1"></span>
+                    }
+                    {{ 'COMPANY_BROKERS.REACTIVATE' | translate }}
+                  </button>
+                  <button class="btn btn-sm btn-outline-danger" (click)="requestDelete(b)" [title]="'COMMON.DELETE' | translate">
+                    <i class="fa-solid fa-trash"></i>
+                  </button>
+                }
+              </td>
+            </tr>
+          } @empty {
+            <tr>
+              <td colspan="7" class="text-center text-muted py-4">
+                @if (search() || statusFilter() !== 'all') {
+                  {{ 'COMPANY_BROKERS.NO_MATCH' | translate }}
+                } @else {
+                  {{ 'COMPANY_BROKERS.NO_BROKERS' | translate }}
+                }
+              </td>
+            </tr>
+          }
+        </tbody>
+      </table>
+    </div>
+  </div>
+}
+
+<!-- Add Broker Modal -->
+@if (showModal()) {
+  <div class="modal d-block" tabindex="-1" role="dialog">
+    <div class="modal-dialog">
+      <div class="modal-content">
+        <form [formGroup]="form" (ngSubmit)="submit()">
+          <div class="modal-header">
+            <h5 class="modal-title">{{ 'COMPANY_BROKERS.MODAL_TITLE' | translate }}</h5>
+            <button type="button" class="btn-close" (click)="closeModal()"></button>
+          </div>
+          <div class="modal-body">
+            @if (errorMsg()) {
+              <div class="alert alert-danger">
+                {{ errorMsg() }}
+                <a routerLink="/dashboard/company/subscriptions" class="alert-link ms-1">{{ 'COMMON.UPGRADE_PLAN' | translate }}</a>
+              </div>
+            }
+
+            <div class="mb-3">
+              <label class="form-label">{{ 'COMPANY_BROKERS.FULL_NAME' | translate }}</label>
+              <input
+                type="text"
+                class="form-control"
+                formControlName="fullName"
+                [class.is-invalid]="fullName.invalid && fullName.touched"
+              />
+              @if (fullName.invalid && fullName.touched) {
+                <div class="invalid-feedback">{{ 'COMPANY_BROKERS.ERR_FULL_NAME' | translate }}</div>
+              }
+            </div>
+
+            <div class="mb-3">
+              <label class="form-label">{{ 'COMPANY_BROKERS.EMAIL' | translate }}</label>
+              <input
+                type="email"
+                class="form-control"
+                formControlName="email"
+                [class.is-invalid]="email.invalid && email.touched"
+              />
+              @if (email.invalid && email.touched) {
+                <div class="invalid-feedback">{{ 'COMPANY_BROKERS.ERR_EMAIL' | translate }}</div>
+              }
+            </div>
+
+            <div class="mb-3">
+              <label class="form-label">{{ 'COMPANY_BROKERS.TEMP_PASSWORD' | translate }}</label>
+              <input
+                type="password"
+                class="form-control"
+                formControlName="tempPassword"
+                [class.is-invalid]="tempPassword.invalid && tempPassword.touched"
+              />
+              <small class="text-muted">{{ 'COMPANY_BROKERS.TEMP_PASSWORD_HINT' | translate }}</small>
+              @if (tempPassword.invalid && tempPassword.touched) {
+                <div class="invalid-feedback">{{ 'COMPANY_BROKERS.ERR_TEMP_PASSWORD' | translate }}</div>
+              }
+            </div>
+
+            <div class="mb-3">
+              <label class="form-label">{{ 'COMPANY_BROKERS.PHONE' | translate }}</label>
+              <input
+                type="tel"
+                class="form-control"
+                formControlName="phone"
+                [class.is-invalid]="phone.invalid && phone.touched"
+              />
+              @if (phone.invalid && phone.touched) {
+                <div class="invalid-feedback">{{ 'COMPANY_BROKERS.ERR_PHONE' | translate }}</div>
+              }
+            </div>
+
+            <div class="mb-3">
+              <label class="form-label">{{ 'COMPANY_BROKERS.LICENSE_NUMBER' | translate }}</label>
+              <input
+                type="text"
+                class="form-control"
+                formControlName="licenseNumber"
+                [class.is-invalid]="licenseNumber.invalid && licenseNumber.touched"
+              />
+              @if (licenseNumber.invalid && licenseNumber.touched) {
+                <div class="invalid-feedback">{{ 'COMPANY_BROKERS.ERR_LICENSE' | translate }}</div>
+              }
+            </div>
+          </div>
+          <div class="modal-footer">
+            <button type="button" class="btn btn-outline-secondary" (click)="closeModal()">{{ 'COMMON.CANCEL' | translate }}</button>
+            <button type="submit" class="btn btn-dark" [disabled]="submitting()">
+              @if (submitting()) {
+                <span class="spinner-border spinner-border-sm me-2"></span>
+              }
+              {{ 'COMPANY_BROKERS.ADD_BROKER' | translate }}
+            </button>
+          </div>
+        </form>
+      </div>
+    </div>
+  </div>
+  <div class="modal-backdrop show"></div>
+}
+
+<!-- Deactivate confirmation -->
+<app-confirm-modal
+  [show]="brokerToDeactivate() !== null"
+  [title]="'COMPANY_BROKERS.DEACTIVATE_MODAL_TITLE' | translate"
+  [message]="deactivateMessage()"
+  [confirmLabel]="'COMPANY_BROKERS.DEACTIVATE' | translate"
+  confirmClass="btn-danger"
+  [loading]="deactivating()"
+  (confirmed)="confirmDeactivate()"
+  (cancelled)="brokerToDeactivate.set(null)"
+/>
+
+<!-- Permanent delete confirmation -->
+<app-confirm-modal
+  [show]="brokerToDelete() !== null"
+  [title]="'COMPANY_BROKERS.DELETE_MODAL_TITLE' | translate"
+  [message]="deleteMessage()"
+  [confirmLabel]="'COMMON.DELETE' | translate"
+  confirmClass="btn-danger"
+  [loading]="deleting()"
+  (confirmed)="confirmDelete()"
+  (cancelled)="brokerToDelete.set(null)"
+/>

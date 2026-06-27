@@ -1,0 +1,383 @@
+:host {
+  --color-success:    #16a34a;
+  --color-success-bg: #dcfce7;
+  --color-warning:    #b45309;
+  --color-warning-bg: #fef3c7;
+}
+
+.overview-page {
+  padding: 28px;
+}
+
+/* ── LOADING / ERROR ───────────────────────────── */
+.loading-state {
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  min-height: 300px;
+}
+
+/* ── WELCOME HEADER ────────────────────────────── */
+.welcome-header {
+  margin-bottom: 28px;
+}
+
+.welcome-title {
+  font-size: 26px;
+  font-weight: 700;
+  color: var(--color-on-surface);
+  margin: 0 0 4px;
+}
+
+.welcome-date {
+  color: var(--color-on-surface-variant);
+  font-size: 14px;
+  margin: 0;
+}
+
+/* ── STAT CARDS ────────────────────────────────── */
+.stat-card {
+  background: var(--color-surface-container-lowest);
+  border-radius: var(--radius-lg);
+  box-shadow: var(--shadow-soft);
+  padding: 1.25rem;
+  display: flex;
+  align-items: center;
+  gap: 14px;
+  height: 100%;
+}
+
+.stat-icon-wrap {
+  width: 44px;
+  height: 44px;
+  border-radius: var(--radius-md);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 18px;
+  flex-shrink: 0;
+}
+
+.stat-icon-green   { background: var(--color-success-bg); color: var(--color-success); }
+.stat-icon-gray    { background: var(--color-surface-container); color: var(--color-on-surface-variant); }
+.stat-icon-primary { background: var(--color-primary-fixed); color: var(--color-primary); }
+
+/* expiry variants */
+.stat-icon-expiry-critical { background: var(--color-error-container); color: var(--color-error); }
+.stat-icon-expiry-warning  { background: var(--color-warning-bg); color: var(--color-warning); }
+.stat-icon-expiry-safe     { background: var(--color-success-bg); color: var(--color-success); }
+
+.stat-body { flex: 1; min-width: 0; }
+
+.stat-label {
+  font-size: 12px;
+  color: var(--color-on-surface-variant);
+  margin: 0 0 2px;
+  font-weight: 500;
+}
+
+.stat-value {
+  font-size: 22px;
+  font-weight: 700;
+  color: var(--color-on-surface);
+  margin: 0;
+  display: flex;
+  align-items: center;
+  gap: 6px;
+}
+
+.stat-value-green    { color: var(--color-success); }
+.expiry-critical     { color: var(--color-error); }
+.expiry-warning      { color: var(--color-warning); }
+.expiry-safe         { color: var(--color-success); }
+
+.unread-dot {
+  width: 8px;
+  height: 8px;
+  border-radius: var(--radius-full);
+  background: var(--color-error);
+  display: inline-block;
+}
+
+/* ── SECTION CARDS ─────────────────────────────── */
+.section-card {
+  background: var(--color-surface-container-lowest);
+  border-radius: var(--radius-lg);
+  box-shadow: var(--shadow-soft);
+  padding: 1.25rem;
+}
+
+.section-card-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  flex-wrap: wrap;
+  gap: 8px;
+  margin-bottom: 16px;
+}
+
+.section-title {
+  font-size: 16px;
+  font-weight: 600;
+  color: var(--color-on-surface);
+  margin: 0;
+}
+
+/* ── LEASE CARD ────────────────────────────────── */
+.lease-info-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(200px, 1fr));
+  gap: 12px;
+}
+
+.lease-info-item {
+  display: flex;
+  flex-direction: column;
+  gap: 3px;
+}
+
+.info-label {
+  font-size: 12px;
+  color: var(--color-on-surface-variant);
+  font-weight: 500;
+}
+
+.info-value {
+  font-size: 14px;
+  font-weight: 600;
+  color: var(--color-on-surface);
+}
+
+.rent-amount {
+  color: var(--color-primary);
+  font-size: 16px;
+}
+
+.lease-progress-wrap {
+  margin-top: 14px;
+}
+
+.lease-progress-header {
+  display: flex;
+  justify-content: space-between;
+  margin-bottom: 6px;
+}
+
+.progress-label {
+  font-size: 12px;
+  color: var(--color-on-surface-variant);
+}
+
+.progress-pct {
+  font-size: 12px;
+  font-weight: 600;
+  color: var(--color-on-surface);
+}
+
+.progress-track {
+  width: 100%;
+  height: 8px;
+  background: var(--color-surface-container);
+  border-radius: var(--radius-full);
+  overflow: hidden;
+}
+
+.progress-fill {
+  height: 100%;
+  background: var(--color-primary-container);
+  border-radius: var(--radius-full);
+  transition: width 0.6s ease;
+}
+
+/* ── TICKET STATS BAR ──────────────────────────── */
+.ticket-stats-numbers {
+  display: flex;
+  gap: 24px;
+  flex-wrap: wrap;
+}
+
+.ticket-stat-item {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+}
+
+.ticket-stat-num {
+  font-size: 20px;
+  font-weight: 700;
+}
+
+.ticket-stat-label {
+  font-size: 11px;
+  color: var(--color-on-surface-variant);
+  font-weight: 500;
+}
+
+.stat-waiting  { color: var(--color-warning); }
+.stat-vendor   { color: #7c3aed; }
+.stat-progress { color: var(--color-primary); }
+.stat-open     { color: var(--color-secondary); }
+.stat-done     { color: var(--color-success); }
+
+.ticket-bar {
+  display: flex;
+  height: 10px;
+  border-radius: var(--radius-full);
+  overflow: hidden;
+  gap: 2px;
+}
+
+.ticket-bar-seg {
+  height: 100%;
+  border-radius: var(--radius-full);
+  transition: width 0.5s ease;
+}
+
+.seg-waiting  { background: var(--color-warning-bg); outline: 1.5px solid var(--color-warning); }
+.seg-vendor   { background: #ede9fe; outline: 1.5px solid #7c3aed; }
+.seg-progress { background: var(--color-primary-fixed); outline: 1.5px solid var(--color-primary); }
+.seg-open     { background: var(--color-secondary-container); }
+.seg-done     { background: var(--color-success-bg); outline: 1.5px solid var(--color-success); }
+
+.ticket-total-label { font-size: 12px; color: var(--color-on-surface-variant); margin: 6px 0 0; }
+.no-tickets-hint    { font-size: 13px; color: var(--color-on-surface-variant); margin: 8px 0 0; }
+
+/* ── INQUIRIES CARD ────────────────────────────── */
+.inq-stats {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 0;
+  padding: 16px 0 4px;
+}
+
+.inq-stat {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 4px;
+}
+
+.inq-num {
+  font-size: 32px;
+  font-weight: 700;
+  color: var(--color-on-surface);
+  line-height: 1;
+}
+
+.inq-label {
+  font-size: 12px;
+  color: var(--color-on-surface-variant);
+  font-weight: 500;
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+}
+
+.inq-divider {
+  width: 1px;
+  height: 48px;
+  background: var(--color-outline-variant);
+  flex-shrink: 0;
+}
+
+/* ── EXPIRY BANNER ─────────────────────────────── */
+.expiry-banner {
+  background: #fef3c7;
+  color: #92400e;
+  border: 1px solid #fcd34d;
+  border-radius: var(--radius-md);
+  padding: 12px 16px;
+  font-size: 14px;
+}
+
+/* ── ACTIVITY FEED ─────────────────────────────── */
+.activity-list {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+}
+
+.activity-item {
+  display: flex;
+  align-items: flex-start;
+  gap: 12px;
+  padding: 12px 0;
+  border-bottom: 1px solid var(--color-outline-variant);
+}
+
+.activity-item:last-child {
+  border-bottom: none;
+  padding-bottom: 0;
+}
+
+.activity-unread .activity-title {
+  font-weight: 600;
+}
+
+.activity-icon-wrap {
+  width: 36px;
+  height: 36px;
+  border-radius: var(--radius-full);
+  background: var(--color-surface-container-low);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: var(--color-primary);
+  font-size: 14px;
+  flex-shrink: 0;
+  margin-top: 2px;
+}
+
+.activity-body { flex: 1; min-width: 0; }
+
+.activity-title {
+  font-size: 14px;
+  color: var(--color-on-surface);
+  margin: 0 0 2px;
+}
+
+.activity-desc {
+  font-size: 13px;
+  color: var(--color-on-surface-variant);
+  margin: 0;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.activity-time {
+  font-size: 12px;
+  color: var(--color-on-surface-variant);
+  flex-shrink: 0;
+  margin-top: 2px;
+}
+
+/* ── EMPTY STATE ───────────────────────────────── */
+.empty-state {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  padding: 40px 0;
+  gap: 10px;
+  color: var(--color-on-surface-variant);
+}
+
+.empty-icon {
+  font-size: 3rem;
+  opacity: 0.35;
+}
+
+/* ── RESPONSIVE ────────────────────────────────── */
+@media (max-width: 576px) {
+  .overview-page {
+    padding: 16px;
+  }
+
+  .welcome-title { font-size: 22px; }
+
+  .lease-info-grid {
+    grid-template-columns: 1fr 1fr;
+  }
+}

@@ -1,0 +1,189 @@
+<div class="page">
+  <div class="page-header">
+    <div>
+      <h1 class="page-title">{{ 'BROKER.LEADS.TITLE' | translate }}</h1>
+      <p class="page-subtitle">{{ 'BROKER.LEADS.SUBTITLE' | translate }}</p>
+    </div>
+  </div>
+
+  @if (loading()) {
+    <div class="kanban">
+      @for (i of [1,2,3,4,5]; track i) {
+        <div class="skeleton-col">
+          <div class="skeleton" style="height:32px;border-radius:8px;margin-bottom:12px"></div>
+          <div class="skeleton" style="height:90px;border-radius:10px;margin-bottom:8px"></div>
+          <div class="skeleton" style="height:90px;border-radius:10px"></div>
+        </div>
+      }
+    </div>
+  } @else {
+    <div class="kanban" cdkDropListGroup>
+      @for (col of columns(); track col.status) {
+        <div class="kanban-col">
+          <div class="col-header" [style.border-top-color]="col.color">
+            <span class="col-title">{{ col.labelKey | translate }}</span>
+            <span class="col-count" [style.background]="col.color + '20'" [style.color]="col.color">
+              {{ col.leads.length }}
+            </span>
+          </div>
+          <div class="col-body"
+               cdkDropList
+               [id]="col.status"
+               [cdkDropListData]="col.leads"
+               [cdkDropListConnectedTo]="connectedIds()"
+               (cdkDropListDropped)="drop($event, col)">
+            @if (col.leads.length === 0) {
+              <div class="col-empty">{{ 'BROKER.LEADS.EMPTY_COL' | translate }}</div>
+            }
+            @for (lead of col.leads; track lead.id) {
+              <div class="lead-card" cdkDrag (click)="openDetail(lead)">
+                <p class="lead-name">{{ lead.tenantName }}</p>
+                <p class="lead-prop">{{ lead.propertyTitle }}</p>
+                <div class="lead-meta">
+                  <span class="lead-time">{{ timeInStage(lead.stageEnteredAt) }}</span>
+                  @if (lead.dealValue) {
+                    <span class="lead-deal">{{ lead.dealValue }}</span>
+                  }
+                </div>
+                @if (col.status === 'closed_won') {
+                  @if (lead.noManagementClosed) {
+                    <span class="deal-closed-badge">
+                      <i class="fa-solid fa-circle-check"></i>
+                      Deal Closed
+                    </span>
+                  } @else if (lead.noManagementPending) {
+                    <span class="deal-pending-badge">
+                      <i class="fa-solid fa-clock"></i>
+                      Pending Manager
+                    </span>
+                  } @else if (isCompanyBroker()) {
+                    @if (hasLease(lead)) {
+                      <span class="lease-created">
+                        <i class="fa-solid fa-circle-check"></i>
+                        {{ 'BROKER.LEADS.LEASE_CREATED' | translate }}
+                      </span>
+                    } @else if (lead.draftLeaseId) {
+                      <button class="btn-lease" (click)="$event.stopPropagation(); openResume(lead)">
+                        <i class="fa-solid fa-pen-to-square"></i>
+                        {{ 'BROKER.LEADS.RESUME_LEASE' | translate }}
+                      </button>
+                    } @else {
+                      <button class="btn-lease" (click)="$event.stopPropagation(); managementChoiceLead.set(lead)">
+                        <i class="fa-solid fa-file-contract"></i>
+                        {{ 'BROKER.LEADS.CREATE_LEASE' | translate }}
+                      </button>
+                    }
+                  } @else {
+                    <button class="btn-close-deal"
+                            [disabled]="closingNoMgmt() === lead.id"
+                            (click)="$event.stopPropagation(); closeNoManagement(lead)">
+                      @if (closingNoMgmt() === lead.id) {
+                        <i class="fa-solid fa-spinner fa-spin"></i>
+                      } @else {
+                        <i class="fa-solid fa-handshake"></i>
+                      }
+                      Close Deal
+                    </button>
+                  }
+                }
+              </div>
+            }
+          </div>
+        </div>
+      }
+    </div>
+  }
+</div>
+
+<!-- Lead detail modal -->
+@if (selectedLead(); as lead) {
+  <div class="modal-backdrop" (click)="closeDetail()">
+    <div class="lead-dialog" (click)="$event.stopPropagation()">
+      <div class="modal-header">
+        <h2>{{ 'BROKER.LEADS.DETAIL_TITLE' | translate }}</h2>
+        <button class="modal-close" (click)="closeDetail()"><i class="fa-solid fa-xmark"></i></button>
+      </div>
+      <div class="modal-body">
+        <p><strong>{{ lead.tenantName }}</strong> — {{ lead.propertyTitle }}</p>
+        @if (lead.dealValue) {
+          <p class="modal-deal">{{ 'BROKER.LEADS.DEAL_VALUE' | translate:{ value: lead.dealValue } }}</p>
+        }
+
+        @if (canClose(lead)) {
+          <label class="modal-label">{{ 'BROKER.LEADS.STAGE_LABEL' | translate }}</label>
+          <div class="stage-buttons">
+            @for (s of openStages; track s.status) {
+              <button class="stage-btn" [class.active]="lead.status === s.status"
+                      [disabled]="movingStage() || (lead.status !== s.status && !canMoveTo(lead, s.status))"
+                      (click)="moveToStage(lead, s.status)">
+                {{ s.labelKey | translate }}
+              </button>
+            }
+          </div>
+        }
+
+        <label class="modal-label">{{ 'BROKER.LEADS.NOTES_LABEL' | translate }}</label>
+        <textarea class="modal-textarea" [(ngModel)]="noteText"
+          [placeholder]="'BROKER.LEADS.NOTES_PLACEHOLDER' | translate" rows="4"></textarea>
+      </div>
+      <div class="modal-footer">
+        <button class="btn btn-outline" (click)="closeDetail()">{{ 'BROKER.LEADS.CLOSE' | translate }}</button>
+        @if (canClose(lead)) {
+          <button class="btn btn-danger" (click)="closeLost(lead)" [disabled]="isClosing(lead)">
+            @if (isClosing(lead)) { <i class="fa-solid fa-spinner fa-spin"></i> }
+            @else { <i class="fa-solid fa-xmark-circle"></i> }
+            {{ 'BROKER.LEADS.CLOSE_LOST' | translate }}
+          </button>
+          <button class="btn btn-success" (click)="closeWon(lead)" [disabled]="isClosing(lead)">
+            @if (isClosing(lead)) { <i class="fa-solid fa-spinner fa-spin"></i> }
+            @else { <i class="fa-solid fa-trophy"></i> }
+            {{ 'BROKER.LEADS.CLOSE_WON' | translate }}
+          </button>
+        } @else {
+          <button class="btn btn-primary" (click)="saveNotes()">{{ 'BROKER.LEADS.SAVE_NOTES' | translate }}</button>
+        }
+      </div>
+    </div>
+  </div>
+}
+
+<!-- Management choice modal (company broker, after Close Won) -->
+@if (managementChoiceLead(); as lead) {
+  <div class="modal-backdrop" (click)="managementChoiceLead.set(null)">
+    <div class="mgmt-choice-dialog" (click)="$event.stopPropagation()">
+      <div class="modal-header">
+        <h2>Choose Management Option</h2>
+        <button class="modal-close" (click)="managementChoiceLead.set(null)">
+          <i class="fa-solid fa-xmark"></i>
+        </button>
+      </div>
+      <div class="mgmt-choice-body">
+        <p class="mgmt-choice-subtitle">
+          Deal won for <strong>{{ lead.propertyTitle }}</strong>. How should the company handle this property?
+        </p>
+        <div class="mgmt-choice-options">
+          <button class="mgmt-option mgmt-option--full" (click)="selectFullManagement()">
+            <i class="fa-solid fa-building"></i>
+            <span class="mgmt-option-title">Company Full Management</span>
+            <span class="mgmt-option-desc">Upload a lease contract. Company manages rent collection and maintenance.</span>
+          </button>
+          <button class="mgmt-option mgmt-option--none" (click)="selectNoManagement()">
+            <i class="fa-solid fa-handshake-slash"></i>
+            <span class="mgmt-option-title">Company Doesn't Manage</span>
+            <span class="mgmt-option-desc">No management service. The company manager will be notified to confirm, then the tenant will be informed.</span>
+          </button>
+        </div>
+      </div>
+    </div>
+  </div>
+}
+
+<!-- Lease upload modal (opens after Full Management is selected) -->
+@if (leaseUploadLead()) {
+  <app-lease-upload-modal
+    [lead]="leaseUploadLead()!"
+    [resumeLeaseId]="resumeLeaseId()"
+    (closed)="closeLeaseModal()"
+    (leaseCreated)="onLeaseCreated()"
+  />
+}

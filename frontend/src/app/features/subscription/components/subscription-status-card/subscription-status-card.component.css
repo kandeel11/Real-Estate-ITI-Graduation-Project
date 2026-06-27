@@ -1,0 +1,95 @@
+:host {
+  --color-success:    #16a34a;
+  --color-success-bg: #dcfce7;
+  display: block;
+}
+
+.sub-card {
+  background: var(--color-surface-container-lowest);
+  border-radius: var(--radius-lg);
+  box-shadow: var(--shadow-soft);
+  padding: 16px 20px;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  flex-wrap: wrap;
+  border-left: 3px solid var(--color-primary);
+}
+
+.sub-card-left {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+}
+
+.sub-icon-wrap {
+  width: 40px;
+  height: 40px;
+  border-radius: var(--radius-md);
+  background: var(--color-primary-fixed);
+  color: var(--color-primary);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 16px;
+  flex-shrink: 0;
+}
+
+.sub-info {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+}
+
+.sub-label {
+  font-size: 12px;
+  color: var(--color-on-surface-variant);
+  font-weight: 500;
+  margin: 0;
+}
+
+.sub-name {
+  font-size: 15px;
+  font-weight: 700;
+  color: var(--color-on-surface);
+  margin: 0;
+}
+
+.sub-card-right {
+  display: flex;
+  align-items: center;
+  gap: 14px;
+}
+
+.sub-status-badge {
+  display: inline-flex;
+  align-items: center;
+  padding: 4px 10px;
+  border-radius: var(--radius-full);
+  font-size: 12px;
+  font-weight: 600;
+}
+
+.badge-active {
+  background: var(--color-success-bg);
+  color: var(--color-success);
+}
+
+.sub-link {
+  font-size: 13px;
+  font-weight: 600;
+  color: var(--color-primary);
+  text-decoration: none;
+  transition: opacity 0.15s;
+  white-space: nowrap;
+}
+
+.sub-link:hover {
+  opacity: 0.75;
+}
+
+@media (max-width: 576px) {
+  .sub-card { padding: 14px 16px; }
+  .sub-card-right { width: 100%; justify-content: space-between; }
+}
