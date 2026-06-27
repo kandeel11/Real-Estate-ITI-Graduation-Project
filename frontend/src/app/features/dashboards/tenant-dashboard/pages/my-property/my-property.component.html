@@ -46,7 +46,7 @@
         <span class="lease-badge" [class.badge-active]="prop.isActive" [class.badge-past]="!prop.isActive">
           {{ prop.isActive ? ('MY_PROPERTY.ACTIVE' | translate) : ('MY_PROPERTY.PAST' | translate) }}
         </span>
-        @if (prop.isActive && prop.daysUntilExpiry <= 60) {
+        @if (prop.isActive && prop.daysUntilExpiry !== null && prop.daysUntilExpiry <= 60) {
           <span class="expiry-badge">
             <i class="fa-regular fa-clock me-1"></i>{{ prop.daysUntilExpiry }}{{ 'MY_PROPERTY.DAYS_LEFT' | translate }}
           </span>
@@ -109,7 +109,7 @@
           </div>
           <div class="lease-meta-item">
             <span class="meta-label">{{ 'MY_PROPERTY.DAYS_REMAINING' | translate }}</span>
-            <span class="meta-value" [class.expiry-warn]="prop.daysUntilExpiry <= 60">
+            <span class="meta-value" [class.expiry-warn]="prop.daysUntilExpiry !== null && prop.daysUntilExpiry <= 60">
               {{ prop.daysUntilExpiry }}
             </span>
           </div>
@@ -117,13 +117,23 @@
 
         <!-- Action Buttons -->
         <div class="d-flex gap-2 mb-3 flex-wrap">
-          <a class="btn btn-primary btn-sm" routerLink="/dashboard/lease">
-            <i class="fa-solid fa-file-contract me-1"></i>{{ 'MY_PROPERTY.VIEW_LEASE' | translate }}
-          </a>
-          <a class="btn btn-outline-primary btn-sm" routerLink="/dashboard/maintenance-requests/create">
-            <i class="fa-solid fa-screwdriver-wrench me-1"></i>{{ 'MY_PROPERTY.NEW_TICKET' | translate }}
-          </a>
-          @if (prop.isActive) {
+          @if (!prop.noManagement) {
+            <a class="btn btn-primary btn-sm" routerLink="/dashboard/lease">
+              <i class="fa-solid fa-file-contract me-1"></i>{{ 'MY_PROPERTY.VIEW_LEASE' | translate }}
+            </a>
+            <a class="btn btn-outline-primary btn-sm" routerLink="/dashboard/maintenance-requests/create">
+              <i class="fa-solid fa-screwdriver-wrench me-1"></i>{{ 'MY_PROPERTY.NEW_TICKET' | translate }}
+            </a>
+          } @else {
+            <!-- No-management deal: show lease & maintenance as locked (no formal lease or company support) -->
+            <button class="btn btn-primary btn-sm" disabled title="No lease document — deal closed directly by broker">
+              <i class="fa-solid fa-lock me-1"></i>No Lease
+            </button>
+            <button class="btn btn-outline-primary btn-sm" disabled title="Maintenance is not available — no management service for this property">
+              <i class="fa-solid fa-lock me-1"></i>{{ 'MY_PROPERTY.NEW_TICKET' | translate }}
+            </button>
+          }
+          @if (prop.isActive && !prop.noManagement) {
             <button class="btn btn-outline-warning btn-sm" (click)="openRatingModal(prop)">
               <i class="fa-regular fa-star me-1"></i>Write a Review
             </button>

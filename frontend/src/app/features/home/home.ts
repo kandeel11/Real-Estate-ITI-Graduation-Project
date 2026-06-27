@@ -10,7 +10,6 @@ import { AgentAvatarComponent } from '../../shared/components/agent-avatar/agent
 
 type SearchMode = 'regular' | 'smart';
 
-/** Cap on how many featured listings the home carousel will cycle through. */
 const MAX_FEATURED = 15;
 
 @Component({
@@ -20,15 +19,14 @@ const MAX_FEATURED = 15;
   styleUrl: './home.scss',
 })
 export class HomeComponent implements OnInit, OnDestroy {
-  // ============================================================
-  // 🔎 SEARCH STATE (NEW)
-  // ============================================================
   private searchService = inject(SearchService);
   private propertyService = inject(PropertyService);
   private router = inject(Router);
 
+  // ── Search mode ────────────────────────────────────────────
   searchMode = signal<SearchMode>('regular');
-  query = signal('');
+  locationQuery = signal('');   // structured location input
+  query = signal('');           // AI full-text query
   loading = signal(false);
   hasSearched = signal(false);
   errorMsg = signal('');
@@ -37,37 +35,47 @@ export class HomeComponent implements OnInit, OnDestroy {
   totalResults = signal(0);
   parsedQuery = signal<ParsedQuery | null>(null);
 
-  // ============================================================
-  // 🎯 STATIC DATA (KEEP YOUR EXISTING)
-  // ============================================================
+  // ── Structured hero filters ────────────────────────────────
+  selectedTypes = signal<Set<string>>(new Set());
+  selectedBeds = signal<number | null>(null);
+  homeMinPrice = signal<number | null>(null);
+  homeMaxPrice = signal<number | null>(null);
+  homeFurnished = signal(false);
+  moreFiltersOpen = signal(false);
+
+  readonly homeTypeOptions = ['Apartment', 'Villa', 'House'];
+  readonly homeBedOptions = [1, 2, 3, 4, 5];
+
+  // ── Static data ────────────────────────────────────────────
   services = [
-    { icon: 'fa-solid fa-house',       titleKey: 'HOME.SERVICES.FIND_HOME.TITLE',    descKey: 'HOME.SERVICES.FIND_HOME.DESC' },
-    { icon: 'fa-solid fa-coins',       titleKey: 'HOME.SERVICES.UNLOCK_VALUE.TITLE', descKey: 'HOME.SERVICES.UNLOCK_VALUE.DESC' },
-    { icon: 'fa-solid fa-building',    titleKey: 'HOME.SERVICES.MANAGEMENT.TITLE',   descKey: 'HOME.SERVICES.MANAGEMENT.DESC' },
-    { icon: 'fa-solid fa-chart-line',  titleKey: 'HOME.SERVICES.INVESTMENTS.TITLE',  descKey: 'HOME.SERVICES.INVESTMENTS.DESC' },
+    { icon: 'fa-solid fa-house',                   titleKey: 'HOME.SERVICES.FIND_HOME.TITLE',    descKey: 'HOME.SERVICES.FIND_HOME.DESC' },
+    { icon: 'fa-solid fa-coins',                   titleKey: 'HOME.SERVICES.UNLOCK_VALUE.TITLE', descKey: 'HOME.SERVICES.UNLOCK_VALUE.DESC' },
+    { icon: 'fa-solid fa-building',                titleKey: 'HOME.SERVICES.MANAGEMENT.TITLE',   descKey: 'HOME.SERVICES.MANAGEMENT.DESC' },
+    { icon: 'fa-solid fa-chart-line',              titleKey: 'HOME.SERVICES.INVESTMENTS.TITLE',  descKey: 'HOME.SERVICES.INVESTMENTS.DESC' },
+    { icon: 'fa-solid fa-magnifying-glass-dollar', titleKey: 'HOME.SERVICES.PRICING.TITLE',      descKey: 'HOME.SERVICES.PRICING.DESC' },
+    { icon: 'fa-solid fa-comments',                titleKey: 'HOME.SERVICES.TIPS.TITLE',         descKey: 'HOME.SERVICES.TIPS.DESC' },
   ];
 
-  /** Featured listings pulled from the public active feed (up to {@link MAX_FEATURED}). */
+  topAreas = [
+    { name: 'Cairo',      count: '2,480', image: 'https://images.unsplash.com/photo-1572252009286-268acec5ca0a?auto=format&fit=crop&w=600&q=80' },
+    { name: 'Alexandria', count: '1,210', image: 'https://images.unsplash.com/photo-1697546889969-27f7b5be8664?auto=format&fit=crop&w=600&q=80' },
+    { name: 'Giza',       count: '890',   image: 'https://images.unsplash.com/photo-1553913861-c0fddf2619ee?auto=format&fit=crop&w=600&q=80' },
+    { name: 'New Cairo',  count: '640',   image: 'https://images.unsplash.com/photo-1568605114967-8130f3a36994?auto=format&fit=crop&w=600&q=80' },
+    { name: 'Maadi',      count: '420',   image: 'https://images.unsplash.com/photo-1580587771525-78b9dba3b914?auto=format&fit=crop&w=600&q=80' },
+    { name: 'Tanta',      count: '380',   image: 'https://images.unsplash.com/photo-1609128437842-bf1f8df85bee?auto=format&fit=crop&w=600&q=80' },
+  ];
+
+  // ── Featured properties carousel ───────────────────────────
   properties = signal<Property[]>([]);
   propertiesLoading = signal(true);
 
-  // ── Featured carousel state ─────────────────────────────────────
-  /** Index of the left-most visible card. */
   slide = signal(0);
-  /** Cards visible at once — responsive (1 mobile / 2 tablet / 3 desktop). */
   cardsPerView = signal(3);
   private autoplayId: ReturnType<typeof setInterval> | null = null;
 
-  /** Highest slide index that still fills the viewport. */
-  maxSlide = computed(() => Math.max(0, this.properties().length - this.cardsPerView()));
-
-  /** How far the track is shifted, as a percentage of one viewport width. */
+  maxSlide  = computed(() => Math.max(0, this.properties().length - this.cardsPerView()));
   trackOffset = computed(() => -(this.slide() * (100 / this.cardsPerView())));
-
-  /** Whether the carousel has more cards than fit on screen. */
   hasCarousel = computed(() => this.properties().length > this.cardsPerView());
-
-  /** One dot per slide position. */
   slideDots = computed(() => Array.from({ length: this.maxSlide() + 1 }, (_, i) => i));
 
   faqs = [
@@ -84,15 +92,8 @@ export class HomeComponent implements OnInit, OnDestroy {
     this.loadFeatured();
   }
 
-  ngOnDestroy(): void {
-    this.stopAutoplay();
-  }
+  ngOnDestroy(): void { this.stopAutoplay(); }
 
-  /**
-   * Load featured listings for the home page. Prefers properties flagged
-   * `isFeatured`; falls back to the most recent active listings so the
-   * section is never empty. Caps the carousel at {@link MAX_FEATURED}.
-   */
   private loadFeatured(): void {
     this.propertiesLoading.set(true);
     this.propertyService.getActive().subscribe({
@@ -103,31 +104,15 @@ export class HomeComponent implements OnInit, OnDestroy {
         this.propertiesLoading.set(false);
         this.startAutoplay();
       },
-      error: () => {
-        this.properties.set([]);
-        this.propertiesLoading.set(false);
-      },
+      error: () => { this.properties.set([]); this.propertiesLoading.set(false); },
     });
   }
 
-  // ── Carousel controls ───────────────────────────────────────────
-
-  /** Advance one slide, wrapping back to the start at the end. */
-  nextSlide(): void {
-    this.slide.set(this.slide() >= this.maxSlide() ? 0 : this.slide() + 1);
-  }
-
-  /** Go back one slide, wrapping to the end at the start. */
-  prevSlide(): void {
-    this.slide.set(this.slide() <= 0 ? this.maxSlide() : this.slide() - 1);
-  }
-
-  goToSlide(i: number): void {
-    this.slide.set(Math.min(Math.max(i, 0), this.maxSlide()));
-  }
-
-  /** Pause autoplay while the user hovers/interacts. */
-  pauseAutoplay(): void { this.stopAutoplay(); }
+  // ── Carousel controls ───────────────────────────────────────
+  nextSlide(): void { this.slide.set(this.slide() >= this.maxSlide() ? 0 : this.slide() + 1); }
+  prevSlide(): void { this.slide.set(this.slide() <= 0 ? this.maxSlide() : this.slide() - 1); }
+  goToSlide(i: number): void { this.slide.set(Math.min(Math.max(i, 0), this.maxSlide())); }
+  pauseAutoplay(): void  { this.stopAutoplay(); }
   resumeAutoplay(): void { this.startAutoplay(); }
 
   private startAutoplay(): void {
@@ -135,15 +120,10 @@ export class HomeComponent implements OnInit, OnDestroy {
     if (!this.hasCarousel()) return;
     this.autoplayId = setInterval(() => this.nextSlide(), 4000);
   }
-
   private stopAutoplay(): void {
-    if (this.autoplayId !== null) {
-      clearInterval(this.autoplayId);
-      this.autoplayId = null;
-    }
+    if (this.autoplayId !== null) { clearInterval(this.autoplayId); this.autoplayId = null; }
   }
 
-  /** Keep cards-per-view in step with the viewport, clamping the slide index. */
   @HostListener('window:resize')
   updateCardsPerView(): void {
     const w = window.innerWidth;
@@ -154,53 +134,67 @@ export class HomeComponent implements OnInit, OnDestroy {
     }
   }
 
-  /** Font Awesome icon for a property type. */
   typeIcon(type: string): string {
     switch (type) {
       case 'Villa': return 'fa-solid fa-house-chimney';
       case 'House': return 'fa-solid fa-house-user';
-      default: return 'fa-solid fa-building';
+      default:      return 'fa-solid fa-building';
     }
   }
 
-  /** Open a featured property's detail page. */
-  openProperty(id: string): void {
-    this.router.navigate(['/properties', id]);
+  openProperty(id: string): void { this.router.navigate(['/properties', id]); }
+  goToProperty(p: PropertyResult): void { this.router.navigate(['/properties', p.propertyId]); }
+
+  // ── Structured filter helpers ───────────────────────────────
+  toggleHomeType(t: string): void {
+    const next = new Set(this.selectedTypes());
+    next.has(t) ? next.delete(t) : next.add(t);
+    this.selectedTypes.set(next);
   }
 
-  // ============================================================
-  // 🔎 SEARCH METHODS (NEW)
-  // ============================================================
+  setHomeMin(e: Event): void {
+    const v = (e.target as HTMLInputElement).value;
+    this.homeMinPrice.set(v ? Number(v) : null);
+  }
 
-  /** Toggle between regular and smart (AI) search mode */
+  setHomeMax(e: Event): void {
+    const v = (e.target as HTMLInputElement).value;
+    this.homeMaxPrice.set(v ? Number(v) : null);
+  }
+
+  /** Navigate to /properties with the selected home-page filters applied as query params. */
+  navigateToBrowse(city?: string): void {
+    const params: Record<string, string> = {};
+    const loc = city ?? this.locationQuery().trim();
+    if (loc)                            params['search']    = loc;
+    if (this.selectedTypes().size)      params['types']     = [...this.selectedTypes()].join(',');
+    if (this.selectedBeds() !== null)   params['beds']      = String(this.selectedBeds());
+    if (this.homeMinPrice() !== null)   params['minPrice']  = String(this.homeMinPrice());
+    if (this.homeMaxPrice() !== null)   params['maxPrice']  = String(this.homeMaxPrice());
+    if (this.homeFurnished())           params['furnished'] = 'true';
+    this.router.navigate(['/properties'], { queryParams: params });
+  }
+
+  // ── AI / smart search ───────────────────────────────────────
   toggleMode(): void {
     this.searchMode.set(this.searchMode() === 'regular' ? 'smart' : 'regular');
     this.clearResults();
   }
 
-  /** Clear current results and start fresh */
   clearResults(): void {
-    this.results.set([]);
-    this.parsedQuery.set(null);
-    this.hasSearched.set(false);
-    this.totalResults.set(0);
-    this.errorMsg.set('');
+    this.results.set([]); this.parsedQuery.set(null);
+    this.hasSearched.set(false); this.totalResults.set(0); this.errorMsg.set('');
   }
 
-  /** Triggered when user submits the search */
   onSubmit(): void {
+    if (this.searchMode() === 'regular') { this.navigateToBrowse(); return; }
+
     const q = this.query().trim();
     if (!q || this.loading()) return;
-
     this.loading.set(true);
     this.errorMsg.set('');
     this.parsedQuery.set(null);
-
-    if (this.searchMode() === 'smart') {
-      this.runSmartSearch(q);
-    } else {
-      this.runRegularSearch(q);
-    }
+    this.runSmartSearch(q);
   }
 
   private runSmartSearch(q: string): void {
@@ -220,70 +214,28 @@ export class HomeComponent implements OnInit, OnDestroy {
     });
   }
 
-  private runRegularSearch(q: string): void {
-    // مؤقتاً نستخدم smart endpoint كـ fallback
-    // غيّرها لما تجهز endpoint للـ regular search في الباك
-    this.searchService.smartSearch({ query: q, page: 1, pageSize: 10 }).subscribe({
-      next: (res) => {
-        this.loading.set(false);
-        this.hasSearched.set(true);
-        this.results.set(res.properties ?? []);
-        this.totalResults.set(res.totalResults ?? 0);
-      },
-      error: (err) => {
-        this.loading.set(false);
-        this.errorMsg.set(err.message || 'Search failed.');
-        this.results.set([]);
-      },
-    });
-  }
-
-  /** Build the AI-detected chips array for the UI */
   getParsedChips(): { label: string; value: string }[] {
     const p = this.parsedQuery();
     if (!p) return [];
     const chips: { label: string; value: string }[] = [];
-
-    if (p.propertyType) chips.push({ label: 'Type', value: p.propertyType });
-    if (p.city) chips.push({ label: 'City', value: p.city });
-    if (p.district) chips.push({ label: 'District', value: p.district });
-    if (p.nearbyLandmark) chips.push({ label: 'Near', value: p.nearbyLandmark });
-    if (p.bedrooms) chips.push({ label: 'Beds', value: `${p.bedrooms}` });
-    if (p.bathrooms) chips.push({ label: 'Baths', value: `${p.bathrooms}` });
-    if (p.floor) chips.push({ label: 'Floor', value: `${p.floor}` });
-    if (p.minArea || p.maxArea) {
-      chips.push({
-        label: 'Area',
-        value: `${p.minArea ?? 0} - ${p.maxArea ?? '∞'} m²`,
-      });
-    }
-    if (p.minPrice || p.maxPrice) {
-      chips.push({
-        label: 'Price',
-        value: `${p.minPrice ? '$' + p.minPrice : '0'} - ${p.maxPrice ? '$' + p.maxPrice : '∞'}`,
-      });
-    }
-    if (p.amenities?.length) {
-      chips.push({ label: 'Amenities', value: p.amenities.join(', ') });
-    }
+    if (p.propertyType)    chips.push({ label: 'Type',   value: p.propertyType });
+    if (p.city)            chips.push({ label: 'City',   value: p.city });
+    if (p.district)        chips.push({ label: 'Area',   value: p.district });
+    if (p.nearbyLandmark)  chips.push({ label: 'Near',   value: p.nearbyLandmark });
+    if (p.bedrooms)        chips.push({ label: 'Beds',   value: `${p.bedrooms}` });
+    if (p.bathrooms)       chips.push({ label: 'Baths',  value: `${p.bathrooms}` });
+    if (p.minArea || p.maxArea)   chips.push({ label: 'Area',  value: `${p.minArea ?? 0}–${p.maxArea ?? '∞'} m²` });
+    if (p.minPrice || p.maxPrice) chips.push({ label: 'Price', value: `${p.minPrice ?? 0}–${p.maxPrice ?? '∞'}` });
+    if (p.amenities?.length)      chips.push({ label: 'Amenities', value: p.amenities.join(', ') });
     return chips;
   }
 
-  /** Navigate to property details */
-  goToProperty(p: PropertyResult): void {
-    this.router.navigate(['/properties', p.propertyId]);
-  }
-
-  /** Pretty-print prices ($550K / $1.2M) */
   formatPrice(price: number): string {
     if (!price) return '—';
     if (price >= 1_000_000) return `$${(price / 1_000_000).toFixed(1)}M`;
-    if (price >= 1_000) return `$${(price / 1_000).toFixed(0)}K`;
+    if (price >= 1_000)     return `$${(price / 1_000).toFixed(0)}K`;
     return `$${price}`;
   }
 
-  /** Convert matchScore (0–1) to a 0–100% display */
-  matchPercent(score: number): number {
-    return Math.round((score ?? 0) * 100);
-  }
+  matchPercent(score: number): number { return Math.round((score ?? 0) * 100); }
 }

@@ -106,7 +106,15 @@
                 <div class="card-title">{{ lease.propertyTitle }}</div>
                 <div class="card-meta">
                   <span><i class="fa-solid fa-user"></i> {{ lease.tenantName }}</span>
-                  <span><i class="fa-solid fa-user-tie"></i> {{ lease.brokerName }}</span>
+                  @if (lease.brokerName) {
+                    <span><i class="fa-solid fa-user-tie"></i> {{ lease.brokerName }}</span>
+                  }
+                  @if (lease.installmentAmount) {
+                    <span><i class="fa-solid fa-money-bill"></i> EGP {{ lease.installmentAmount | number:'1.0-0' }}/mo</span>
+                  }
+                  @if (lease.startDate && lease.endDate) {
+                    <span><i class="fa-regular fa-calendar"></i> {{ lease.startDate | date:'d MMM yyyy' }} → {{ lease.endDate | date:'d MMM yyyy' }}</span>
+                  }
                   <span><i class="fa-regular fa-clock"></i> Approved {{ lease.approvedAt | date:'d MMM yyyy' }}</span>
                 </div>
                 <div class="options-row">
@@ -123,6 +131,74 @@
               <span class="awaiting-badge">
                 <i class="fa-solid fa-hourglass-half fa-spin-pulse"></i>
                 Waiting for tenant
+              </span>
+            </div>
+          </div>
+        }
+      </div>
+    }
+
+    <!-- ── Section 3: Active leases ──────────────────────────────────── -->
+    <div class="section-header section-header--mt">
+      <div class="section-label">
+        <i class="fa-solid fa-circle-check label-icon label-icon--active"></i>
+        Active Leases
+      </div>
+      @if (activeLeases().length > 0) {
+        <span class="section-count section-count--active">{{ activeLeases().length }}</span>
+      }
+    </div>
+
+    @if (activeLeases().length === 0) {
+      <div class="empty-state empty-state--sm">
+        <i class="fa-solid fa-file-contract" style="color: #94a3b8"></i>
+        <p>No active leases yet.</p>
+      </div>
+    } @else {
+      <div class="approval-list">
+        @for (lease of activeLeases(); track lease.id) {
+          <div class="approval-card approval-card--active">
+            <div class="card-body">
+              <div class="card-icon card-icon--active">
+                <i class="fa-solid fa-file-contract"></i>
+              </div>
+              <div class="card-info">
+                <div class="card-title">{{ lease.propertyTitle }}</div>
+                <div class="card-meta">
+                  <span><i class="fa-solid fa-user"></i> {{ lease.tenantName }}</span>
+                  @if (lease.brokerName) {
+                    <span><i class="fa-solid fa-user-tie"></i> {{ lease.brokerName }}</span>
+                  }
+                  @if (lease.installmentAmount) {
+                    <span><i class="fa-solid fa-money-bill"></i> EGP {{ lease.installmentAmount | number:'1.0-0' }}/mo</span>
+                  }
+                  @if (lease.startDate && lease.endDate) {
+                    <span><i class="fa-regular fa-calendar"></i> {{ lease.startDate | date:'d MMM yyyy' }} → {{ lease.endDate | date:'d MMM yyyy' }}</span>
+                  }
+                  @if (lease.activeSince) {
+                    <span><i class="fa-solid fa-circle-check" style="color:#16a34a"></i> Active since {{ lease.activeSince | date:'d MMM yyyy' }}</span>
+                  }
+                </div>
+                <div class="options-row">
+                  @if (lease.isFullManagement) {
+                    <span class="option-badge option-badge--full">
+                      <i class="fa-solid fa-star"></i> Full Management
+                    </span>
+                  } @else {
+                    @for (opt of lease.managementOptions; track opt) {
+                      <span class="option-badge">
+                        <i class="fa-solid fa-circle-check"></i>
+                        {{ opt }}
+                      </span>
+                    }
+                  }
+                </div>
+              </div>
+            </div>
+            <div class="card-actions">
+              <span class="active-badge">
+                <i class="fa-solid fa-circle" style="color:#16a34a; font-size:8px"></i>
+                Active
               </span>
             </div>
           </div>
@@ -156,17 +232,73 @@
         </div>
         <div class="dialog-detail">
           <span class="detail-label">Broker</span>
-          <span class="detail-value">{{ lease.brokerName }}</span>
+          <span class="detail-value">{{ lease.brokerName ?? '—' }}</span>
         </div>
         <div class="dialog-detail">
           <span class="detail-label">Uploaded</span>
           <span class="detail-value">{{ lease.uploadedAt | date:'d MMM yyyy, h:mm a' }}</span>
         </div>
+        @if (lease.contractFileUrl) {
+          <div class="dialog-detail">
+            <span class="detail-label">Contract PDF</span>
+            <button class="btn btn-download-pdf"
+                    (click)="downloadContract(lease.id)"
+                    [disabled]="downloadingId() === lease.id">
+              @if (downloadingId() === lease.id) {
+                <i class="fa-solid fa-spinner fa-spin"></i> Downloading…
+              } @else {
+                <i class="fa-solid fa-file-pdf"></i> Download &amp; Review PDF
+              }
+            </button>
+          </div>
+        }
+        <div class="dialog-detail">
+          <span class="detail-label">Monthly Rent</span>
+          <span class="detail-value">{{ lease.installmentAmount ? ('EGP ' + (lease.installmentAmount | number:'1.0-0')) : '—' }}</span>
+        </div>
+        @if (lease.totalRentAmount) {
+          <div class="dialog-detail">
+            <span class="detail-label">Total Rent</span>
+            <span class="detail-value">EGP {{ lease.totalRentAmount | number:'1.0-0' }}</span>
+          </div>
+        }
+        <div class="dialog-detail">
+          <span class="detail-label">Start Date</span>
+          <span class="detail-value">{{ lease.startDate ? (lease.startDate | date:'d MMM yyyy') : '—' }}</span>
+        </div>
+        <div class="dialog-detail">
+          <span class="detail-label">End Date</span>
+          <span class="detail-value">{{ lease.endDate ? (lease.endDate | date:'d MMM yyyy') : '—' }}</span>
+        </div>
+        @if (lease.durationInMonths) {
+          <div class="dialog-detail">
+            <span class="detail-label">Duration</span>
+            <span class="detail-value">{{ lease.durationInMonths }} months</span>
+          </div>
+        }
+        @if (lease.securityDeposit) {
+          <div class="dialog-detail">
+            <span class="detail-label">Security Deposit</span>
+            <span class="detail-value">EGP {{ lease.securityDeposit | number:'1.0-0' }}</span>
+          </div>
+        }
+        @if (lease.paymentFrequency) {
+          <div class="dialog-detail">
+            <span class="detail-label">Payment Frequency</span>
+            <span class="detail-value">{{ lease.paymentFrequency }}</span>
+          </div>
+        }
         <div class="dialog-detail">
           <span class="detail-label">Management</span>
           <div class="detail-badges">
-            @for (opt of lease.managementOptions; track opt) {
-              <span class="option-badge">{{ opt }}</span>
+            @if (lease.isFullManagement) {
+              <span class="option-badge option-badge--full">Full Management</span>
+            } @else if (lease.managementOptions.length > 0) {
+              @for (opt of lease.managementOptions; track opt) {
+                <span class="option-badge">{{ opt }}</span>
+              }
+            } @else {
+              <span class="detail-value">—</span>
             }
           </div>
         </div>

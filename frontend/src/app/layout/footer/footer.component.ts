@@ -11,34 +11,39 @@ import { TranslatePipe } from '@ngx-translate/core';
 export class FooterComponent {
   currentYear = new Date().getFullYear();
 
-  homeLinks = [
-    { labelKey: 'FOOTER.HOME_LINKS.HERO',         path: '/' },
-    { labelKey: 'FOOTER.HOME_LINKS.FEATURES',     path: '/' },
-    { labelKey: 'FOOTER.HOME_LINKS.PROPERTIES',   path: '/properties' },
-    { labelKey: 'FOOTER.HOME_LINKS.TESTIMONIALS', path: '/' },
-    { labelKey: 'FOOTER.HOME_LINKS.FAQS',         path: '/' },
+  navLinks = [
+    { label: 'Home',        path: '/',           params: null },
+    { label: 'Properties',  path: '/properties', params: null },
+    { label: 'Services',    path: '/services',   params: null },
+    { label: 'Contact',     path: '/contact',    params: null },
   ];
 
-  aboutLinks = [
-    { labelKey: 'FOOTER.ABOUT_LINKS.OUR_STORY',    path: '/about' },
-    { labelKey: 'FOOTER.ABOUT_LINKS.OUR_WORKS',    path: '/about' },
-    { labelKey: 'FOOTER.ABOUT_LINKS.HOW_IT_WORKS', path: '/about' },
-    { labelKey: 'FOOTER.ABOUT_LINKS.OUR_TEAM',     path: '/about' },
-    { labelKey: 'FOOTER.ABOUT_LINKS.OUR_CLIENTS',  path: '/about' },
+  propertyLinks = [
+    { label: 'Browse All',   path: '/properties', params: null },
+    { label: 'Featured',     path: '/properties', params: { featured: 'true' } },
+    { label: 'Apartments',   path: '/properties', params: { types: 'Apartment' } },
+    { label: 'Villas',       path: '/properties', params: { types: 'Villa' } },
+    { label: 'Houses',       path: '/properties', params: { types: 'House' } },
   ];
 
-  serviceLinks = [
-    { labelKey: 'FOOTER.SERVICE_LINKS.VALUATION',   path: '/services' },
-    { labelKey: 'FOOTER.SERVICE_LINKS.MARKETING',   path: '/services' },
-    { labelKey: 'FOOTER.SERVICE_LINKS.NEGOTIATION', path: '/services' },
-    { labelKey: 'FOOTER.SERVICE_LINKS.CLOSING',     path: '/services' },
-    { labelKey: 'FOOTER.SERVICE_LINKS.MANAGEMENT',  path: '/services' },
+  contactInfo = [
+    { icon: 'fa-solid fa-envelope',     text: 'info@estatein.com',    href: 'mailto:info@estatein.com' },
+    { icon: 'fa-solid fa-phone',        text: '+20 100 000 0000',     href: 'tel:+201000000000' },
+    { icon: 'fa-solid fa-location-dot', text: 'Cairo, Egypt',         href: null },
+    { icon: 'fa-regular fa-clock',      text: 'Mon – Sat  9 AM – 6 PM', href: null },
+  ];
+
+  socials = [
+    { icon: 'fa-brands fa-facebook-f',  label: 'Facebook',   href: '#' },
+    { icon: 'fa-brands fa-x-twitter',   label: 'Twitter/X',  href: '#' },
+    { icon: 'fa-brands fa-instagram',   label: 'Instagram',  href: '#' },
+    { icon: 'fa-brands fa-linkedin-in', label: 'LinkedIn',   href: '#' },
+    { icon: 'fa-brands fa-whatsapp',    label: 'WhatsApp',   href: '#' },
   ];
 
   legalLinks = [
-    { labelKey: 'FOOTER.LEGAL.PRIVACY',   path: '/privacy' },
-    { labelKey: 'FOOTER.LEGAL.TERMS',     path: '/terms' },
-    { labelKey: 'FOOTER.LEGAL.COOKIES',   path: '/cookies' },
-    { labelKey: 'FOOTER.LEGAL.LOCATIONS', path: '/locations' },
+    { label: 'Privacy Policy',   path: '/privacy' },
+    { label: 'Terms of Service', path: '/terms' },
+    { label: 'Cookie Policy',    path: '/cookies' },
   ];
 }

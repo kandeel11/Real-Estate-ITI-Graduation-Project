@@ -17,4 +17,10 @@ public class Lead
     public DateTime UpdatedAt { get; set; }
 
     public Inquiry Inquiry { get; set; } = null!;
+
+    // ── No-management deal flow ──────────────────────────────────────────────
+    /// <summary>Set when a company broker chooses "no management"; cleared after manager confirms.</summary>
+    public DateTime? NoManagementPendingAt { get; set; }
+    /// <summary>Company manager who must confirm the no-management decision.</summary>
+    public Guid? NoManagementManagerId { get; set; }
 }

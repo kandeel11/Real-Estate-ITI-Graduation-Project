@@ -103,12 +103,13 @@ export interface LeaseOffer {
 
 export interface RentedPropertyItem {
   property: ApiPropertyDto;
-  leaseId: string;
-  monthlyRent: number;
-  startDate: string;
-  endDate: string;
+  leaseId: string | null;
+  monthlyRent: number | null;
+  startDate: string | null;
+  endDate: string | null;
   isActive: boolean;
-  daysUntilExpiry: number;
+  daysUntilExpiry: number | null;
+  noManagement?: boolean;
 }
 
 @Injectable({ providedIn: 'root' })

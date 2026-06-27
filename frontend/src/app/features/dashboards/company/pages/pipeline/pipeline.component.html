@@ -194,4 +194,38 @@
     </div>
   }
 
+  <!-- ── No-Management Pending Confirmations ──────────────────────────── -->
+  @if (noMgmtPending().length > 0) {
+    <div class="no-mgmt-section">
+      <div class="no-mgmt-header">
+        <i class="fa-solid fa-handshake-slash"></i>
+        <h3>No-Management Deals Awaiting Confirmation</h3>
+        <span class="no-mgmt-count">{{ noMgmtPending().length }}</span>
+      </div>
+      <div class="no-mgmt-list">
+        @for (item of noMgmtPending(); track item.leadId) {
+          <div class="no-mgmt-item">
+            <div class="no-mgmt-info">
+              <span class="no-mgmt-tenant"><i class="fa-solid fa-user"></i> {{ item.tenantName }}</span>
+              @if (item.dealValue) {
+                <span class="no-mgmt-value">EGP {{ item.dealValue | number }}</span>
+              }
+              <span class="no-mgmt-age">{{ leadAge(item.pendingAt) }} ago</span>
+            </div>
+            <button class="btn-confirm-no-mgmt"
+                    [disabled]="confirmingLeadId() === item.leadId"
+                    (click)="confirmNoManagement(item)">
+              @if (confirmingLeadId() === item.leadId) {
+                <i class="fa-solid fa-spinner fa-spin"></i>
+              } @else {
+                <i class="fa-solid fa-circle-check"></i>
+              }
+              Confirm No Management
+            </button>
+          </div>
+        }
+      </div>
+    </div>
+  }
+
 </div>

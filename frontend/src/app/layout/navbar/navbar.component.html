@@ -58,14 +58,75 @@
                 <button class="site-navbar__icon-btn" aria-label="Search" (click)="openSearch()">
                     <i class="fa-solid fa-magnifying-glass"></i>
                 </button>
+
+                <!-- ── Bell + Notification Panel ── -->
                 @if (authenticated()) {
-                <button class="site-navbar__icon-btn site-navbar__bell" aria-label="Notifications"
-                    routerLink="/dashboard/notifications">
-                    <i class="fa-regular fa-bell"></i>
-                    @if (notifService.unreadCount() > 0) {
-                    <span class="bell-badge">{{ notifService.unreadCount() }}</span>
+                <div class="notif-wrap">
+                    <button class="site-navbar__icon-btn site-navbar__bell"
+                        aria-label="Notifications"
+                        [class.site-navbar__bell--open]="notifOpen()"
+                        (click)="toggleNotif($event)">
+                        <i class="fa-regular fa-bell"></i>
+                        @if (notifService.unreadCount() > 0) {
+                        <span class="bell-badge">{{ notifService.unreadCount() }}</span>
+                        }
+                    </button>
+
+                    @if (notifOpen()) {
+                    <div class="notif-panel" (click)="$event.stopPropagation()">
+
+                        <!-- Panel header -->
+                        <div class="notif-panel__head">
+                            <span class="notif-panel__title">Notifications</span>
+                            @if (notifService.unreadCount() > 0) {
+                            <button class="notif-panel__mark-all" (click)="onMarkAllRead($event)">
+                                <i class="fa-solid fa-check-double"></i> Mark all read
+                            </button>
+                            }
+                        </div>
+
+                        <!-- List -->
+                        <div class="notif-panel__list">
+                            @if (notifLoading()) {
+                            <div class="notif-panel__state">
+                                <i class="fa-solid fa-spinner fa-spin"></i>
+                                <span>Loading…</span>
+                            </div>
+                            } @else if (notifications().length === 0) {
+                            <div class="notif-panel__state">
+                                <i class="fa-regular fa-bell-slash"></i>
+                                <span>No notifications yet</span>
+                            </div>
+                            } @else {
+                                @for (n of notifications(); track n.id) {
+                                <div class="notif-item" [class.notif-item--unread]="!n.isRead"
+                                    (click)="onNotifClick(n, $event)">
+                                    <div class="notif-item__icon-wrap">
+                                        <i [class]="notifIcon(n.type)"></i>
+                                    </div>
+                                    <div class="notif-item__body">
+                                        <p class="notif-item__title">{{ n.title }}</p>
+                                        <p class="notif-item__text">{{ n.body }}</p>
+                                        <span class="notif-item__time">{{ timeAgo(n.createdAt) }}</span>
+                                    </div>
+                                    @if (!n.isRead) {
+                                    <span class="notif-item__dot"></span>
+                                    }
+                                </div>
+                                }
+                            }
+                        </div>
+
+                        <!-- Footer link -->
+                        <a class="notif-panel__footer" routerLink="/dashboard/notifications"
+                            (click)="notifOpen.set(false)">
+                            View all notifications
+                            <i class="fa-solid fa-arrow-right fa-xs"></i>
+                        </a>
+
+                    </div>
                     }
-                </button>
+                </div>
                 } @else {
                 <button class="site-navbar__icon-btn" aria-label="Notifications">
                     <i class="fa-regular fa-bell"></i>

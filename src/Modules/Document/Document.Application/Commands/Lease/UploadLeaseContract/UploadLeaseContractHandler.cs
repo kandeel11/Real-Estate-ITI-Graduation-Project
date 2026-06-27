@@ -30,8 +30,8 @@ public class UploadLeaseContractHandler : IRequestHandler<UploadLeaseContractCom
             Id = Guid.NewGuid(),
             PropertyId = lead.PropertyId,
             TenantId = lead.TenantId,
-            // Derive the real owner from the lead — the controller no longer fabricates one.
             OwnerId = lead.OwnerId,
+            BrokerId = cmd.BrokerId,
             LeadId = cmd.LeadId,
             ContractFileUrl = blobName,
             ExtractionStatus = LeaseExtractionStatus.Pending,

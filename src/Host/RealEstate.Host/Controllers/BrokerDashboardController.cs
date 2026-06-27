@@ -152,13 +152,21 @@ public class BrokerDashboardController(
     [HttpGet("leads")]
     public async Task<IActionResult> GetLeads(CancellationToken ct)
     {
-        var properties = await sender.Send(new GetPropertiesByBrokerQuery(UserId), ct);
-        var leads = await sender.Send(new GetLeadsByPropertiesQuery(properties.Select(p => p.Id).ToList()), ct);
+        // Use InquiryAssignment-based lookup so independent brokers (no listed properties)
+        // still see their leads.
+        var leads = await sender.Send(new GetLeadsByBrokerQuery(UserId), ct);
         if (leads.Count == 0) return Ok(Array.Empty<object>());
 
         var tenantIds = leads.Select(l => l.TenantId).Distinct().ToList();
         var tenantNames = await userRepo.GetFullNamesByIdsAsync(tenantIds, ct);
-        var propertyTitles = properties.ToDictionary(p => p.Id, p => p.Title);
+
+        // Resolve property titles for the distinct property IDs in these leads.
+        var propertyTitles = new Dictionary<Guid, string>();
+        foreach (var pid in leads.Select(l => l.PropertyId).Distinct())
+        {
+            var prop = await sender.Send(new GetPropertyByIdQuery(pid), ct);
+            if (prop is not null) propertyTitles[pid] = prop.Title;
+        }
 
         // Resolve tenant contact details so the broker never has to re-type them
         // (e.g. the lease-upload modal prefills the email from the tenant's account).
@@ -190,7 +198,8 @@ public class BrokerDashboardController(
                 dealValue = l.DealValue?.ToString(),
                 notes = l.Notes,
                 hasLease = st?.HasSentLease ?? false,
-                draftLeaseId = st?.DraftLeaseId
+                draftLeaseId = st?.DraftLeaseId,
+                noManagementPending = l.NoManagementPendingAt.HasValue
             };
         });
 

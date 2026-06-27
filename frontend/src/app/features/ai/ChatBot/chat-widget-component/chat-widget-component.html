@@ -1,131 +1,165 @@
-<!-- Floating launcher button -->
-<button class="chat-fab" (click)="toggle()" [class.hidden]="isOpen()" aria-label="Open chat">
-    <div class="fab-pulse"></div>
-    <svg viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
-        <path
-            d="M21 11.5a8.38 8.38 0 0 1-.9 3.8 8.5 8.5 0 0 1-7.6 4.7 8.38 8.38 0 0 1-3.8-.9L3 21l1.9-5.7a8.38 8.38 0 0 1-.9-3.8 8.5 8.5 0 0 1 4.7-7.6 8.38 8.38 0 0 1 3.8-.9h.5a8.48 8.48 0 0 1 8 8v.5z"
-            stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" />
+<!-- ══ FLOATING LAUNCHER ══ -->
+<button class="chat-fab" (click)="toggle()" [class.chat-fab--hidden]="isOpen()" aria-label="Open AI chat">
+  <span class="chat-fab__ring"></span>
+  <span class="chat-fab__ring chat-fab__ring--2"></span>
+  <span class="chat-fab__inner">
+    <svg class="chat-fab__icon" viewBox="0 0 32 32" fill="none" xmlns="http://www.w3.org/2000/svg">
+      <!-- Sparkle star -->
+      <path d="M16 4 L17.5 12 L25 13.5 L17.5 15 L16 23 L14.5 15 L7 13.5 L14.5 12 Z" fill="white" opacity="0.9"/>
+      <path d="M24 6 L24.8 9.2 L28 10 L24.8 10.8 L24 14 L23.2 10.8 L20 10 L23.2 9.2 Z" fill="white" opacity="0.7"/>
+      <path d="M8 20 L8.5 22 L10.5 22.5 L8.5 23 L8 25 L7.5 23 L5.5 22.5 L7.5 22 Z" fill="white" opacity="0.6"/>
     </svg>
-    <span class="fab-badge">AI</span>
+    <span class="chat-fab__label">AI</span>
+  </span>
 </button>
 
-<!-- Chat panel -->
-<div class="chat-panel" [class.open]="isOpen()">
-    <!-- Header -->
-    <header class="chat-header">
-        <div class="header-bg"></div>
-        <div class="header-content">
-            <div class="assistant-info">
-                <div class="avatar">
-                    <svg viewBox="0 0 24 24" fill="none">
-                        <path d="M12 2L2 7l10 5 10-5-10-5zM2 17l10 5 10-5M2 12l10 5 10-5" stroke="currentColor"
-                            stroke-width="2" stroke-linecap="round" stroke-linejoin="round" />
-                    </svg>
-                    <span class="status-dot"></span>
-                </div>
-                <div class="meta">
-                    <h3>Estatein AI</h3>
-                    <span class="status">
-                        <span class="online-dot"></span>
-                        {{ 'CHATBOT.ONLINE' | translate }}
-                    </span>
-                </div>
-            </div>
-            <div class="actions">
-                <button class="icon-btn" (click)="newSession()" title="New chat">
-                    <svg viewBox="0 0 24 24" fill="none">
-                        <path d="M12 5v14M5 12h14" stroke="currentColor" stroke-width="2" stroke-linecap="round" />
-                    </svg>
-                </button>
-                <button class="icon-btn" (click)="close()" title="Close">
-                    <svg viewBox="0 0 24 24" fill="none">
-                        <path d="M18 6L6 18M6 6l12 12" stroke="currentColor" stroke-width="2" stroke-linecap="round" />
-                    </svg>
-                </button>
-            </div>
-        </div>
-    </header>
+<!-- ══ CHAT PANEL ══ -->
+<div class="chat-panel" [class.chat-panel--open]="isOpen()">
 
-    <!-- Messages -->
-    <div class="messages" #scrollBox>
-        @if (loadingHistory()) {
-        <div class="loading-state">
-            <div class="loader"></div>
-            <span>{{ 'CHATBOT.LOADING_HISTORY' | translate }}</span>
-        </div>
-        } @else if (messages().length === 0) {
-        <div class="welcome">
-            <div class="welcome-icon">
-                <svg viewBox="0 0 24 24" fill="none">
-                    <path d="M12 2L2 7l10 5 10-5-10-5z" stroke="currentColor" stroke-width="2"
-                        stroke-linejoin="round" />
-                    <path d="M2 17l10 5 10-5M2 12l10 5 10-5" stroke="currentColor" stroke-width="2"
-                        stroke-linejoin="round" />
-                </svg>
-            </div>
-            <h4>{{ 'CHATBOT.GREETING' | translate }}</h4>
-            <p>{{ 'CHATBOT.INTRO' | translate }}</p>
-            <div class="suggestions">
-                <button (click)="draft.set('Show me luxury homes'); send()">🏡 {{ 'CHATBOT.SUGGESTION_LUXURY' | translate }}</button>
-                <button (click)="draft.set('Properties under $500k'); send()">💰 {{ 'CHATBOT.SUGGESTION_BUDGET' | translate }}</button>
-                <button (click)="draft.set('New listings this week'); send()">✨ {{ 'CHATBOT.SUGGESTION_NEW' | translate }}</button>
-            </div>
-        </div>
-        }
+  <!-- Header -->
+  <header class="chat-header">
+    <div class="chat-header__glow"></div>
+    <div class="chat-header__orb chat-header__orb--1"></div>
+    <div class="chat-header__orb chat-header__orb--2"></div>
 
-        @for (m of messages(); track $index) {
-        <div class="bubble-row" [class.user]="m.role === 'user'" [class.assistant]="m.role === 'assistant'">
-            @if (m.role === 'assistant') {
-            <div class="mini-avatar">
-                <svg viewBox="0 0 24 24" fill="none">
-                    <path d="M12 2L2 7l10 5 10-5-10-5z" stroke="currentColor" stroke-width="2" />
-                </svg>
-            </div>
-            }
-            <div class="bubble">
-                <div class="text">{{ m.message }}</div>
-            </div>
-        </div>
-        }
-
-        @if (sending()) {
-        <div class="bubble-row assistant">
-            <div class="mini-avatar">
-                <svg viewBox="0 0 24 24" fill="none">
-                    <path d="M12 2L2 7l10 5 10-5-10-5z" stroke="currentColor" stroke-width="2" />
-                </svg>
-            </div>
-            <div class="bubble typing">
-                <span></span><span></span><span></span>
-            </div>
-        </div>
-        }
-    </div>
-
-    @if (errorMsg()) {
-    <div class="error-banner">
-        <svg viewBox="0 0 24 24" fill="none">
-            <circle cx="12" cy="12" r="10" stroke="currentColor" stroke-width="2" />
-            <path d="M12 8v4M12 16h.01" stroke="currentColor" stroke-width="2" stroke-linecap="round" />
+    <div class="chat-header__left">
+      <div class="chat-header__avatar">
+        <svg viewBox="0 0 32 32" fill="none">
+          <path d="M16 4 L17.5 12 L25 13.5 L17.5 15 L16 23 L14.5 15 L7 13.5 L14.5 12 Z" fill="white" opacity="0.95"/>
+          <path d="M24 6 L24.8 9.2 L28 10 L24.8 10.8 L24 14 L23.2 10.8 L20 10 L23.2 9.2 Z" fill="white" opacity="0.7"/>
         </svg>
-        <span>{{ errorMsg() }}</span>
+        <span class="chat-header__online-dot"></span>
+      </div>
+      <div class="chat-header__info">
+        <h3 class="chat-header__name">Estatein AI</h3>
+        <span class="chat-header__status">
+          <span class="chat-header__status-dot"></span>
+          {{ 'CHATBOT.ONLINE' | translate }}
+        </span>
+      </div>
     </div>
+
+    <div class="chat-header__actions">
+      <button class="chat-header__btn" (click)="newSession()" title="New conversation">
+        <svg viewBox="0 0 20 20" fill="none">
+          <path d="M10 4v12M4 10h12" stroke="currentColor" stroke-width="2" stroke-linecap="round"/>
+        </svg>
+      </button>
+      <button class="chat-header__btn chat-header__btn--close" (click)="close()" title="Close">
+        <svg viewBox="0 0 20 20" fill="none">
+          <path d="M15 5L5 15M5 5l10 10" stroke="currentColor" stroke-width="2" stroke-linecap="round"/>
+        </svg>
+      </button>
+    </div>
+  </header>
+
+  <!-- Messages -->
+  <div class="chat-messages" #scrollBox>
+
+    @if (loadingHistory()) {
+      <div class="chat-state">
+        <div class="chat-state__spinner"></div>
+        <span>{{ 'CHATBOT.LOADING_HISTORY' | translate }}</span>
+      </div>
     }
 
-    <!-- Composer -->
-    <form class="composer" (submit)="$event.preventDefault(); send()">
-        <div class="input-wrapper">
-            <textarea [value]="draft()" (input)="draft.set($any($event.target).value)" rows="1"
-                [placeholder]="'CHATBOT.PLACEHOLDER' | translate" (keydown)="onEnter($event)" [disabled]="sending()"></textarea>
-            <button type="submit" class="send-btn" [disabled]="sending() || !draft().trim()" aria-label="Send">
-                <svg viewBox="0 0 24 24" fill="none">
-                    <path d="M22 2L11 13M22 2l-7 20-4-9-9-4 20-7z" stroke="currentColor" stroke-width="2"
-                        stroke-linecap="round" stroke-linejoin="round" />
-                </svg>
-            </button>
+    @if (!loadingHistory() && messages().length === 0) {
+      <div class="chat-welcome">
+        <div class="chat-welcome__badge">
+          <svg viewBox="0 0 32 32" fill="none" width="28" height="28">
+            <path d="M16 4 L17.5 12 L25 13.5 L17.5 15 L16 23 L14.5 15 L7 13.5 L14.5 12 Z" fill="white"/>
+            <path d="M24 6 L24.8 9.2 L28 10 L24.8 10.8 L24 14 L23.2 10.8 L20 10 L23.2 9.2 Z" fill="white" opacity="0.7"/>
+          </svg>
         </div>
-        <div class="composer-hint">
-            {{ 'CHATBOT.POWERED_BY' | translate }} <strong>Estatein AI</strong> · {{ 'CHATBOT.PRESS_ENTER' | translate }} <kbd>Enter</kbd> {{ 'CHATBOT.TO_SEND' | translate }}
+        <h4 class="chat-welcome__title">{{ 'CHATBOT.GREETING' | translate }}</h4>
+        <p class="chat-welcome__sub">{{ 'CHATBOT.INTRO' | translate }}</p>
+
+        <div class="chat-suggestions">
+          <button class="chat-suggestion" (click)="draft.set('Show me luxury homes'); send()">
+            <span class="chat-suggestion__emoji">🏡</span>
+            <span>{{ 'CHATBOT.SUGGESTION_LUXURY' | translate }}</span>
+          </button>
+          <button class="chat-suggestion" (click)="draft.set('Properties under 20000 EGP'); send()">
+            <span class="chat-suggestion__emoji">💰</span>
+            <span>{{ 'CHATBOT.SUGGESTION_BUDGET' | translate }}</span>
+          </button>
+          <button class="chat-suggestion" (click)="draft.set('New listings this week'); send()">
+            <span class="chat-suggestion__emoji">✨</span>
+            <span>{{ 'CHATBOT.SUGGESTION_NEW' | translate }}</span>
+          </button>
+          <button class="chat-suggestion" (click)="draft.set('3 bedroom apartments in Cairo'); send()">
+            <span class="chat-suggestion__emoji">🗺️</span>
+            <span>Apartments in Cairo</span>
+          </button>
         </div>
-    </form>
-</div>
+      </div>
+    }
+
+    @for (m of messages(); track $index) {
+      <div class="chat-msg" [class.chat-msg--user]="m.role === 'user'" [class.chat-msg--ai]="m.role !== 'user'">
+        @if (m.role !== 'user') {
+          <div class="chat-msg__avatar">
+            <svg viewBox="0 0 20 20" fill="none" width="12" height="12">
+              <path d="M10 2 L11 7 L16 8 L11 9 L10 14 L9 9 L4 8 L9 7 Z" fill="white"/>
+            </svg>
+          </div>
+        }
+        <div class="chat-msg__bubble">
+          <span class="chat-msg__text">{{ m.message }}</span>
+        </div>
+      </div>
+    }
+
+    @if (sending()) {
+      <div class="chat-msg chat-msg--ai">
+        <div class="chat-msg__avatar">
+          <svg viewBox="0 0 20 20" fill="none" width="12" height="12">
+            <path d="M10 2 L11 7 L16 8 L11 9 L10 14 L9 9 L4 8 L9 7 Z" fill="white"/>
+          </svg>
+        </div>
+        <div class="chat-msg__bubble chat-msg__bubble--typing">
+          <span></span><span></span><span></span>
+        </div>
+      </div>
+    }
+
+  </div><!-- /messages -->
+
+  @if (errorMsg()) {
+    <div class="chat-error">
+      <i class="fa-solid fa-circle-exclamation"></i>
+      <span>{{ errorMsg() }}</span>
+    </div>
+  }
+
+  <!-- Composer -->
+  <div class="chat-composer">
+    <div class="chat-composer__field" [class.chat-composer__field--active]="draft().length > 0">
+      <textarea
+        [value]="draft()"
+        (input)="draft.set($any($event.target).value)"
+        rows="1"
+        [placeholder]="'CHATBOT.PLACEHOLDER' | translate"
+        (keydown)="onEnter($event)"
+        [disabled]="sending()">
+      </textarea>
+      <button class="chat-composer__send" (click)="send()"
+              [disabled]="sending() || !draft().trim()" aria-label="Send">
+        @if (sending()) {
+          <span class="chat-composer__sending-dot"></span>
+        } @else {
+          <svg viewBox="0 0 20 20" fill="none" width="16" height="16">
+            <path d="M18 2L9.5 10.5M18 2L12 18l-2.5-7.5L2 8l16-6z"
+                  stroke="white" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+          </svg>
+        }
+      </button>
+    </div>
+    <p class="chat-composer__hint">
+      {{ 'CHATBOT.POWERED_BY' | translate }}
+      <strong>Estatein AI</strong> &middot;
+      {{ 'CHATBOT.PRESS_ENTER' | translate }} <kbd>Enter</kbd> {{ 'CHATBOT.TO_SEND' | translate }}
+    </p>
+  </div>
+
+</div><!-- /chat-panel -->

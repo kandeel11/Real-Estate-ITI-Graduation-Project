@@ -6,7 +6,8 @@ namespace Document.Application.Commands.Lease.UploadLeaseContract;
 public record UploadLeaseContractCommand(
     Guid LeadId,
     Guid OwnerId,
-    IFormFile File) : IRequest<UploadLeaseResponse>;
+    IFormFile File,
+    Guid? BrokerId = null) : IRequest<UploadLeaseResponse>;
 
 public record UploadLeaseResponse(
     Guid LeaseId,

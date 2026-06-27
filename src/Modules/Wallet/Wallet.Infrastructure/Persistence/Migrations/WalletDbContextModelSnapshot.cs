@@ -68,6 +68,9 @@ namespace Wallet.Infrastructure.Persistence.Migrations
                     b.Property<decimal>("Balance")
                         .HasColumnType("decimal(18,4)");
 
+                    b.Property<Guid?>("CompanyId")
+                        .HasColumnType("uniqueidentifier");
+
                     b.Property<DateTime>("CreatedAt")
                         .HasColumnType("datetime2");
 
@@ -86,6 +89,10 @@ namespace Wallet.Infrastructure.Persistence.Migrations
 
                     b.HasIndex("OwnerId")
                         .IsUnique();
+
+                    b.HasIndex("CompanyId")
+                        .IsUnique()
+                        .HasFilter("[CompanyId] IS NOT NULL");
 
                     b.ToTable("wallet_balances", "wallet");
                 });
@@ -107,6 +114,9 @@ namespace Wallet.Infrastructure.Persistence.Migrations
                         .ValueGeneratedOnAdd()
                         .HasColumnType("decimal(18,4)")
                         .HasDefaultValue(0m);
+
+                    b.Property<Guid?>("CompanyId")
+                        .HasColumnType("uniqueidentifier");
 
                     b.Property<decimal>("NetAmount")
                         .ValueGeneratedOnAdd()
@@ -139,6 +149,9 @@ namespace Wallet.Infrastructure.Persistence.Migrations
                     b.HasKey("Id");
 
                     b.HasIndex("OwnerId");
+
+                    b.HasIndex("CompanyId")
+                        .HasFilter("[CompanyId] IS NOT NULL");
 
                     b.ToTable("wallet_withdrawal_requests", "wallet");
                 });

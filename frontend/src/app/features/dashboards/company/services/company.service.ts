@@ -115,11 +115,33 @@ export interface CompanyLeadPipelineDto {
 
 export interface PendingLeaseApproval {
   id: string;
+  propertyId: string;
   propertyTitle: string;
+  tenantId: string;
   tenantName: string;
-  brokerName: string;
+  brokerId: string | null;
+  brokerName: string | null;
+  installmentAmount: number | null;
+  paymentFrequency: string | null;
+  totalRentAmount: number | null;
+  durationInMonths: number | null;
+  securityDeposit: number | null;
+  startDate: string | null;
+  endDate: string | null;
+  isFullManagement: boolean;
   managementOptions: string[];
   uploadedAt: string;
+  contractFileUrl: string | null;
+}
+
+/** Deal closed by broker without management, waiting for manager confirmation. */
+export interface NoManagementPendingItem {
+  leadId: string;
+  propertyId: string;
+  tenantId: string;
+  tenantName: string;
+  dealValue: number | null;
+  pendingAt: string;
 }
 
 /** Lease the manager already approved — now waiting for the tenant to accept. */
@@ -127,9 +149,37 @@ export interface AwaitingTenantLease {
   id: string;
   propertyTitle: string;
   tenantName: string;
-  brokerName: string;
+  brokerName: string | null;
+  installmentAmount: number | null;
+  paymentFrequency: string | null;
+  startDate: string | null;
+  endDate: string | null;
   managementOptions: string[];
   approvedAt: string;
+  uploadedAt: string;
+  contractFileUrl: string | null;
+}
+
+/** Lease that is currently active (tenant accepted). */
+export interface ActiveCompanyLease {
+  id: string;
+  propertyId: string;
+  propertyTitle: string;
+  tenantId: string;
+  tenantName: string;
+  brokerId: string | null;
+  brokerName: string | null;
+  installmentAmount: number | null;
+  paymentFrequency: string | null;
+  totalRentAmount: number | null;
+  durationInMonths: number | null;
+  securityDeposit: number | null;
+  startDate: string | null;
+  endDate: string | null;
+  isFullManagement: boolean;
+  managementOptions: string[];
+  activeSince: string | null;
+  uploadedAt: string;
 }
 
 @Injectable({ providedIn: 'root' })
@@ -286,12 +336,39 @@ export class CompanyService {
     );
   }
 
+  /** GET /api/companies/mine/leases/active — tenant-accepted active leases. */
+  getActiveLeases(): Observable<ActiveCompanyLease[]> {
+    return this.http.get<ActiveCompanyLease[]>(
+      `${this.baseUrl}/companies/mine/leases/active`,
+    );
+  }
+
+  /** GET /api/leases/{id}/download — returns a time-limited SAS URL for the uploaded PDF. */
+  downloadLeaseContract(leaseId: string): Observable<{ contractFileUrl: string }> {
+    return this.http.get<{ contractFileUrl: string }>(`${this.baseUrl}/leases/${leaseId}/download`);
+  }
+
   /** POST /api/leases/{id}/manager-approve — approve or reject a partial-management lease. */
   approveLease(leaseId: string, isApproved: boolean, notes?: string): Observable<void> {
     return this.http.post<void>(`${this.baseUrl}/leases/${leaseId}/manager-approve`, {
       isApproved,
       notes: notes ?? null,
     });
+  }
+
+  /** GET /api/companies/mine/leads/no-management-pending — broker closed deals awaiting manager confirmation. */
+  getNoManagementPending(): Observable<NoManagementPendingItem[]> {
+    return this.http.get<NoManagementPendingItem[]>(
+      `${this.baseUrl}/companies/mine/leads/no-management-pending`,
+    );
+  }
+
+  /** POST /api/companies/mine/leads/{leadId}/confirm-no-management — manager confirms the no-management close. */
+  confirmNoManagement(leadId: string): Observable<void> {
+    return this.http.post<void>(
+      `${this.baseUrl}/companies/mine/leads/${leadId}/confirm-no-management`,
+      {},
+    );
   }
 
   /** PUT /api/companies/mine — backend returns 204 No Content. */
@@ -305,4 +382,68 @@ export class CompanyService {
       changes
     );
   }
+
+  // ── Company Wallet ──────────────────────────────────────────────────────────
+
+  getWalletBalance(): Observable<CompanyWalletBalance> {
+    return this.http.get<CompanyWalletBalance>(`${this.baseUrl}/companies/mine/wallet/balance`);
+  }
+
+  getWalletLedger(page = 1, pageSize = 20): Observable<CompanyLedgerResponse> {
+    return this.http.get<CompanyLedgerResponse>(
+      `${this.baseUrl}/companies/mine/wallet/ledger?page=${page}&pageSize=${pageSize}`,
+    );
+  }
+
+  getWalletWithdrawals(): Observable<CompanyWithdrawal[]> {
+    return this.http.get<CompanyWithdrawal[]>(`${this.baseUrl}/companies/mine/wallet/withdrawals`);
+  }
+
+  requestWithdrawal(amount: number, bankAccountDetails: string): Observable<{ withdrawalId: string }> {
+    return this.http.post<{ withdrawalId: string }>(
+      `${this.baseUrl}/companies/mine/wallet/withdraw`,
+      { amount, bankAccountDetails },
+    );
+  }
+}
+
+// ── Company Wallet models ──────────────────────────────────────────────────────
+
+export interface CompanyWalletBalance {
+  walletId: string;
+  ownerId: string;
+  balance: number;
+  currency: string;
+  updatedAt: string;
+}
+
+export type CompanyLedgerEntryType = 'Credit' | 'Debit';
+
+export interface CompanyLedgerEntry {
+  id: string;
+  type: CompanyLedgerEntryType;
+  amount: number;
+  description: string;
+  occurredAt: string;
+}
+
+export interface CompanyLedgerResponse {
+  items: CompanyLedgerEntry[];
+  totalCount: number;
+  page: number;
+  pageSize: number;
+}
+
+export interface CompanyWithdrawal {
+  id: string;
+  companyId: string;
+  amount: number;
+  commissionAmount: number;
+  netAmount: number;
+  currency: string;
+  bankAccountDetails: string;
+  status: 'Pending' | 'Processing' | 'Completed' | 'Rejected';
+  requestedAt: string;
+  processedAt?: string;
+  notes?: string;
 }

@@ -13,6 +13,7 @@ using Document.Application.Queries.Lease;
 using Document.Application.Queries.Lease.GetLeaseById;
 using Document.Application.Queries.Lease.GetLeasePaymentSchedule;
 using Identity.Application.Interfaces;
+using Identity.Application.Queries.GetCompanyManagerId;
 using MediatR;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
@@ -48,14 +49,17 @@ public class LeasesController : ControllerBase
     private Guid CurrentUserId => _currentUser.UserId ?? throw new UnauthorizedAccessException();
 
     [HttpPost("upload")]
-    public async Task<IActionResult> Upload([FromForm] Guid leadId, IFormFile file)
+    public async Task<IActionResult> Upload([FromForm] Guid leadId, IFormFile file, CancellationToken ct)
     {
         if (leadId == Guid.Empty) return BadRequest(new { error = "leadId is required." });
         if (file is null || file.Length == 0) return BadRequest(new { error = "A PDF file is required." });
 
         try
         {
-            var result = await _mediator.Send(new UploadLeaseContractCommand(leadId, Guid.Empty, file));
+            // Pass the uploader's ID as BrokerId when they are a broker so the lease
+            // knows who uploaded it (needed for the manager → tenant routing later).
+            var brokerId = _currentUser.IsInRole("broker") ? CurrentUserId : (Guid?)null;
+            var result = await _mediator.Send(new UploadLeaseContractCommand(leadId, Guid.Empty, file, brokerId), ct);
             return Ok(result);
         }
         catch (KeyNotFoundException ex) { return NotFound(new { error = ex.Message }); }
@@ -171,12 +175,17 @@ public class LeasesController : ControllerBase
         });
     }
 
-    /// <summary>Persist reviewed lease terms and notify the tenant a lease is ready.</summary>
+    /// <summary>Persist reviewed lease terms. Company brokers route to manager approval first.</summary>
     [HttpPost("{id}/send-to-tenant")]
     public async Task<IActionResult> SendToTenant(Guid id, [FromBody] SendLeaseToTenantRequest req, CancellationToken ct)
     {
         try
         {
+            // Company brokers: look up the manager and route through them.
+            Guid? managerId = null;
+            if (_currentUser.IsInRole("broker") && _currentUser.CompanyId.HasValue)
+                managerId = await _mediator.Send(new GetCompanyManagerIdQuery(_currentUser.CompanyId.Value), ct);
+
             await _mediator.Send(new SendLeaseToTenantCommand(
                 id,
                 req.InstallmentAmount,
@@ -185,7 +194,8 @@ public class LeasesController : ControllerBase
                 DateOnly.TryParse(req.EndDate, out var e) ? e : null,
                 req.PaymentFrequency,
                 req.TotalRentAmount,
-                req.DurationInMonths), ct);
+                req.DurationInMonths,
+                managerId), ct);
             return NoContent();
         }
         catch (KeyNotFoundException ex) { return NotFound(new { error = ex.Message }); }

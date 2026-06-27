@@ -7,6 +7,7 @@ import {
   CompanyService,
   PendingLeaseApproval,
   AwaitingTenantLease,
+  ActiveCompanyLease,
 } from '../../services/company.service';
 
 @Component({
@@ -28,9 +29,13 @@ export class LeasesComponent implements OnInit {
   /** Leases the manager approved — now waiting for tenant to accept. */
   readonly awaitingTenant = signal<AwaitingTenantLease[]>([]);
 
+  /** Active leases — tenant confirmed. */
+  readonly activeLeases = signal<ActiveCompanyLease[]>([]);
+
   readonly reviewingId = signal<string | null>(null);
   readonly actionInProgress = signal(false);
   readonly actionError = signal<string | null>(null);
+  readonly downloadingId = signal<string | null>(null);
   reviewNotes = '';
 
   ngOnInit(): void {
@@ -43,11 +48,13 @@ export class LeasesComponent implements OnInit {
     forkJoin({
       pending:        this.svc.getPendingApprovals(),
       awaitingTenant: this.svc.getAwaitingTenantLeases(),
+      activeLeases:   this.svc.getActiveLeases(),
     }).pipe(finalize(() => this.loading.set(false)))
       .subscribe({
-        next: ({ pending, awaitingTenant }) => {
+        next: ({ pending, awaitingTenant, activeLeases }) => {
           this.pending.set(pending);
           this.awaitingTenant.set(awaitingTenant);
+          this.activeLeases.set(activeLeases);
         },
         error: () => this.error.set('Could not load lease data. Please try again.'),
       });
@@ -68,6 +75,24 @@ export class LeasesComponent implements OnInit {
     return id ? (this.pending().find(l => l.id === id) ?? null) : null;
   }
 
+  downloadContract(leaseId: string): void {
+    if (this.downloadingId()) return;
+    this.downloadingId.set(leaseId);
+    this.svc.downloadLeaseContract(leaseId).subscribe({
+      next: ({ contractFileUrl }) => {
+        this.downloadingId.set(null);
+        const a = document.createElement('a');
+        a.href = contractFileUrl;
+        a.download = 'lease-contract.pdf';
+        a.rel = 'noopener';
+        document.body.appendChild(a);
+        a.click();
+        a.remove();
+      },
+      error: () => this.downloadingId.set(null),
+    });
+  }
+
   decide(isApproved: boolean): void {
     const id = this.reviewingId();
     if (!id || this.actionInProgress()) return;
@@ -80,10 +105,15 @@ export class LeasesComponent implements OnInit {
         next: () => {
           this.pending.update(list => list.filter(l => l.id !== id));
           this.reviewingId.set(null);
-          // Reload awaiting-tenant list so the newly approved lease appears there.
           if (isApproved) {
-            this.svc.getAwaitingTenantLeases().subscribe({
-              next: list => this.awaitingTenant.set(list),
+            forkJoin({
+              awaiting: this.svc.getAwaitingTenantLeases(),
+              active:   this.svc.getActiveLeases(),
+            }).subscribe({
+              next: ({ awaiting, active }) => {
+                this.awaitingTenant.set(awaiting);
+                this.activeLeases.set(active);
+              },
             });
           }
         },

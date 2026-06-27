@@ -53,6 +53,7 @@ export class CompanyDashboardComponent {
     { id: 'performance',   label: 'COMPANY_NAV.PERFORMANCE',   icon: 'fa-solid fa-chart-line',      route: '/dashboard/company/performance' },
     { id: 'inquiries',     label: 'COMPANY_NAV.INQUIRIES',     icon: 'fa-regular fa-envelope',      route: '/dashboard/company/inquiries' },
     { id: 'ai',            label: 'COMPANY_NAV.AI_ASSISTANT',  icon: 'fa-solid fa-robot',           route: '/dashboard/company/ai' },
+    { id: 'wallet',        label: 'COMPANY_NAV.WALLET',         icon: 'fa-solid fa-wallet',          route: '/dashboard/company/wallet' },
     { id: 'subscription',  label: 'COMPANY_NAV.SUBSCRIPTION',  icon: 'fa-regular fa-credit-card',   route: '/dashboard/company/subscriptions' },
     { id: 'settings',      label: 'COMPANY_NAV.SETTINGS',      icon: 'fa-solid fa-gear',            route: '/dashboard/company/settings' },
   ];

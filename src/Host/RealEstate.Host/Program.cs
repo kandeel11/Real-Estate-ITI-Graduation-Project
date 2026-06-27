@@ -230,17 +230,19 @@ public class Program
             await AdminSeed.SeedAsync(identityDb, hasher);
 
             var blobServiceClient = scope.ServiceProvider.GetService<BlobServiceClient>();
-            await RealEstate.Host.Seeds.PropertyDataSeed.SeedAsync(
-                propertyDb, identityDb, hasher, blobServiceClient,
-                app.Environment.WebRootPath);
-
-            // Backfill: assign Free plans to seed accounts that have no active
-            // subscription yet (idempotent — skips ones that already have one).
             var seedPublisher = scope.ServiceProvider.GetRequiredService<MediatR.IPublisher>();
             var seedSubscriptionRepo = scope.ServiceProvider
                 .GetRequiredService<Subscription.Application.Interfaces.ISubscriptionRepository>();
-            await RealEstate.Host.Seeds.PropertyDataSeed.BackfillSubscriptionsAsync(
-                identityDb, seedSubscriptionRepo, seedPublisher);
+
+            // Property demo seed — run once; skip entirely if data already present
+            if (!await RealEstate.Host.Seeds.PropertyDataSeed.IsSeededAsync(identityDb))
+            {
+                await RealEstate.Host.Seeds.PropertyDataSeed.SeedAsync(
+                    propertyDb, identityDb, hasher, blobServiceClient,
+                    app.Environment.WebRootPath);
+                await RealEstate.Host.Seeds.PropertyDataSeed.BackfillSubscriptionsAsync(
+                    identityDb, seedSubscriptionRepo, seedPublisher);
+            }
 
             var paymentDb = scope.ServiceProvider.GetRequiredService<PaymentDbContext>();
             await paymentDb.Database.MigrateAsync();
@@ -250,6 +252,15 @@ public class Program
 
             var maintenanceCompaniesDb = scope.ServiceProvider.GetRequiredService<MaintenanceModuleDbContext>();
             await maintenanceCompaniesDb.Database.MigrateAsync();
+
+            // Tenant + maintenance company seed — run once; skip entirely if data already present
+            if (!await RealEstate.Host.Seeds.TenantAndMaintenanceCompanySeed.IsSeededAsync(identityDb))
+            {
+                await RealEstate.Host.Seeds.TenantAndMaintenanceCompanySeed.SeedAsync(
+                    identityDb, maintenanceCompaniesDb, hasher);
+                await RealEstate.Host.Seeds.TenantAndMaintenanceCompanySeed.BackfillTenantSubscriptionsAsync(
+                    identityDb, seedSubscriptionRepo, seedPublisher);
+            }
         }
         //stripe
         app.Use(async (context, next) =>

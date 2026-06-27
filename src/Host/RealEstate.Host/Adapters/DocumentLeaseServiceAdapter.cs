@@ -30,16 +30,27 @@ public sealed class DocumentLeaseServiceAdapter : ILeaseService
             return Array.Empty<ActiveLeaseDto>();
 
         var tenantIds = leases.Select(l => l.TenantId).Distinct().ToList();
+        var brokerIds = leases.Where(l => l.BrokerId.HasValue).Select(l => l.BrokerId!.Value).Distinct().ToList();
+
         var tenants = await _identityDb.Users
             .Where(u => tenantIds.Contains(u.Id))
             .Select(u => new { u.Id, u.FullName, u.Email, u.Phone })
             .ToListAsync(cancellationToken);
 
+        var brokers = brokerIds.Count > 0
+            ? await _identityDb.Users
+                .Where(u => brokerIds.Contains(u.Id))
+                .Select(u => new { u.Id, u.CompanyId })
+                .ToListAsync(cancellationToken)
+            : [];
+
         var tenantMap = tenants.ToDictionary(t => t.Id);
+        var brokerCompanyMap = brokers.ToDictionary(b => b.Id, b => b.CompanyId);
 
         return leases.Select(l =>
         {
             tenantMap.TryGetValue(l.TenantId, out var tenant);
+            var companyId = l.BrokerId.HasValue && brokerCompanyMap.TryGetValue(l.BrokerId.Value, out var cid) ? cid : null;
             return new ActiveLeaseDto(
                 LeaseId: l.Id,
                 InstallmentAmount: l.InstallmentAmount!.Value,
@@ -52,7 +63,8 @@ public sealed class DocumentLeaseServiceAdapter : ILeaseService
                 LandlordId: l.OwnerId,
                 StartDate: l.StartDate ?? DateOnly.FromDateTime(DateTime.UtcNow),
                 EndDate: l.EndDate ?? DateOnly.FromDateTime(DateTime.UtcNow.AddYears(1)),
-                PaymentFrequency: l.PaymentFrequency?.ToString()
+                PaymentFrequency: l.PaymentFrequency?.ToString(),
+                CompanyId: companyId
             );
         }).ToList();
     }
@@ -71,6 +83,15 @@ public sealed class DocumentLeaseServiceAdapter : ILeaseService
             .Select(u => new { u.FullName, u.Email, u.Phone })
             .FirstOrDefaultAsync(cancellationToken);
 
+        Guid? leaseCompanyId = null;
+        if (lease.BrokerId.HasValue)
+        {
+            leaseCompanyId = await _identityDb.Users
+                .Where(u => u.Id == lease.BrokerId.Value)
+                .Select(u => u.CompanyId)
+                .FirstOrDefaultAsync(cancellationToken);
+        }
+
         return new ActiveLeaseDto(
             LeaseId: lease.Id,
             InstallmentAmount: lease.InstallmentAmount ?? 0m,
@@ -83,7 +104,8 @@ public sealed class DocumentLeaseServiceAdapter : ILeaseService
             LandlordId: lease.OwnerId,
             StartDate: lease.StartDate ?? DateOnly.FromDateTime(DateTime.UtcNow),
             EndDate: lease.EndDate ?? DateOnly.FromDateTime(DateTime.UtcNow.AddYears(1)),
-            PaymentFrequency: lease.PaymentFrequency?.ToString()
+            PaymentFrequency: lease.PaymentFrequency?.ToString(),
+            CompanyId: leaseCompanyId
         );
     }
 }

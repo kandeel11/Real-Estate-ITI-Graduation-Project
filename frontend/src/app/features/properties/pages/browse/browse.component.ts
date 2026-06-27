@@ -5,7 +5,7 @@
  * price is a min/max range. All filtering is client-side over /properties/active.
  */
 
-import { Component, inject, signal, computed, effect, OnInit } from '@angular/core';
+import { Component, HostListener, inject, signal, computed, effect, OnInit } from '@angular/core';
 import { DecimalPipe } from '@angular/common';
 import { ActivatedRoute, RouterLink } from '@angular/router';
 import { TranslatePipe } from '@ngx-translate/core';
@@ -14,7 +14,7 @@ import { Property, Amenity } from '../../models/property.model';
 import { SavedPropertyService } from '../../../../core/services/saved-property.service';
 import { AuthService } from '../../../../core/services/auth.service';
 
-const PAGE_SIZE = 9;
+const PAGE_SIZE = 12;
 
 interface Chip {
   kind: 'type' | 'city' | 'beds' | 'amenity' | 'price' | 'furnished' | 'pets' | 'featured';
@@ -56,10 +56,42 @@ export class BrowseComponent implements OnInit {
   featured = signal(false);
 
   amenitiesOpen = signal(false);
+  moreFiltersOpen = signal(false);
+  openDrop = signal<string | null>(null);
   page = signal(1);
 
   readonly typeOptions = ['Apartment', 'Villa', 'House'];
   readonly bedOptions = [1, 2, 3, 4, 5];
+
+  // ── Price range slider constants ────────────────────────────
+  readonly PRICE_MIN  = 0;
+  readonly PRICE_MAX  = 500_000;
+  readonly PRICE_STEP = 1_000;
+
+  // Percentage positions for the range fill bar
+  minPercent = computed(() =>
+    ((this.minPrice() ?? this.PRICE_MIN) - this.PRICE_MIN) /
+    (this.PRICE_MAX - this.PRICE_MIN) * 100
+  );
+  maxPercent = computed(() =>
+    ((this.maxPrice() ?? this.PRICE_MAX) - this.PRICE_MIN) /
+    (this.PRICE_MAX - this.PRICE_MIN) * 100
+  );
+
+  typeLabel = computed(() => [...this.types()].join(' · '));
+  bedsLabel = computed(() => [...this.beds()].sort((a, b) => a - b).join(', '));
+  priceLabel = computed(() => {
+    const lo = this.minPrice() !== null ? this.minPrice()!.toLocaleString() : '0';
+    const hi = this.maxPrice() !== null ? this.maxPrice()!.toLocaleString() : '∞';
+    return `${lo} – ${hi} EGP`;
+  });
+  moreFiltersCount = computed(() =>
+    (this.furnished() ? 1 : 0) +
+    (this.petsAllowed() ? 1 : 0) +
+    (this.featured() ? 1 : 0) +
+    this.cities().size +
+    this.amenityFilter().size
+  );
 
   cityOptions = computed(() =>
     [...new Set(this.all().map((p) => p.city).filter(Boolean))].sort()
@@ -161,10 +193,37 @@ export class BrowseComponent implements OnInit {
   }
 
   ngOnInit(): void {
-    // Deep-link from the home page's "View All" → preselect the featured filter.
-    if (this.route.snapshot.queryParamMap.get('featured') === 'true') {
-      this.featured.set(true);
+    const qp = this.route.snapshot.queryParamMap;
+
+    // featured deep-link
+    if (qp.get('featured') === 'true') this.featured.set(true);
+    // furnished deep-link
+    if (qp.get('furnished') === 'true') this.furnished.set(true);
+
+    // Location / keyword pre-fill from home-page filter
+    const searchParam = qp.get('search');
+    if (searchParam) this.search.set(searchParam);
+
+    // Property type pre-selection (comma-separated: ?types=Apartment,Villa)
+    const typesParam = qp.get('types');
+    if (typesParam) {
+      this.types.set(new Set(typesParam.split(',').map(t => t.trim()).filter(Boolean)));
     }
+
+    // Bedrooms pre-selection (?beds=2 → 2+ bed filter)
+    const bedsParam = qp.get('beds');
+    if (bedsParam) this.beds.set(new Set([Number(bedsParam)]));
+
+    // Price range
+    const minP = qp.get('minPrice');
+    const maxP = qp.get('maxPrice');
+    if (minP) this.minPrice.set(Number(minP));
+    if (maxP) this.maxPrice.set(Number(maxP));
+
+    // City pre-selection from top-areas click
+    const cityParam = qp.get('city');
+    if (cityParam) this.cities.set(new Set([cityParam]));
+
     this.load();
     this.propertySvc.getAmenities().subscribe({
       next: (list) => this.amenities.set(list),
@@ -202,6 +261,20 @@ export class BrowseComponent implements OnInit {
   setMin(e: Event): void { const v = (e.target as HTMLInputElement).value; this.minPrice.set(v ? Number(v) : null); }
   setMax(e: Event): void { const v = (e.target as HTMLInputElement).value; this.maxPrice.set(v ? Number(v) : null); }
 
+  onMinRangeChange(e: Event): void {
+    const val = Number((e.target as HTMLInputElement).value);
+    const curMax = this.maxPrice() ?? this.PRICE_MAX;
+    if (val >= curMax) { (e.target as HTMLInputElement).value = String(curMax - this.PRICE_STEP); return; }
+    this.minPrice.set(val <= this.PRICE_MIN ? null : val);
+  }
+
+  onMaxRangeChange(e: Event): void {
+    const val = Number((e.target as HTMLInputElement).value);
+    const curMin = this.minPrice() ?? this.PRICE_MIN;
+    if (val <= curMin) { (e.target as HTMLInputElement).value = String(curMin + this.PRICE_STEP); return; }
+    this.maxPrice.set(val >= this.PRICE_MAX ? null : val);
+  }
+
   removeChip(chip: Chip): void {
     switch (chip.kind) {
       case 'type': this.toggleType(chip.value); break;
@@ -226,6 +299,13 @@ export class BrowseComponent implements OnInit {
     this.furnished.set(false);
     this.petsAllowed.set(false);
     this.featured.set(false);
+  }
+
+  @HostListener('document:click')
+  onDocumentClick() { this.openDrop.set(null); }
+
+  toggleDrop(name: string): void {
+    this.openDrop.update(cur => cur === name ? null : name);
   }
 
   goToPage(p: number): void {

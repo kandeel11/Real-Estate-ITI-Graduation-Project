@@ -163,6 +163,16 @@ export class BrokerDataService {
     return this.http.put<void>(`${this.api}/leads/${leadId}/status`, { newStatus });
   }
 
+  /**
+   * Closes the deal without a lease or management service.
+   * Independent brokers: property is rented immediately.
+   * Company brokers: notifies the manager for confirmation.
+   * Returns { status: 'closed' | 'pending_manager_confirmation' }
+   */
+  closeNoManagement(leadId: string): Observable<{ status: string }> {
+    return this.http.post<{ status: string }>(`${this.api}/leads/${leadId}/close-no-management`, {});
+  }
+
   // ── Lease Upload / AI Flow ───────────────────────────────────────────────────
 
   uploadLeasePdf(leadId: string, tenantEmail: string, file: File): Observable<{ leaseId: string }> {

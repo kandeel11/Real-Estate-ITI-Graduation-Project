@@ -6,8 +6,9 @@ using Microsoft.EntityFrameworkCore;
 namespace Document.Application.Commands.Lease.SendLeaseToTenant;
 
 /// <summary>
-/// Persists the broker's reviewed/edited lease terms and notifies the tenant that a
-/// lease is ready for their review.
+/// Persists the broker's reviewed/edited lease terms and either:
+///   – routes to the company manager for approval (when ManagerId is provided), or
+///   – notifies the tenant directly (independent broker or owner flow).
 /// </summary>
 public record SendLeaseToTenantCommand(
     Guid LeaseId,
@@ -17,7 +18,8 @@ public record SendLeaseToTenantCommand(
     DateOnly? EndDate,
     string? PaymentFrequency = null,
     decimal? TotalRentAmount = null,
-    int? DurationInMonths = null) : IRequest;
+    int? DurationInMonths = null,
+    Guid? ManagerId = null) : IRequest;
 
 public class SendLeaseToTenantCommandHandler : IRequestHandler<SendLeaseToTenantCommand>
 {
@@ -46,17 +48,33 @@ public class SendLeaseToTenantCommandHandler : IRequestHandler<SendLeaseToTenant
             Enum.TryParse<PaymentFrequency>(cmd.PaymentFrequency, ignoreCase: true, out var freq))
             lease.PaymentFrequency = freq;
 
-        // Sending to the tenant is the owner/broker side finalising the terms:
-        //  • Mark the owner side confirmed (the tenant's later accept completes the pair → lease activates).
-        //  • Set status to "extracted" so it surfaces in the tenant's pending-offer query.
-        lease.OwnerConfirmedAt ??= DateTime.UtcNow;
-        lease.ExtractionStatus = LeaseExtractionStatus.Extracted;
         lease.RejectionReason = null;
         lease.UpdatedAt = DateTime.UtcNow;
 
-        // If this is a renewal being offered, the predecessor's pending renewal request is
-        // now fulfilled — clear it here (not on upload) so a mid-flow reload keeps the
-        // "renewal requested" state until the offer actually reaches the tenant.
+        if (cmd.ManagerId.HasValue)
+        {
+            // Company broker path: route to manager for approval before tenant sees the lease.
+            lease.ManagerApprovalStatus = "PendingApproval";
+            lease.ManagerId = cmd.ManagerId;
+
+            await _db.SaveChangesAsync(ct);
+
+            await _notifications.CreateInAppAsync(
+                userId: cmd.ManagerId.Value,
+                title: "Lease Awaiting Your Approval",
+                body: "A broker has uploaded a lease that requires your approval before it is sent to the tenant.",
+                type: NotificationType.ContractSigned,
+                relatedEntityType: "lease",
+                relatedEntityId: lease.Id,
+                ct: ct);
+            return;
+        }
+
+        // Owner / independent-broker path: send directly to tenant.
+        lease.OwnerConfirmedAt ??= DateTime.UtcNow;
+        lease.ExtractionStatus = LeaseExtractionStatus.Extracted;
+
+        // If this is a renewal being offered, clear the predecessor's pending renewal request.
         if (lease.RenewedFromLeaseId is { } prevId)
         {
             var predecessor = await _db.Leases
