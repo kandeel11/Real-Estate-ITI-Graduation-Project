@@ -73,10 +73,13 @@ public sealed class StripeCheckoutService : IStripeCheckoutService
             }
         };
 
-        // Idempotency Key: لو نفس الـ request اتبعت مرتين، Stripe بيرجع نفس الـ Session
+        // Idempotency Key: unique per (payment, amount, suffix) so regeneration after
+        // late fee changes always produces a fresh session with the correct amount.
+        var amountCents = (long)(request.Amount * 100);
+        var suffix      = request.IdempotencySuffix ?? string.Empty;
         var requestOptions = new RequestOptions
         {
-            IdempotencyKey = $"checkout_{request.PaymentId}"
+            IdempotencyKey = $"checkout_{request.PaymentId}_{amountCents}{suffix}"
         };
 
         var service = new SessionService();

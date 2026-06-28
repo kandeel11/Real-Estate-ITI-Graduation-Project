@@ -370,6 +370,29 @@
   p { margin: 0; font-size: 14px; color: #64748b; max-width: 380px; }
 }
 
+.muted { color: var(--muted); font-size: 13px; }
+
+.late-fee { color: #c2410c; font-size: 13px; font-weight: 700; }
+
+.btn-waive {
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+  padding: 5px 12px;
+  border-radius: 6px;
+  border: 1.5px solid #fca5a5;
+  background: #fff7f7;
+  color: #b91c1c;
+  font-size: 12px;
+  font-weight: 600;
+  cursor: pointer;
+  white-space: nowrap;
+  font-family: inherit;
+  transition: all .15s;
+  &:hover:not(:disabled) { background: #fee2e2; }
+  &:disabled { opacity: .55; cursor: not-allowed; }
+}
+
 @media (max-width: 600px) {
   .summary-grid { grid-template-columns: 1fr 1fr; }
   .summary-card.primary { grid-column: 1 / -1; }

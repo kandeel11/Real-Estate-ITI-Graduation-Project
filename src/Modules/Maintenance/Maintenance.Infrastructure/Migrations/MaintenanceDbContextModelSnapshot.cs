@@ -111,6 +111,9 @@ namespace Maintenance.Infrastructure.Migrations
                     b.Property<Guid>("Id")
                         .HasColumnType("uniqueidentifier");
 
+                    b.Property<string>("AdminNotes")
+                        .HasColumnType("nvarchar(max)");
+
                     b.Property<DateTime?>("ClosedAt")
                         .HasColumnType("datetime2");
 
@@ -123,6 +126,19 @@ namespace Maintenance.Infrastructure.Migrations
                     b.Property<string>("Description")
                         .IsRequired()
                         .HasColumnType("nvarchar(max)");
+
+                    b.Property<DateTime?>("DisputeDate")
+                        .HasColumnType("datetime2");
+
+                    b.Property<string>("DisputeReason")
+                        .HasColumnType("nvarchar(max)");
+
+                    b.Property<Guid?>("DisputedById")
+                        .HasColumnType("uniqueidentifier");
+
+                    b.Property<string>("DisputedByRole")
+                        .HasMaxLength(100)
+                        .HasColumnType("nvarchar(100)");
 
                     b.Property<Guid?>("LeaseId")
                         .HasColumnType("uniqueidentifier");

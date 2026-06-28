@@ -463,6 +463,13 @@ export const routes: Routes = [
                 (m) => m.OwnerWalletComponent,
               ),
           },
+          {
+            path: 'payments',
+            loadComponent: () =>
+              import('./features/dashboards/owner-dashboard/pages/payments/payments.component').then(
+                (m) => m.OwnerPaymentsComponent,
+              ),
+          },
         ],
       },
 

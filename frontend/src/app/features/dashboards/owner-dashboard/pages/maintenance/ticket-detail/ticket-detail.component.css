@@ -208,3 +208,81 @@
 .pay-modal-footer { display: flex; justify-content: flex-end; gap: 8px; padding: 0 20px 18px; }
 
 @keyframes fadeIn { from { opacity: 0; } to { opacity: 1; } }
+
+/* ── Dispute ───────────────────────────────────────── */
+.status-disputed { background: #fef3c7; color: #b45309; }
+
+.dispute-divider {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  margin: 20px 0 12px;
+}
+.dispute-divider::before,
+.dispute-divider::after {
+  content: '';
+  flex: 1;
+  height: 1px;
+  background: var(--color-outline-variant);
+}
+.dispute-divider-label { font-size: 11px; font-weight: 600; color: var(--color-on-surface-variant); white-space: nowrap; }
+
+.dispute-trigger-btn {
+  width: 100%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 6px;
+  padding: 10px;
+  border: 1.5px dashed #f59e0b;
+  border-radius: var(--radius-md);
+  background: transparent;
+  color: #b45309;
+  font-size: 13px;
+  font-weight: 600;
+  cursor: pointer;
+  transition: background 0.15s, border-color 0.15s;
+}
+.dispute-trigger-btn:hover { background: #fffbeb; border-style: solid; }
+
+.dispute-pending-card {
+  border-left: 3px solid #f59e0b;
+  margin-bottom: 16px;
+}
+.dispute-pending-inner {
+  display: flex;
+  align-items: flex-start;
+  gap: 12px;
+}
+.dispute-pending-icon { font-size: 1.6rem; color: #f59e0b; flex-shrink: 0; margin-top: 2px; }
+.dispute-pending-title { font-size: 14px; font-weight: 700; color: #92400e; margin: 0 0 4px; }
+.dispute-pending-desc { font-size: 12px; color: #b45309; margin: 0; }
+
+/* Dispute modal overlay */
+.dispute-modal {
+  position: fixed;
+  inset: 0;
+  background: rgba(11,28,48,0.55);
+  z-index: 1800;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 16px;
+  animation: fadeIn 0.2s ease;
+}
+.dispute-modal-box {
+  background: var(--color-surface-container-lowest);
+  border-radius: var(--radius-lg);
+  width: 100%;
+  max-width: 460px;
+  box-shadow: var(--shadow-hover);
+}
+.dispute-modal-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 18px 20px 0;
+}
+.dispute-modal-header h3 { font-size: 16px; font-weight: 700; margin: 0; }
+.dispute-modal-body { padding: 16px 20px; }
+.dispute-modal-footer { display: flex; justify-content: flex-end; gap: 8px; padding: 0 20px 18px; }

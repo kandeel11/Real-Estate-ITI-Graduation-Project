@@ -1,0 +1,270 @@
+<div class="dispute-detail-page">
+
+  <a routerLink="/dashboard/admin/disputes" class="back-link">
+    <i class="fa-solid fa-arrow-left me-1"></i>Back to Disputes
+  </a>
+
+  @if (loading()) {
+    <div class="loading-state">
+      <div class="spinner-border text-warning" role="status"></div>
+      <span class="ms-2 text-muted">Loading dispute…</span>
+    </div>
+  }
+
+  @if (!loading() && error()) {
+    <div class="alert alert-danger d-flex align-items-center gap-2 mt-3">
+      <i class="fa-solid fa-triangle-exclamation"></i>
+      <span>{{ error() }}</span>
+      <button class="btn btn-sm btn-outline-danger ms-auto" (click)="refresh()">Retry</button>
+    </div>
+  }
+
+  @if (!loading() && dispute(); as d) {
+
+    <!-- ── Page title ─────────────────────────────────────────── -->
+    <div class="detail-hero">
+      <div class="detail-hero-left">
+        <div class="dispute-flag-badge"><i class="fa-solid fa-flag"></i> Dispute</div>
+        <h1 class="detail-hero-title">{{ d.title }}</h1>
+        @if (d.ticketNumber) { <span class="ticket-num">{{ d.ticketNumber }}</span> }
+        <p class="detail-hero-desc">{{ d.description }}</p>
+      </div>
+      <div class="detail-hero-meta">
+        <span class="meta-chip priority--{{ d.priority.toLowerCase() }}">{{ d.priority }}</span>
+        <span class="meta-chip status-disputed">Under Dispute</span>
+        @if (d.propertyAddress) {
+          <span class="meta-address"><i class="fa-solid fa-location-dot me-1"></i>{{ d.propertyAddress }}</span>
+        }
+        <span class="meta-date"><i class="fa-regular fa-calendar me-1"></i>Opened {{ d.createdAt | date:'mediumDate' }}</span>
+      </div>
+    </div>
+
+    <div class="detail-grid">
+
+      <!-- ── Left column ──────────────────────────────────────── -->
+      <div class="detail-col detail-col-main">
+
+        <!-- Dispute info -->
+        <div class="detail-card mb-4">
+          <h2 class="section-title"><i class="fa-solid fa-flag me-2 text-warning"></i>Dispute Information</h2>
+          <div class="info-grid">
+            <div class="info-item">
+              <span class="info-label">Raised By</span>
+              <span class="info-value">{{ roleLabel(d.disputedByRole) }}</span>
+            </div>
+            <div class="info-item">
+              <span class="info-label">Dispute Date</span>
+              <span class="info-value">{{ d.disputeDate ? (d.disputeDate | date:'medium') : '—' }}</span>
+            </div>
+            <div class="info-item info-item-full">
+              <span class="info-label">Reason</span>
+              <p class="info-reason">{{ d.disputeReason ?? 'No reason provided.' }}</p>
+            </div>
+            @if (d.adminNotes) {
+              <div class="info-item info-item-full">
+                <span class="info-label">Admin Notes</span>
+                <p class="info-reason info-admin-notes">{{ d.adminNotes }}</p>
+              </div>
+            }
+          </div>
+        </div>
+
+        <!-- AI Evaluation -->
+        @if (d.aiEvaluation; as ai) {
+          <div class="detail-card mb-4 ai-card">
+            <h2 class="section-title"><i class="fa-solid fa-robot me-2 text-primary"></i>AI Evaluation</h2>
+            <div class="ai-grid">
+              <div class="ai-verdict" [class.ai-verdict-owner]="ai.responsibleParty === 'Owner'"
+                                      [class.ai-verdict-tenant]="ai.responsibleParty === 'Tenant'">
+                <span class="ai-verdict-label">AI says responsible</span>
+                <span class="ai-verdict-value">{{ ai.responsibleParty }}</span>
+              </div>
+              <div class="ai-meta-block">
+                <div class="ai-meta-row">
+                  <span class="ai-meta-label">Category</span>
+                  <span class="ai-meta-val">{{ ai.category }}</span>
+                </div>
+                <div class="ai-meta-row">
+                  <span class="ai-meta-label">Evaluated</span>
+                  <span class="ai-meta-val">{{ ai.evaluatedAt | date:'medium' }}</span>
+                </div>
+              </div>
+            </div>
+            <div class="conf-section">
+              <div class="conf-header">
+                <span class="conf-label">Confidence Score</span>
+                <strong class="conf-value" [style.color]="confidenceColor()">{{ ai.confidenceScore }}%</strong>
+              </div>
+              <div class="conf-bar">
+                <div class="conf-fill" [style.width.%]="ai.confidenceScore" [style.background]="confidenceColor()"></div>
+              </div>
+            </div>
+            <div class="ai-reasoning-box">
+              <span class="ai-reasoning-label">AI Reasoning</span>
+              <p class="ai-reasoning-text">{{ ai.reasoning }}</p>
+            </div>
+          </div>
+        }
+
+        <!-- Evidence Images -->
+        @if (d.images.length > 0) {
+          <div class="detail-card mb-4">
+            <h2 class="section-title"><i class="fa-solid fa-images me-2"></i>Evidence Images ({{ d.images.length }})</h2>
+            <div class="evidence-grid">
+              @for (img of d.images; track img.id) {
+                <div class="evidence-item" (click)="openLightbox(img.fileUrl)">
+                  <img [src]="img.fileUrl" [alt]="img.fileType" class="evidence-thumb" />
+                  <div class="evidence-meta">
+                    <span>{{ img.fileSizeKb >= 1024 ? (img.fileSizeKb / 1024).toFixed(1) + ' MB' : img.fileSizeKb + ' KB' }}</span>
+                  </div>
+                </div>
+              }
+            </div>
+          </div>
+        }
+
+      </div>
+
+      <!-- ── Right column ─────────────────────────────────────── -->
+      <div class="detail-col detail-col-side">
+
+        <!-- Lease Contract -->
+        @if (d.leaseContract; as lc) {
+          <div class="detail-card mb-4 lease-card">
+            <h2 class="section-title"><i class="fa-solid fa-file-contract me-2 text-info"></i>Lease Contract</h2>
+            <div class="lease-grid">
+              <div class="lease-item">
+                <span class="lease-label">Monthly Rent</span>
+                <span class="lease-value lease-highlight">{{ formatCurrency(lc.monthlyInstallment) }}</span>
+              </div>
+              <div class="lease-item">
+                <span class="lease-label">Security Deposit</span>
+                <span class="lease-value">{{ formatCurrency(lc.securityDeposit) }}</span>
+              </div>
+              <div class="lease-item">
+                <span class="lease-label">Total Rent</span>
+                <span class="lease-value">{{ formatCurrency(lc.totalRentAmount) }}</span>
+              </div>
+              <div class="lease-item">
+                <span class="lease-label">Duration</span>
+                <span class="lease-value">{{ lc.durationInMonths ?? '—' }} months</span>
+              </div>
+              <div class="lease-item">
+                <span class="lease-label">Start Date</span>
+                <span class="lease-value">{{ lc.startDate ? (lc.startDate | date:'mediumDate') : '—' }}</span>
+              </div>
+              <div class="lease-item">
+                <span class="lease-label">End Date</span>
+                <span class="lease-value">{{ lc.endDate ? (lc.endDate | date:'mediumDate') : '—' }}</span>
+              </div>
+              <div class="lease-item">
+                <span class="lease-label">Payment Frequency</span>
+                <span class="lease-value">{{ lc.paymentFrequency ?? '—' }}</span>
+              </div>
+              <div class="lease-item">
+                <span class="lease-label">Full Management</span>
+                <span class="lease-value">{{ lc.isFullManagement ? 'Yes' : 'No' }}</span>
+              </div>
+              @if (lc.managementOptions) {
+                <div class="lease-item lease-item-full">
+                  <span class="lease-label">Management Options</span>
+                  <span class="lease-value">{{ lc.managementOptions }}</span>
+                </div>
+              }
+            </div>
+            @if (lc.contractFileUrl) {
+              <a [href]="lc.contractFileUrl" target="_blank" class="btn btn-sm btn-outline-info mt-3">
+                <i class="fa-solid fa-file-pdf me-1"></i>View Contract PDF
+              </a>
+            }
+          </div>
+        } @else {
+          <div class="detail-card mb-4">
+            <h2 class="section-title"><i class="fa-solid fa-file-contract me-2 text-info"></i>Lease Contract</h2>
+            <p class="text-muted small">No lease contract linked to this ticket.</p>
+          </div>
+        }
+
+        <!-- Resolve Dispute -->
+        @if (d.status === 'Disputed') {
+          <div class="detail-card resolve-card">
+            <h2 class="section-title"><i class="fa-solid fa-gavel me-2 text-success"></i>Resolve Dispute</h2>
+            <p class="text-muted small mb-3">
+              Override the AI decision by setting the final responsible party. This will notify both parties and move the ticket forward.
+            </p>
+
+            @if (!showResolveForm()) {
+              <button class="btn btn-success w-100" (click)="showResolveForm.set(true)">
+                <i class="fa-solid fa-gavel me-2"></i>Set Final Decision
+              </button>
+            } @else {
+              <div class="resolve-form">
+                <div class="form-group mb-3">
+                  <label class="form-label fw-semibold">Final Responsible Party</label>
+                  <div class="party-options">
+                    <button class="party-btn" [class.party-btn-active]="finalResponsibleParty() === 'Owner'"
+                            (click)="finalResponsibleParty.set('Owner')">
+                      <i class="fa-solid fa-building me-2"></i>Owner
+                    </button>
+                    <button class="party-btn" [class.party-btn-active]="finalResponsibleParty() === 'Tenant'"
+                            (click)="finalResponsibleParty.set('Tenant')">
+                      <i class="fa-solid fa-user me-2"></i>Tenant
+                    </button>
+                  </div>
+                </div>
+                <div class="form-group mb-3">
+                  <label class="form-label fw-semibold">Admin Notes <span class="text-muted fw-normal">(optional)</span></label>
+                  <textarea class="form-control" rows="3" [(ngModel)]="adminNotes"
+                            placeholder="Explain your reasoning for the override…"
+                            [disabled]="resolveLoading()"></textarea>
+                </div>
+                <div class="resolve-actions">
+                  <button class="btn btn-outline-secondary" (click)="showResolveForm.set(false)" [disabled]="resolveLoading()">
+                    Cancel
+                  </button>
+                  <button class="btn btn-success" (click)="resolveDispute()" [disabled]="resolveLoading()">
+                    @if (resolveLoading()) {
+                      <span class="spinner-border spinner-border-sm me-2" role="status"></span>Resolving…
+                    } @else {
+                      <i class="fa-solid fa-check me-2"></i>Confirm: {{ finalResponsibleParty() }} Responsible
+                    }
+                  </button>
+                </div>
+              </div>
+            }
+          </div>
+        } @else {
+          <div class="detail-card resolve-card resolved-banner">
+            <i class="fa-solid fa-circle-check resolved-icon"></i>
+            <div>
+              <h3 class="resolved-title">Dispute Resolved</h3>
+              <p class="text-muted small mb-0">
+                Final decision has been made. The ticket is now proceeding with the corrected responsible party.
+              </p>
+            </div>
+          </div>
+        }
+
+      </div><!-- /side col -->
+
+    </div><!-- /grid -->
+
+  }<!-- /dispute -->
+
+</div>
+
+<!-- Toast -->
+@if (toast(); as t) {
+  <div class="toast-msg" [class.toast-success]="t.type === 'success'" [class.toast-error]="t.type === 'error'">
+    <i class="fa-solid {{ t.type === 'success' ? 'fa-circle-check' : 'fa-circle-exclamation' }} me-2"></i>
+    {{ t.text }}
+  </div>
+}
+
+<!-- Lightbox -->
+@if (lightboxUrl()) {
+  <div class="lightbox-overlay" (click)="closeLightbox()">
+    <button class="lightbox-close" (click)="closeLightbox()"><i class="fa-solid fa-xmark"></i></button>
+    <img [src]="lightboxUrl()!" alt="Evidence" (click)="$event.stopPropagation()" />
+  </div>
+}

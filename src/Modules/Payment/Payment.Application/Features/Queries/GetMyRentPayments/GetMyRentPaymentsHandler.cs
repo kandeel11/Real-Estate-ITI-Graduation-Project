@@ -26,7 +26,9 @@ public sealed class GetMyRentPaymentsHandler
                 p.Amount, p.DueDate, p.PaidAt,
                 p.Status.ToString(), p.PaymentMethod.ToString(), p.TransactionId,
                 p.LateFee, p.AiPredictedLate, p.ReceiptUrl, p.Notes,
-                p.CreatedAt, p.UpdatedAt))
+                p.CreatedAt, p.UpdatedAt,
+                CheckoutUrl: p.CheckoutUrl,
+                CheckoutSessionId: p.CheckoutSessionId))
             .ToList();
     }
 }

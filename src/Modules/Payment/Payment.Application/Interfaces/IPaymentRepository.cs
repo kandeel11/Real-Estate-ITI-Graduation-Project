@@ -32,6 +32,16 @@ public interface IPaymentRepository
     /// </summary>
     Task<bool> ExistsForLeaseAndMonthAsync(Guid leaseId, DateOnly dueDate, CancellationToken cancellationToken = default);
 
+    /// <summary>
+    /// جيب الدفعات الإيجارية القادمة (Status=Pending) في نطاق تواريخ معين
+    /// والـ Stripe CheckoutUrl لسه مش اتعمله — بتتسمى من RentPaymentLinkJob.
+    /// from و to بيحددوا نافذة البحث (مثلاً اليوم → اليوم + يومين).
+    /// </summary>
+    Task<IReadOnlyList<Payment.Domain.Entities.Payment>> GetUpcomingRentPaymentsWithoutLinkAsync(
+        DateOnly from,
+        DateOnly to,
+        CancellationToken cancellationToken = default);
+
     Task AddAsync(Payment.Domain.Entities.Payment payment, CancellationToken cancellationToken = default);
 
     Task AddRangeAsync(IEnumerable<Payment.Domain.Entities.Payment> payments, CancellationToken cancellationToken = default);

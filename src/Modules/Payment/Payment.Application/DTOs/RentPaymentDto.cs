@@ -16,5 +16,7 @@ public sealed record RentPaymentDto(
     string? ReceiptUrl,
     string? Notes,
     DateTime CreatedAt,
-    DateTime UpdatedAt
+    DateTime UpdatedAt,
+    string? CheckoutUrl = null,
+    string? CheckoutSessionId = null
 );

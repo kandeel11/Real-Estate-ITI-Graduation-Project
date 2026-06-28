@@ -18,8 +18,11 @@ using Maintenance.Application.Features.Commands.RejectAssignment;
 using Maintenance.Application.Features.Queries.GetVendorTickets;
 using Maintenance.Application.Features.Queries.GetVendorDashboard;
 using Maintenance.Application.Features.Queries.GetAdminTickets;
+using Maintenance.Application.Features.Commands.RaiseDispute;
+using Maintenance.Application.Features.Commands.ResolveDispute;
 using Maintenance.Application.Features.Commands.StartWork;
 using Maintenance.Application.Features.Commands.SubmitTicket;
+using Maintenance.Application.Features.Queries.GetDisputeDetails;
 using Maintenance.Application.Features.Commands.UpdateTicket;
 using Maintenance.Application.Features.Commands.UploadAttachment;
 using Maintenance.Application.Features.Queries.GetAiEvaluation;
@@ -362,6 +365,36 @@ public class TicketsController(ISender sender, ICurrentUserService currentUser) 
         await sender.Send(new StartWorkCommand(id));
         return Ok(new { message = "Work started. Status is now InProgress." });
     }
+
+    // ── Ticket Dispute ─────────────────────────────────────────────
+
+    /// <summary>Tenant, Owner, or Company Manager disputes the AI's responsibility decision.</summary>
+    [HttpPost("{id:guid}/dispute")]
+    [Authorize(Roles = "tenant,owner,company_manager")]
+    public async Task<IActionResult> RaiseDispute(Guid id, [FromBody] RaiseDisputeRequest req)
+    {
+        var role = currentUser.Role ?? "unknown";
+        await sender.Send(new RaiseTicketDisputeCommand(id, CurrentUserId, role, req.Reason));
+        return Ok(new { message = "Dispute raised. An admin will review the ticket." });
+    }
+
+    /// <summary>Admin sets the final responsible party, overriding the AI decision.</summary>
+    [HttpPost("{id:guid}/resolve-dispute")]
+    [Authorize(Policy = "AdminOnly")]
+    public async Task<IActionResult> ResolveDispute(Guid id, [FromBody] ResolveDisputeRequest req)
+    {
+        await sender.Send(new ResolveTicketDisputeCommand(id, req.FinalResponsibleParty, req.AdminNotes));
+        return Ok(new { message = $"Dispute resolved. Final responsible party: {req.FinalResponsibleParty}." });
+    }
+
+    /// <summary>Admin-only: returns the full dispute context including AI evaluation, images, and lease contract.</summary>
+    [HttpGet("{id:guid}/dispute-details")]
+    [Authorize(Policy = "AdminOnly")]
+    public async Task<IActionResult> GetDisputeDetails(Guid id)
+    {
+        var result = await sender.Send(new GetDisputeDetailsQuery(id));
+        return Ok(result);
+    }
 }
 
 public record CreateTicketRequest(
@@ -378,3 +411,5 @@ public record RejectAssignmentRequest(string Reason);
 public record AddCommentRequest(string Content, bool IsInternal = false);
 public record CreatePaymentRequest(decimal Amount, string Currency = "EGP");
 public record PayOnlineRequest(string TransactionId);
+public record RaiseDisputeRequest(string Reason);
+public record ResolveDisputeRequest(string FinalResponsibleParty, string? AdminNotes);

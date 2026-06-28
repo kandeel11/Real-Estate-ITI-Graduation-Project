@@ -1,0 +1,143 @@
+<div class="op-page">
+
+  <div class="page-head">
+    <div>
+      <h1><i class="fa-solid fa-money-bill-wave"></i> Rent Payments</h1>
+      <p>Incoming rent from your tenants. Waive late fees when appropriate.</p>
+    </div>
+    <button class="btn-refresh" (click)="load()">
+      <i class="fa-solid fa-arrows-rotate"></i> Refresh
+    </button>
+  </div>
+
+  @if (loading()) {
+    <div class="loading-state">
+      <i class="fa-solid fa-spinner fa-spin"></i>
+      <p>Loading payments…</p>
+    </div>
+  } @else if (error()) {
+    <div class="error-state">
+      <i class="fa-solid fa-circle-exclamation"></i>
+      <p>{{ error() }}</p>
+    </div>
+  } @else if (payments().length === 0) {
+    <div class="empty-state">
+      <i class="fa-solid fa-receipt empty-icon"></i>
+      <p>No rent payment records found yet. Payments appear here once a lease is active.</p>
+    </div>
+  } @else {
+
+    <!-- ── Summary cards ── -->
+    <div class="summary-grid">
+      <div class="summary-card primary">
+        <div class="sc-icon"><i class="fa-solid fa-coins"></i></div>
+        <div>
+          <span>Total Collected</span>
+          <strong>{{ fmt(stats().totalCollected) }}</strong>
+          <small>{{ stats().paid }} paid</small>
+        </div>
+      </div>
+      <div class="summary-card">
+        <div class="sc-icon amber"><i class="fa-solid fa-clock"></i></div>
+        <div>
+          <span>Pending</span>
+          <strong>{{ stats().pending }}</strong>
+        </div>
+      </div>
+      <div class="summary-card">
+        <div class="sc-icon red"><i class="fa-solid fa-triangle-exclamation"></i></div>
+        <div>
+          <span>Late / Overdue</span>
+          <strong>{{ stats().late }}</strong>
+          @if (stats().totalLateFees > 0) {
+            <small>+{{ fmt(stats().totalLateFees) }} fees</small>
+          }
+        </div>
+      </div>
+      <div class="summary-card">
+        <div class="sc-icon green"><i class="fa-solid fa-check-circle"></i></div>
+        <div>
+          <span>Total Records</span>
+          <strong>{{ stats().total }}</strong>
+        </div>
+      </div>
+    </div>
+
+    <!-- ── Payments table ── -->
+    <div class="schedule-card">
+      <div class="schedule-head">
+        <h3><i class="fa-solid fa-table-list"></i> All Payments</h3>
+        <span class="record-count">{{ payments().length }} records</span>
+      </div>
+      <div class="table-wrap">
+        <table class="data-table">
+          <thead>
+            <tr>
+              <th>Property</th>
+              <th>Tenant</th>
+              <th>Due Date</th>
+              <th>Rent Amount</th>
+              <th>Late Fee</th>
+              <th>Paid On</th>
+              <th>Status</th>
+              <th>Actions</th>
+            </tr>
+          </thead>
+          <tbody>
+            @for (p of payments(); track p.id) {
+              <tr>
+                <td>{{ p.propertyTitle || '—' }}</td>
+                <td>{{ p.tenantName || '—' }}</td>
+                <td>{{ fmtDate(p.dueDate) }}</td>
+                <td><strong>{{ fmt(p.amount) }}</strong></td>
+                <td>
+                  @if (p.lateFee && p.lateFee > 0) {
+                    <span class="late-fee-cell">+{{ fmt(p.lateFee) }}</span>
+                  } @else {
+                    <span class="muted-cell">—</span>
+                  }
+                </td>
+                <td>{{ p.paidAt ? fmtDate(p.paidAt) : '—' }}</td>
+                <td>
+                  <span class="badge" [attr.data-color]="statusColor(p.status)">
+                    @switch (p.status) {
+                      @case ('Paid')    { <i class="fa-solid fa-check"></i> }
+                      @case ('Pending') { <i class="fa-solid fa-clock"></i> }
+                      @case ('Late')    { <i class="fa-solid fa-triangle-exclamation"></i> }
+                      @case ('Overdue') { <i class="fa-solid fa-circle-exclamation"></i> }
+                      @case ('Refunded'){ <i class="fa-solid fa-rotate-left"></i> }
+                    }
+                    {{ p.status }}
+                  </span>
+                </td>
+                <td>
+                  @if (canWaive(p)) {
+                    <button
+                      class="btn-waive"
+                      [disabled]="waivedLoading() === p.id"
+                      (click)="waiveLateFee(p)">
+                      @if (waivedLoading() === p.id) {
+                        <i class="fa-solid fa-spinner fa-spin"></i>
+                      } @else {
+                        <i class="fa-solid fa-circle-xmark"></i>
+                      }
+                      Waive Fee
+                    </button>
+                  } @else {
+                    <span class="muted-cell">—</span>
+                  }
+                </td>
+              </tr>
+            }
+          </tbody>
+        </table>
+      </div>
+      <div class="waive-notice">
+        <i class="fa-solid fa-circle-info"></i>
+        Waiving a late fee removes it completely and regenerates the tenant's payment link at the base rent amount.
+      </div>
+    </div>
+
+  }
+
+</div>
