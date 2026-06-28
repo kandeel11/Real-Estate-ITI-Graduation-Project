@@ -1,3 +1,5 @@
+@use 'sass:list';
+
 :host {
     display: block;
 }
@@ -166,18 +168,18 @@
     }
 
     $colors: (
-        indigo: (#eef2ff, #4f46e5),
-        blue: (#eff6ff, #1d4ed8),
-        green: (#f0fdf4, #15803d),
-        purple: (#f5f3ff, #7c3aed),
-        teal: (#f0fdfa, #0d9488),
-        amber: (#fffbeb, #b45309),
+        "indigo": (#eef2ff, #4f46e5),
+        "blue": (#eff6ff, #1d4ed8),
+        "green": (#f0fdf4, #15803d),
+        "purple": (#f5f3ff, #7c3aed),
+        "teal": (#f0fdfa, #0d9488),
+        "amber": (#fffbeb, #b45309),
     );
 
 @each $name, $pair in $colors {
     &[data-color="#{$name}"] .mkt-kpi__icon {
-        background: nth($pair, 1);
-        color: nth($pair, 2);
+        background: list.nth($pair, 1);
+        color: list.nth($pair, 2);
     }
 }
 

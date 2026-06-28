@@ -60,7 +60,9 @@ export class AdminDisputesComponent implements OnInit {
     return new Date(iso).toLocaleDateString('en-US', { year: 'numeric', month: 'short', day: 'numeric' });
   }
 
-  priorityClass(p: string): string {
-    return { Emergency: 'priority--emergency', Medium: 'priority--medium', Low: 'priority--low' }[p] ?? '';
+  priorityClass(p: string | undefined): string {
+    if (!p) return '';
+    const map: Record<string, string> = { Emergency: 'priority--emergency', Medium: 'priority--medium', Low: 'priority--low' };
+    return map[p] ?? '';
   }
 }

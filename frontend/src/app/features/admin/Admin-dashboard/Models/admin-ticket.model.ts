@@ -3,6 +3,8 @@ export interface AdminTicket {
   title: string;
   description: string;
   status: string;
+  ticketNumber?: string;
+  priority?: string;
   propertyAddress?: string;
   categoryName?: string;
   categoryIcon?: string;

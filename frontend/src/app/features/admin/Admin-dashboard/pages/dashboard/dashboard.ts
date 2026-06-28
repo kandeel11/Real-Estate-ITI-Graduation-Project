@@ -13,7 +13,6 @@ import {
   ApexLegend,
   ApexPlotOptions,
 } from 'ng-apexcharts';
-import { DecimalPipe } from '@angular/common';
 import { TranslatePipe } from '@ngx-translate/core';
 
 // مسارات السيرفيس والموديلز (تأكد إنها مطابقة لمشروعك)
@@ -25,7 +24,7 @@ import { DashboardStats, PendingProperty, RentPayment, AdminUser } from '../../M
 @Component({
   selector: 'app-admin-dashboard',
   standalone: true,
-  imports: [NgApexchartsModule, DecimalPipe, TranslatePipe],
+  imports: [NgApexchartsModule, TranslatePipe],
   templateUrl: './dashboard.html',
   styleUrls: ['./dashboard.scss'],
 })
@@ -87,7 +86,7 @@ export class DashboardComponent {
 
       // تجهيز بيانات المفتاح (Legend) للـ HTML (هنفلتر الأصفار عشان متبقاش زحمة لو دور معين مفيهوش حد)
       const legendData = roleKeys
-        .map((key, index) => ({
+        .map((_key, index) => ({
           label: roleLabels[index],
           count: counts[index],
           color: roleColors[index],

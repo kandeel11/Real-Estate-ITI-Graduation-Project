@@ -1,3 +1,5 @@
+@use 'sass:list';
+
 :host {
     display: block;
 }
@@ -168,20 +170,20 @@
     }
 
     $colors: (
-        indigo: (#eef2ff, #4f46e5),
-        purple: (#f5f3ff, #7c3aed),
-        blue: (#eff6ff, #1d4ed8),
-        green: (#f0fdf4, #15803d),
-        amber: (#fffbeb, #b45309),
-        teal: (#f0fdfa, #0d9488),
-        orange: (#fff7ed, #c2410c),
+        "indigo": (#eef2ff, #4f46e5),
+        "purple": (#f5f3ff, #7c3aed),
+        "blue": (#eff6ff, #1d4ed8),
+        "green": (#f0fdf4, #15803d),
+        "amber": (#fffbeb, #b45309),
+        "teal": (#f0fdfa, #0d9488),
+        "orange": (#fff7ed, #c2410c),
     );
 
 @each $name, $pair in $colors {
     &[data-color="#{$name}"].active {
-        background: nth($pair, 1);
-        border-color: nth($pair, 2);
-        color: nth($pair, 2);
+        background: list.nth($pair, 1);
+        border-color: list.nth($pair, 2);
+        color: list.nth($pair, 2);
     }
 }
 }
@@ -387,17 +389,17 @@
     justify-content: center;
     flex-shrink: 0;
 
-    @each $name, $grad in (indigo: (#4f46e5, #6366f1),
-        purple: (#7c3aed, #a855f7),
-        blue: (#1d4ed8, #3b82f6),
-        green: (#059669, #10b981),
-        amber: (#b45309, #f59e0b),
-        teal: (#0d9488, #14b8a6),
-        orange: (#c2410c, #f97316),
-        gray: (#475569, #64748b),
+    @each $name, $grad in ("indigo": (#4f46e5, #6366f1),
+        "purple": (#7c3aed, #a855f7),
+        "blue": (#1d4ed8, #3b82f6),
+        "green": (#059669, #10b981),
+        "amber": (#b45309, #f59e0b),
+        "teal": (#0d9488, #14b8a6),
+        "orange": (#c2410c, #f97316),
+        "gray": (#475569, #64748b),
     ) {
         &[data-color="#{$name}"] {
-            background: linear-gradient(135deg, nth($grad, 1), nth($grad, 2));
+            background: linear-gradient(135deg, list.nth($grad, 1), list.nth($grad, 2));
         }
     }
 }
@@ -445,18 +447,18 @@
         font-size: 10px;
     }
 
-    @each $name, $pair in (indigo: (#eef2ff, #4f46e5),
-        purple: (#f5f3ff, #7c3aed),
-        blue: (#eff6ff, #1d4ed8),
-        green: (#f0fdf4, #15803d),
-        amber: (#fffbeb, #b45309),
-        teal: (#f0fdfa, #0d9488),
-        orange: (#fff7ed, #c2410c),
-        gray: (#f1f5f9, #475569),
+    @each $name, $pair in ("indigo": (#eef2ff, #4f46e5),
+        "purple": (#f5f3ff, #7c3aed),
+        "blue": (#eff6ff, #1d4ed8),
+        "green": (#f0fdf4, #15803d),
+        "amber": (#fffbeb, #b45309),
+        "teal": (#f0fdfa, #0d9488),
+        "orange": (#fff7ed, #c2410c),
+        "gray": (#f1f5f9, #475569),
     ) {
         &[data-color="#{$name}"] {
-            background: nth($pair, 1);
-            color: nth($pair, 2);
+            background: list.nth($pair, 1);
+            color: list.nth($pair, 2);
         }
     }
 }

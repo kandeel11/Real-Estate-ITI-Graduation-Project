@@ -1,3 +1,4 @@
+@use 'sass:list';
 // ── Design tokens ─────────────────────────────────────────────────────────────
 $page-bg:       #f5f6fa;
 $surface:       #ffffff;
@@ -512,16 +513,16 @@ $shadow-lg: 0 12px 40px rgba(79,70,229,.14);
   }
 
   $colors: (
-    indigo: (#eef2ff, #4338ca),
-    green:  (#f0fdf4, #16a34a),
-    amber:  (#fffbeb, #b45309),
-    purple: (#f5f3ff, #7c3aed),
+    "indigo": (#eef2ff, #4338ca),
+    "green":  (#f0fdf4, #16a34a),
+    "amber":  (#fffbeb, #b45309),
+    "purple": (#f5f3ff, #7c3aed),
   );
 
   @each $name, $pair in $colors {
     &[data-color="#{$name}"] .ai-suggestion-icon {
-      background: nth($pair, 1);
-      color: nth($pair, 2);
+      background: list.nth($pair, 1);
+      color: list.nth($pair, 2);
     }
   }
 }
