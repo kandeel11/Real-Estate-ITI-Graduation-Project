@@ -128,16 +128,26 @@ public sealed class OverduePaymentsJob : BackgroundService
     }
 
     /// <summary>
-    /// حساب غرامة التأخير:
-    /// - أول 7 أيام: 2% من المبلغ
-    /// - بعد 7 أيام: 5% من المبلغ
-    /// - الحد الأقصى: 15% من المبلغ
+    /// حساب غرامة التأخير بناءً على الإعدادات القابلة للتهيئة من Admin:
+    /// - أول {Tier1Days} أيام: {Tier1Percent}% من المبلغ (افتراضي: 7 أيام × 2%)
+    /// - بعد {Tier1Days} أيام: {Tier2Percent}% من المبلغ (افتراضي: 5%)
+    /// - بعد فترة السماح {GracePeriodDays}: لا غرامة (افتراضي: 0 أيام)
+    /// - الحد الأقصى: {MaxPercent}% من المبلغ (افتراضي: 15%)
     /// </summary>
-    private static decimal CalculateLateFee(decimal amount, int daysOverdue)
+    private decimal CalculateLateFee(decimal amount, int daysOverdue)
     {
-        var percentage = daysOverdue <= 7 ? 0.02m : 0.05m;
-        var fee = amount * percentage;
-        var maxFee = amount * 0.15m; // 15% حد أقصى
+        // فترة السماح — لا تطبق غرامة خلالها
+        if (daysOverdue <= _settings.LateFeeGracePeriodDays)
+            return 0m;
+
+        var effectiveDays = daysOverdue - _settings.LateFeeGracePeriodDays;
+
+        var pct = effectiveDays <= _settings.LateFeeTier1Days
+            ? _settings.LateFeeTier1Percent / 100m
+            : _settings.LateFeeTier2Percent / 100m;
+
+        var fee    = amount * pct;
+        var maxFee = amount * (_settings.LateFeeMaxPercent / 100m);
         return Math.Min(fee, maxFee);
     }
 
@@ -158,7 +168,21 @@ public sealed class OverduePaymentsJob : BackgroundService
 }
 
 /// <summary>
-/// إعدادات الـ OverduePaymentsJob من appsettings.json
+/// إعدادات الـ OverduePaymentsJob من appsettings.json (section: "Payment:OverdueJob")
+/// قابلة للتعديل بواسطة Admin بدون إعادة نشر التطبيق.
+///
+/// مثال appsettings:
+/// "Payment": {
+///   "OverdueJob": {
+///     "Enabled": true,
+///     "SendSmsReminders": true,
+///     "LateFeeGracePeriodDays": 0,
+///     "LateFeeTier1Days": 7,
+///     "LateFeeTier1Percent": 2.0,
+///     "LateFeeTier2Percent": 5.0,
+///     "LateFeeMaxPercent": 15.0
+///   }
+/// }
 /// </summary>
 public sealed class OverdueJobSettings
 {
@@ -166,4 +190,20 @@ public sealed class OverdueJobSettings
 
     public bool Enabled { get; init; } = true;
     public bool SendSmsReminders { get; init; } = true;
+
+    // ── Late-fee configuration (Admin-tunable) ──────────────────────────────
+    /// <summary>أيام السماح قبل تطبيق أي غرامة (0 = بدون سماح)</summary>
+    public int LateFeeGracePeriodDays { get; init; } = 0;
+
+    /// <summary>عدد أيام الشريحة الأولى من التأخير (default 7)</summary>
+    public int LateFeeTier1Days { get; init; } = 7;
+
+    /// <summary>نسبة الغرامة في الشريحة الأولى بالـ % (default 2%)</summary>
+    public decimal LateFeeTier1Percent { get; init; } = 2.0m;
+
+    /// <summary>نسبة الغرامة في الشريحة الثانية بالـ % (default 5%)</summary>
+    public decimal LateFeeTier2Percent { get; init; } = 5.0m;
+
+    /// <summary>الحد الأقصى للغرامة بالـ % من المبلغ الأصلي (default 15%)</summary>
+    public decimal LateFeeMaxPercent { get; init; } = 15.0m;
 }
