@@ -106,6 +106,7 @@
                 <th>Late Fee</th>
                 <th>Paid On</th>
                 <th>Status</th>
+                <th>Actions</th>
               </tr>
             </thead>
             <tbody>
@@ -134,6 +135,20 @@
                       }
                       {{ p.status }}
                     </span>
+                  </td>
+                  <td>
+                    @if (canWaive(p)) {
+                      <button class="btn-waive" [disabled]="waivedLoading() === p.id" (click)="waiveLateFee(p)">
+                        @if (waivedLoading() === p.id) {
+                          <i class="fa-solid fa-spinner fa-spin"></i>
+                        } @else {
+                          <i class="fa-solid fa-circle-xmark"></i>
+                        }
+                        Waive Fee
+                      </button>
+                    } @else {
+                      <span class="muted">—</span>
+                    }
                   </td>
                 </tr>
               }

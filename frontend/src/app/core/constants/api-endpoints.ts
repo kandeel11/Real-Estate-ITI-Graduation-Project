@@ -165,6 +165,7 @@ export const API_ENDPOINTS = {
     GET_SUMMARY: '/payments/summary',
     GET_BY_STATUS: (status: string) => `/payments/status/${status}`,
     APPLY_LATE_FEE: (id: string) => `/payments/${id}/late-fee`,
+    WAIVE_LATE_FEE: (id: string) => `/payments/${id}/waive-late-fee`,
     GET_RECEIPT: (id: string) => `/payments/${id}/receipt`,
     REFUND: (id: string) => `/payments/${id}/refund`,
     GENERATE_MONTHLY: '/payments/generate-monthly',

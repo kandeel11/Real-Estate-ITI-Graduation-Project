@@ -98,9 +98,13 @@ public sealed class RentPaymentLinkJob : BackgroundService
                 // اجلب بيانات الـ lease عشان نعرف اسم المستأجر والـ context
                 var lease = await leaseService.GetLeaseByIdAsync(payment.LeaseId, ct);
 
+                // Tenant pays rent + 1% platform commission
+                var baseAmount = payment.Amount + payment.LateFee;
+                var totalWithCommission = Math.Round(baseAmount * 1.01m, 2);
+
                 var result = await stripeCheckout.CreateCheckoutSessionAsync(new(
                     PaymentId:   payment.Id,
-                    Amount:      payment.Amount + payment.LateFee,
+                    Amount:      totalWithCommission,
                     ProductName: $"Rent Payment — {payment.DueDate:MMMM yyyy}",
                     SuccessUrl:  _settings.SuccessUrl,
                     CancelUrl:   _settings.CancelUrl,
@@ -111,7 +115,8 @@ public sealed class RentPaymentLinkJob : BackgroundService
                         ["due_date"]    = payment.DueDate.ToString("yyyy-MM-dd"),
                         ["type"]        = "rent",
                         ["tenant_id"]   = lease?.TenantId.ToString() ?? string.Empty,
-                        ["property_id"] = lease?.PropertyId.ToString() ?? string.Empty
+                        ["property_id"] = lease?.PropertyId.ToString() ?? string.Empty,
+                        ["company_id"]  = lease?.CompanyId?.ToString() ?? string.Empty
                     }
                 ), ct);
 
@@ -175,8 +180,8 @@ public sealed class RentLinkJobSettings
     public int DaysBeforeDue { get; init; } = 2;
 
     /// <summary>صفحة النجاح في الـ Angular app بعد الدفع</summary>
-    public string SuccessUrl { get; init; } = "http://localhost:4200/tenant/payments/success";
+    public string SuccessUrl { get; init; } = "http://localhost:4200/dashboard/payments/success";
 
     /// <summary>صفحة الإلغاء في الـ Angular app</summary>
-    public string CancelUrl { get; init; } = "http://localhost:4200/tenant/payments";
+    public string CancelUrl { get; init; } = "http://localhost:4200/dashboard/payments";
 }

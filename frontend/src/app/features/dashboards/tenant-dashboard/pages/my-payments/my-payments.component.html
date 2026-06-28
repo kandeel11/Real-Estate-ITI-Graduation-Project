@@ -35,7 +35,7 @@
         <div class="summary-card primary">
           <div class="sc-icon"><i class="fa-solid fa-money-bill-wave"></i></div>
           <div>
-            <span>Monthly Installment</span>
+            <span>Installment Amount</span>
             <strong>{{ formatCurrency(s.installmentAmount) }}</strong>
           </div>
         </div>
@@ -132,9 +132,7 @@
               @for (p of visiblePeriods(); track p.periodNumber) {
                 <tr [class.row-current]="p.isCurrent" [class.row-past]="p.isPast">
                   <td class="num-cell">{{ p.periodNumber }}</td>
-                  <td class="period-cell">
-                    {{ formatDate(p.periodStart) }} — {{ formatDate(p.periodEnd) }}
-                  </td>
+                  <td class="period-cell">{{ formatDate(p.periodStart) }} — {{ formatDate(p.periodEnd) }}</td>
                   <td>{{ formatDate(p.dueDate) }}</td>
                   <td><strong>{{ formatCurrency(p.amount) }}</strong></td>
                   <td>
@@ -206,7 +204,7 @@
         </div>
       </div>
 
-      <!-- History Table -->
+      <!-- Payment Records -->
       <div class="schedule-card">
         <div class="schedule-head">
           <h3><i class="fa-solid fa-receipt"></i> Payment Records</h3>
@@ -218,11 +216,12 @@
             <thead>
               <tr>
                 <th>Due Date</th>
-                <th>Amount</th>
+                <th>Rent Amount</th>
                 <th>Late Fee</th>
+                <th>Platform Fee (1%)</th>
+                <th>Total Charged</th>
                 <th>Paid On</th>
                 <th>Status</th>
-                <th>Method</th>
                 <th></th>
               </tr>
             </thead>
@@ -234,6 +233,20 @@
                   <td>
                     @if (p.lateFee && p.lateFee > 0) {
                       <span class="late-fee">+{{ formatCurrency(p.lateFee) }}</span>
+                    } @else {
+                      <span class="text-muted">—</span>
+                    }
+                  </td>
+                  <td>
+                    @if (p.status !== 'Paid') {
+                      <span class="commission-fee">+{{ formatCurrency(commissionAmount(p)) }}</span>
+                    } @else {
+                      <span class="text-muted">—</span>
+                    }
+                  </td>
+                  <td>
+                    @if (p.status !== 'Paid') {
+                      <strong class="total-charged">{{ formatCurrency(chargedAmount(p)) }}</strong>
                     } @else {
                       <span class="text-muted">—</span>
                     }
@@ -251,24 +264,32 @@
                       {{ p.status }}
                     </span>
                   </td>
-                  <td>
-                    @if (p.paymentMethod) {
-                      <span class="method-tag">{{ p.paymentMethod }}</span>
-                    } @else {
-                      <span class="text-muted">—</span>
-                    }
-                  </td>
-                  <td>
-                    @if (p.status === 'Pending' || p.status === 'Late' || p.status === 'Overdue') {
-                      <button class="btn-pay-now" (click)="openStripePayment(p.id)">
+                  <td class="action-cell">
+                    @if (hasCheckoutLink(p)) {
+                      <button class="btn-pay-now" (click)="payNow(p)">
                         <i class="fa-brands fa-stripe"></i> Pay Now
                       </button>
+                    } @else if (linkPending(p)) {
+                      <span class="link-pending" title="Payment link is auto-generated 2 days before due date">
+                        <i class="fa-solid fa-hourglass-half"></i> Link pending
+                      </span>
+                    }
+                    @if (p.status === 'Paid' && p.receiptUrl) {
+                      <a [href]="p.receiptUrl" target="_blank" class="btn-receipt">
+                        <i class="fa-solid fa-file-invoice"></i> Receipt
+                      </a>
                     }
                   </td>
                 </tr>
               }
             </tbody>
           </table>
+        </div>
+
+        <!-- Commission notice -->
+        <div class="commission-notice">
+          <i class="fa-solid fa-circle-info"></i>
+          A 1% platform service fee is applied to online payments. The payment link is generated automatically 2 days before your due date.
         </div>
       </div>
 
@@ -277,45 +298,3 @@
   }
 
 </div>
-
-<!-- ── Stripe Elements Payment Modal ───────────────────────── -->
-@if (stripePaymentId()) {
-  <div class="stripe-backdrop" (click)="closeStripePayment()">
-    <div class="stripe-modal" (click)="$event.stopPropagation()">
-      <div class="stripe-modal-header">
-        <h3><i class="fa-brands fa-stripe me-2"></i>Pay Rent Installment</h3>
-        <button class="stripe-close" (click)="closeStripePayment()"><i class="fa-solid fa-xmark"></i></button>
-      </div>
-
-      <div class="stripe-modal-body">
-        @if (stripeLoading()) {
-          <div class="stripe-loading">
-            <i class="fa-solid fa-spinner fa-spin"></i>
-            <span>Setting up secure payment…</span>
-          </div>
-        } @else {
-          <div #stripeCard id="stripe-card-element"></div>
-        }
-
-        @if (stripeError()) {
-          <div class="stripe-err">
-            <i class="fa-solid fa-circle-exclamation"></i>
-            {{ stripeError() }}
-          </div>
-        }
-      </div>
-
-      <div class="stripe-modal-footer">
-        <button class="btn-stripe-cancel" (click)="closeStripePayment()" [disabled]="stripeConfirming()">Cancel</button>
-        <button class="btn-stripe-pay" (click)="confirmStripePayment()"
-                [disabled]="stripeLoading() || stripeConfirming()">
-          @if (stripeConfirming()) {
-            <i class="fa-solid fa-spinner fa-spin me-1"></i>Processing…
-          } @else {
-            <i class="fa-solid fa-lock me-1"></i>Confirm Payment
-          }
-        </button>
-      </div>
-    </div>
-  </div>
-}

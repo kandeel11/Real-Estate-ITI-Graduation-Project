@@ -18,7 +18,8 @@ public sealed class OverduePaymentsJob : BackgroundService
 {
     private readonly IServiceScopeFactory _scopeFactory;
     private readonly ILogger<OverduePaymentsJob> _logger;
-    private readonly OverdueJobSettings _settings;
+    private readonly OverdueJobSettings   _settings;
+    private readonly RentLinkJobSettings  _linkSettings;
 
     // بيشتغل مرة كل 24 ساعة
     private static readonly TimeSpan Interval = TimeSpan.FromHours(24);
@@ -26,11 +27,13 @@ public sealed class OverduePaymentsJob : BackgroundService
     public OverduePaymentsJob(
         IServiceScopeFactory scopeFactory,
         ILogger<OverduePaymentsJob> logger,
-        IOptions<OverdueJobSettings> settings)
+        IOptions<OverdueJobSettings> settings,
+        IOptions<RentLinkJobSettings> linkSettings)
     {
         _scopeFactory = scopeFactory;
-        _logger = logger;
-        _settings = settings.Value;
+        _logger       = logger;
+        _settings     = settings.Value;
+        _linkSettings = linkSettings.Value;
     }
 
     protected override async Task ExecuteAsync(CancellationToken stoppingToken)
@@ -61,9 +64,10 @@ public sealed class OverduePaymentsJob : BackgroundService
         _logger.LogInformation("OverduePaymentsJob: Starting overdue check at {Time}", DateTime.UtcNow);
 
         using var scope = _scopeFactory.CreateScope();
-        var repository = scope.ServiceProvider.GetRequiredService<IPaymentRepository>();
+        var repository          = scope.ServiceProvider.GetRequiredService<IPaymentRepository>();
         var notificationService = scope.ServiceProvider.GetRequiredService<INotificationService>();
-        var leaseService = scope.ServiceProvider.GetRequiredService<ILeaseService>();
+        var leaseService        = scope.ServiceProvider.GetRequiredService<ILeaseService>();
+        var stripeCheckout      = scope.ServiceProvider.GetRequiredService<IStripeCheckoutService>();
 
         var overduePayments = await repository.GetOverdueAsync(ct);
 
@@ -96,6 +100,44 @@ public sealed class OverduePaymentsJob : BackgroundService
                     _logger.LogDebug(
                         "Applied late fee {Fee} AED to Payment {Id} ({Days} days overdue)",
                         lateFee, payment.Id, daysOverdue);
+
+                    // Regenerate checkout link with updated amount (base + late fee + 1% commission)
+                    try
+                    {
+                        var lease = await leaseService.GetLeaseByIdAsync(payment.LeaseId, ct);
+                        var totalWithCommission = Math.Round((payment.Amount + payment.LateFee) * 1.01m, 2);
+
+                        var result = await stripeCheckout.CreateCheckoutSessionAsync(new(
+                            PaymentId:   payment.Id,
+                            Amount:      totalWithCommission,
+                            ProductName: $"Rent Payment — {payment.DueDate:MMMM yyyy} (includes late fee)",
+                            SuccessUrl:  _linkSettings.SuccessUrl,
+                            CancelUrl:   _linkSettings.CancelUrl,
+                            Metadata: new Dictionary<string, string>
+                            {
+                                ["payment_id"]  = payment.Id.ToString(),
+                                ["lease_id"]    = payment.LeaseId.ToString(),
+                                ["due_date"]    = payment.DueDate.ToString("yyyy-MM-dd"),
+                                ["type"]        = "rent",
+                                ["tenant_id"]   = lease?.TenantId.ToString() ?? string.Empty,
+                                ["property_id"] = lease?.PropertyId.ToString() ?? string.Empty,
+                                ["company_id"]  = lease?.CompanyId?.ToString() ?? string.Empty
+                            },
+                            IdempotencySuffix: $"_lf{daysOverdue}"
+                        ), ct);
+
+                        payment.SetCheckoutSession(result.SessionId, result.Url);
+
+                        _logger.LogInformation(
+                            "OverduePaymentsJob: Stripe link regenerated for Payment {Id} with late fee included (amount={Amount})",
+                            payment.Id, totalWithCommission);
+                    }
+                    catch (Exception ex)
+                    {
+                        _logger.LogError(ex,
+                            "OverduePaymentsJob: Failed to regenerate Stripe link for Payment {Id}. Late fee still applied.",
+                            payment.Id);
+                    }
                 }
 
                 // إرسال SMS تذكير للمستأجر

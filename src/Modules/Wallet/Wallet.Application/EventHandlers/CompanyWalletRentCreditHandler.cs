@@ -41,26 +41,32 @@ public class CompanyWalletRentCreditHandler : INotificationHandler<RentPaymentSu
 
             var wallet = await _walletRepo.GetOrCreateForCompanyAsync(companyId, cancellationToken);
 
-            // Company receives 10% management fee (minus 1% platform commission = 9.9% net)
-            var managementFeeRate = 0.10m;
-            var grossFee = Math.Round(notification.Amount * managementFeeRate, 2);
-            var commission = Math.Round(grossFee * 0.01m, 2);
-            var netFee = grossFee - commission;
+            // Company receives full rent minus 1% platform commission
+            var netAmount = Math.Round(notification.Amount * 0.99m, 2);
+            var commission = notification.Amount - netAmount;
+
+            var propertyLabel = notification.PropertyTitle is not null
+                ? $"property \"{notification.PropertyTitle}\""
+                : $"property {notification.PropertyId}";
+
+            var dueLabel = notification.DueDate is not null
+                ? $" (due {notification.DueDate:MMM yyyy})"
+                : string.Empty;
 
             var entry = LedgerEntry.CreateCredit(
                 walletId: wallet.Id,
                 paymentId: notification.PaymentId,
-                amount: netFee,
-                description: $"company management fee for lease {notification.LeaseId} (net of {commission:0.##} AED platform commission)");
+                amount: netAmount,
+                description: $"Rent payment — {propertyLabel}{dueLabel}, lease {notification.LeaseId} (net of {commission:0.##} AED commission)");
 
-            wallet.Credit(netFee);
+            wallet.Credit(netAmount);
 
             await _walletRepo.AddLedgerEntryAsync(entry, cancellationToken);
             await _walletRepo.SaveChangesAsync(cancellationToken);
 
             _logger.LogInformation(
-                "Company wallet credited: CompanyId={CompanyId}, Fee={Fee}, PaymentId={PaymentId}",
-                companyId, netFee, notification.PaymentId);
+                "Company wallet credited: CompanyId={CompanyId}, NetAmount={Amount}, PaymentId={PaymentId}",
+                companyId, netAmount, notification.PaymentId);
         }
         catch (Exception ex)
         {

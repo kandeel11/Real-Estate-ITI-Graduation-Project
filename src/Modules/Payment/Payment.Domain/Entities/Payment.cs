@@ -260,6 +260,21 @@ public class Payment
         UpdatedAt = DateTime.UtcNow;
     }
 
+    /// <summary>
+    /// Waives the late fee entirely — resets LateFee to zero, restores status to Pending,
+    /// and clears the Stripe checkout link so it gets regenerated with the correct base amount.
+    /// </summary>
+    public void WaiveLateFee()
+    {
+        if (LateFee <= 0) return;
+        LateFee = 0;
+        if (Status == PaymentStatus.Late)
+            Status = PaymentStatus.Pending;
+        CheckoutUrl = null;
+        CheckoutSessionId = null;
+        UpdatedAt = DateTime.UtcNow;
+    }
+
     public void UpdateAiPrediction(bool predictedLate)
     {
         AiPredictedLate = predictedLate;

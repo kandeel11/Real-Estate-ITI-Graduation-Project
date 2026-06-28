@@ -30,7 +30,8 @@ public sealed record CreateCheckoutSessionRequest(
     string ProductName,
     string SuccessUrl,
     string CancelUrl,
-    Dictionary<string, string> Metadata
+    Dictionary<string, string> Metadata,
+    string? IdempotencySuffix = null
 );
 
 public sealed record CheckoutSessionResult(
