@@ -54,6 +54,21 @@ public sealed class PropertyDuplicateCheckService : IPropertyDuplicateCheckServi
         _logger = logger;
     }
 
+    // ─────────────────────────────────────────────────────────────────────────
+    // Direct upsert — no duplicate check (used by seed jobs)
+    // ─────────────────────────────────────────────────────────────────────────
+    public async Task UpsertDirectAsync(
+        PropertyDuplicateCheckRequest request,
+        CancellationToken cancellationToken = default)
+    {
+        await EnsureCollectionAsync(cancellationToken);
+        var searchText = BuildSearchText(request);
+        var embeddings = await _embeddings.GenerateEmbeddingsAsync(
+            [searchText], cancellationToken: cancellationToken);
+        var vector = embeddings[0].ToArray();
+        await UpsertPropertyAsync(request, vector, cancellationToken);
+    }
+
     public async Task<DuplicateCheckResult> CheckAsync(
         PropertyDuplicateCheckRequest request,
         CancellationToken cancellationToken = default)
