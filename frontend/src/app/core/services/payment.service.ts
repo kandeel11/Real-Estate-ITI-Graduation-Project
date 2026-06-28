@@ -159,6 +159,25 @@ export class PaymentService {
     return this.http.get<PlatformDashboard>(`${this.base}/payments/platform-dashboard`);
   }
 
+  /**
+   * Confirms a rent Checkout Session after Stripe redirects back.
+   * POST /api/payments/rent/confirm — marks payment Paid + credits wallet.
+   */
+  confirmRentPayment(sessionId: string): Observable<{ paymentStatus: string | null }> {
+    return this.http.post<{ paymentStatus: string | null }>(
+      `${this.base}/payments/rent/confirm`,
+      { sessionId },
+    );
+  }
+
+  /** Owner / company_manager / admin waive late fee — POST /api/payments/{id}/waive-late-fee */
+  waiveLateFee(id: string): Observable<void> {
+    return this.http.post<void>(
+      `${this.base}${API_ENDPOINTS.PAYMENTS.WAIVE_LATE_FEE(id)}`,
+      {},
+    );
+  }
+
   /** Admin refund — POST /api/payments/{id}/refund */
   refundPayment(id: string, reason: string): Observable<void> {
     return this.http.post<void>(`${this.base}${API_ENDPOINTS.PAYMENTS.REFUND(id)}`, { reason });

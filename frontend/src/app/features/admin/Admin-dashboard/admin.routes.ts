@@ -74,6 +74,18 @@ export const adminRoutes: Routes = [
             (m) => m.AdminPlatformDashboardComponent,
           ),
       },
+      {
+        path: 'disputes',
+        loadComponent: () =>
+          import('./pages/disputes/disputes.component').then((m) => m.AdminDisputesComponent),
+      },
+      {
+        path: 'disputes/:id',
+        loadComponent: () =>
+          import('./pages/disputes/dispute-detail/dispute-detail.component').then(
+            (m) => m.DisputeDetailComponent,
+          ),
+      },
       // Placeholder redirects until pages are built
       { path: 'approvals', redirectTo: 'overview', pathMatch: 'full' },
       { path: 'reports', redirectTo: 'overview', pathMatch: 'full' },

@@ -9,5 +9,7 @@ public record RentPaymentSucceededEvent(
     Guid LeaseId,
     Guid PropertyId,
     decimal Amount,
-    Guid? CompanyId = null
+    Guid? CompanyId = null,
+    string? PropertyTitle = null,
+    DateOnly? DueDate = null
 ) : INotification;

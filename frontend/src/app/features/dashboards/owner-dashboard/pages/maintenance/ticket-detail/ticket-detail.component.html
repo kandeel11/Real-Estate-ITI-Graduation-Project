@@ -146,6 +146,30 @@
             <span class="text-muted small">Submitting decision…</span>
           </div>
         }
+        @if (canDispute()) {
+          <div class="dispute-divider">
+            <span class="dispute-divider-label">Disagree with the AI decision?</span>
+          </div>
+          <button class="btn btn-outline-warning btn-sm dispute-trigger-btn" (click)="showDisputeModal.set(true)">
+            <i class="fa-solid fa-flag me-2"></i>Dispute AI Decision
+          </button>
+        }
+      </div>
+    }
+
+    <!-- ══ 4b. DISPUTE PENDING BANNER ════════════════════ -->
+    @if (t.status === 'Disputed') {
+      <div class="detail-card mb-4 dispute-pending-card">
+        <div class="dispute-pending-inner">
+          <i class="fa-solid fa-flag dispute-pending-icon"></i>
+          <div>
+            <h3 class="dispute-pending-title">Dispute Under Admin Review</h3>
+            <p class="dispute-pending-desc">
+              A dispute has been submitted on this ticket. An admin will review the AI's decision and set the final responsible party.
+              @if (t.disputeReason) { <br><strong>Dispute reason:</strong> {{ t.disputeReason }} }
+            </p>
+          </div>
+        </div>
       </div>
     }
 
@@ -280,6 +304,40 @@
 
   }<!-- /ticket -->
 </div>
+
+<!-- ── DISPUTE MODAL ──────────────────────────────────── -->
+@if (showDisputeModal()) {
+  <div class="modal-overlay" (click)="showDisputeModal.set(false)">
+    <div class="dispute-modal" (click)="$event.stopPropagation()">
+      <div class="dispute-modal-header">
+        <h3><i class="fa-solid fa-flag me-2 text-warning"></i>Dispute AI Decision</h3>
+        <button class="modal-close-btn" (click)="showDisputeModal.set(false)"><i class="fa-solid fa-xmark"></i></button>
+      </div>
+      <div class="dispute-modal-body">
+        <p class="text-muted small mb-3">
+          Tell us why you disagree with the AI's responsibility decision. An admin will review your case and make a final ruling.
+        </p>
+        <div class="form-group">
+          <label class="dispute-label">Your reason <span style="color:var(--color-error)">*</span></label>
+          <textarea class="form-control" rows="4" [(ngModel)]="disputeReason"
+                    placeholder="e.g. The AI said I am responsible but this is a structural defect that predates my tenancy..."
+                    [disabled]="disputeLoading()"></textarea>
+          <span class="text-muted" style="font-size:0.75rem">{{ disputeReason.length }}/500</span>
+        </div>
+      </div>
+      <div class="dispute-modal-footer">
+        <button class="btn btn-outline-secondary" (click)="showDisputeModal.set(false)" [disabled]="disputeLoading()">Cancel</button>
+        <button class="btn btn-warning" (click)="raiseDispute()" [disabled]="!disputeReason.trim() || disputeLoading()">
+          @if (disputeLoading()) {
+            <span class="spinner-border spinner-border-sm me-2" role="status"></span>Submitting…
+          } @else {
+            <i class="fa-solid fa-flag me-2"></i>Submit Dispute
+          }
+        </button>
+      </div>
+    </div>
+  </div>
+}
 
 <!-- ── DECISION CONFIRM MODAL ─────────────────────────── -->
 <app-confirm-modal

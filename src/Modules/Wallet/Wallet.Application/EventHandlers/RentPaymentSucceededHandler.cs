@@ -19,6 +19,10 @@ public class RentPaymentSucceededHandler : INotificationHandler<RentPaymentSucce
 
     public async Task Handle(RentPaymentSucceededEvent notification, CancellationToken cancellationToken)
     {
+        // Company-managed deals: the entire net rent goes to the company wallet (handled by CompanyWalletRentCreditHandler)
+        if (notification.CompanyId is not null)
+            return;
+
         try
         {
             // Idempotency: skip if this payment was already credited
@@ -36,11 +40,19 @@ public class RentPaymentSucceededHandler : INotificationHandler<RentPaymentSucce
             var netAmount = Math.Round(notification.Amount * 0.99m, 2);
             var commission = notification.Amount - netAmount;
 
+            var propertyLabel = notification.PropertyTitle is not null
+                ? $"property \"{notification.PropertyTitle}\""
+                : $"property {notification.PropertyId}";
+
+            var dueLabel = notification.DueDate is not null
+                ? $" (due {notification.DueDate:MMM yyyy})"
+                : string.Empty;
+
             var entry = LedgerEntry.CreateCredit(
                 walletId: wallet.Id,
                 paymentId: notification.PaymentId,
                 amount: netAmount,
-                description: $"Rent payment for lease {notification.LeaseId} (net of {commission:0.##} AED platform commission)");
+                description: $"Rent payment — {propertyLabel}{dueLabel}, lease {notification.LeaseId} (net of {commission:0.##} AED commission)");
 
             wallet.Credit(netAmount);
 
@@ -48,14 +60,13 @@ public class RentPaymentSucceededHandler : INotificationHandler<RentPaymentSucce
             await _walletRepo.SaveChangesAsync(cancellationToken);
 
             _logger.LogInformation(
-                "Wallet credited: OwnerId={OwnerId}, Amount={Amount}, PaymentId={PaymentId}",
-                notification.OwnerId, notification.Amount, notification.PaymentId);
+                "Owner wallet credited: OwnerId={OwnerId}, NetAmount={Amount}, PaymentId={PaymentId}",
+                notification.OwnerId, netAmount, notification.PaymentId);
         }
         catch (Exception ex)
         {
             _logger.LogError(ex,
                 "RentPaymentSucceededHandler: Failed for PaymentId={PaymentId}", notification.PaymentId);
-            // Don't rethrow — failures must not crash the outbox publisher
         }
     }
 }

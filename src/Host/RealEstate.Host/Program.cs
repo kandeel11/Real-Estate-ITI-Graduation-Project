@@ -156,6 +156,7 @@ public class Program
         builder.Services.AddScoped<Property.Application.Interfaces.IAdminEmailService, PropertyAdminEmailAdapter>();
         builder.Services.AddScoped<Maintenance.Application.Interfaces.IPropertyManagementChecker, PropertyManagementCheckerAdapter>();
         builder.Services.AddScoped<Maintenance.Application.Interfaces.IMaintenancePaymentLinkService, MaintenancePaymentLinkAdapter>();
+        builder.Services.AddScoped<Maintenance.Application.Interfaces.ILeaseDetailsAdapter, LeaseDetailsForDisputeAdapter>();
 
         builder.Services.AddPaymentModule(builder.Configuration);
         builder.Services.AddWalletModule(builder.Configuration);
@@ -243,6 +244,16 @@ public class Program
                 await RealEstate.Host.Seeds.PropertyDataSeed.BackfillSubscriptionsAsync(
                     identityDb, seedSubscriptionRepo, seedPublisher);
             }
+
+            // Qdrant vector seed — uploads seeded properties into the 'properties' collection
+            // so they participate in duplicate detection from the first review submission.
+            // Idempotent (skips IDs already in Qdrant) and non-blocking (wrapped in try-catch).
+            await RealEstate.Host.Seeds.QdrantPropertySeed.SeedAsync(
+                propertyDb,
+                identityDb,
+                scope.ServiceProvider.GetRequiredService<AI.Application.Interfaces.IPropertyDuplicateCheckService>(),
+                scope.ServiceProvider.GetRequiredService<Qdrant.Client.QdrantClient>(),
+                app.Services.GetRequiredService<ILoggerFactory>().CreateLogger("QdrantPropertySeed"));
 
             var paymentDb = scope.ServiceProvider.GetRequiredService<PaymentDbContext>();
             await paymentDb.Database.MigrateAsync();

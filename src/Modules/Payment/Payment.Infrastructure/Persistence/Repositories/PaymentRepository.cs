@@ -108,6 +108,23 @@ public sealed class PaymentRepository : IPaymentRepository
             .ToListAsync(cancellationToken);
     }
 
+    public async Task<IReadOnlyList<Payment.Domain.Entities.Payment>> GetUpcomingRentPaymentsWithoutLinkAsync(
+        DateOnly from,
+        DateOnly to,
+        CancellationToken cancellationToken = default)
+    {
+        return await _context.Payments
+            .Include(p => p.RentDetails)
+            .Where(p =>
+                p.PaymentType == PaymentType.Rent &&
+                p.Status      == PaymentStatus.Pending &&
+                p.DueDate     >= from &&
+                p.DueDate     <= to &&
+                p.CheckoutUrl == null)
+            .OrderBy(p => p.DueDate)
+            .ToListAsync(cancellationToken);
+    }
+
     public async Task<bool> ExistsForLeaseAndMonthAsync(
         Guid leaseId,
         DateOnly dueDate,

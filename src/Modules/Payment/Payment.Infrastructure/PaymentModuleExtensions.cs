@@ -55,6 +55,10 @@ public static class PaymentModuleExtensions
         services.AddHostedService<OverduePaymentsJob>();
         services.AddHostedService<MonthlyPaymentGenerationJob>();
 
+        services.Configure<RentLinkJobSettings>(
+            configuration.GetSection(RentLinkJobSettings.SectionName));
+        services.AddHostedService<RentPaymentLinkJob>();
+
         services.TryAddScoped<INotificationService, MockNotificationService>();
 
         // ISubscriptionPlanService مش بيتسجل هنا — التسجيل الحقيقي موجود في

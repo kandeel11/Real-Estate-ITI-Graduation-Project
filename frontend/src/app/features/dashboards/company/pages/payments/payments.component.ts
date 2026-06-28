@@ -2,6 +2,7 @@ import { Component, inject, signal, computed, OnInit } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { PaymentService } from '../../../../../core/services/payment.service';
 import { RentPayment, BrokerLeaseSchedule, PaymentPeriod } from '../../../../../core/models/payment.model';
+import { finalize } from 'rxjs';
 
 type ActiveTab = 'payments' | 'schedule';
 
@@ -121,8 +122,29 @@ export class CompanyPaymentsComponent implements OnInit {
     return Object.entries(this.paymentStats().byProperty);
   }
 
+  waivedIds = signal<Set<string>>(new Set());
+  waivedLoading = signal<string | null>(null);
+
+  canWaive(p: RentPayment): boolean {
+    return (p.status === 'Late' || p.status === 'Overdue') && (p.lateFee ?? 0) > 0 && !this.waivedIds().has(p.id);
+  }
+
+  waiveLateFee(p: RentPayment) {
+    if (!confirm(`Waive the late fee of ${this.formatCurrency(p.lateFee ?? 0)} for this payment?`)) return;
+    this.waivedLoading.set(p.id);
+    this.paymentService.waiveLateFee(p.id).pipe(
+      finalize(() => this.waivedLoading.set(null))
+    ).subscribe({
+      next: () => {
+        this.waivedIds.update(s => { const n = new Set(s); n.add(p.id); return n; });
+        this.loadPayments();
+      },
+      error: () => alert('Could not waive late fee. Please try again.'),
+    });
+  }
+
   formatCurrency(n: number) {
-    return `${(n ?? 0).toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })} EGP`;
+    return `${(n ?? 0).toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })} AED`;
   }
 
   formatDate(iso: string) {

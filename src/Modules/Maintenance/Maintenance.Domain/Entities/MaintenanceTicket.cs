@@ -46,6 +46,18 @@ namespace Maintenance.Domain.Entities
         public DateTime? ResolvedAt { get; private set; }
         public DateTime? ClosedAt { get; private set; }
 
+        // ── Dispute Tracking ──────────────────────────────────────────────────
+        /// <summary>The reason the party disputes the AI's responsibility decision.</summary>
+        public string? DisputeReason { get; private set; }
+        /// <summary>The user ID of whoever raised the dispute.</summary>
+        public Guid? DisputedById { get; private set; }
+        /// <summary>Role of the disputing party: "Tenant", "Owner", or "Company".</summary>
+        public string? DisputedByRole { get; private set; }
+        /// <summary>UTC timestamp when the dispute was raised.</summary>
+        public DateTime? DisputeDate { get; private set; }
+        /// <summary>Admin's notes recorded when resolving the dispute.</summary>
+        public string? AdminNotes { get; private set; }
+
         public ICollection<MaintenanceTicketAttachment> Attachments { get; private set; } = new List<MaintenanceTicketAttachment>();
         public ICollection<MaintenanceTicketComment> Comments { get; private set; } = new List<MaintenanceTicketComment>();
         public ICollection<TicketStatusHistory> StatusHistory { get; private set; } = new List<TicketStatusHistory>();
@@ -182,6 +194,57 @@ namespace Maintenance.Domain.Entities
             TransitionTo(TicketStatus.Completed, "System");
             ResolvedAt = DateTime.UtcNow;
             MarkAsUpdated();
+        }
+
+        // ── Dispute Workflow ──────────────────────────────────────────────────
+
+        /// <summary>
+        /// Raises a dispute against the AI's responsibility decision.
+        /// Only valid when the ticket is waiting for an Owner or Tenant decision.
+        /// </summary>
+        public void RaiseDispute(Guid disputedById, string disputedByRole, string reason)
+        {
+            if (Status != TicketStatus.WaitingForOwnerDecision
+                && Status != TicketStatus.WaitingForTenantDecision)
+                throw new InvalidOperationException(
+                    $"Disputes can only be raised while a decision is pending. Current status: {Status}.");
+
+            if (string.IsNullOrWhiteSpace(reason))
+                throw new ArgumentException("A dispute reason is required.", nameof(reason));
+
+            DisputedById   = disputedById;
+            DisputedByRole = disputedByRole;
+            DisputeReason  = reason;
+            DisputeDate    = DateTime.UtcNow;
+
+            TransitionTo(TicketStatus.Disputed, disputedById.ToString());
+            AddDomainEvent(new Events.TicketDisputeRaisedDomainEvent(Id, disputedById, disputedByRole, reason));
+        }
+
+        /// <summary>
+        /// Admin resolves the dispute by declaring the final responsible party.
+        /// The ticket transitions back to the appropriate decision-waiting state so
+        /// the normal vendor-assignment flow can continue.
+        /// </summary>
+        public void ResolveDispute(string finalResponsibleParty, string? adminNotes)
+        {
+            if (Status != TicketStatus.Disputed)
+                throw new InvalidOperationException("Only Disputed tickets can be resolved.");
+
+            if (!Enum.TryParse<ResponsibleParty>(finalResponsibleParty, ignoreCase: true, out var parsed))
+                throw new ArgumentException(
+                    $"Invalid responsible party '{finalResponsibleParty}'. Must be 'Owner' or 'Tenant'.",
+                    nameof(finalResponsibleParty));
+
+            ResponsibleParty = parsed;
+            AdminNotes       = adminNotes;
+
+            var nextStatus = parsed == Enums.ResponsibleParty.Owner
+                ? TicketStatus.WaitingForOwnerDecision
+                : TicketStatus.WaitingForTenantDecision;
+
+            TransitionTo(nextStatus, "Admin");
+            AddDomainEvent(new Events.TicketDisputeResolvedDomainEvent(Id, parsed.ToString(), adminNotes));
         }
 
         public void Cancel(string cancelledBy)

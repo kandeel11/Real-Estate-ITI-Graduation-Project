@@ -17,7 +17,7 @@ namespace RealEstate.Host.Seeds;
 public static class PropertyDataSeed
 {
     // All seed user emails — used both for idempotency and for targeted cleanup
-    private static readonly string[] SeedEmails =
+    internal static readonly string[] SeedEmails =
     [
         "ahmed.hassan@seeddata.com",
         "mona.ibrahim@seeddata.com",

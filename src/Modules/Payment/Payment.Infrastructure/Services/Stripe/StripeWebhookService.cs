@@ -288,6 +288,51 @@ public sealed class StripeWebhookService
             "Payment {PaymentId} marked Paid via Checkout. SessionId={SessionId}",
             paymentId, session.Id);
 
+        // ── Rent: wallet credit event via Outbox ────────────────────────────────
+        if (payment.PaymentType == PaymentType.Rent && payment.RentDetails is not null)
+        {
+            payment.RecordCommission();
+
+            var rentDetails = payment.RentDetails;
+
+            // CompanyId from metadata (set by RentPaymentLinkJob)
+            var companyId = session.Metadata.TryGetValue("company_id", out var companyIdStr)
+                && !string.IsNullOrEmpty(companyIdStr)
+                && Guid.TryParse(companyIdStr, out var parsedCompanyId)
+                ? parsedCompanyId
+                : (Guid?)null;
+
+            // Fallback: resolve companyId from lease if not in metadata
+            if (companyId is null)
+            {
+                var leaseDto = await _leaseService.GetLeaseByIdAsync(rentDetails.LeaseId, ct);
+                companyId = leaseDto?.CompanyId;
+            }
+
+            await _outboxWriter.AddAsync(
+                new RentPaymentSucceededEvent(
+                    PaymentId:     payment.Id,
+                    OwnerId:       rentDetails.LandlordId,
+                    TenantId:      rentDetails.TenantId,
+                    LeaseId:       rentDetails.LeaseId,
+                    PropertyId:    rentDetails.PropertyId,
+                    Amount:        payment.Amount,
+                    CompanyId:     companyId,
+                    DueDate:       payment.DueDate),
+                ct);
+
+            await _repository.SaveChangesAsync(ct);
+
+            // Notify tenant of confirmed payment
+            await TrySendPaymentConfirmationAsync(payment, paymentIntentId, null, ct);
+
+            _logger.LogInformation(
+                "RentPaymentSucceededEvent queued in outbox for Payment {PaymentId}, Owner {OwnerId}, CompanyId {CompanyId}",
+                payment.Id, rentDetails.LandlordId, companyId);
+
+            return null;
+        }
+
         // ── Publish Integration Event via Outbox (Subscription Activation) ──
         if (payment.PaymentType == PaymentType.Subscription && payment.SubscriptionDetails is not null)
         {

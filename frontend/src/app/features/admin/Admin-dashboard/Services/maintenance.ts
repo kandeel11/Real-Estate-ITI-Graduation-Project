@@ -67,4 +67,62 @@ export class MaintenanceService {
       map((res) => Array.isArray(res) ? res : (res?.$values ?? res?.data ?? res?.items ?? [])),
     );
   }
+
+  // ===== DISPUTES =====
+  getDisputeDetails(ticketId: string): Observable<DisputeDetailsDto> {
+    return this.http.get<DisputeDetailsDto>(
+      `${this.base}/maintenance/tickets/${ticketId}/dispute-details`
+    ).pipe(timeout(15000));
+  }
+
+  resolveDispute(ticketId: string, finalResponsibleParty: string, adminNotes: string | null): Observable<void> {
+    return this.http.post<void>(
+      `${this.base}/maintenance/tickets/${ticketId}/resolve-dispute`,
+      { finalResponsibleParty, adminNotes }
+    );
+  }
+}
+
+// ── Dispute DTOs ─────────────────────────────────────────────────────────────
+export interface LeaseContractSummaryDto {
+  leaseId: string;
+  monthlyInstallment: number | null;
+  totalRentAmount: number | null;
+  securityDeposit: number | null;
+  startDate: string | null;
+  endDate: string | null;
+  durationInMonths: number | null;
+  paymentFrequency: string | null;
+  contractFileUrl: string | null;
+  isFullManagement: boolean;
+  managementOptions: string | null;
+}
+
+export interface DisputeDetailsDto {
+  ticketId: string;
+  ticketNumber: string | null;
+  title: string;
+  description: string;
+  priority: string;
+  status: string;
+  propertyAddress: string | null;
+  propertyId: string;
+  tenantId: string;
+  ownerId: string;
+  createdAt: string;
+  aiEvaluation: {
+    id: string;
+    responsibleParty: string;
+    category: string;
+    confidenceScore: number;
+    reasoning: string;
+    evaluatedAt: string;
+  } | null;
+  images: { id: string; fileUrl: string; fileType: string; fileSizeKb: number; uploadedAt: string }[];
+  disputedById: string | null;
+  disputedByRole: string | null;
+  disputeReason: string | null;
+  disputeDate: string | null;
+  adminNotes: string | null;
+  leaseContract: LeaseContractSummaryDto | null;
 }

@@ -1,4 +1,5 @@
 using Identity.Application.Interfaces;
+using Microsoft.Extensions.Options;
 using Maintenance.Application.Interfaces;
 using MediatR;
 using Microsoft.AspNetCore.Authorization;
@@ -7,6 +8,7 @@ using Payment.Application.Exceptions;
 using Payment.Application.Interfaces;
 using Property.Application.Features.Queries.GetPropertyById;
 using Payment.Application.Features.Commands.ApplyLateFee;
+using Payment.Application.Features.Commands.WaiveLateFee;
 using Payment.Application.Features.Commands.CreateSubscriptionPayment;
 using Payment.Application.Features.Commands.GenerateLeasePayment;
 using Payment.Application.Features.Commands.GenerateMonthlyPayments;
@@ -20,6 +22,7 @@ using Payment.Application.Features.Queries.GetOverduePayments;
 using Payment.Application.Features.Queries.GetPaymentReceipt;
 using Payment.Application.Features.Queries.GetPaymentsByStatus;
 using Payment.Application.Features.Queries.GetRentPaymentById;
+using Payment.Infrastructure.BackgroundJobs;
 using Payment.Infrastructure.Services.Stripe;
 using Wallet.Application.Interfaces;
 using Wallet.Domain.Enums;
@@ -85,6 +88,32 @@ public sealed class PaymentController : ControllerBase
     /// </summary>
     [HttpPost("subscriptions/confirm")]
     public async Task<IActionResult> ConfirmSubscriptionPayment(
+        [FromBody] ConfirmSubscriptionPaymentRequest body,
+        CancellationToken cancellationToken)
+    {
+        if (string.IsNullOrWhiteSpace(body.SessionId))
+            return BadRequest(new { error = "sessionId is required." });
+
+        try
+        {
+            var paymentStatus = await _stripeWebhook.ConfirmCheckoutSessionAsync(body.SessionId, cancellationToken);
+            return Ok(new { paymentStatus });
+        }
+        catch (InvalidOperationException ex)
+        {
+            return BadRequest(new { error = ex.Message });
+        }
+    }
+
+    /// <summary>
+    /// Confirms a rent Checkout Session from the success redirect — marks the
+    /// rent payment as Paid and queues the wallet-credit event via Outbox.
+    /// Idempotent (already-Paid payments are skipped). Called by the Angular
+    /// success page with the ?session_id=... from the Stripe redirect URL.
+    /// </summary>
+    [HttpPost("rent/confirm")]
+    [Authorize(Roles = "tenant")]
+    public async Task<IActionResult> ConfirmRentPayment(
         [FromBody] ConfirmSubscriptionPaymentRequest body,
         CancellationToken cancellationToken)
     {
@@ -344,6 +373,34 @@ public sealed class PaymentController : ControllerBase
     {
         var success = await _mediator.Send(new ApplyLateFeeCommand(id, body.LateFeeAmount), cancellationToken);
         return success ? Ok() : BadRequest(new { error = "Late fee could not be applied." });
+    }
+
+    /// <summary>
+    /// Waives the late fee on a rent payment. The Stripe checkout link is
+    /// regenerated at the base amount (1% commission only, no late fee).
+    /// Owner: can only waive their own property's payments.
+    /// Company manager: can waive any payment managed by their company.
+    /// Admin: unrestricted.
+    /// </summary>
+    [HttpPost("{id:guid}/waive-late-fee")]
+    [Authorize(Roles = "owner,company_manager,admin")]
+    public async Task<ActionResult> WaiveLateFee(
+        Guid id,
+        [FromServices] IOptions<RentLinkJobSettings> jobSettings,
+        CancellationToken cancellationToken)
+    {
+        var userId = _currentUser.UserId ?? Guid.Empty;
+        var role   = _currentUser.Role   ?? string.Empty;
+
+        var success = await _mediator.Send(new WaiveLateFeeCommand(
+            PaymentId:    id,
+            RequesterId:  userId,
+            RequesterRole: role,
+            SuccessUrl:   jobSettings.Value.SuccessUrl,
+            CancelUrl:    jobSettings.Value.CancelUrl
+        ), cancellationToken);
+
+        return success ? Ok() : BadRequest(new { error = "Late fee could not be waived. Check that you are the landlord and the payment has an active late fee." });
     }
 
     [HttpPost("{id:guid}/ai-prediction")]
