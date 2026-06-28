@@ -27,6 +27,7 @@ const STATUS_ORDER: Record<string, number> = {
   AiEvaluated: 3,
   WaitingForOwnerDecision: 4,
   WaitingForTenantDecision: 4,
+  Disputed: 4,
   AssignedToVendor: 5,
   VendorAccepted: 5,
   InProgress: 6,
@@ -38,7 +39,7 @@ const TIMELINE_STEPS: TimelineStep[] = [
   { key: 'Draft',      labelKey: 'TICKET_DETAIL.STEP_DRAFT',       icon: 'fa-file-pen',           matchStatuses: ['Draft'] },
   { key: 'Submitted',  labelKey: 'TICKET_DETAIL.STEP_SUBMITTED',   icon: 'fa-paper-plane',        matchStatuses: ['Submitted'] },
   { key: 'AIReview',   labelKey: 'TICKET_DETAIL.STEP_AI_REVIEW',   icon: 'fa-robot',              matchStatuses: ['UnderAiReview', 'AiEvaluated'] },
-  { key: 'Decision',   labelKey: 'TICKET_DETAIL.STEP_DECISION',    icon: 'fa-scale-balanced',     matchStatuses: ['WaitingForOwnerDecision', 'WaitingForTenantDecision'] },
+  { key: 'Decision',   labelKey: 'TICKET_DETAIL.STEP_DECISION',    icon: 'fa-scale-balanced',     matchStatuses: ['WaitingForOwnerDecision', 'WaitingForTenantDecision', 'Disputed'] },
   { key: 'Assigned',   labelKey: 'TICKET_DETAIL.STEP_ASSIGNED',    icon: 'fa-user-gear',          matchStatuses: ['AssignedToVendor', 'VendorAccepted'] },
   { key: 'InProgress', labelKey: 'TICKET_DETAIL.STEP_IN_PROGRESS', icon: 'fa-screwdriver-wrench', matchStatuses: ['InProgress'] },
   { key: 'Payment',    labelKey: 'TICKET_DETAIL.STEP_PAYMENT',     icon: 'fa-credit-card',        matchStatuses: ['AwaitingPayment'] },
@@ -75,6 +76,11 @@ export class OwnerTicketDetailComponent implements OnInit {
 
   protected lightboxUrl = signal<string | null>(null);
 
+  // Dispute
+  protected showDisputeModal = signal(false);
+  protected disputeReason = '';
+  protected disputeLoading = signal(false);
+
   // Payment
   protected showPayModal = signal(false);
   protected transactionId = '';
@@ -97,6 +103,10 @@ export class OwnerTicketDetailComponent implements OnInit {
   );
 
   protected readonly isCancellable = computed(() =>
+    this.ticket()?.status === 'WaitingForOwnerDecision'
+  );
+
+  protected readonly canDispute = computed(() =>
     this.ticket()?.status === 'WaitingForOwnerDecision'
   );
 
@@ -216,6 +226,23 @@ export class OwnerTicketDetailComponent implements OnInit {
       });
   }
 
+  raiseDispute(): void {
+    const id = this.ticket()?.id;
+    if (!id || !this.disputeReason.trim()) return;
+    this.disputeLoading.set(true);
+    this.maintenanceService.raiseDispute(id, this.disputeReason.trim())
+      .pipe(finalize(() => this.disputeLoading.set(false)))
+      .subscribe({
+        next: () => {
+          this.toast.success('Dispute raised. An admin will review your case.');
+          this.showDisputeModal.set(false);
+          this.disputeReason = '';
+          this.refresh();
+        },
+        error: () => this.toast.error('Failed to raise dispute. Please try again.'),
+      });
+  }
+
   openLightbox(url: string): void { this.lightboxUrl.set(url); }
   closeLightbox(): void { this.lightboxUrl.set(null); }
 
@@ -228,6 +255,7 @@ export class OwnerTicketDetailComponent implements OnInit {
       Draft: 'status-draft', Submitted: 'status-submitted',
       UnderAiReview: 'status-ai-review', AiEvaluated: 'status-ai-evaluated',
       WaitingForOwnerDecision: 'status-waiting', WaitingForTenantDecision: 'status-waiting-tenant',
+      Disputed: 'status-disputed',
       AssignedToVendor: 'status-assigned', VendorAccepted: 'status-vendor-accepted',
       InProgress: 'status-progress', AwaitingPayment: 'status-awaiting-payment',
       Completed: 'status-done', Cancelled: 'status-cancelled', Rejected: 'status-rejected',
@@ -239,8 +267,8 @@ export class OwnerTicketDetailComponent implements OnInit {
     const map: Record<string, string> = {
       Draft: 'Draft', Submitted: 'Submitted', UnderAiReview: 'AI Review',
       AiEvaluated: 'Evaluated', WaitingForOwnerDecision: 'Your Decision',
-      WaitingForTenantDecision: 'Tenant Decision', AssignedToVendor: 'Assigned',
-      VendorAccepted: 'Vendor Accepted', InProgress: 'In Progress',
+      WaitingForTenantDecision: 'Tenant Decision', Disputed: 'Under Dispute',
+      AssignedToVendor: 'Assigned', VendorAccepted: 'Vendor Accepted', InProgress: 'In Progress',
       AwaitingPayment: 'Awaiting Payment', Completed: 'Completed',
       Cancelled: 'Cancelled', Rejected: 'Rejected',
     };

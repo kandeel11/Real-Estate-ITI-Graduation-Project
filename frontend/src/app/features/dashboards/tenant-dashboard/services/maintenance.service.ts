@@ -11,6 +11,7 @@ export type TicketStatus =
   | 'AiEvaluated'
   | 'WaitingForOwnerDecision'
   | 'WaitingForTenantDecision'
+  | 'Disputed'
   | 'AssignedToVendor'
   | 'VendorAccepted'
   | 'InProgress'
@@ -130,6 +131,10 @@ export interface TicketDetail {
   routedToCompanyId?: string | null;
   /** On company-shadow tickets: ID of the original tenant ticket. */
   parentTicketId?: string | null;
+  disputeReason?: string | null;
+  disputedByRole?: string | null;
+  disputeDate?: string | null;
+  adminNotes?: string | null;
 }
 
 // ── Request bodies ───────────────────────────────────────────────────────────
@@ -249,4 +254,57 @@ export class MaintenanceService {
       `${this.base}/maintenance/tickets/company/${companyId}/routed`
     );
   }
+
+  // ── Dispute ──────────────────────────────────────────────────────────────────
+  raiseDispute(id: string, reason: string): Observable<void> {
+    return this.http.post<void>(`${this.base}/maintenance/tickets/${id}/dispute`, { reason });
+  }
+
+  getDisputeDetails(id: string): Observable<DisputeDetails> {
+    return this.http.get<DisputeDetails>(`${this.base}/maintenance/tickets/${id}/dispute-details`);
+  }
+
+  resolveDispute(id: string, finalResponsibleParty: string, adminNotes: string | null): Observable<void> {
+    return this.http.post<void>(`${this.base}/maintenance/tickets/${id}/resolve-dispute`, {
+      finalResponsibleParty,
+      adminNotes,
+    });
+  }
+}
+
+// ── Dispute Models ────────────────────────────────────────────────────────────
+export interface LeaseContractSummary {
+  leaseId: string;
+  monthlyInstallment: number | null;
+  totalRentAmount: number | null;
+  securityDeposit: number | null;
+  startDate: string | null;
+  endDate: string | null;
+  durationInMonths: number | null;
+  paymentFrequency: string | null;
+  contractFileUrl: string | null;
+  isFullManagement: boolean;
+  managementOptions: string | null;
+}
+
+export interface DisputeDetails {
+  ticketId: string;
+  ticketNumber: string | null;
+  title: string;
+  description: string;
+  priority: string;
+  status: string;
+  propertyAddress: string | null;
+  propertyId: string;
+  tenantId: string;
+  ownerId: string;
+  createdAt: string;
+  aiEvaluation: AiEvaluation | null;
+  images: TicketAttachment[];
+  disputedById: string | null;
+  disputedByRole: string | null;
+  disputeReason: string | null;
+  disputeDate: string | null;
+  adminNotes: string | null;
+  leaseContract: LeaseContractSummary | null;
 }
