@@ -1,7 +1,7 @@
 import { Injectable, signal, computed, inject } from '@angular/core';
 import { HttpClient } from '@angular/common/http';
 import { Router } from '@angular/router';
-import { Observable, of, delay, map, tap, throwError, catchError } from 'rxjs';
+import { Observable, of, delay, map, tap, throwError } from 'rxjs';
 import { environment } from '../../../environments/environment';
 import { API_ENDPOINTS } from '../constants/api-endpoints';
 
@@ -24,7 +24,6 @@ export interface AuthUser {
 
 export interface LoginResponse {
   accessToken: string;
-  refreshToken: string;
   expiresAt: string;
   user: {
     id: string;
@@ -60,7 +59,6 @@ export interface RegisterCompanyRequest {
 
 export interface RefreshResponse {
   accessToken: string;
-  refreshToken: string;
   expiresAt?: string;
   user?: LoginResponse['user'];
 }
@@ -84,12 +82,14 @@ export class AuthService {
 
   private logoutTimer: ReturnType<typeof setTimeout> | null = null;
 
-  private readonly currentUser = signal<AuthUser | null>(null);
-  private readonly isAuthenticated = signal<boolean>(false);
+  private readonly currentUser      = signal<AuthUser | null>(null);
+  private readonly isAuthenticated  = signal<boolean>(false);
+  // Access token lives in memory only — never touches localStorage
+  private readonly _accessToken     = signal<string | null>(null);
 
-  readonly user = this.currentUser.asReadonly();
+  readonly user          = this.currentUser.asReadonly();
   readonly authenticated = this.isAuthenticated.asReadonly();
-  readonly userRole = computed(() => this.currentUser()?.role ?? null);
+  readonly userRole      = computed(() => this.currentUser()?.role ?? null);
 
   constructor() {
     this.initializeAuth();
@@ -99,17 +99,15 @@ export class AuthService {
     const storedUser = localStorage.getItem('auth_user');
     if (!storedUser) return;
 
-    if (this.isTokenExpired()) {
-      this.clearAuth();
-      return;
-    }
-
     try {
       const user = JSON.parse(storedUser) as AuthUser;
+      // Restore identity from localStorage for immediate UX
       this.currentUser.set(user);
       this.isAuthenticated.set(true);
-      const token = this.getToken();
-      if (token) this.scheduleAutoLogout(token);
+      // Silently restore access token from the HttpOnly refresh cookie.
+      // On failure: stay authenticated — the interceptor's 401 path will
+      // call sessionExpired() and redirect to login when an API call fires.
+      this.refresh().subscribe({ error: () => {} });
     } catch {
       this.clearAuth();
     }
@@ -127,7 +125,7 @@ export class AuthService {
   }
 
   isTokenExpired(): boolean {
-    const token = this.getToken();
+    const token = this._accessToken();
     if (!token) return false;
     const expiresAt = this.getTokenExpiry(token);
     return expiresAt !== null && Date.now() >= expiresAt;
@@ -164,14 +162,15 @@ export class AuthService {
     }
 
     return this.http
-      .post<LoginResponse>(`${environment.apiUrl}${API_ENDPOINTS.AUTH.LOGIN}`, {
-        email,
-        password,
-      })
+      .post<LoginResponse>(
+        `${environment.apiUrl}${API_ENDPOINTS.AUTH.LOGIN}`,
+        { email, password },
+        { withCredentials: true }
+      )
       .pipe(
         map((res) => {
           const user = this.toAuthUser(res.user);
-          this.setUser(user, res.accessToken, res.refreshToken);
+          this.setUser(user, res.accessToken);
           return user;
         })
       );
@@ -183,24 +182,20 @@ export class AuthService {
    * Clears auth and throws on failure (interceptor calls sessionExpired after).
    */
   refresh(): Observable<string> {
-    const refreshToken = localStorage.getItem('auth_refresh_token');
-    if (!refreshToken) return throwError(() => new Error('No refresh token stored.'));
-
     return this.http
       .post<RefreshResponse>(
         `${environment.apiUrl}${API_ENDPOINTS.AUTH.REFRESH_TOKEN}`,
-        { refreshToken }
+        {},
+        { withCredentials: true }
       )
       .pipe(
         tap((res) => {
           const user = res.user ? this.toAuthUser(res.user) : this.user()!;
-          this.setUser(user, res.accessToken, res.refreshToken);
+          this.setUser(user, res.accessToken);
         }),
-        map((res) => res.accessToken),
-        catchError((err) => {
-          this.clearAuth();
-          return throwError(() => err);
-        })
+        map((res) => res.accessToken)
+        // No clearAuth here — the interceptor's handleRefresh calls
+        // sessionExpired() on failure, which owns the logout decision.
       );
   }
 
@@ -285,18 +280,18 @@ export class AuthService {
     }
   }
 
-  setUser(user: AuthUser, accessToken: string, refreshToken?: string): void {
+  setUser(user: AuthUser, accessToken: string): void {
     this.currentUser.set(user);
     this.isAuthenticated.set(true);
+    this._accessToken.set(accessToken);
     localStorage.setItem('auth_user', JSON.stringify(user));
-    localStorage.setItem('auth_token', accessToken);
-    if (refreshToken) {
-      localStorage.setItem('auth_refresh_token', refreshToken);
-    }
     this.scheduleAutoLogout(accessToken);
   }
 
   logout(): void {
+    this.http
+      .post(`${environment.apiUrl}${API_ENDPOINTS.AUTH.LOGOUT}`, {}, { withCredentials: true })
+      .subscribe({ error: () => {} });
     this.clearAuth();
   }
 
@@ -307,14 +302,12 @@ export class AuthService {
     }
     this.currentUser.set(null);
     this.isAuthenticated.set(false);
+    this._accessToken.set(null);
     localStorage.removeItem('auth_user');
-    localStorage.removeItem('auth_token');
-    localStorage.removeItem('auth_refresh_token');
-    localStorage.removeItem('refresh_token');
   }
 
   getToken(): string | null {
-    return localStorage.getItem('auth_token');
+    return this._accessToken();
   }
 
   hasRole(role: UserRole): boolean {

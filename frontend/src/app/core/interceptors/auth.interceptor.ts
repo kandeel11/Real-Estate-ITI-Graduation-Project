@@ -61,6 +61,9 @@ export const authInterceptor: HttpInterceptorFn = (req, next) => {
   const token = authService.getToken();
   const isAuthEndpoint = req.url.includes('/auth/');
 
+  // Send cookies (HttpOnly refresh token) with every API request
+  req = req.clone({ withCredentials: true });
+
   // Pre-flight expiry check — try to refresh rather than immediately logging out
   if (token && !isAuthEndpoint && authService.isTokenExpired()) {
     return handleRefresh(authService, req, next);
