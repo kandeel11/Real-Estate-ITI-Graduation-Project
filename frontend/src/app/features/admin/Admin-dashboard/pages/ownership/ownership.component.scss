@@ -1,0 +1,163 @@
+:host { display: block; }
+
+.ov-page {
+  padding: 28px 32px;
+  max-width: 1200px;
+  margin: 0 auto;
+}
+
+/* ── Header ──────────────────────────────────────────────────── */
+.ov-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-bottom: 28px;
+  gap: 16px;
+  flex-wrap: wrap;
+}
+.ov-header__left { display: flex; align-items: center; gap: 16px; }
+.ov-header__icon {
+  width: 48px; height: 48px;
+  border-radius: 14px;
+  background: linear-gradient(135deg, #4f46e5, #7c3aed);
+  display: flex; align-items: center; justify-content: center;
+  color: #fff; font-size: 20px;
+}
+.ov-header__title { font-size: 22px; font-weight: 700; color: #111827; margin: 0; }
+.ov-header__sub { font-size: 13px; color: #6b7280; margin: 2px 0 0; }
+
+/* ── States ─────────────────────────────────────────────────── */
+.ov-loader, .ov-empty {
+  display: flex; flex-direction: column; align-items: center;
+  justify-content: center; gap: 12px;
+  padding: 72px 24px;
+  color: #9ca3af; font-size: 15px;
+}
+.ov-empty__icon { font-size: 48px; color: #16a34a; }
+
+/* ── Table ──────────────────────────────────────────────────── */
+.ov-table-wrap { overflow-x: auto; border-radius: 16px; box-shadow: 0 1px 3px rgba(0,0,0,.08); }
+.ov-table {
+  width: 100%; border-collapse: collapse;
+  background: #fff; font-size: 14px;
+}
+.ov-table thead th {
+  padding: 12px 16px;
+  text-align: left;
+  font-size: 11px;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: .06em;
+  color: #6b7280;
+  background: #f9fafb;
+  border-bottom: 1px solid #e5e7eb;
+}
+.ov-table tbody tr { border-bottom: 1px solid #f3f4f6; transition: background .15s; }
+.ov-table tbody tr:last-child { border-bottom: none; }
+.ov-table tbody tr:hover { background: #fafafa; }
+.ov-table td { padding: 14px 16px; vertical-align: middle; }
+
+/* ── Badges ─────────────────────────────────────────────────── */
+.badge {
+  display: inline-flex; align-items: center;
+  padding: 3px 10px; border-radius: 99px;
+  font-size: 11px; font-weight: 600;
+}
+.badge--pending    { background: #fef3c7; color: #92400e; }
+.badge--verified   { background: #dcfce7; color: #166534; }
+.badge--review     { background: #dbeafe; color: #1e40af; }
+.badge--rejected   { background: #fee2e2; color: #991b1b; }
+
+/* ── Scores ─────────────────────────────────────────────────── */
+.ov-score {
+  display: inline-block;
+  font-weight: 700; font-size: 14px;
+}
+.score--high { color: #16a34a; }
+.score--mid  { color: #d97706; }
+.score--low  { color: #dc2626; }
+.ov-muted { color: #9ca3af; font-size: 13px; }
+.ov-name { font-weight: 500; }
+
+/* ── Flags ──────────────────────────────────────────────────── */
+.ov-flag { color: #dc2626; font-size: 12px; font-weight: 600; display: flex; align-items: center; gap: 4px; }
+.ov-ok   { color: #16a34a; font-size: 12px; font-weight: 600; display: flex; align-items: center; gap: 4px; }
+
+/* ── Doc links ──────────────────────────────────────────────── */
+.ov-docs { display: flex; flex-direction: column; gap: 6px; }
+.ov-doc-link {
+  display: inline-flex; align-items: center; gap: 6px;
+  font-size: 12px; font-weight: 600; color: #4f46e5;
+  text-decoration: none; padding: 4px 8px;
+  border: 1px solid #e0e7ff; border-radius: 6px;
+  background: #eef2ff; transition: background .15s;
+  white-space: nowrap;
+}
+.ov-doc-link:hover { background: #e0e7ff; color: #3730a3; }
+
+/* ── Buttons ─────────────────────────────────────────────────── */
+.ov-btn {
+  display: inline-flex; align-items: center; gap: 6px;
+  padding: 7px 14px; border-radius: 8px;
+  font-size: 13px; font-weight: 600;
+  border: 1px solid transparent;
+  cursor: pointer; transition: all .15s;
+}
+.ov-btn:disabled { opacity: .5; cursor: not-allowed; }
+
+.ov-btn--ghost {
+  background: #fff; border-color: #e5e7eb; color: #374151;
+}
+.ov-btn--ghost:hover:not(:disabled) { background: #f9fafb; }
+
+.ov-btn--approve {
+  background: #16a34a; color: #fff;
+}
+.ov-btn--approve:hover:not(:disabled) { background: #15803d; }
+
+.ov-btn--reject {
+  background: #dc2626; color: #fff;
+}
+.ov-btn--reject:hover:not(:disabled) { background: #b91c1c; }
+
+.ov-actions { display: flex; gap: 8px; flex-wrap: wrap; }
+
+/* ── Modal ──────────────────────────────────────────────────── */
+.ov-modal-backdrop {
+  position: fixed; inset: 0; z-index: 1000;
+  background: rgba(0,0,0,.4);
+  display: flex; align-items: center; justify-content: center;
+  padding: 16px;
+}
+.ov-modal {
+  background: #fff; border-radius: 20px;
+  box-shadow: 0 24px 64px rgba(0,0,0,.18);
+  width: 100%; max-width: 460px;
+  overflow: hidden;
+}
+.ov-modal__header {
+  display: flex; align-items: center; gap: 12px;
+  padding: 24px 24px 16px;
+  h2 { font-size: 18px; font-weight: 700; color: #111827; margin: 0; }
+}
+.ov-modal__icon { font-size: 26px; }
+.ov-modal__icon--approve { color: #16a34a; }
+.ov-modal__icon--reject  { color: #dc2626; }
+
+.ov-modal__body { padding: 0 24px 20px; }
+.ov-modal__label { display: block; font-size: 13px; font-weight: 600; color: #374151; margin-bottom: 8px; }
+.ov-modal__textarea {
+  width: 100%; padding: 10px 12px;
+  border: 1.5px solid #e5e7eb; border-radius: 10px;
+  font-size: 13px; color: #111827;
+  resize: vertical; outline: none;
+  font-family: inherit; box-sizing: border-box;
+  transition: border-color .15s;
+}
+.ov-modal__textarea:focus { border-color: #4f46e5; }
+
+.ov-modal__footer {
+  display: flex; gap: 10px; justify-content: flex-end;
+  padding: 16px 24px;
+  border-top: 1px solid #f3f4f6;
+}

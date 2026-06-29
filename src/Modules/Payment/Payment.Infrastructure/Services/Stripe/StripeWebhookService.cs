@@ -165,6 +165,13 @@ public sealed class StripeWebhookService
                 _logger.LogInformation(
                     "RentPaymentSucceededEvent queued in outbox for Payment {PaymentId}, Owner {OwnerId}",
                     payment.Id, details.LandlordId);
+
+                // Auto-create the next installment
+                await _publisher.Publish(new RentPaymentPaidIntegrationEvent(
+                    PaymentId: payment.Id,
+                    LeaseId: details.LeaseId,
+                    PaidDueDate: payment.DueDate
+                ), ct);
             }
         }
     }

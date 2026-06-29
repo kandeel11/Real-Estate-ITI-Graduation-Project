@@ -1,6 +1,7 @@
 using MediatR;
 using Microsoft.Extensions.Logging;
 using Payment.Application.Interfaces;
+using Payment.Domain.Entities;
 using RealEstate.Shared.Kernel.Shared.IntegrationEvents;
 using PaymentEntity = Payment.Domain.Entities.Payment;
 
@@ -41,6 +42,9 @@ public sealed class LeaseActivatedPaymentHandler
             return;
         }
 
+        var today = DateOnly.FromDateTime(DateTime.UtcNow);
+        bool isPast = firstDueDate < today;
+
         var payment = PaymentEntity.CreateRent(
             leaseId: notification.LeaseId,
             propertyId: notification.PropertyId,
@@ -51,11 +55,38 @@ public sealed class LeaseActivatedPaymentHandler
             notes: $"Installment 1 — {notification.StartDate:MMMM yyyy}"
         );
 
+        // First installment's due date is already in the past → the tenant paid in
+        // cash / real-world before the lease was digitised.  Mark it automatically
+        // so it never appears in the overdue queue and no late fee can be applied.
+        if (isPast)
+        {
+            payment.MarkAsPaidExternally("First installment settled outside the platform (lease registered after due date).");
+            _logger.LogInformation(
+                "Lease {LeaseId}: first due date {DueDate} is in the past — marked as PaidExternally.",
+                notification.LeaseId, firstDueDate);
+        }
+
         await _repository.AddAsync(payment, cancellationToken);
+
+        // Store the lease schedule so subsequent installments can be auto-created
+        // when each payment is marked Paid (without crossing the module boundary).
+        var config = LeaseScheduleConfig.Create(
+            leaseId: notification.LeaseId,
+            propertyId: notification.PropertyId,
+            tenantId: notification.TenantId,
+            landlordId: notification.OwnerId,
+            installmentAmount: notification.InstallmentAmount,
+            paymentFrequency: notification.PaymentFrequency,
+            paymentDayOfMonth: notification.PaymentDayOfMonth,
+            startDate: notification.StartDate,
+            endDate: notification.EndDate
+        );
+        await _repository.SaveLeaseScheduleConfigAsync(config, cancellationToken);
+
         await _repository.SaveChangesAsync(cancellationToken);
 
         _logger.LogInformation(
-            "Created first payment record for lease {LeaseId} due {DueDate}",
-            notification.LeaseId, firstDueDate);
+            "Created first payment record for lease {LeaseId} due {DueDate} | Status={Status}",
+            notification.LeaseId, firstDueDate, payment.Status);
     }
 }

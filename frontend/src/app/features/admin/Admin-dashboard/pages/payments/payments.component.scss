@@ -307,6 +307,13 @@
     &:hover:not(:disabled) { background: #fecaca; }
   }
 
+  &.external {
+    background: #f3f4f6;
+    color: #374151;
+    margin-left: 6px;
+    &:hover:not(:disabled) { background: #e5e7eb; }
+  }
+
   &:disabled { opacity: 0.5; cursor: not-allowed; }
 }
 

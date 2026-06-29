@@ -8,6 +8,7 @@ using Payment.Application.Exceptions;
 using Payment.Application.Interfaces;
 using Property.Application.Features.Queries.GetPropertyById;
 using Payment.Application.Features.Commands.ApplyLateFee;
+using Payment.Application.Features.Commands.MarkAsPaidExternally;
 using Payment.Application.Features.Commands.WaiveLateFee;
 using Payment.Application.Features.Commands.CreateSubscriptionPayment;
 using Payment.Application.Features.Commands.GenerateLeasePayment;
@@ -364,6 +365,26 @@ public sealed class PaymentController : ControllerBase
         return success ? Ok() : BadRequest(new { error = "Payment could not be refunded." });
     }
 
+    /// <summary>
+    /// Admin: marks a rent payment as settled outside the platform (cash / real-world).
+    /// Sets Status = PaidExternally, excludes it from the overdue queue, and blocks
+    /// future late-fee application.  Typical use: the first installment of a newly
+    /// registered lease that the tenant already paid before the system was set up.
+    /// </summary>
+    [HttpPost("{id:guid}/mark-external")]
+    [Authorize(Roles = "admin")]
+    public async Task<ActionResult> MarkAsPaidExternally(
+        Guid id,
+        [FromBody] MarkExternalRequestBody? body,
+        CancellationToken cancellationToken)
+    {
+        var success = await _mediator.Send(
+            new MarkAsPaidExternallyCommand(id, body?.Notes),
+            cancellationToken);
+
+        return success ? Ok() : NotFound(new { error = $"Payment {id} not found." });
+    }
+
     [HttpPost("{id:guid}/late-fee")]
     [Authorize(Roles = "admin")]
     public async Task<ActionResult> ApplyLateFee(
@@ -454,6 +475,7 @@ public sealed class PaymentController : ControllerBase
 
 // ── Request bodies (تبسيط الـ binding بدل ما الـ route param يتكرر في الـ command) ──
 public sealed record ConfirmSubscriptionPaymentRequest(string SessionId);
+public sealed record MarkExternalRequestBody(string? Notes);
 public sealed record ProcessPaymentRequestBody(string PaymentMethod, string? CardToken);
 public sealed record RefundPaymentRequestBody(string Reason);
 public sealed record ApplyLateFeeRequestBody(decimal LateFeeAmount);

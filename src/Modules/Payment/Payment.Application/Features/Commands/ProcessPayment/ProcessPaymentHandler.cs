@@ -18,6 +18,7 @@ public sealed class ProcessPaymentHandler
     private readonly ILeaseService _leaseService;
     private readonly INotificationService _notificationService;
     private readonly IOutboxWriter _outboxWriter;
+    private readonly IPublisher _publisher;
     private readonly ILogger<ProcessPaymentHandler> _logger;
 
     public ProcessPaymentHandler(
@@ -26,6 +27,7 @@ public sealed class ProcessPaymentHandler
         ILeaseService leaseService,
         INotificationService notificationService,
         IOutboxWriter outboxWriter,
+        IPublisher publisher,
         ILogger<ProcessPaymentHandler> logger)
     {
         _repository = repository;
@@ -33,6 +35,7 @@ public sealed class ProcessPaymentHandler
         _leaseService = leaseService;
         _notificationService = notificationService;
         _outboxWriter = outboxWriter;
+        _publisher = publisher;
         _logger = logger;
     }
 
@@ -87,6 +90,16 @@ public sealed class ProcessPaymentHandler
                     CompanyId: leaseDto?.CompanyId
                 ), cancellationToken);
                 await _repository.SaveChangesAsync(cancellationToken);
+            }
+
+            // Trigger next installment creation
+            if (payment.PaymentType == PaymentType.Rent)
+            {
+                await _publisher.Publish(new RentPaymentPaidIntegrationEvent(
+                    PaymentId: payment.Id,
+                    LeaseId: payment.LeaseId,
+                    PaidDueDate: payment.DueDate
+                ), cancellationToken);
             }
 
             // إرسال إشعار للتنانت بعد نجاح الدفع

@@ -372,25 +372,45 @@
 
                 <div class="cp-field">
                   <label class="cp-label"><i class="fa-solid fa-id-card"></i> {{ 'CREATE_PROPERTY.NATIONAL_ID' | translate }}</label>
-                  <label class="cp-file-upload">
-                    <input type="file" accept="application/pdf,image/*" (change)="onNationalId($event)" />
-                    <div class="cp-file-upload__body">
-                      <i class="fa-solid fa-cloud-arrow-up cp-file-upload__icon"></i>
-                      <span>Click to upload</span>
-                      <small>PDF or image</small>
-                    </div>
+                  <label class="cp-file-upload" [class.cp-file-upload--selected]="nationalIdFileName()">
+                    <input #nationalIdInput type="file" accept="application/pdf,image/*" (change)="onNationalId($event)" />
+                    @if (nationalIdFileName(); as name) {
+                      <div class="cp-file-upload__body cp-file-upload__body--done">
+                        <i class="fa-solid fa-file-circle-check cp-file-upload__icon cp-file-upload__icon--done"></i>
+                        <span class="cp-file-upload__name" [title]="name">{{ name }}</span>
+                        <button type="button" class="cp-file-upload__clear" (click)="clearNationalId(nationalIdInput); $event.preventDefault()">
+                          <i class="fa-solid fa-xmark"></i>
+                        </button>
+                      </div>
+                    } @else {
+                      <div class="cp-file-upload__body">
+                        <i class="fa-solid fa-cloud-arrow-up cp-file-upload__icon"></i>
+                        <span>Click to upload</span>
+                        <small>PDF or image</small>
+                      </div>
+                    }
                   </label>
                 </div>
 
                 <div class="cp-field">
                   <label class="cp-label"><i class="fa-solid fa-file-contract"></i> {{ 'CREATE_PROPERTY.TITLE_DEED' | translate }}</label>
-                  <label class="cp-file-upload">
-                    <input type="file" accept="application/pdf,image/*" (change)="onOwnershipProof($event)" />
-                    <div class="cp-file-upload__body">
-                      <i class="fa-solid fa-cloud-arrow-up cp-file-upload__icon"></i>
-                      <span>Click to upload</span>
-                      <small>PDF or image</small>
-                    </div>
+                  <label class="cp-file-upload" [class.cp-file-upload--selected]="ownershipProofFileName()">
+                    <input #ownershipProofInput type="file" accept="application/pdf,image/*" (change)="onOwnershipProof($event)" />
+                    @if (ownershipProofFileName(); as name) {
+                      <div class="cp-file-upload__body cp-file-upload__body--done">
+                        <i class="fa-solid fa-file-circle-check cp-file-upload__icon cp-file-upload__icon--done"></i>
+                        <span class="cp-file-upload__name" [title]="name">{{ name }}</span>
+                        <button type="button" class="cp-file-upload__clear" (click)="clearOwnershipProof(ownershipProofInput); $event.preventDefault()">
+                          <i class="fa-solid fa-xmark"></i>
+                        </button>
+                      </div>
+                    } @else {
+                      <div class="cp-file-upload__body">
+                        <i class="fa-solid fa-cloud-arrow-up cp-file-upload__icon"></i>
+                        <span>Click to upload</span>
+                        <small>PDF or image</small>
+                      </div>
+                    }
                   </label>
                 </div>
               </div>
@@ -597,12 +617,39 @@
     <!-- ════ STEP 3: DONE ════════════════════════════════════════════════════ -->
     @if (step() === 3) {
       <div class="cp-done">
-        <div class="cp-done__icon"><i class="fa-solid fa-circle-check"></i></div>
-        <h2 class="cp-done__title">{{ 'CREATE_PROPERTY.DONE_TITLE' | translate }}</h2>
-        <p class="cp-done__sub">
-          {{ 'CREATE_PROPERTY.DONE_HINT' | translate }}
-          <span class="cp-done__badge">{{ 'CREATE_PROPERTY.DONE_PENDING' | translate }}</span>
-        </p>
+
+        @if (finalStatus() === 'Active') {
+          <div class="cp-done__icon cp-done__icon--active"><i class="fa-solid fa-circle-check"></i></div>
+          <h2 class="cp-done__title">Listing is Live!</h2>
+          <p class="cp-done__sub">
+            Your ownership documents were verified automatically.
+            Your property is now <span class="cp-done__badge cp-done__badge--active">Active</span> and visible to renters.
+          </p>
+        } @else if (finalStatus() === 'Rejected') {
+          <div class="cp-done__icon cp-done__icon--rejected"><i class="fa-solid fa-circle-xmark"></i></div>
+          <h2 class="cp-done__title">Ownership Requires Review</h2>
+          <p class="cp-done__sub">
+            The AI could not automatically verify your documents.
+            An admin will review your ownership documents shortly.
+            Your listing has been submitted and is <span class="cp-done__badge cp-done__badge--review">Under Review</span>.
+          </p>
+        } @else if (finalStatus() === 'RequiresManualReview') {
+          <div class="cp-done__icon cp-done__icon--review"><i class="fa-solid fa-clock"></i></div>
+          <h2 class="cp-done__title">Submitted for Manual Review</h2>
+          <p class="cp-done__sub">
+            Your listing needs a quick review by our team.
+            We'll notify you once it's approved.
+            Status: <span class="cp-done__badge">{{ 'CREATE_PROPERTY.DONE_PENDING' | translate }}</span>
+          </p>
+        } @else {
+          <div class="cp-done__icon"><i class="fa-solid fa-circle-check"></i></div>
+          <h2 class="cp-done__title">{{ 'CREATE_PROPERTY.DONE_TITLE' | translate }}</h2>
+          <p class="cp-done__sub">
+            {{ 'CREATE_PROPERTY.DONE_HINT' | translate }}
+            <span class="cp-done__badge">{{ 'CREATE_PROPERTY.DONE_PENDING' | translate }}</span>
+          </p>
+        }
+
         <a routerLink="/" class="cp-btn-ghost">
           <i class="fa-solid fa-house"></i> {{ 'CREATE_PROPERTY.BACK_HOME' | translate }}
         </a>

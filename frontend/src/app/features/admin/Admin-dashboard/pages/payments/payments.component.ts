@@ -133,8 +133,31 @@ export class AdminPaymentsComponent implements OnInit {
     });
   }
 
+  markAsPaidExternally(p: RentPayment) {
+    this.processing.set(p.id);
+    this.paymentService.markAsPaidExternally(p.id).subscribe({
+      next: () => {
+        this.processing.set(null);
+        this.showToast('success', 'Payment marked as paid externally (cash/real-world)');
+        this.loadPayments();
+        this.loadOverdue();
+      },
+      error: (err) => {
+        this.processing.set(null);
+        this.showToast('error', err?.error?.error ?? 'Failed to mark as externally paid');
+      },
+    });
+  }
+
   statusColor(s: PaymentStatus): string {
-    return ({ Pending: 'amber', Paid: 'green', Late: 'orange', Overdue: 'red', Refunded: 'blue' } as Record<string, string>)[s] ?? 'gray';
+    return ({
+      Pending: 'amber',
+      Paid: 'green',
+      Late: 'orange',
+      Overdue: 'red',
+      Refunded: 'blue',
+      PaidExternally: 'gray',
+    } as Record<string, string>)[s] ?? 'gray';
   }
 
   formatCurrency(n: number) {

@@ -287,9 +287,7 @@ public class AzureBlobMediaService : IMediaStorageService
     {
         ValidateFile(fileName, contentType, category);
 
-        await _container.CreateIfNotExistsAsync(PublicAccessType.Blob, cancellationToken: ct);
-        // Ensure existing containers are also set to public (idempotent)
-        await _container.SetAccessPolicyAsync(PublicAccessType.Blob, cancellationToken: ct);
+        await _container.CreateIfNotExistsAsync(PublicAccessType.None, cancellationToken: ct);
 
         var folder = CategoryFolder(category);
         var safeName = SanitizeFileName(fileName);
@@ -323,7 +321,7 @@ public class AzureBlobMediaService : IMediaStorageService
             "Uploaded {Category} blob: {BlobPath} | PropertyId={PropertyId}",
             category, blobPath, OwnerId);
 
-        return blobClient.Uri.ToString();
+        return blobPath;
     }
 
     //public Task<string> UploadAsync(Guid? OwnerId, Stream fileStream, string fileName, string contentType, MediaCategory category, CancellationToken ct = default)

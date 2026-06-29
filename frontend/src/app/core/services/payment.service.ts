@@ -183,6 +183,11 @@ export class PaymentService {
     return this.http.post<void>(`${this.base}${API_ENDPOINTS.PAYMENTS.REFUND(id)}`, { reason });
   }
 
+  /** Admin: mark a payment as settled outside the platform — POST /api/payments/{id}/mark-external */
+  markAsPaidExternally(id: string, notes?: string): Observable<void> {
+    return this.http.post<void>(`${this.base}${API_ENDPOINTS.PAYMENTS.MARK_EXTERNAL(id)}`, { notes: notes ?? null });
+  }
+
   /** Broker payments across all managed leases — GET /api/brokers/me/payments */
   getBrokerPayments(): Observable<RentPayment[]> {
     return this.http.get<RentPayment[]>(`${this.base}${API_ENDPOINTS.BROKER_PAYMENTS.GET_ALL}`);

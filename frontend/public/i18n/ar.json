@@ -1650,7 +1650,8 @@
     "DISPUTES": "النزاعات",
     "PAYMENTS": "المدفوعات",
     "WITHDRAWALS": "طلبات السحب",
-    "PLATFORM": "لوحة إيرادات المنصة"
+    "PLATFORM": "لوحة إيرادات المنصة",
+    "OWNERSHIP": "التحقق من الملكية"
   },
   "ADMIN": {
     "SIDEBAR": {

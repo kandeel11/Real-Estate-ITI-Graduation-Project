@@ -1,4 +1,4 @@
-export type PaymentStatus = 'Pending' | 'Paid' | 'Late' | 'Overdue' | 'Refunded';
+export type PaymentStatus = 'Pending' | 'Paid' | 'Late' | 'Overdue' | 'Refunded' | 'PaidExternally';
 export type PaymentMethod = 'BankTransfer' | 'Stripe' | 'Other';
 
 export interface RentPayment {

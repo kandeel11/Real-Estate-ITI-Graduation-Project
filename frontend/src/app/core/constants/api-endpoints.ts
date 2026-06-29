@@ -165,6 +165,7 @@ export const API_ENDPOINTS = {
     GET_SUMMARY: '/payments/summary',
     GET_BY_STATUS: (status: string) => `/payments/status/${status}`,
     APPLY_LATE_FEE: (id: string) => `/payments/${id}/late-fee`,
+    MARK_EXTERNAL: (id: string) => `/payments/${id}/mark-external`,
     WAIVE_LATE_FEE: (id: string) => `/payments/${id}/waive-late-fee`,
     GET_RECEIPT: (id: string) => `/payments/${id}/receipt`,
     REFUND: (id: string) => `/payments/${id}/refund`,
@@ -245,6 +246,14 @@ export const API_ENDPOINTS = {
     GET_NOTIFICATIONS: '/user/notifications',
     MARK_NOTIFICATION_READ: (notificationId: string) =>
       `/user/notifications/${notificationId}/read`,
+  },
+
+  // ==================== OWNERSHIP VERIFICATION MODULE ====================
+  OWNERSHIP_VERIFICATIONS: {
+    PENDING_REVIEWS: '/ownershipverifications/admin/pending',
+    GET_BY_ID: (id: string) => `/ownershipverifications/${id}`,
+    APPROVE: (id: string) => `/ownershipverifications/${id}/approve`,
+    REJECT: (id: string) => `/ownershipverifications/${id}/reject`,
   },
 
   // ==================== ANALYTICS & REPORTING ====================

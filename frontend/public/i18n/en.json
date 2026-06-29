@@ -1650,7 +1650,8 @@
     "DISPUTES": "Disputes",
     "PAYMENTS": "Payments",
     "WITHDRAWALS": "Withdrawals",
-    "PLATFORM": "Platform Dashboard"
+    "PLATFORM": "Platform Dashboard",
+    "OWNERSHIP": "Ownership Verify"
   },
   "ADMIN": {
     "SIDEBAR": {
