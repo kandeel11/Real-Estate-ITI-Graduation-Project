@@ -318,6 +318,19 @@
   background: #fff5f5;
 }
 .cp-input::placeholder { color: #94a3b8; font-weight: 400; }
+
+/* Locked country field — fixed on Egypt, not editable */
+.cp-input--locked {
+  cursor: default;
+  color: #475569;
+  background: #f1f5f9;
+  border-style: dashed;
+}
+.cp-input--locked:focus {
+  border-color: var(--cp-border);
+  box-shadow: none;
+  background: #f1f5f9;
+}
 .cp-textarea {
   height: auto;
   padding: 12px 14px;

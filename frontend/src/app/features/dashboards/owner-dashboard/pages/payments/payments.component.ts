@@ -66,7 +66,7 @@ export class OwnerPaymentsComponent implements OnInit {
   }
 
   fmt(n: number) {
-    return `${(n ?? 0).toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })} AED`;
+    return `${(n ?? 0).toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })} EGP`;
   }
 
   fmtDate(iso: string | undefined | null) {

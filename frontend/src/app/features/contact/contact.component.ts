@@ -1,12 +1,13 @@
 import { Component, inject, signal } from '@angular/core';
 import { ReactiveFormsModule, FormBuilder, Validators } from '@angular/forms';
 import { RouterLink } from '@angular/router';
+import { TranslatePipe } from '@ngx-translate/core';
 import { InViewDirective } from '../../shared/directives/in-view.directive';
 
 @Component({
   selector: 'app-contact',
   standalone: true,
-  imports: [ReactiveFormsModule, RouterLink, InViewDirective],
+  imports: [ReactiveFormsModule, RouterLink, InViewDirective, TranslatePipe],
   templateUrl: './contact.component.html',
   styleUrl: './contact.component.scss',
 })
@@ -59,98 +60,30 @@ export class ContactComponent {
     this.form.reset();
   }
 
+  // Label/sub hold i18n keys; value is literal data (emails, phones, place names).
   readonly contactInfo = [
-    {
-      icon: 'fa-envelope',
-      color: '#4f46e5',
-      bg: 'rgba(79,70,229,.1)',
-      label: 'Email Us',
-      value: 'hello@estatein.io',
-      sub: 'We reply within 24 hours',
-    },
-    {
-      icon: 'fa-phone',
-      color: '#059669',
-      bg: 'rgba(5,150,105,.1)',
-      label: 'Call Us',
-      value: '+20 123 456 7890',
-      sub: 'Sun – Thu, 9am – 6pm EET',
-    },
-    {
-      icon: 'fa-location-dot',
-      color: '#dc2626',
-      bg: 'rgba(220,38,38,.1)',
-      label: 'Visit Us',
-      value: 'Smart Village, Cairo',
-      sub: 'Building B3, 6th Floor',
-    },
-    {
-      icon: 'fa-clock',
-      color: '#d97706',
-      bg: 'rgba(217,119,6,.1)',
-      label: 'Working Hours',
-      value: 'Sun – Thu',
-      sub: '9:00 AM – 6:00 PM EET',
-    },
+    { icon: 'fa-envelope',     color: '#4f46e5', bg: 'rgba(79,70,229,.1)', label: 'CONTACT.INFO_EMAIL_LABEL', value: 'hello@estatein.io',     sub: 'CONTACT.INFO_EMAIL_SUB' },
+    { icon: 'fa-phone',        color: '#059669', bg: 'rgba(5,150,105,.1)', label: 'CONTACT.INFO_PHONE_LABEL', value: '+20 123 456 7890',     sub: 'CONTACT.INFO_PHONE_SUB' },
+    { icon: 'fa-location-dot', color: '#dc2626', bg: 'rgba(220,38,38,.1)', label: 'CONTACT.INFO_VISIT_LABEL', value: 'Smart Village, Cairo', sub: 'CONTACT.INFO_VISIT_SUB' },
+    { icon: 'fa-clock',        color: '#d97706', bg: 'rgba(217,119,6,.1)', label: 'CONTACT.INFO_HOURS_LABEL', value: 'Sun – Thu',            sub: 'CONTACT.INFO_HOURS_SUB' },
   ];
 
   readonly subjects = [
-    'General Inquiry',
-    'Property Listing',
-    'Technical Support',
-    'Subscription & Billing',
-    'Partnership Opportunity',
-    'Other',
+    { value: 'General Inquiry',          labelKey: 'CONTACT.SUBJ_GENERAL' },
+    { value: 'Property Listing',         labelKey: 'CONTACT.SUBJ_LISTING' },
+    { value: 'Technical Support',        labelKey: 'CONTACT.SUBJ_SUPPORT' },
+    { value: 'Subscription & Billing',   labelKey: 'CONTACT.SUBJ_BILLING' },
+    { value: 'Partnership Opportunity',  labelKey: 'CONTACT.SUBJ_PARTNERSHIP' },
+    { value: 'Other',                    labelKey: 'CONTACT.SUBJ_OTHER' },
   ];
 
+  // Names/initials are not translated; role + bio resolve via the translate pipe.
   readonly team = [
-    {
-      name: 'Mohamed Khaled Kandel',
-      role: 'AI Engineer',
-      bio: 'Builds the AI-powered smart search and recommendation engine that drives intelligent property discovery across the platform.',
-      gradient: 'linear-gradient(135deg,#3525cd,#6366f1)',
-      initials: 'MK',
-      social: { linkedin: '#', twitter: '#' },
-    },
-    {
-      name: 'Ahmed Shipl',
-      role: 'Team Leader & Property Integration',
-      bio: 'Team lead responsible for the full property module — listing, details, integrations — and platform-wide subscription management.',
-      gradient: 'linear-gradient(135deg,#0891b2,#38bdf8)',
-      initials: 'AS',
-      social: { linkedin: '#', twitter: '#' },
-    },
-    {
-      name: 'Nawal Ali',
-      role: 'Maintenance, Home & Tenant Dashboard',
-      bio: 'Owns the home experience, tenant dashboard, and the full maintenance ticketing workflow from request to resolution.',
-      gradient: 'linear-gradient(135deg,#059669,#34d399)',
-      initials: 'NA',
-      social: { linkedin: '#', twitter: '#' },
-    },
-    {
-      name: 'Yasser',
-      role: 'Broker Dashboard, Leases & Communication',
-      bio: 'Leads the broker portal, lease management lifecycle, and in-platform communication features for seamless deal flow.',
-      gradient: 'linear-gradient(135deg,#7c3aed,#a78bfa)',
-      initials: 'YA',
-      social: { linkedin: '#', twitter: '#' },
-    },
-    {
-      name: 'Alyaa Shahin',
-      role: 'Payment Systems',
-      bio: 'Designs and implements the secure payment gateway, rent collection flows, and financial transaction management.',
-      gradient: 'linear-gradient(135deg,#d97706,#fbbf24)',
-      initials: 'AL',
-      social: { linkedin: '#', twitter: '#' },
-    },
-    {
-      name: 'Sara Samir',
-      role: 'Identity & Authentication',
-      bio: 'Builds and secures the authentication system — registration, OTP verification, role-based access control, and user identity.',
-      gradient: 'linear-gradient(135deg,#db2777,#f472b6)',
-      initials: 'SS',
-      social: { linkedin: '#', twitter: '#' },
-    },
+    { name: 'Mohamed Khaled Kandel', role: 'CONTACT.TEAM1_ROLE', bio: 'CONTACT.TEAM1_BIO', gradient: 'linear-gradient(135deg,#3525cd,#6366f1)', initials: 'MK', social: { linkedin: '#', twitter: '#' } },
+    { name: 'Ahmed Shipl',           role: 'CONTACT.TEAM2_ROLE', bio: 'CONTACT.TEAM2_BIO', gradient: 'linear-gradient(135deg,#0891b2,#38bdf8)', initials: 'AS', social: { linkedin: '#', twitter: '#' } },
+    { name: 'Nawal Ali',             role: 'CONTACT.TEAM3_ROLE', bio: 'CONTACT.TEAM3_BIO', gradient: 'linear-gradient(135deg,#059669,#34d399)', initials: 'NA', social: { linkedin: '#', twitter: '#' } },
+    { name: 'Yasser',                role: 'CONTACT.TEAM4_ROLE', bio: 'CONTACT.TEAM4_BIO', gradient: 'linear-gradient(135deg,#7c3aed,#a78bfa)', initials: 'YA', social: { linkedin: '#', twitter: '#' } },
+    { name: 'Alyaa Shahin',          role: 'CONTACT.TEAM5_ROLE', bio: 'CONTACT.TEAM5_BIO', gradient: 'linear-gradient(135deg,#d97706,#fbbf24)', initials: 'AL', social: { linkedin: '#', twitter: '#' } },
+    { name: 'Sara Samir',            role: 'CONTACT.TEAM6_ROLE', bio: 'CONTACT.TEAM6_BIO', gradient: 'linear-gradient(135deg,#db2777,#f472b6)', initials: 'SS', social: { linkedin: '#', twitter: '#' } },
   ];
 }

@@ -251,7 +251,7 @@ export class OwnerDataService {
 
   getLeaseExtractionDebug(leaseId: string): Observable<{
     leaseId: string; extractionStatus: string;
-    displayStatus: 'pending' | 'done' | 'failed';
+    displayStatus: 'pending' | 'done' | 'failed' | 'not_rent_lease';
     confidence: number; isReadyForFrontend: boolean;
     nullFields: string[]; diagnosis: string;
   }> {
