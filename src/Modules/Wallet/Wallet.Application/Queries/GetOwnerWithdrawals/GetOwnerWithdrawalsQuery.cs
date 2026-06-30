@@ -8,6 +8,8 @@ public record WithdrawalDto(
     Guid Id,
     Guid OwnerId,
     decimal Amount,
+    decimal CommissionAmount,
+    decimal NetAmount,
     string Currency,
     string BankAccountDetails,
     string Status,

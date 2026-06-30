@@ -314,6 +314,13 @@
     &:hover:not(:disabled) { background: #e5e7eb; }
   }
 
+  &.link-btn {
+    background: #eff6ff;
+    color: #1d4ed8;
+    margin-left: 6px;
+    &:hover:not(:disabled) { background: #dbeafe; }
+  }
+
   &:disabled { opacity: 0.5; cursor: not-allowed; }
 }
 

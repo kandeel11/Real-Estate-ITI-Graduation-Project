@@ -9,6 +9,7 @@ using Payment.Application.Interfaces;
 using Property.Application.Features.Queries.GetPropertyById;
 using Payment.Application.Features.Commands.ApplyLateFee;
 using Payment.Application.Features.Commands.MarkAsPaidExternally;
+using Payment.Application.Features.Commands.GenerateRentPaymentLink;
 using Payment.Application.Features.Commands.WaiveLateFee;
 using Payment.Application.Features.Commands.CreateSubscriptionPayment;
 using Payment.Application.Features.Commands.GenerateLeasePayment;
@@ -422,6 +423,28 @@ public sealed class PaymentController : ControllerBase
         ), cancellationToken);
 
         return success ? Ok() : BadRequest(new { error = "Late fee could not be waived. Check that you are the landlord and the payment has an active late fee." });
+    }
+
+    /// <summary>
+    /// Admin-only: generates (or regenerates) a Stripe checkout link for a rent payment.
+    /// Use this when the background job hasn't run yet or for demo/testing purposes.
+    /// </summary>
+    [HttpPost("{id:guid}/generate-link")]
+    [Authorize(Roles = "admin")]
+    public async Task<ActionResult> GenerateRentPaymentLink(
+        Guid id,
+        [FromServices] IOptions<RentLinkJobSettings> jobSettings,
+        CancellationToken cancellationToken)
+    {
+        var result = await _mediator.Send(new GenerateRentPaymentLinkCommand(
+            PaymentId:  id,
+            SuccessUrl: jobSettings.Value.SuccessUrl,
+            CancelUrl:  jobSettings.Value.CancelUrl
+        ), cancellationToken);
+
+        return result.Success
+            ? Ok(new { checkoutUrl = result.CheckoutUrl })
+            : BadRequest(new { error = result.Error });
     }
 
     [HttpPost("{id:guid}/ai-prediction")]

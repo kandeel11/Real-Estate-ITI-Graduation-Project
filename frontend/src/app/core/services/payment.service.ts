@@ -188,6 +188,11 @@ export class PaymentService {
     return this.http.post<void>(`${this.base}${API_ENDPOINTS.PAYMENTS.MARK_EXTERNAL(id)}`, { notes: notes ?? null });
   }
 
+  /** Admin: generate (or regenerate) a Stripe checkout link for a rent payment */
+  generateRentPaymentLink(id: string): Observable<{ checkoutUrl: string }> {
+    return this.http.post<{ checkoutUrl: string }>(`${this.base}${API_ENDPOINTS.PAYMENTS.GENERATE_LINK(id)}`, {});
+  }
+
   /** Broker payments across all managed leases — GET /api/brokers/me/payments */
   getBrokerPayments(): Observable<RentPayment[]> {
     return this.http.get<RentPayment[]>(`${this.base}${API_ENDPOINTS.BROKER_PAYMENTS.GET_ALL}`);

@@ -19,6 +19,7 @@ public record SendLeaseToTenantCommand(
     string? PaymentFrequency = null,
     decimal? TotalRentAmount = null,
     int? DurationInMonths = null,
+    int? PaymentDayOfMonth = null,
     Guid? ManagerId = null) : IRequest;
 
 public class SendLeaseToTenantCommandHandler : IRequestHandler<SendLeaseToTenantCommand>
@@ -44,6 +45,8 @@ public class SendLeaseToTenantCommandHandler : IRequestHandler<SendLeaseToTenant
         if (cmd.EndDate.HasValue) lease.EndDate = cmd.EndDate;
         if (cmd.TotalRentAmount.HasValue) lease.TotalRentAmount = cmd.TotalRentAmount;
         if (cmd.DurationInMonths.HasValue) lease.DurationInMonths = cmd.DurationInMonths;
+        if (cmd.PaymentDayOfMonth.HasValue && cmd.PaymentDayOfMonth.Value is >= 1 and <= 31)
+            lease.PaymentDayOfMonth = cmd.PaymentDayOfMonth;
         if (!string.IsNullOrWhiteSpace(cmd.PaymentFrequency) &&
             Enum.TryParse<PaymentFrequency>(cmd.PaymentFrequency, ignoreCase: true, out var freq))
             lease.PaymentFrequency = freq;

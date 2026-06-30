@@ -57,6 +57,15 @@ public class GetLeasePaymentScheduleHandler
             var maxDay  = DateTime.DaysInMonth(periodStart.Year, periodStart.Month);
             var dueDate = new DateOnly(periodStart.Year, periodStart.Month,
                                        Math.Min(paymentDay, maxDay));
+            // If the computed due date falls before the period start (e.g. start on the 29th,
+            // pay-day is the 1st), roll the due date forward by one period so it stays inside
+            // the billing window.
+            if (dueDate < periodStart)
+            {
+                var rolled   = periodStart.AddMonths(1);
+                var rolledMax = DateTime.DaysInMonth(rolled.Year, rolled.Month);
+                dueDate = new DateOnly(rolled.Year, rolled.Month, Math.Min(paymentDay, rolledMax));
+            }
 
             var isCurrent = today >= periodStart && today <= periodEnd;
             var isPast    = today > periodEnd;

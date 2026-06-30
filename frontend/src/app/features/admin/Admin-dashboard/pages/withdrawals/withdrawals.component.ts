@@ -41,7 +41,7 @@ export class AdminWithdrawalsComponent implements OnInit {
     const all = this.withdrawals();
     return {
       total: all.length,
-      pending: all.filter(w => w.status === 'Pending').length,
+      pending: all.filter(w => w.status === 'Pending' || w.status === 'Processing').length,
       completed: all.filter(w => w.status === 'Completed').length,
       rejected: all.filter(w => w.status === 'Rejected').length,
       totalVolume: all.filter(w => w.status === 'Completed').reduce((s, w) => s + w.amount, 0),
@@ -103,7 +103,7 @@ export class AdminWithdrawalsComponent implements OnInit {
   }
 
   statusColor(s: WithdrawalStatus): string {
-    return { Pending: 'amber', Completed: 'green', Rejected: 'red' }[s] ?? 'gray';
+    return { Pending: 'amber', Processing: 'blue', Completed: 'green', Rejected: 'red' }[s] ?? 'gray';
   }
 
   formatCurrency(n: number) {
