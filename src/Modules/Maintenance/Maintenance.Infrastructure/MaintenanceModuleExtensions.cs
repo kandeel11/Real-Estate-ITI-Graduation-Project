@@ -37,8 +37,21 @@ public static class MaintenanceModuleExtensions
         // Other services
         services.AddScoped<IAutoVendorAssignmentService, AutoVendorAssignmentService>();
         services.AddScoped<ITicketNumberGenerator, TicketNumberGenerator>();
-        services.AddHttpClient("AiEvaluation");
-        services.AddScoped<IAiEvaluationService, AiEvaluationService>();
+
+        // AI Agent — ITI Student API (DeepSeek v3.2)
+        // Singletons: Qdrant/OpenAI clients are thread-safe and expensive to create.
+        services.AddHttpClient("ITIStudentApi", (sp, client) =>
+        {
+            var cfg    = sp.GetRequiredService<IConfiguration>();
+            var apiKey = cfg["ITIStudentApi:ApiKey"]
+                         ?? throw new InvalidOperationException(
+                             "Secret 'ITIStudentApi:ApiKey' is not configured.");
+            client.BaseAddress = new Uri("http://apiaccess.iti.net.eg/api/v1/");
+            client.DefaultRequestHeaders.Authorization =
+                new System.Net.Http.Headers.AuthenticationHeaderValue("Bearer", apiKey);
+        });
+        services.AddSingleton<IContractClauseSearchService, QdrantContractSearchService>();
+        services.AddSingleton<IAiEvaluationService, StudentApiMaintenanceAgent>();
 
         // MediatR handlers
         services.AddMaintenanceApplication();
