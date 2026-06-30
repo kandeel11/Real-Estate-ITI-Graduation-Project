@@ -44,7 +44,7 @@ export class CompanyDashboardComponent {
 
   readonly navItems: NavItem[] = [
     { id: 'overview',      label: 'COMPANY_NAV.OVERVIEW',      icon: 'fa-solid fa-gauge-high',      route: '/dashboard/company/overview' },
-    { id: 'pipeline',      label: 'COMPANY_NAV.PIPELINE',      icon: 'fa-solid fa-chart-kanban',    route: '/dashboard/company/pipeline' },
+    { id: 'pipeline',      label: 'COMPANY_NAV.PIPELINE',      icon: 'fa-solid fa-filter',          route: '/dashboard/company/pipeline' },
     { id: 'properties',    label: 'COMPANY_NAV.PROPERTIES',    icon: 'fa-solid fa-building',        route: '/dashboard/company/properties' },
     { id: 'brokers',       label: 'COMPANY_NAV.BROKERS',       icon: 'fa-solid fa-users',           route: '/dashboard/company/brokers' },
     { id: 'leases',        label: 'COMPANY_NAV.LEASES',        icon: 'fa-solid fa-file-contract',   route: '/dashboard/company/leases' },

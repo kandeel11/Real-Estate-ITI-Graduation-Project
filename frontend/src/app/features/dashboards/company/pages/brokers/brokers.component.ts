@@ -239,4 +239,13 @@ export class BrokersComponent implements OnInit {
   displayName(broker: Broker): string {
     return broker.fullName || `License ${broker.licenseNumber}`;
   }
+
+  /** Up-to-two-letter avatar initials from the broker's display name. */
+  initials(broker: Broker): string {
+    const parts = this.displayName(broker).trim().split(/\s+/);
+    const letters = parts.length > 1
+      ? parts[0].charAt(0) + parts[parts.length - 1].charAt(0)
+      : parts[0].slice(0, 2);
+    return letters.toUpperCase();
+  }
 }

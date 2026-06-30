@@ -126,6 +126,15 @@ export class PropertiesComponent implements OnInit {
     return status === 'PendingReview' ? 'Pending' : status;
   }
 
+  /** Card status-badge colour key. */
+  statusColor(s: string): string {
+    const m: Record<string, string> = {
+      Active: 'green', Draft: 'slate', PendingReview: 'amber',
+      RequiresManualReview: 'amber', Rented: 'blue', Rejected: 'red', Inactive: 'slate',
+    };
+    return m[s] ?? 'slate';
+  }
+
   onSearch(event: Event): void {
     this.search.set((event.target as HTMLInputElement).value);
   }

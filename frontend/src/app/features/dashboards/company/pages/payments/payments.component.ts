@@ -144,7 +144,7 @@ export class CompanyPaymentsComponent implements OnInit {
   }
 
   formatCurrency(n: number) {
-    return `${(n ?? 0).toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })} AED`;
+    return `${(n ?? 0).toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })} EGP`;
   }
 
   formatDate(iso: string) {

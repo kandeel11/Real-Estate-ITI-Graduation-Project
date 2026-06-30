@@ -267,29 +267,17 @@
             </div>
 
             <div class="cp-grid cp-grid--2">
-              <!-- Country autocomplete -->
-              <div class="cp-field" [class.cp-field--error]="form.get('country')!.invalid && form.get('country')!.touched">
+              <!-- Country (fixed to Egypt) -->
+              <div class="cp-field">
                 <label class="cp-label"><i class="fa-solid fa-globe"></i> {{ 'CREATE_PROPERTY.COUNTRY' | translate }}</label>
-                <div class="cp-autocomplete">
-                  <div class="cp-input-icon-wrap">
-                    <input
-                      class="cp-input"
-                      [value]="form.get('country')!.value"
-                      (input)="onCountryInput($event)"
-                      (focus)="filteredCountries().length > 0 && countryDropdownOpen.set(true)"
-                      placeholder="Search country…"
-                      autocomplete="off" />
-                    <i class="fa-solid fa-chevron-down cp-input-caret" [class.open]="countryDropdownOpen()"></i>
-                  </div>
-                  @if (countryDropdownOpen() && filteredCountries().length > 0) {
-                    <div class="cp-dropdown">
-                      @for (c of filteredCountries().slice(0, 60); track c) {
-                        <button type="button" class="cp-dropdown__item" (mousedown)="selectCountry(c)">
-                          {{ c }}
-                        </button>
-                      }
-                    </div>
-                  }
+                <div class="cp-input-icon-wrap">
+                  <input
+                    class="cp-input cp-input--locked"
+                    [value]="form.get('country')!.value"
+                    readonly
+                    aria-readonly="true"
+                    tabindex="-1" />
+                  <i class="fa-solid fa-lock cp-input-caret"></i>
                 </div>
               </div>
 

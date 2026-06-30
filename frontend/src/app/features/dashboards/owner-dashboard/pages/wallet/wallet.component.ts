@@ -141,8 +141,9 @@ export class OwnerWalletComponent implements OnInit {
     Math.max(1, Math.ceil(this.ledgerTotal() / this.ledgerPageSize)),
   );
 
-  formatCurrency(n: number, currency = 'EGP') {
-    return `${n.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })} ${currency}`;
+  formatCurrency(n: number, _currency = 'EGP') {
+    // Platform currency is always EGP regardless of any legacy stored currency.
+    return `${n.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })} EGP`;
   }
 
   formatDate(iso: string) {
