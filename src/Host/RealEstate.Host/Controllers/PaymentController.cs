@@ -19,6 +19,7 @@ using Payment.Application.Features.Commands.RefundPayment;
 using Payment.Application.Features.Commands.UpdateAiPrediction;
 using Payment.Application.Features.Queries.GetAllRentPayments;
 using Payment.Application.Features.Queries.GetFinancialSummary;
+using Payment.Application.Features.Queries.GetOwnerFinancialSummary;
 using Payment.Application.Features.Queries.GetMyRentPayments;
 using Payment.Application.Features.Queries.GetOverduePayments;
 using Payment.Application.Features.Queries.GetPaymentReceipt;
@@ -261,6 +262,16 @@ public sealed class PaymentController : ControllerBase
     public async Task<ActionResult> GetFinancialSummary(CancellationToken cancellationToken)
     {
         var result = await _mediator.Send(new GetFinancialSummaryQuery(), cancellationToken);
+        return Ok(result);
+    }
+
+    [HttpGet("owner/financial-summary")]
+    [Authorize(Roles = "owner,company_manager,admin")]
+    public async Task<ActionResult> GetOwnerFinancialSummary(CancellationToken cancellationToken)
+    {
+        var userId = _currentUser.UserId
+            ?? throw new UnauthorizedAccessException("User not authenticated.");
+        var result = await _mediator.Send(new GetOwnerFinancialSummaryQuery(userId), cancellationToken);
         return Ok(result);
     }
 

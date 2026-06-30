@@ -15,6 +15,7 @@ import {
   SelectPlanRequest,
   SelectPlanResponse,
   StartCheckoutOptions,
+  OwnerFinancialSummary,
 } from '../models/payment.model';
 
 // ── Admin platform dashboard ──────────────────────────────────────────────────
@@ -191,6 +192,11 @@ export class PaymentService {
   /** Admin: generate (or regenerate) a Stripe checkout link for a rent payment */
   generateRentPaymentLink(id: string): Observable<{ checkoutUrl: string }> {
     return this.http.post<{ checkoutUrl: string }>(`${this.base}${API_ENDPOINTS.PAYMENTS.GENERATE_LINK(id)}`, {});
+  }
+
+  /** Owner: real financial summary — revenue, pending, monthly chart */
+  getOwnerFinancialSummary(): Observable<OwnerFinancialSummary> {
+    return this.http.get<OwnerFinancialSummary>(`${this.base}${API_ENDPOINTS.PAYMENTS.OWNER_FINANCIAL_SUMMARY}`);
   }
 
   /** Broker payments across all managed leases — GET /api/brokers/me/payments */

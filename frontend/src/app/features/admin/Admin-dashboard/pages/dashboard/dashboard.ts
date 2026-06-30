@@ -146,9 +146,11 @@ export class DashboardComponent {
 
     // 2. Financial Chart Setup
     this.service.getMonthlyRevenue().subscribe((data) => {
-      const months = data.slice(0, 8).map((d) => d.month);
-      const revenue = data.slice(0, 8).map((d) => d.amount);
-      const expenses = revenue.map((v) => Math.round(v * 0.35 + Math.random() * 2000));
+      const recent = data.slice(-8); // last 8 months (most recent)
+      const months = recent.map((d) => d.month);
+      const revenue = recent.map((d) => d.amount);
+      // Expenses = 99% of collected rent flows to owners via wallet credits
+      const expenses = revenue.map((v) => Math.round(v * 0.99));
 
       this.financialChart = {
         series: [
@@ -199,7 +201,7 @@ export class DashboardComponent {
         yaxis: {
           labels: {
             style: { colors: '#94a3b8', fontSize: '12px' },
-            formatter: (val: number) => '$' + (val / 1000).toFixed(0) + 'K',
+            formatter: (val: number) => (val / 1000).toFixed(0) + 'K EGP',
           },
         },
         grid: {
@@ -212,7 +214,7 @@ export class DashboardComponent {
         tooltip: {
           shared: true,
           intersect: false,
-          y: { formatter: (val: number) => '$' + val.toLocaleString() },
+          y: { formatter: (val: number) => val.toLocaleString('en-US') + ' EGP' },
         } as ApexTooltip,
       };
     });

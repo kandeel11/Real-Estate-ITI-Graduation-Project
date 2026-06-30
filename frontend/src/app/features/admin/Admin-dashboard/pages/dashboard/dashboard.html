@@ -13,7 +13,7 @@
                 <span class="stat__label">{{ 'ADMIN.DASHBOARD.STAT_REVENUE' | translate }}</span>
                 <div class="stat__icon"><i class="fa-regular fa-credit-card"></i></div>
             </div>
-            <h2 class="stat__value">${{ formatMoney(s.monthlyRevenue) }}</h2>
+            <h2 class="stat__value">{{ formatMoney(s.monthlyRevenue) }} EGP</h2>
             <span class="stat__trend up">
                 <i class="fa-solid fa-arrow-trend-up"></i>
                 {{ 'ADMIN.DASHBOARD.VS_LAST_MONTH' | translate: { value: s.revenueGrowth } }}
@@ -25,7 +25,7 @@
                 <span class="stat__label">{{ 'ADMIN.DASHBOARD.STAT_EXPENSES' | translate }}</span>
                 <div class="stat__icon"><i class="fa-regular fa-money-bill-1"></i></div>
             </div>
-            <h2 class="stat__value">$82,450</h2>
+            <h2 class="stat__value">{{ formatMoney(s.totalWithdrawn) }} EGP</h2>
             <span class="stat__trend down">
                 <i class="fa-solid fa-arrow-trend-up"></i>
                 {{ 'ADMIN.DASHBOARD.VS_LAST_MONTH' | translate: { value: '2.1' } }}
@@ -46,7 +46,7 @@
                 <span class="stat__label">{{ 'ADMIN.DASHBOARD.STAT_YIELD' | translate }}</span>
                 <div class="stat__icon"><i class="fa-solid fa-chart-simple"></i></div>
             </div>
-            <h2 class="stat__value">6.8%</h2>
+            <h2 class="stat__value">{{ s.netYield }}%</h2>
             <span class="stat__trend up">
                 <i class="fa-solid fa-arrow-trend-up"></i>
                 {{ 'ADMIN.DASHBOARD.YOY' | translate: { value: '0.4' } }}
@@ -137,7 +137,7 @@
                         <span>{{ p.tenantName }} · {{ p.paidDate ? timeAgo(p.paidDate) : timeAgo(p.dueDate) }}</span>
                     </div>
                     <div class="activity-amount" [class.up]="p.status === 'paid'" [class.down]="p.status !== 'paid'">
-                        {{ p.status === 'paid' ? '+' : '-' }}${{ formatMoney(p.amount) }}
+                        {{ p.status === 'paid' ? '+' : '-' }}{{ formatMoney(p.amount) }} EGP
                     </div>
                 </div>
                 }

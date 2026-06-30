@@ -167,6 +167,7 @@ export const API_ENDPOINTS = {
     APPLY_LATE_FEE: (id: string) => `/payments/${id}/late-fee`,
     MARK_EXTERNAL: (id: string) => `/payments/${id}/mark-external`,
     GENERATE_LINK: (id: string) => `/payments/${id}/generate-link`,
+    OWNER_FINANCIAL_SUMMARY: '/payments/owner/financial-summary',
     WAIVE_LATE_FEE: (id: string) => `/payments/${id}/waive-late-fee`,
     GET_RECEIPT: (id: string) => `/payments/${id}/receipt`,
     REFUND: (id: string) => `/payments/${id}/refund`,
