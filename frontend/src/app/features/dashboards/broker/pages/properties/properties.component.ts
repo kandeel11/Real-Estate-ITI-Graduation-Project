@@ -196,4 +196,13 @@ export class PropertiesComponent implements OnInit {
     };
     return m[s] ?? 'BROKER.PROPERTIES.STATUS_DRAFT';
   }
+
+  /** Card status-badge colour key. */
+  statusColor(s: string): string {
+    const m: Record<string, string> = {
+      Active: 'green', Draft: 'slate', PendingReview: 'amber',
+      RequiresManualReview: 'amber', Rented: 'blue', Rejected: 'red', Inactive: 'slate',
+    };
+    return m[s] ?? 'slate';
+  }
 }

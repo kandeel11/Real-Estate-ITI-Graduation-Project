@@ -109,6 +109,14 @@ public class AcceptInquiryCommandHandler : IRequestHandler<AcceptInquiryCommand,
             AcceptedById = cmd.AcceptedById
         }, ct);
 
+        // Feed the broker's Avg Response Time metric. The handler in Identity
+        // looks up the accepter by user id and ignores owner-accepts (no broker
+        // row), so publishing unconditionally is safe.
+        var responseMinutes = (int)Math.Max(
+            0, (inquiry.AcceptedAt!.Value - inquiry.CreatedAt).TotalMinutes);
+        await _mediator.Publish(
+            new BrokerInquiryAcceptedEvent(cmd.AcceptedById, responseMinutes), ct);
+
         return response;
     }
 }

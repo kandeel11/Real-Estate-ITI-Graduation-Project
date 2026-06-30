@@ -21,7 +21,7 @@
         <strong class="balance-amount">
           {{ formatCurrency(balance()!.balance, balance()!.currency) }}
         </strong>
-        <span class="balance-currency">{{ balance()!.currency }}</span>
+        <span class="balance-currency">EGP</span>
       </div>
       <div class="balance-actions">
         <button class="btn-withdraw" (click)="setView('withdraw')">
@@ -193,7 +193,7 @@
           </div>
 
           <div class="form-field">
-            <label>Amount ({{ balance()?.currency ?? 'AED' }}) *</label>
+            <label>Amount (EGP) *</label>
             <input type="number" [value]="withdrawAmount()"
               (input)="withdrawAmount.set($any($event.target).value)"
               placeholder="Enter amount to withdraw" min="1"

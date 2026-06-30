@@ -50,90 +50,76 @@
     }
   </div>
 } @else {
-  <div class="card">
-    <div class="table-responsive">
-      <table class="table table-hover align-middle mb-0">
-        <thead class="table-light">
-          <tr>
-            <th></th>
-            <th>{{ 'COMMON.TITLE' | translate }}</th>
-            <th>{{ 'COMMON.LOCATION' | translate }}</th>
-            <th>{{ 'COMMON.PRICE' | translate }}</th>
-            <th>{{ 'COMMON.STATUS' | translate }}</th>
-            <th>{{ 'COMMON.VIEWS' | translate }}</th>
-            <th class="text-end">{{ 'COMMON.ACTIONS' | translate }}</th>
-          </tr>
-        </thead>
-        <tbody>
-          @for (prop of filtered(); track prop.id) {
-            <tr>
-              <td>
-                @if (prop.primaryImageUrl) {
-                  <img [src]="prop.primaryImageUrl" [alt]="prop.title" class="thumb rounded" />
-                } @else {
-                  <div class="thumb rounded bg-light d-flex align-items-center justify-content-center">
-                    <i class="fa-solid fa-image text-muted"></i>
-                  </div>
-                }
-              </td>
-              <td class="fw-semibold">
-                {{ prop.title }}
-                @if (prop.isFeatured) {
-                  <i class="fa-solid fa-star text-warning ms-1" [title]="'COMMON.FEATURED' | translate"></i>
-                }
-              </td>
-              <td>{{ prop.district }}, {{ prop.city }}</td>
-              <td>EGP {{ prop.price | number }}/mo</td>
-              <td><span class="status-badge" [ngClass]="statusClass(prop.status)">{{ statusLabel(prop.status) | translate }}</span></td>
-              <td>{{ prop.viewsCount | number }}</td>
-              <td class="text-end text-nowrap">
-                @if (prop.status === 'Draft') {
-                  <button class="btn btn-sm btn-dark me-1" (click)="resumeProperty(prop)">
-                    <i class="fa-solid fa-pen-to-square me-1"></i>{{ 'OWNER.PROPERTIES.BTN_RESUME' | translate }}
-                  </button>
-                  <button class="btn btn-sm btn-outline-success me-1" (click)="submitDraft(prop)"
-                          [disabled]="busyId() === prop.id">
-                    @if (busyId() === prop.id) { <span class="spinner-border spinner-border-sm"></span> }
-                    @else { {{ 'OWNER.PROPERTIES.BTN_SUBMIT' | translate }} }
-                  </button>
-                }
-
-                @if (prop.status === 'Active') {
-                  <button class="btn btn-sm me-1" [class]="prop.isFeatured ? 'btn-warning' : 'btn-outline-warning'"
-                          (click)="toggleFeatured(prop)" [disabled]="busyId() === prop.id"
-                          [title]="(prop.isFeatured ? 'OWNER.PROPERTIES.BTN_UNFEATURE' : 'OWNER.PROPERTIES.BTN_FEATURE') | translate">
-                    @if (busyId() === prop.id) { <span class="spinner-border spinner-border-sm"></span> }
-                    @else if (prop.isFeatured) { <i class="fa-solid fa-star me-1"></i>{{ 'OWNER.PROPERTIES.BTN_FEATURED' | translate }} }
-                    @else { <i class="fa-regular fa-star me-1"></i>{{ 'OWNER.PROPERTIES.BTN_FEATURE' | translate }} }
-                  </button>
-                }
-
-                <button class="btn btn-sm btn-outline-secondary me-1" (click)="openImages(prop)"
-                        [title]="'OWNER.PROPERTIES.BTN_IMAGES' | translate">
-                  <i class="fa-regular fa-images"></i>
-                </button>
-
-                <button class="btn btn-sm btn-outline-secondary me-1" (click)="openInquiries(prop)"
-                        [title]="'OWNER.PROPERTIES.BTN_INQUIRIES' | translate">
-                  <i class="fa-regular fa-envelope"></i>
-                </button>
-                <button class="btn btn-sm btn-outline-secondary me-1" (click)="openView(prop)"
-                        [title]="'OWNER.PROPERTIES.BTN_VIEW' | translate">
-                  <i class="fa-regular fa-eye"></i>
-                </button>
-
-                @if (prop.status === 'Draft' || prop.status === 'Rejected' || prop.status === 'Active') {
-                  <button class="btn btn-sm btn-outline-danger" (click)="propertyToDelete.set(prop)"
-                          [title]="'COMMON.DELETE' | translate">
-                    <i class="fa-solid fa-trash"></i>
-                  </button>
-                }
-              </td>
-            </tr>
+  <div class="pc-grid">
+    @for (prop of filtered(); track prop.id) {
+      <div class="pc-card">
+        <div class="pc-image">
+          @if (prop.primaryImageUrl) {
+            <img [src]="prop.primaryImageUrl" [alt]="prop.title" />
+          } @else {
+            <div class="pc-placeholder"><i class="fa-solid fa-house"></i></div>
           }
-        </tbody>
-      </table>
-    </div>
+          <span class="pc-status" [attr.data-color]="statusColor(prop.status)">
+            {{ statusLabel(prop.status) | translate }}
+          </span>
+          @if (prop.isFeatured) {
+            <span class="pc-featured"><i class="fa-solid fa-star"></i>{{ 'OWNER.PROPERTIES.BTN_FEATURED' | translate }}</span>
+          }
+        </div>
+
+        <div class="pc-body">
+          <div class="pc-top">
+            <h3 class="pc-title">{{ prop.title }}</h3>
+            <strong class="pc-price">EGP {{ prop.price | number }}</strong>
+          </div>
+          <span class="pc-location"><i class="fa-solid fa-location-dot"></i>{{ prop.district }}, {{ prop.city }}</span>
+          <div class="pc-meta">
+            <span class="pc-pill"><i class="fa-solid fa-house-chimney"></i>{{ prop.propertyType }}</span>
+            @if (prop.bedrooms) { <span class="pc-pill"><i class="fa-solid fa-bed"></i>{{ prop.bedrooms }}</span> }
+            @if (prop.bathrooms) { <span class="pc-pill"><i class="fa-solid fa-bath"></i>{{ prop.bathrooms }}</span> }
+            <span class="pc-pill"><i class="fa-solid fa-vector-square"></i>{{ prop.areaSqm }}m²</span>
+          </div>
+
+          <div class="pc-footer">
+            <span class="pc-views"><i class="fa-regular fa-eye"></i>{{ prop.viewsCount | number }} {{ 'COMMON.VIEWS' | translate }}</span>
+          </div>
+
+          <div class="pc-actions">
+            @if (prop.status === 'Draft') {
+              <button class="pc-btn pc-btn--dark" (click)="resumeProperty(prop)">
+                <i class="fa-solid fa-pen-to-square"></i>{{ 'OWNER.PROPERTIES.BTN_RESUME' | translate }}
+              </button>
+              <button class="pc-btn pc-btn--success" (click)="submitDraft(prop)" [disabled]="busyId() === prop.id">
+                @if (busyId() === prop.id) { <span class="spinner-border spinner-border-sm"></span> }
+                @else { <i class="fa-solid fa-paper-plane"></i>{{ 'OWNER.PROPERTIES.BTN_SUBMIT' | translate }} }
+              </button>
+            }
+            @if (prop.status === 'Active') {
+              <button class="pc-btn" [class.pc-btn--gold]="prop.isFeatured" (click)="toggleFeatured(prop)" [disabled]="busyId() === prop.id"
+                      [title]="(prop.isFeatured ? 'OWNER.PROPERTIES.BTN_UNFEATURE' : 'OWNER.PROPERTIES.BTN_FEATURE') | translate">
+                @if (busyId() === prop.id) { <span class="spinner-border spinner-border-sm"></span> }
+                @else if (prop.isFeatured) { <i class="fa-solid fa-star"></i>{{ 'OWNER.PROPERTIES.BTN_FEATURED' | translate }} }
+                @else { <i class="fa-regular fa-star"></i>{{ 'OWNER.PROPERTIES.BTN_FEATURE' | translate }} }
+              </button>
+            }
+            <button class="pc-btn pc-btn--icon" (click)="openImages(prop)" [title]="'OWNER.PROPERTIES.BTN_IMAGES' | translate">
+              <i class="fa-regular fa-images"></i>
+            </button>
+            <button class="pc-btn pc-btn--icon" (click)="openInquiries(prop)" [title]="'OWNER.PROPERTIES.BTN_INQUIRIES' | translate">
+              <i class="fa-regular fa-envelope"></i>
+            </button>
+            <button class="pc-btn pc-btn--icon" (click)="openView(prop)" [title]="'OWNER.PROPERTIES.BTN_VIEW' | translate">
+              <i class="fa-regular fa-eye"></i>
+            </button>
+            @if (prop.status === 'Draft' || prop.status === 'Rejected' || prop.status === 'Active') {
+              <button class="pc-btn pc-btn--icon pc-btn--danger" (click)="propertyToDelete.set(prop)" [title]="'COMMON.DELETE' | translate">
+                <i class="fa-solid fa-trash"></i>
+              </button>
+            }
+          </div>
+        </div>
+      </div>
+    }
   </div>
 }
 

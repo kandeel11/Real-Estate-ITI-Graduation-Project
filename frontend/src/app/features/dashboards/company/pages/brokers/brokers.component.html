@@ -1,5 +1,11 @@
-<div class="d-flex justify-content-between align-items-center mb-3">
-  <h2 class="mb-0">{{ 'COMPANY_BROKERS.TITLE' | translate }} ({{ activeCount() }} / {{ maxBrokersLabel() }})</h2>
+<div class="d-flex justify-content-between align-items-center mb-4">
+  <div class="page-head">
+    <span class="page-head__icon"><i class="fa-solid fa-users"></i></span>
+    <div>
+      <h2 class="page-head__title">{{ 'COMPANY_BROKERS.TITLE' | translate }}</h2>
+      <p class="page-head__subtitle">{{ activeCount() }} / {{ maxBrokersLabel() }} {{ 'COMPANY_NAV.BROKERS' | translate }}</p>
+    </div>
+  </div>
   <button class="btn btn-dark" (click)="openModal()">
     <i class="fa-solid fa-plus me-2"></i>{{ 'COMPANY_BROKERS.ADD_BROKER' | translate }}
   </button>
@@ -64,40 +70,48 @@
           @for (b of filtered(); track b.id) {
             <tr [class.table-secondary]="!b.isActive">
               <td>
-                <div class="fw-semibold">{{ displayName(b) }}</div>
-                @if (b.email) {
-                  <div class="small text-muted">{{ b.email }}</div>
-                }
+                <div class="broker-cell">
+                  <span class="broker-cell__avatar">{{ initials(b) }}</span>
+                  <div>
+                    <div class="fw-semibold">{{ displayName(b) }}</div>
+                    @if (b.email) {
+                      <div class="small text-muted">{{ b.email }}</div>
+                    }
+                  </div>
+                </div>
               </td>
-              <td>{{ b.licenseNumber }}</td>
+              <td><span class="tt-license"><i class="fa-solid fa-id-badge"></i>{{ b.licenseNumber }}</span></td>
               <td>{{ b.closedDealsCount }}</td>
               <td>{{ b.avgResponseTimeMinutes }} {{ 'COMPANY_BROKERS.MIN' | translate }}</td>
               <td>
-                <i class="fa-solid fa-star text-warning"></i>
-                {{ b.ratingAvg }}
-                <span class="text-muted small">({{ b.totalRatings }})</span>
+                <span class="tt-rating">
+                  <i class="fa-solid fa-star"></i>{{ b.ratingAvg }}
+                  <small>({{ b.totalRatings }})</small>
+                </span>
               </td>
               <td>
                 @if (b.isActive) {
-                  <span class="badge bg-success">{{ 'COMMON.ACTIVE' | translate }}</span>
+                  <span class="tt-status tt-status--active"><i class="fa-solid fa-circle-check"></i>{{ 'COMMON.ACTIVE' | translate }}</span>
                 } @else {
-                  <span class="badge bg-secondary">{{ 'COMMON.INACTIVE' | translate }}</span>
+                  <span class="tt-status tt-status--inactive"><i class="fa-solid fa-circle-minus"></i>{{ 'COMMON.INACTIVE' | translate }}</span>
                 }
               </td>
               <td class="text-end">
                 @if (b.isActive) {
-                  <button class="btn btn-sm btn-outline-danger" (click)="deactivate(b)">
-                    {{ 'COMPANY_BROKERS.DEACTIVATE' | translate }}
+                  <button class="tt-btn tt-btn--ban" (click)="deactivate(b)">
+                    <i class="fa-solid fa-ban"></i>{{ 'COMPANY_BROKERS.DEACTIVATE' | translate }}
                   </button>
                 } @else {
-                  <button class="btn btn-sm btn-outline-success me-1" (click)="reactivate(b)"
+                  <button class="tt-btn tt-btn--success me-1" (click)="reactivate(b)"
                           [disabled]="reactivatingId() === b.id">
                     @if (reactivatingId() === b.id) {
-                      <span class="spinner-border spinner-border-sm me-1"></span>
+                      <span class="spinner-border spinner-border-sm"></span>
+                    } @else {
+                      <i class="fa-solid fa-circle-check"></i>
                     }
                     {{ 'COMPANY_BROKERS.REACTIVATE' | translate }}
                   </button>
-                  <button class="btn btn-sm btn-outline-danger" (click)="requestDelete(b)" [title]="'COMMON.DELETE' | translate">
+                  <button class="tt-btn tt-btn--ban" (click)="requestDelete(b)" [title]="'COMMON.DELETE' | translate">
                     <i class="fa-solid fa-trash"></i>
                   </button>
                 }
