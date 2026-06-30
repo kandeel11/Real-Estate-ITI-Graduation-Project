@@ -12,6 +12,7 @@ namespace Maintenance.Application.Interfaces
         Task<AiEvaluationResultDto> EvaluateAsync(
         string ticketNumber, string leaseId,
         string description, string imageUrl,
+        IReadOnlyList<string> categoryNames,
         CancellationToken ct = default);
     }
 }

@@ -195,6 +195,7 @@ public class LeasesController : ControllerBase
                 req.PaymentFrequency,
                 req.TotalRentAmount,
                 req.DurationInMonths,
+                req.PaymentDayOfMonth,
                 managerId), ct);
             return NoContent();
         }
@@ -437,5 +438,6 @@ public record SendLeaseToTenantRequest(
     string? PaymentFrequency = null,
     decimal? TotalRentAmount = null,
     int? DurationInMonths = null,
+    int? PaymentDayOfMonth = null,
     string? TenantEmail = null,
     string? TenantName = null);

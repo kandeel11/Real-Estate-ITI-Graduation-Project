@@ -139,3 +139,20 @@ export interface PaymentSchedule {
   allPeriods: PaymentPeriod[];
   summary: PaymentScheduleSummary;
 }
+
+export interface MonthlyRevenue {
+  month: string;
+  year: number;
+  revenue: number;
+  count: number;
+}
+
+export interface OwnerFinancialSummary {
+  totalRevenue: number;
+  totalPending: number;
+  totalPlatformFee: number;
+  totalLateFees: number;
+  totalPaidCount: number;
+  totalPendingCount: number;
+  monthly: MonthlyRevenue[];
+}

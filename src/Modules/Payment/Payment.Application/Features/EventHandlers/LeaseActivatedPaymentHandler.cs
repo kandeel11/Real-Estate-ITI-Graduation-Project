@@ -30,6 +30,14 @@ public sealed class LeaseActivatedPaymentHandler
         int day = Math.Min(notification.PaymentDayOfMonth,
             DateTime.DaysInMonth(notification.StartDate.Year, notification.StartDate.Month));
         var firstDueDate = new DateOnly(notification.StartDate.Year, notification.StartDate.Month, day);
+        // Roll forward if pay-day falls before the lease start date
+        // (e.g. start = Apr 29, pay-day = 1 → Apr 1 is before Apr 29 → move to May 1).
+        if (firstDueDate < notification.StartDate)
+        {
+            var rolled = notification.StartDate.AddMonths(1);
+            int rolledDay = Math.Min(notification.PaymentDayOfMonth, DateTime.DaysInMonth(rolled.Year, rolled.Month));
+            firstDueDate = new DateOnly(rolled.Year, rolled.Month, rolledDay);
+        }
 
         bool exists = await _repository.ExistsForLeaseAndMonthAsync(
             notification.LeaseId, firstDueDate, cancellationToken);

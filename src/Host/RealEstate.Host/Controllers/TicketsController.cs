@@ -10,6 +10,7 @@ using Maintenance.Application.Features.Commands.ConfirmPayment;
 using Maintenance.Application.Features.Commands.CreateMaintenanceCheckout;
 using Maintenance.Application.Features.Commands.CreatePayment;
 using Maintenance.Application.Features.Commands.UserPay;
+using Maintenance.Application.Features.Commands.PayFromWallet;
 using Maintenance.Application.Features.Queries.GetCompanyRoutedTickets;
 using Maintenance.Application.Features.Commands.CreateTicket;
 using Maintenance.Application.Features.Commands.DeleteTicket;
@@ -26,6 +27,7 @@ using Maintenance.Application.Features.Queries.GetDisputeDetails;
 using Maintenance.Application.Features.Commands.UpdateTicket;
 using Maintenance.Application.Features.Commands.UploadAttachment;
 using Maintenance.Application.Features.Queries.GetAiEvaluation;
+using Maintenance.Application.Features.Queries.GetAvailableVendors;
 using Maintenance.Application.Features.Queries.GetPayment;
 using Maintenance.Application.Features.Queries.GetTicketById;
 using Maintenance.Application.Features.Queries.GetTickets;
@@ -166,8 +168,25 @@ public class TicketsController(ISender sender, ICurrentUserService currentUser) 
 
     // ── Decision ───────────────────────────────────────────────────
 
+    /// <summary>
+    /// Returns maintenance companies that match this ticket's AI category and property city.
+    /// Call this before POST /decision to show the vendor list to the user.
+    /// </summary>
+    [HttpGet("{id:guid}/available-vendors")]
+    [Authorize(Roles = "owner,tenant,maintenance_company")]
+    public async Task<IActionResult> GetAvailableVendors(Guid id, CancellationToken ct)
+    {
+        var result = await sender.Send(new GetAvailableVendorsForTicketQuery(id), ct);
+        return Ok(result);
+    }
+
+    /// <summary>
+    /// Records the decision.
+    /// When ResolutionMethod == PlatformVendor, VendorId is required
+    /// (pick from the list returned by GET /available-vendors).
+    /// </summary>
     [HttpPost("{id:guid}/decision")]
-    [Authorize(Roles = "owner,tenant")]
+    [Authorize(Roles = "owner,tenant,maintenance_company,company_manager")]
     public async Task<IActionResult> MakeDecision(Guid id, [FromBody] MakeDecisionRequest req)
     {
         await sender.Send(new MakeDecisionCommand(id, req.ResolutionMethod, CurrentUserId));
@@ -243,7 +262,7 @@ public class TicketsController(ISender sender, ICurrentUserService currentUser) 
 
     // User marks ticket complete when they hired an external technician themselves
     [HttpPost("{id:guid}/complete")]
-    [Authorize(Roles = "tenant,owner")]
+    [Authorize(Roles = "tenant,owner,company_manager")]
     public async Task<IActionResult> MarkCompleted(Guid id)
     {
         await sender.Send(new MarkCompletedCommand(id));
@@ -273,7 +292,7 @@ public class TicketsController(ISender sender, ICurrentUserService currentUser) 
     // ── Comments ───────────────────────────────────────────────────
 
     [HttpPost("{id:guid}/comments")]
-    [Authorize(Roles = "tenant,owner,maintenance_company")]
+    [Authorize(Roles = "tenant,owner,maintenance_company,company_manager")]
     public async Task<IActionResult> AddComment(Guid id, [FromBody] AddCommentRequest req)
     {
         var role = currentUser.Role switch
@@ -281,6 +300,7 @@ public class TicketsController(ISender sender, ICurrentUserService currentUser) 
             "tenant" => Maintenance.Domain.Enums.CommentAuthorRole.Tenant,
             "owner" => Maintenance.Domain.Enums.CommentAuthorRole.Owner,
             "maintenance_company" => Maintenance.Domain.Enums.CommentAuthorRole.Vendor,
+            "company_manager" => Maintenance.Domain.Enums.CommentAuthorRole.Owner,
             _ => Maintenance.Domain.Enums.CommentAuthorRole.Tenant
         };
 
@@ -312,11 +332,26 @@ public class TicketsController(ISender sender, ICurrentUserService currentUser) 
 
     // User pays online — submits transaction ID from the website payment
     [HttpPost("payments/{paymentId:guid}/pay")]
-    [Authorize(Roles = "tenant,owner")]
+    [Authorize(Roles = "tenant,owner,company_manager")]
     public async Task<IActionResult> PayOnline(Guid paymentId, [FromBody] PayOnlineRequest req)
     {
         await sender.Send(new UserPayCommand(paymentId, req.TransactionId));
         return Ok(new { message = "Payment submitted. Awaiting vendor confirmation." });
+    }
+
+    // Owner or company manager pays directly from their platform wallet — skips vendor confirmation
+    [HttpPost("payments/{paymentId:guid}/pay-from-wallet")]
+    [Authorize(Roles = "owner,company_manager")]
+    public async Task<IActionResult> PayFromWallet(Guid paymentId, CancellationToken ct)
+    {
+        try
+        {
+            var isCompany = currentUser.IsInRole("company_manager");
+            await sender.Send(new PayFromWalletCommand(paymentId, CurrentUserId, isCompany, currentUser.CompanyId), ct);
+            return Ok(new { message = "Payment completed from wallet. Ticket is now marked as complete." });
+        }
+        catch (InvalidOperationException ex) { return BadRequest(new { error = ex.Message }); }
+        catch (KeyNotFoundException ex) { return NotFound(new { error = ex.Message }); }
     }
 
     // Vendor confirms the payment after seeing it — closes the ticket

@@ -149,6 +149,26 @@ export class AdminPaymentsComponent implements OnInit {
     });
   }
 
+  generatingLink = signal<string | null>(null);
+
+  generatePaymentLink(p: RentPayment) {
+    this.generatingLink.set(p.id);
+    this.paymentService.generateRentPaymentLink(p.id).subscribe({
+      next: (res) => {
+        this.generatingLink.set(null);
+        this.showToast('success', 'Stripe link generated — refreshing list');
+        // Update the payment in-place with the new checkout URL
+        this.payments.update(list => list.map(x =>
+          x.id === p.id ? { ...x, checkoutUrl: res.checkoutUrl } : x
+        ));
+      },
+      error: (err) => {
+        this.generatingLink.set(null);
+        this.showToast('error', err?.error?.error ?? 'Failed to generate payment link');
+      },
+    });
+  }
+
   statusColor(s: PaymentStatus): string {
     return ({
       Pending: 'amber',

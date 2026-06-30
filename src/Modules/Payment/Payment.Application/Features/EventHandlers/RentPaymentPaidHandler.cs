@@ -65,6 +65,19 @@ public sealed class RentPaymentPaidHandler
             notes: $"Installment {installmentNumber} — {nextDueDate.Value:MMMM yyyy}"
         );
 
+        // Backdated lease: if this installment's due date is already in the past,
+        // auto-mark it PaidExternally so it never shows as overdue.
+        // This fires RentPaymentPaidIntegrationEvent again, cascading until we reach
+        // a future installment — at which point the chain naturally stops.
+        var today = DateOnly.FromDateTime(DateTime.UtcNow);
+        if (nextDueDate.Value < today)
+        {
+            next.MarkAsPaidExternally("Installment settled outside the platform (backdated lease).");
+            _logger.LogInformation(
+                "Lease {LeaseId}: installment {Number} due {DueDate} is in the past — auto-marked PaidExternally.",
+                config.LeaseId, installmentNumber, nextDueDate.Value);
+        }
+
         await _repository.AddAsync(next, cancellationToken);
         await _repository.SaveChangesAsync(cancellationToken);
 

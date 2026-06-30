@@ -25,14 +25,18 @@ public class MakeDecisionHandler(
 
         if (cmd.ResolutionMethod == ResolutionMethod.PlatformVendor)
         {
-            var evaluation = await aiRepo.GetByTicketIdAsync(cmd.TicketId, ct)
+            // Company-facing shadow tickets share the parent's AI evaluation
+            var evalTicketId = ticket.ParentTicketId ?? cmd.TicketId;
+            var evaluation = await aiRepo.GetByTicketIdAsync(evalTicketId, ct)
                 ?? throw new InvalidOperationException(
-                    "Cannot auto-assign a vendor: AI evaluation not found for this ticket.");
+                    "AI evaluation not found — cannot auto-assign a vendor.");
 
-            var vendorId = await autoAssign.FindVendorForCategoryAsync(evaluation.Category, ct)
+            var city = ExtractCity(ticket.PropertyAddress);
+            var vendorId = await autoAssign.FindVendorForCategoryAsync(evaluation.Category, city, ct)
                 ?? throw new InvalidOperationException(
-                    $"No maintenance company is available for category '{evaluation.Category}'. " +
-                    "Please choose the External Technician option instead.");
+                    $"No active maintenance company found for category '{evaluation.Category}'" +
+                    (string.IsNullOrEmpty(city) ? "." : $" in '{city}'.") +
+                    " Please choose External Technician instead.");
 
             var assignment = ticket.AssignVendor(vendorId, cmd.DecidedById);
             await assignmentRepo.AddAsync(assignment, ct);
@@ -40,5 +44,12 @@ public class MakeDecisionHandler(
         }
 
         await ticketRepo.SaveChangesAsync(ct);
+    }
+
+    private static string ExtractCity(string? address)
+    {
+        if (string.IsNullOrWhiteSpace(address)) return string.Empty;
+        var parts = address.Split(',', StringSplitOptions.RemoveEmptyEntries | StringSplitOptions.TrimEntries);
+        return parts.Length >= 2 ? parts[^2] : parts[0];
     }
 }
