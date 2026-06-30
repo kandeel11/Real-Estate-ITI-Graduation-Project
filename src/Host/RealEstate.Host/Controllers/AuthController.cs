@@ -62,6 +62,27 @@ public class AuthController(IMediator mediator, ICurrentUserService currentUser)
         }
     }
 
+    private const string RefreshCookieName = "refresh_token";
+
+    private void SetRefreshCookie(string token) =>
+        Response.Cookies.Append(RefreshCookieName, token, new CookieOptions
+        {
+            HttpOnly  = true,
+            Secure    = true,
+            SameSite  = SameSiteMode.None,
+            Expires   = DateTimeOffset.UtcNow.AddDays(7),
+            Path      = "/api/auth",
+        });
+
+    private void ClearRefreshCookie() =>
+        Response.Cookies.Delete(RefreshCookieName, new CookieOptions
+        {
+            HttpOnly = true,
+            Secure   = true,
+            SameSite = SameSiteMode.None,
+            Path     = "/api/auth",
+        });
+
     [HttpPost("login")]
     [AllowAnonymous]
     public async Task<IActionResult> Login(
@@ -75,7 +96,8 @@ public class AuthController(IMediator mediator, ICurrentUserService currentUser)
                 HttpContext.Connection.RemoteIpAddress?.ToString());
 
             var result = await mediator.Send(cmd, ct);
-            return Ok(result);
+            SetRefreshCookie(result.RefreshToken);
+            return Ok(new { result.AccessToken, result.ExpiresAt, result.User });
         }
         catch (UnauthorizedAccessException ex)
         {
@@ -85,30 +107,38 @@ public class AuthController(IMediator mediator, ICurrentUserService currentUser)
 
     [HttpPost("refresh")]
     [AllowAnonymous]
-    public async Task<IActionResult> Refresh(
-        [FromBody] RefreshRequest request, CancellationToken ct)
+    public async Task<IActionResult> Refresh(CancellationToken ct)
     {
+        var refreshToken = Request.Cookies[RefreshCookieName];
+        if (string.IsNullOrEmpty(refreshToken))
+            return Unauthorized(new { error = "No refresh token." });
+
         try
         {
             var cmd = new RefreshTokenCommand(
-                request.RefreshToken,
+                refreshToken,
                 HttpContext.Connection.RemoteIpAddress?.ToString());
 
             var result = await mediator.Send(cmd, ct);
-            return Ok(result);
+            SetRefreshCookie(result.RefreshToken);
+            return Ok(new { result.AccessToken, result.ExpiresAt, result.User });
         }
         catch (UnauthorizedAccessException ex)
         {
+            ClearRefreshCookie();
             return Unauthorized(new { error = ex.Message });
         }
     }
 
     [HttpPost("logout")]
-    [Authorize]
-    public async Task<IActionResult> Logout(
-        [FromBody] LogoutRequest request, CancellationToken ct)
+    [AllowAnonymous]
+    public async Task<IActionResult> Logout(CancellationToken ct)
     {
-        await mediator.Send(new LogoutCommand(request.RefreshToken), ct);
+        var refreshToken = Request.Cookies[RefreshCookieName];
+        if (!string.IsNullOrEmpty(refreshToken))
+            await mediator.Send(new LogoutCommand(refreshToken), ct);
+
+        ClearRefreshCookie();
         return NoContent();
     }
 
@@ -235,6 +265,4 @@ public record LoginRequest(string Email, string Password);
 public record ForgotPasswordRequest(string Email);
 public record ResetPasswordRequest(string Email, string Code, string NewPassword);
 // ChangePasswordRequest is declared in TenantController and shared across this namespace.
-public record RefreshRequest(string RefreshToken);
-public record LogoutRequest(string RefreshToken);
 public record ResendVerificationRequest(string Email);

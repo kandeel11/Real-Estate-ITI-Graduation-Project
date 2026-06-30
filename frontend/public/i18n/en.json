@@ -460,7 +460,8 @@
       "ERR_NO_EMAIL": "Please enter the tenant's email address.",
       "ERR_DATES_REQUIRED": "Please enter both the lease start and end dates before sending.",
       "ERR_DATES_ORDER": "The lease end date must be after the start date.",
-      "UPLOAD_ERROR": "Upload failed. Please try again."
+      "UPLOAD_ERROR": "Upload failed. Please try again.",
+      "ERR_NOT_RENT_LEASE": "This document does not appear to be a rental lease contract (عقد إيجار). Please upload the correct document."
     },
     "INQUIRIES": {
       "TITLE": "Inquiries",
@@ -745,7 +746,8 @@
       "ERR_NO_EMAIL": "Please enter the tenant's email address.",
       "ERR_DATES_REQUIRED": "Please enter both the lease start and end dates before sending.",
       "ERR_DATES_ORDER": "The lease end date must be after the start date.",
-      "UPLOAD_ERROR": "Upload failed. Please try again."
+      "UPLOAD_ERROR": "Upload failed. Please try again.",
+      "ERR_NOT_RENT_LEASE": "This document does not appear to be a rental lease contract (عقد إيجار). Please upload the correct document."
     },
     "INQUIRIES": {
       "TITLE": "Inquiries",
@@ -1650,7 +1652,8 @@
     "DISPUTES": "Disputes",
     "PAYMENTS": "Payments",
     "WITHDRAWALS": "Withdrawals",
-    "PLATFORM": "Platform Dashboard"
+    "PLATFORM": "Platform Dashboard",
+    "OWNERSHIP": "Ownership Verify"
   },
   "ADMIN": {
     "SIDEBAR": {

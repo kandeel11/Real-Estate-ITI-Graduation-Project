@@ -70,6 +70,22 @@ namespace Maintenance.Domain.Entities
             MarkAsUpdated();
         }
 
+        /// <summary>
+        /// Confirms payment settled directly from the owner/company wallet.
+        /// Records 2% platform commission and skips the vendor confirmation step.
+        /// </summary>
+        public void ConfirmFromWallet()
+        {
+            if (Status != MaintenancePaymentStatus.Pending)
+                throw new InvalidOperationException("Payment is not pending.");
+            TransactionId = "WALLET";
+            PaymentMethod = "Wallet";
+            Status = MaintenancePaymentStatus.Paid;
+            PaidAt = DateTime.UtcNow;
+            RecordCommission();
+            MarkAsUpdated();
+        }
+
         public void SetCheckoutSession(string sessionId, string checkoutUrl)
         {
             CheckoutSessionId = sessionId;

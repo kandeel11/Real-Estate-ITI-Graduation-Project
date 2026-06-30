@@ -233,6 +233,13 @@ export const routes: Routes = [
               ),
           },
           {
+            path: 'tickets/:id',
+            loadComponent: () =>
+              import('./features/dashboards/company/pages/tickets/ticket-detail/ticket-detail.component').then(
+                (m) => m.CompanyTicketDetailComponent,
+              ),
+          },
+          {
             path: 'payments',
             loadComponent: () =>
               import('./features/dashboards/company/pages/payments/payments.component').then(

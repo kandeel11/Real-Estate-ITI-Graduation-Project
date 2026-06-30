@@ -17,9 +17,6 @@ public sealed class PropertyManagementCheckerAdapter(ISender sender) : IProperty
         if (property is null || property.CompanyId is null)
             return null;
 
-        if (!property.IsFullManagement || !property.IsMaintenanceEnabled)
-            return null;
-
         var company = await sender.Send(new GetCompanyDetailsQuery(property.CompanyId.Value), ct);
         if (company is null || !company.IsActive || !company.IsVerified)
             return null;
@@ -27,7 +24,7 @@ public sealed class PropertyManagementCheckerAdapter(ISender sender) : IProperty
         return new PropertyManagementInfo(
             CompanyId: company.Id,
             CompanyManagerUserId: company.ManagerId,
-            IsFullManagement: property.IsFullManagement,
-            IsMaintenanceEnabled: property.IsMaintenanceEnabled);
+            IsFullManagement: true,
+            IsMaintenanceEnabled: true);
     }
 }

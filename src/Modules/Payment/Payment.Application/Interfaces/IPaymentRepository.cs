@@ -47,4 +47,10 @@ public interface IPaymentRepository
     Task AddRangeAsync(IEnumerable<Payment.Domain.Entities.Payment> payments, CancellationToken cancellationToken = default);
 
     Task SaveChangesAsync(CancellationToken cancellationToken = default);
+
+    // ── Lease schedule config (stored snapshot for auto-installment chaining) ──
+
+    Task<Payment.Domain.Entities.LeaseScheduleConfig?> GetLeaseScheduleConfigAsync(Guid leaseId, CancellationToken cancellationToken = default);
+
+    Task SaveLeaseScheduleConfigAsync(Payment.Domain.Entities.LeaseScheduleConfig config, CancellationToken cancellationToken = default);
 }

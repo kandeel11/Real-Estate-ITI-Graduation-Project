@@ -22,5 +22,11 @@ namespace AI.Application.Features.OwnershipVerification.DTOs
         public DateTime? AdminReviewedAt { get; set; }
 
         public string? RejectionReason { get; set; }
+
+        /// <summary>Short-lived SAS URL to view the uploaded National ID document (null when not applicable).</summary>
+        public string? NationalIdDocumentUrl { get; set; }
+
+        /// <summary>Short-lived SAS URL to view the uploaded ownership proof document (null when not applicable).</summary>
+        public string? OwnershipProofDocumentUrl { get; set; }
     }
 }

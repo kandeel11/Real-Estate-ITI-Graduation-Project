@@ -45,6 +45,7 @@ export class SidebarComponent {
       route: 'tickets',
     },
     { labelKey: 'ADMIN_NAV.DISPUTES', icon: 'fa-solid fa-flag', route: 'disputes' },
+    { labelKey: 'ADMIN_NAV.OWNERSHIP', icon: 'fa-solid fa-shield-halved', route: 'ownership' },
     { labelKey: 'ADMIN_NAV.PAYMENTS', icon: 'fa-solid fa-credit-card', route: 'payments' },
     { labelKey: 'ADMIN_NAV.WITHDRAWALS', icon: 'fa-solid fa-arrow-up-from-bracket', route: 'withdrawals' },
     { labelKey: 'ADMIN_NAV.PLATFORM', icon: 'fa-solid fa-chart-pie', route: 'platform' },

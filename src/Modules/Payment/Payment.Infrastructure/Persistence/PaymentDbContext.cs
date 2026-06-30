@@ -24,6 +24,8 @@ public sealed class PaymentDbContext : DbContext, IPaymentDbContext
 
     public DbSet<OutboxMessage> OutboxMessages => Set<OutboxMessage>();
 
+    public DbSet<LeaseScheduleConfig> LeaseScheduleConfigs => Set<LeaseScheduleConfig>();
+
     protected override void OnModelCreating(ModelBuilder modelBuilder)
     {
         modelBuilder.ApplyConfigurationsFromAssembly(typeof(PaymentDbContext).Assembly);

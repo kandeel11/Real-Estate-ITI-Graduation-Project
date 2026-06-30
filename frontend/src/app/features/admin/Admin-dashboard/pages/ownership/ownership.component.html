@@ -1,0 +1,153 @@
+<div class="ov-page">
+
+  <div class="ov-header">
+    <div class="ov-header__left">
+      <div class="ov-header__icon"><i class="fa-solid fa-shield-halved"></i></div>
+      <div>
+        <h1 class="ov-header__title">Ownership Verification</h1>
+        <p class="ov-header__sub">Review AI-flagged documents requiring manual approval</p>
+      </div>
+    </div>
+    <button class="ov-btn ov-btn--ghost" (click)="load()" [disabled]="loading()">
+      <i class="fa-solid fa-rotate-right" [class.fa-spin]="loading()"></i> Refresh
+    </button>
+  </div>
+
+  <!-- ── Loading ───────────────────────────────────────────────── -->
+  @if (loading()) {
+    <div class="ov-loader">
+      <i class="fa-solid fa-spinner fa-spin"></i>
+      <span>Loading pending reviews…</span>
+    </div>
+  }
+
+  <!-- ── Empty ─────────────────────────────────────────────────── -->
+  @else if (items().length === 0) {
+    <div class="ov-empty">
+      <i class="fa-solid fa-circle-check ov-empty__icon"></i>
+      <p>No pending verifications — all clear!</p>
+    </div>
+  }
+
+  <!-- ── Table ─────────────────────────────────────────────────── -->
+  @else {
+    <div class="ov-table-wrap">
+      <table class="ov-table">
+        <thead>
+          <tr>
+            <th>Status</th>
+            <th>Owner Name</th>
+            <th>AI Confidence</th>
+            <th>Fake Flag</th>
+            <th>Documents</th>
+            <th>Actions</th>
+          </tr>
+        </thead>
+        <tbody>
+          @for (item of items(); track item.verificationRequestId) {
+            <tr>
+              <!-- Status -->
+              <td>
+                <span class="badge" [class]="statusClass(item.status)">{{ item.status }}</span>
+              </td>
+
+              <!-- Owner -->
+              <td class="ov-name">{{ item.aiOcrExtractedOwnerName || '—' }}</td>
+
+              <!-- Confidence -->
+              <td>
+                @if (item.aiConfidenceScore !== null) {
+                  <span class="ov-score" [class]="confidenceClass(item.aiConfidenceScore)">
+                    {{ item.aiConfidenceScore | number:'1.0-0' }}%
+                  </span>
+                } @else { <span class="ov-muted">—</span> }
+              </td>
+
+              <!-- Fake flag -->
+              <td>
+                @if (item.aiFakeDetectionFlag) {
+                  <span class="ov-flag"><i class="fa-solid fa-triangle-exclamation"></i> Flagged</span>
+                } @else {
+                  <span class="ov-ok"><i class="fa-solid fa-check"></i> Clean</span>
+                }
+              </td>
+
+              <!-- Documents -->
+              <td class="ov-docs">
+                @if (item.nationalIdDocumentUrl) {
+                  <a [href]="item.nationalIdDocumentUrl" target="_blank" rel="noopener" class="ov-doc-link">
+                    <i class="fa-solid fa-id-card"></i> National ID
+                  </a>
+                }
+                @if (item.ownershipProofDocumentUrl) {
+                  <a [href]="item.ownershipProofDocumentUrl" target="_blank" rel="noopener" class="ov-doc-link">
+                    <i class="fa-solid fa-file-contract"></i> Title Deed
+                  </a>
+                }
+                @if (!item.nationalIdDocumentUrl && !item.ownershipProofDocumentUrl) {
+                  <span class="ov-muted">No documents</span>
+                }
+              </td>
+
+              <!-- Actions -->
+              <td class="ov-actions">
+                <button class="ov-btn ov-btn--approve" (click)="openModal(item, 'approve')"
+                  [disabled]="actionBusy() === item.verificationRequestId">
+                  <i class="fa-solid fa-check"></i> Approve
+                </button>
+                <button class="ov-btn ov-btn--reject" (click)="openModal(item, 'reject')"
+                  [disabled]="actionBusy() === item.verificationRequestId">
+                  <i class="fa-solid fa-xmark"></i> Reject
+                </button>
+              </td>
+            </tr>
+          }
+        </tbody>
+      </table>
+    </div>
+  }
+
+</div>
+
+<!-- ── Confirm Modal ─────────────────────────────────────────── -->
+@if (selected()) {
+  <div class="ov-modal-backdrop" (click)="closeModal()">
+    <div class="ov-modal" (click)="$event.stopPropagation()">
+      <div class="ov-modal__header">
+        @if (action() === 'approve') {
+          <i class="fa-solid fa-check-circle ov-modal__icon ov-modal__icon--approve"></i>
+          <h2>Approve Verification</h2>
+        } @else {
+          <i class="fa-solid fa-xmark-circle ov-modal__icon ov-modal__icon--reject"></i>
+          <h2>Reject Verification</h2>
+        }
+      </div>
+
+      <div class="ov-modal__body">
+        <label class="ov-modal__label">
+          {{ action() === 'approve' ? 'Approval notes (optional)' : 'Rejection reason (required)' }}
+        </label>
+        <textarea class="ov-modal__textarea" rows="3"
+          [placeholder]="action() === 'approve' ? 'e.g. Documents verified and match.' : 'e.g. ID document is expired or tampered.'"
+          [value]="notes()"
+          (input)="notes.set($any($event.target).value)">
+        </textarea>
+      </div>
+
+      <div class="ov-modal__footer">
+        <button class="ov-btn ov-btn--ghost" (click)="closeModal()">Cancel</button>
+        @if (action() === 'approve') {
+          <button class="ov-btn ov-btn--approve" (click)="confirm()" [disabled]="actionBusy()">
+            @if (actionBusy()) { <i class="fa-solid fa-spinner fa-spin"></i> } @else { <i class="fa-solid fa-check"></i> }
+            Approve
+          </button>
+        } @else {
+          <button class="ov-btn ov-btn--reject" (click)="confirm()" [disabled]="actionBusy()">
+            @if (actionBusy()) { <i class="fa-solid fa-spinner fa-spin"></i> } @else { <i class="fa-solid fa-xmark"></i> }
+            Reject
+          </button>
+        }
+      </div>
+    </div>
+  </div>
+}

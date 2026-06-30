@@ -3,8 +3,7 @@
   <span class="chat-fab__ring"></span>
   <span class="chat-fab__ring chat-fab__ring--2"></span>
   <span class="chat-fab__inner">
-    <svg class="chat-fab__icon" viewBox="0 0 32 32" fill="none" xmlns="http://www.w3.org/2000/svg">
-      <!-- Sparkle star -->
+    <svg class="chat-fab__icon" viewBox="0 0 32 32" fill="none">
       <path d="M16 4 L17.5 12 L25 13.5 L17.5 15 L16 23 L14.5 15 L7 13.5 L14.5 12 Z" fill="white" opacity="0.9"/>
       <path d="M24 6 L24.8 9.2 L28 10 L24.8 10.8 L24 14 L23.2 10.8 L20 10 L23.2 9.2 Z" fill="white" opacity="0.7"/>
       <path d="M8 20 L8.5 22 L10.5 22.5 L8.5 23 L8 25 L7.5 23 L5.5 22.5 L7.5 22 Z" fill="white" opacity="0.6"/>
@@ -16,150 +15,351 @@
 <!-- ══ CHAT PANEL ══ -->
 <div class="chat-panel" [class.chat-panel--open]="isOpen()">
 
-  <!-- Header -->
-  <header class="chat-header">
-    <div class="chat-header__glow"></div>
-    <div class="chat-header__orb chat-header__orb--1"></div>
-    <div class="chat-header__orb chat-header__orb--2"></div>
+  @switch (view()) {
 
-    <div class="chat-header__left">
-      <div class="chat-header__avatar">
-        <svg viewBox="0 0 32 32" fill="none">
-          <path d="M16 4 L17.5 12 L25 13.5 L17.5 15 L16 23 L14.5 15 L7 13.5 L14.5 12 Z" fill="white" opacity="0.95"/>
-          <path d="M24 6 L24.8 9.2 L28 10 L24.8 10.8 L24 14 L23.2 10.8 L20 10 L23.2 9.2 Z" fill="white" opacity="0.7"/>
-        </svg>
-        <span class="chat-header__online-dot"></span>
-      </div>
-      <div class="chat-header__info">
-        <h3 class="chat-header__name">Estatein AI</h3>
-        <span class="chat-header__status">
-          <span class="chat-header__status-dot"></span>
-          {{ 'CHATBOT.ONLINE' | translate }}
-        </span>
-      </div>
-    </div>
-
-    <div class="chat-header__actions">
-      <button class="chat-header__btn" (click)="newSession()" title="New conversation">
-        <svg viewBox="0 0 20 20" fill="none">
-          <path d="M10 4v12M4 10h12" stroke="currentColor" stroke-width="2" stroke-linecap="round"/>
-        </svg>
-      </button>
-      <button class="chat-header__btn chat-header__btn--close" (click)="close()" title="Close">
-        <svg viewBox="0 0 20 20" fill="none">
-          <path d="M15 5L5 15M5 5l10 10" stroke="currentColor" stroke-width="2" stroke-linecap="round"/>
-        </svg>
-      </button>
-    </div>
-  </header>
-
-  <!-- Messages -->
-  <div class="chat-messages" #scrollBox>
-
-    @if (loadingHistory()) {
-      <div class="chat-state">
-        <div class="chat-state__spinner"></div>
-        <span>{{ 'CHATBOT.LOADING_HISTORY' | translate }}</span>
-      </div>
-    }
-
-    @if (!loadingHistory() && messages().length === 0) {
-      <div class="chat-welcome">
-        <div class="chat-welcome__badge">
-          <svg viewBox="0 0 32 32" fill="none" width="28" height="28">
-            <path d="M16 4 L17.5 12 L25 13.5 L17.5 15 L16 23 L14.5 15 L7 13.5 L14.5 12 Z" fill="white"/>
-            <path d="M24 6 L24.8 9.2 L28 10 L24.8 10.8 L24 14 L23.2 10.8 L20 10 L23.2 9.2 Z" fill="white" opacity="0.7"/>
+    <!-- ═══════════════════════ HOME ═══════════════════════ -->
+    @case ('home') {
+      <header class="w-header w-header--gradient">
+        <div class="w-header__glow"></div>
+        <div class="w-header__orb w-header__orb--1"></div>
+        <div class="w-header__orb w-header__orb--2"></div>
+        <div class="w-home-logo">
+          <svg viewBox="0 0 28 28" fill="none" width="24" height="24">
+            <polygon points="14,3 25,24 3,24" fill="none" stroke="rgba(255,255,255,0.9)" stroke-width="2.2" stroke-linejoin="round"/>
+            <polygon points="14,12 20,24 8,24" fill="rgba(255,255,255,0.35)"/>
           </svg>
         </div>
-        <h4 class="chat-welcome__title">{{ 'CHATBOT.GREETING' | translate }}</h4>
-        <p class="chat-welcome__sub">{{ 'CHATBOT.INTRO' | translate }}</p>
-
-        <div class="chat-suggestions">
-          <button class="chat-suggestion" (click)="draft.set('Show me luxury homes'); send()">
-            <span class="chat-suggestion__emoji">🏡</span>
-            <span>{{ 'CHATBOT.SUGGESTION_LUXURY' | translate }}</span>
-          </button>
-          <button class="chat-suggestion" (click)="draft.set('Properties under 20000 EGP'); send()">
-            <span class="chat-suggestion__emoji">💰</span>
-            <span>{{ 'CHATBOT.SUGGESTION_BUDGET' | translate }}</span>
-          </button>
-          <button class="chat-suggestion" (click)="draft.set('New listings this week'); send()">
-            <span class="chat-suggestion__emoji">✨</span>
-            <span>{{ 'CHATBOT.SUGGESTION_NEW' | translate }}</span>
-          </button>
-          <button class="chat-suggestion" (click)="draft.set('3 bedroom apartments in Cairo'); send()">
-            <span class="chat-suggestion__emoji">🗺️</span>
-            <span>Apartments in Cairo</span>
-          </button>
+        <button class="w-close" (click)="close()" aria-label="Close">
+          <svg viewBox="0 0 20 20" fill="none" width="15" height="15">
+            <path d="M15 5L5 15M5 5l10 10" stroke="currentColor" stroke-width="2" stroke-linecap="round"/>
+          </svg>
+        </button>
+        <div class="w-greeting">
+          <p class="w-greeting__hi">Hi {{ userName() }} 👋</p>
+          <h2 class="w-greeting__how">How can we help?</h2>
         </div>
-      </div>
-    }
+      </header>
 
-    @for (m of messages(); track $index) {
-      <div class="chat-msg" [class.chat-msg--user]="m.role === 'user'" [class.chat-msg--ai]="m.role !== 'user'">
-        @if (m.role !== 'user') {
-          <div class="chat-msg__avatar">
-            <svg viewBox="0 0 20 20" fill="none" width="12" height="12">
-              <path d="M10 2 L11 7 L16 8 L11 9 L10 14 L9 9 L4 8 L9 7 Z" fill="white"/>
+      <div class="w-body">
+        @if (recentSession(); as s) {
+          <p class="w-label">Recent message</p>
+          <div class="w-session-card" (click)="openSession(s)" role="button" tabindex="0">
+            <div class="w-avatar">{{ initials(s.title) }}</div>
+            <div class="w-session-card__info">
+              <div class="w-session-card__row">
+                <span class="w-session-card__title">{{ s.title || 'New conversation' }}</span>
+                <span class="w-session-card__time">{{ timeAgo(s.lastMessageAt || s.createdAt) }}</span>
+              </div>
+              <p class="w-session-card__preview">Continue this conversation…</p>
+            </div>
+            <svg class="w-chevron" viewBox="0 0 16 16" fill="none" width="14">
+              <path d="M6 4l4 4-4 4" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/>
             </svg>
           </div>
         }
-        <div class="chat-msg__bubble">
-          <span class="chat-msg__text">{{ m.message }}</span>
-        </div>
-      </div>
-    }
 
-    @if (sending()) {
-      <div class="chat-msg chat-msg--ai">
-        <div class="chat-msg__avatar">
-          <svg viewBox="0 0 20 20" fill="none" width="12" height="12">
-            <path d="M10 2 L11 7 L16 8 L11 9 L10 14 L9 9 L4 8 L9 7 Z" fill="white"/>
+        <button class="w-cta" (click)="openNewChat()">
+          <span>Send us a message</span>
+          <svg viewBox="0 0 16 16" fill="none" width="14">
+            <path d="M3 8h10M9 4l4 4-4 4" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/>
           </svg>
-        </div>
-        <div class="chat-msg__bubble chat-msg__bubble--typing">
-          <span></span><span></span><span></span>
+        </button>
+
+        <div class="w-status">
+          <span class="w-status__dot"></span>
+          <div>
+            <p class="w-status__title">All Systems Operational</p>
+            <p class="w-status__sub">AI assistant is online and ready</p>
+          </div>
         </div>
       </div>
+
+      <nav class="w-nav">
+        <button class="w-nav__btn w-nav__btn--active" (click)="goTo('home')">
+          <svg viewBox="0 0 20 20" fill="none" width="20" height="20">
+            <path d="M3 9.5L10 3l7 6.5V17a1 1 0 01-1 1H4a1 1 0 01-1-1V9.5z" stroke="currentColor" stroke-width="1.5" stroke-linejoin="round"/>
+            <path d="M7 18v-5h6v5" stroke="currentColor" stroke-width="1.5" stroke-linejoin="round"/>
+          </svg>
+          <span>Home</span>
+        </button>
+        <button class="w-nav__btn" (click)="goTo('messages')">
+          <svg viewBox="0 0 20 20" fill="none" width="20" height="20">
+            <path d="M2 5a2 2 0 012-2h12a2 2 0 012 2v8a2 2 0 01-2 2H7l-4 3V5z" stroke="currentColor" stroke-width="1.5" stroke-linejoin="round"/>
+          </svg>
+          <span>Messages</span>
+        </button>
+        <button class="w-nav__btn" (click)="goTo('help')">
+          <svg viewBox="0 0 20 20" fill="none" width="20" height="20">
+            <circle cx="10" cy="10" r="8" stroke="currentColor" stroke-width="1.5"/>
+            <path d="M10 14v-1M7.5 7.5a2.5 2.5 0 015 0c0 2-2.5 2-2.5 4" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"/>
+          </svg>
+          <span>Help</span>
+        </button>
+      </nav>
     }
 
-  </div><!-- /messages -->
+    <!-- ═══════════════════════ MESSAGES ═══════════════════════ -->
+    @case ('messages') {
+      <header class="w-header w-header--light">
+        <span class="w-header__title">Messages</span>
+        <button class="w-close w-close--dark" (click)="close()" aria-label="Close">
+          <svg viewBox="0 0 20 20" fill="none" width="15" height="15">
+            <path d="M15 5L5 15M5 5l10 10" stroke="currentColor" stroke-width="2" stroke-linecap="round"/>
+          </svg>
+        </button>
+      </header>
 
-  @if (errorMsg()) {
-    <div class="chat-error">
-      <i class="fa-solid fa-circle-exclamation"></i>
-      <span>{{ errorMsg() }}</span>
-    </div>
-  }
-
-  <!-- Composer -->
-  <div class="chat-composer">
-    <div class="chat-composer__field" [class.chat-composer__field--active]="draft().length > 0">
-      <textarea
-        [value]="draft()"
-        (input)="draft.set($any($event.target).value)"
-        rows="1"
-        [placeholder]="'CHATBOT.PLACEHOLDER' | translate"
-        (keydown)="onEnter($event)"
-        [disabled]="sending()">
-      </textarea>
-      <button class="chat-composer__send" (click)="send()"
-              [disabled]="sending() || !draft().trim()" aria-label="Send">
-        @if (sending()) {
-          <span class="chat-composer__sending-dot"></span>
+      <div class="w-body w-body--scroll">
+        @if (loadingSessions()) {
+          <div class="w-loading"><div class="w-spinner"></div></div>
+        } @else if (sessions().length === 0) {
+          <div class="w-empty">
+            <svg viewBox="0 0 48 48" fill="none" width="40" height="40">
+              <path d="M6 12a4 4 0 014-4h28a4 4 0 014 4v20a4 4 0 01-4 4H14l-8 6V12z" stroke="currentColor" stroke-width="2" stroke-linejoin="round"/>
+            </svg>
+            <p>No conversations yet.</p>
+            <small>Start one by sending a message.</small>
+          </div>
         } @else {
-          <svg viewBox="0 0 20 20" fill="none" width="16" height="16">
-            <path d="M18 2L9.5 10.5M18 2L12 18l-2.5-7.5L2 8l16-6z"
-                  stroke="white" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
-          </svg>
+          @for (s of sessions(); track s.sessionId) {
+            <div class="w-session-row" (click)="openSession(s)" role="button" tabindex="0">
+              <div class="w-avatar">{{ initials(s.title) }}</div>
+              <div class="w-session-row__info">
+                <div class="w-session-row__top">
+                  <span class="w-session-row__title">{{ s.title || 'New conversation' }}</span>
+                  <span class="w-session-row__time">{{ timeAgo(s.lastMessageAt || s.createdAt) }}</span>
+                </div>
+                <p class="w-session-row__preview">Tap to open conversation…</p>
+              </div>
+            </div>
+          }
         }
-      </button>
-    </div>
-    <p class="chat-composer__hint">
-      {{ 'CHATBOT.POWERED_BY' | translate }}
-      <strong>Estatein AI</strong> &middot;
-      {{ 'CHATBOT.PRESS_ENTER' | translate }} <kbd>Enter</kbd> {{ 'CHATBOT.TO_SEND' | translate }}
-    </p>
-  </div>
+      </div>
 
-</div><!-- /chat-panel -->
+      <div class="w-msgs-footer">
+        <button class="w-cta w-cta--pill" (click)="openNewChat()">
+          <span>Send us a message</span>
+          <svg viewBox="0 0 16 16" fill="none" width="14">
+            <path d="M3 8h10M9 4l4 4-4 4" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/>
+          </svg>
+        </button>
+      </div>
+
+      <nav class="w-nav">
+        <button class="w-nav__btn" (click)="goTo('home')">
+          <svg viewBox="0 0 20 20" fill="none" width="20" height="20">
+            <path d="M3 9.5L10 3l7 6.5V17a1 1 0 01-1 1H4a1 1 0 01-1-1V9.5z" stroke="currentColor" stroke-width="1.5" stroke-linejoin="round"/>
+            <path d="M7 18v-5h6v5" stroke="currentColor" stroke-width="1.5" stroke-linejoin="round"/>
+          </svg>
+          <span>Home</span>
+        </button>
+        <button class="w-nav__btn w-nav__btn--active" (click)="goTo('messages')">
+          <svg viewBox="0 0 20 20" fill="none" width="20" height="20">
+            <path d="M2 5a2 2 0 012-2h12a2 2 0 012 2v8a2 2 0 01-2 2H7l-4 3V5z" stroke="currentColor" stroke-width="1.5" stroke-linejoin="round"/>
+          </svg>
+          <span>Messages</span>
+        </button>
+        <button class="w-nav__btn" (click)="goTo('help')">
+          <svg viewBox="0 0 20 20" fill="none" width="20" height="20">
+            <circle cx="10" cy="10" r="8" stroke="currentColor" stroke-width="1.5"/>
+            <path d="M10 14v-1M7.5 7.5a2.5 2.5 0 015 0c0 2-2.5 2-2.5 4" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"/>
+          </svg>
+          <span>Help</span>
+        </button>
+      </nav>
+    }
+
+    <!-- ═══════════════════════ CHAT ═══════════════════════ -->
+    @case ('chat') {
+      <header class="w-header w-header--gradient w-header--chat">
+        <div class="w-header__glow"></div>
+        <div class="w-header__orb w-header__orb--1"></div>
+        <div class="w-header__orb w-header__orb--2"></div>
+        <div class="w-chat-left">
+          <button class="w-back" (click)="goBack()" aria-label="Back">
+            <svg viewBox="0 0 20 20" fill="none" width="16" height="16">
+              <path d="M13 4L7 10l6 6" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+            </svg>
+          </button>
+          <div class="w-chat-avatar">
+            <svg viewBox="0 0 32 32" fill="none" width="16" height="16">
+              <path d="M16 4 L17.5 12 L25 13.5 L17.5 15 L16 23 L14.5 15 L7 13.5 L14.5 12 Z" fill="white"/>
+            </svg>
+            <span class="w-online-dot"></span>
+          </div>
+          <div class="w-chat-info">
+            <span class="w-chat-name">Estatein AI</span>
+            <span class="w-chat-status">
+              <span class="w-status-pulse"></span>Online
+            </span>
+          </div>
+        </div>
+        <button class="w-close" (click)="close()" aria-label="Close">
+          <svg viewBox="0 0 20 20" fill="none" width="15" height="15">
+            <path d="M15 5L5 15M5 5l10 10" stroke="currentColor" stroke-width="2" stroke-linecap="round"/>
+          </svg>
+        </button>
+      </header>
+
+      <div class="chat-messages" #scrollBox>
+        @if (loadingHistory()) {
+          <div class="chat-state">
+            <div class="chat-state__spinner"></div>
+            <span>Loading history…</span>
+          </div>
+        }
+        @if (!loadingHistory() && messages().length === 0) {
+          <div class="chat-welcome">
+            <div class="chat-welcome__badge">
+              <svg viewBox="0 0 32 32" fill="none" width="28" height="28">
+                <path d="M16 4 L17.5 12 L25 13.5 L17.5 15 L16 23 L14.5 15 L7 13.5 L14.5 12 Z" fill="white"/>
+                <path d="M24 6 L24.8 9.2 L28 10 L24.8 10.8 L24 14 L23.2 10.8 L20 10 L23.2 9.2 Z" fill="white" opacity="0.7"/>
+              </svg>
+            </div>
+            <h4 class="chat-welcome__title">How can I help?</h4>
+            <p class="chat-welcome__sub">Ask about properties, payments, leases, or anything on the platform.</p>
+            <div class="chat-suggestions">
+              <button class="chat-suggestion" (click)="draft.set('Show me luxury homes'); send()">
+                <span class="chat-suggestion__emoji">🏡</span><span>Luxury homes</span>
+              </button>
+              <button class="chat-suggestion" (click)="draft.set('How do payments work?'); send()">
+                <span class="chat-suggestion__emoji">💳</span><span>How payments work</span>
+              </button>
+              <button class="chat-suggestion" (click)="draft.set('New listings this week'); send()">
+                <span class="chat-suggestion__emoji">✨</span><span>New listings</span>
+              </button>
+              <button class="chat-suggestion" (click)="draft.set('3 bedroom apartments in Cairo'); send()">
+                <span class="chat-suggestion__emoji">🗺️</span><span>Cairo apartments</span>
+              </button>
+            </div>
+          </div>
+        }
+        @for (m of messages(); track $index) {
+          <div class="chat-msg" [class.chat-msg--user]="m.role === 'user'" [class.chat-msg--ai]="m.role !== 'user'">
+            @if (m.role !== 'user') {
+              <div class="chat-msg__avatar">
+                <svg viewBox="0 0 20 20" fill="none" width="12" height="12">
+                  <path d="M10 2 L11 7 L16 8 L11 9 L10 14 L9 9 L4 8 L9 7 Z" fill="white"/>
+                </svg>
+              </div>
+            }
+            <div class="chat-msg__bubble">
+              <span class="chat-msg__text">{{ m.message }}</span>
+            </div>
+          </div>
+        }
+        @if (sending()) {
+          <div class="chat-msg chat-msg--ai">
+            <div class="chat-msg__avatar">
+              <svg viewBox="0 0 20 20" fill="none" width="12" height="12">
+                <path d="M10 2 L11 7 L16 8 L11 9 L10 14 L9 9 L4 8 L9 7 Z" fill="white"/>
+              </svg>
+            </div>
+            <div class="chat-msg__bubble chat-msg__bubble--typing">
+              <span></span><span></span><span></span>
+            </div>
+          </div>
+        }
+      </div>
+
+      @if (errorMsg()) {
+        <div class="chat-error">
+          <i class="fa-solid fa-circle-exclamation"></i>
+          <span>{{ errorMsg() }}</span>
+        </div>
+      }
+
+      <div class="chat-composer">
+        <div class="chat-composer__field" [class.chat-composer__field--active]="draft().length > 0">
+          <textarea
+            [value]="draft()"
+            (input)="draft.set($any($event.target).value)"
+            rows="1"
+            placeholder="Type a message…"
+            (keydown)="onEnter($event)"
+            [disabled]="sending()">
+          </textarea>
+          <button class="chat-composer__send" (click)="send()"
+                  [disabled]="sending() || !draft().trim()" aria-label="Send">
+            @if (sending()) {
+              <span class="chat-composer__sending-dot"></span>
+            } @else {
+              <svg viewBox="0 0 20 20" fill="none" width="16" height="16">
+                <path d="M18 2L9.5 10.5M18 2L12 18l-2.5-7.5L2 8l16-6z"
+                      stroke="white" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+              </svg>
+            }
+          </button>
+        </div>
+        <p class="chat-composer__hint">
+          Powered by <strong>Estatein AI</strong> · Press <kbd>Enter</kbd> to send
+        </p>
+      </div>
+    }
+
+    <!-- ═══════════════════════ HELP ═══════════════════════ -->
+    @case ('help') {
+      <header class="w-header w-header--light">
+        <span class="w-header__title">Help</span>
+        <button class="w-close w-close--dark" (click)="close()" aria-label="Close">
+          <svg viewBox="0 0 20 20" fill="none" width="15" height="15">
+            <path d="M15 5L5 15M5 5l10 10" stroke="currentColor" stroke-width="2" stroke-linecap="round"/>
+          </svg>
+        </button>
+      </header>
+
+      <div class="w-body w-body--scroll">
+        <div class="w-search">
+          <svg viewBox="0 0 20 20" fill="none" width="15" height="15" class="w-search__icon">
+            <circle cx="9" cy="9" r="5.5" stroke="currentColor" stroke-width="1.5"/>
+            <path d="M13.5 13.5l3 3" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"/>
+          </svg>
+          <input
+            type="text"
+            placeholder="Search for help"
+            [value]="helpSearch()"
+            (input)="helpSearch.set($any($event.target).value)" />
+        </div>
+
+        <p class="w-label w-label--count">{{ filteredCollections().length }} collections</p>
+
+        @for (c of filteredCollections(); track c.id) {
+          <div class="w-help-item">
+            <div class="w-help-item__body">
+              <h4 class="w-help-item__title">{{ c.title }}</h4>
+              <p class="w-help-item__desc">{{ c.description }}</p>
+              <span class="w-help-item__count">{{ c.articleCount }} articles</span>
+            </div>
+            <svg class="w-chevron" viewBox="0 0 16 16" fill="none" width="14">
+              <path d="M6 4l4 4-4 4" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/>
+            </svg>
+          </div>
+        }
+      </div>
+
+      <nav class="w-nav">
+        <button class="w-nav__btn" (click)="goTo('home')">
+          <svg viewBox="0 0 20 20" fill="none" width="20" height="20">
+            <path d="M3 9.5L10 3l7 6.5V17a1 1 0 01-1 1H4a1 1 0 01-1-1V9.5z" stroke="currentColor" stroke-width="1.5" stroke-linejoin="round"/>
+            <path d="M7 18v-5h6v5" stroke="currentColor" stroke-width="1.5" stroke-linejoin="round"/>
+          </svg>
+          <span>Home</span>
+        </button>
+        <button class="w-nav__btn" (click)="goTo('messages')">
+          <svg viewBox="0 0 20 20" fill="none" width="20" height="20">
+            <path d="M2 5a2 2 0 012-2h12a2 2 0 012 2v8a2 2 0 01-2 2H7l-4 3V5z" stroke="currentColor" stroke-width="1.5" stroke-linejoin="round"/>
+          </svg>
+          <span>Messages</span>
+        </button>
+        <button class="w-nav__btn w-nav__btn--active" (click)="goTo('help')">
+          <svg viewBox="0 0 20 20" fill="none" width="20" height="20">
+            <circle cx="10" cy="10" r="8" stroke="currentColor" stroke-width="1.5"/>
+            <path d="M10 14v-1M7.5 7.5a2.5 2.5 0 015 0c0 2-2.5 2-2.5 4" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"/>
+          </svg>
+          <span>Help</span>
+        </button>
+      </nav>
+    }
+
+  }
+</div>

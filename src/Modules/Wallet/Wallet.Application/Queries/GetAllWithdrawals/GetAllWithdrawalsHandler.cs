@@ -14,7 +14,8 @@ public class GetAllWithdrawalsHandler : IRequestHandler<GetAllWithdrawalsQuery, 
     {
         var items = await _repo.GetAllAsync(ct);
         return items.Select(w => new WithdrawalDto(
-            w.Id, w.OwnerId, w.Amount, w.Currency, w.BankAccountDetails,
+            w.Id, w.OwnerId, w.Amount, w.CommissionAmount, w.NetAmount,
+            w.Currency, w.BankAccountDetails,
             w.Status.ToString(), w.RequestedAt, w.ProcessedAt, w.Notes)).ToList();
     }
 }

@@ -85,6 +85,8 @@ export class OwnerTicketDetailComponent implements OnInit {
   protected showPayModal = signal(false);
   protected transactionId = '';
   protected payLoading = signal(false);
+  protected walletBalance = signal<number | null>(null);
+  protected walletPayLoading = signal(false);
 
   protected readonly timelineSteps = TIMELINE_STEPS;
 
@@ -141,9 +143,19 @@ export class OwnerTicketDetailComponent implements OnInit {
     this.maintenanceService.getTicketDetail(id)
       .pipe(finalize(() => this.loading.set(false)))
       .subscribe({
-        next: t => this.ticket.set(t),
+        next: t => {
+          this.ticket.set(t);
+          if (t.status === 'AwaitingPayment') this.loadWalletBalance();
+        },
         error: () => this.error.set('Failed to load ticket details.'),
       });
+  }
+
+  private loadWalletBalance(): void {
+    this.maintenanceService.getWalletBalance().subscribe({
+      next: b => this.walletBalance.set(b),
+      error: () => this.walletBalance.set(0),
+    });
   }
 
   refresh(): void {
@@ -208,6 +220,21 @@ export class OwnerTicketDetailComponent implements OnInit {
           this.refresh();
         },
         error: () => this.toast.error('Payment failed. Please try again.'),
+      });
+  }
+
+  payFromWallet(): void {
+    const t = this.ticket();
+    if (!t?.payment?.id) return;
+    this.walletPayLoading.set(true);
+    this.maintenanceService.payFromWallet(t.payment.id)
+      .pipe(finalize(() => this.walletPayLoading.set(false)))
+      .subscribe({
+        next: () => { this.toast.success('Paid from wallet. Ticket is now complete.'); this.refresh(); },
+        error: (err) => {
+          const msg = err?.error?.error ?? 'Wallet payment failed. Please try again.';
+          this.toast.error(msg);
+        },
       });
   }
 

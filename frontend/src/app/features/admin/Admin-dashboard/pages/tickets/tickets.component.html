@@ -25,21 +25,21 @@
     <div class="stat-card inprogress">
       <i class="fa-solid fa-spinner"></i>
       <div>
-        <strong>{{ statusCounts()['InProgress'] ?? 0 }}</strong>
+        <strong>{{ statusCounts()['InProgress'] }}</strong>
         <span>In Progress</span>
       </div>
     </div>
     <div class="stat-card awaiting">
       <i class="fa-solid fa-hourglass-half"></i>
       <div>
-        <strong>{{ statusCounts()['AwaitingPayment'] ?? 0 }}</strong>
+        <strong>{{ statusCounts()['AwaitingPayment'] }}</strong>
         <span>Awaiting Payment</span>
       </div>
     </div>
     <div class="stat-card completed">
       <i class="fa-solid fa-circle-check"></i>
       <div>
-        <strong>{{ statusCounts()['Completed'] ?? 0 }}</strong>
+        <strong>{{ statusCounts()['Completed'] }}</strong>
         <span>Completed</span>
       </div>
     </div>
@@ -55,12 +55,12 @@
     </div>
     <div class="filter-tabs">
       <button class="tab" [class.active]="activeFilter() === 'all'" (click)="activeFilter.set('all')">
-        All <span class="tab-count">{{ statusCounts()['all'] ?? 0 }}</span>
+        All <span class="tab-count">{{ statusCounts()['all'] }}</span>
       </button>
       @for (status of uniqueStatuses(); track status) {
       <button class="tab" [class.active]="activeFilter() === status" (click)="activeFilter.set(status)">
         {{ statusLabel(status) }}
-        <span class="tab-count {{ statusClass(status) }}">{{ statusCounts()[status] ?? 0 }}</span>
+        <span class="tab-count {{ statusClass(status) }}">{{ statusCounts()[status] }}</span>
       </button>
       }
     </div>

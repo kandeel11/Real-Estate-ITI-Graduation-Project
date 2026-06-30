@@ -13,7 +13,7 @@ type Toast = { type: 'success' | 'error'; text: string } | null;
   selector: 'app-admin-tickets',
   standalone: true,
   changeDetection: ChangeDetectionStrategy.OnPush,
-  imports: [FormsModule, DecimalPipe, TranslatePipe],
+  imports: [FormsModule, DecimalPipe],
   templateUrl: './tickets.component.html',
   styleUrls: ['./tickets.component.scss'],
 })
@@ -48,7 +48,7 @@ export class AdminTicketsComponent implements OnInit, OnDestroy {
 
   // single O(n) pass instead of N separate filter() calls
   statusCounts = computed(() => {
-    const map: Record<string, number> = { all: 0 };
+    const map: Record<string, number> = { all: 0, InProgress: 0, AwaitingPayment: 0, Completed: 0 };
     for (const t of this.tickets()) {
       map['all']++;
       map[t.status] = (map[t.status] ?? 0) + 1;

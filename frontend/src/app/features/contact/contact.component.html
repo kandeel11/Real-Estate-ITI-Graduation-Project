@@ -102,7 +102,7 @@
                     </div>
                     @if (email.touched && email.errors) {
                       <p class="ct-field__err">
-                        @if (email.errors?.['required']) { Email is required. }
+                        @if (email.errors['required']) { Email is required. }
                         @else { Please enter a valid email. }
                       </p>
                     }
@@ -148,7 +148,7 @@
                   </div>
                   @if (message.touched && message.errors) {
                     <p class="ct-field__err">
-                      @if (message.errors?.['required']) { Message is required. }
+                      @if (message.errors['required']) { Message is required. }
                       @else { Message must be at least 20 characters. }
                     </p>
                   }

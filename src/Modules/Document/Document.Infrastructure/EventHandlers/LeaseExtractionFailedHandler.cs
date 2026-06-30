@@ -16,7 +16,9 @@ public class LeaseExtractionFailedHandler : INotificationHandler<LeaseExtraction
         var lease = await _db.Leases.FindAsync(new object[] { evt.LeaseId }, ct);
         if (lease == null) return;
 
-        lease.ExtractionStatus = LeaseExtractionStatus.Failed;
+        lease.ExtractionStatus = evt.Reason == "NOT_RENT_LEASE"
+            ? LeaseExtractionStatus.NotRentLease
+            : LeaseExtractionStatus.Failed;
         lease.UpdatedAt = DateTime.UtcNow;
 
         await _db.SaveChangesAsync(ct);

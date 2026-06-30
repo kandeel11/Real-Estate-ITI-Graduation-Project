@@ -80,10 +80,10 @@
         </div>
       </div>
 
-      <!-- Current + Next Period -->
-      @if (s.currentPeriod || s.nextPeriod) {
+      <!-- Current + Next Period (enriched by actual payment statuses) -->
+      @if (enrichedCurrentPeriod() || enrichedNextPeriod()) {
         <div class="period-highlights">
-          @if (s.currentPeriod; as cp) {
+          @if (enrichedCurrentPeriod(); as cp) {
             <div class="highlight-card current">
               <div class="hl-badge">Current Period</div>
               <div class="hl-amount">{{ formatCurrency(cp.amount) }}</div>
@@ -95,7 +95,7 @@
               <div class="hl-due">Due: <strong>{{ formatDate(cp.dueDate) }}</strong></div>
             </div>
           }
-          @if (s.nextPeriod; as np) {
+          @if (enrichedNextPeriod(); as np) {
             <div class="highlight-card next">
               <div class="hl-badge">Next Period</div>
               <div class="hl-amount">{{ formatCurrency(np.amount) }}</div>

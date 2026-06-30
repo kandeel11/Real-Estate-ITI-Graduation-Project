@@ -156,4 +156,24 @@ public sealed class PaymentRepository : IPaymentRepository
     {
         await _context.SaveChangesAsync(cancellationToken);
     }
+
+    public async Task<Payment.Domain.Entities.LeaseScheduleConfig?> GetLeaseScheduleConfigAsync(
+        Guid leaseId,
+        CancellationToken cancellationToken = default)
+    {
+        return await _context.LeaseScheduleConfigs
+            .FirstOrDefaultAsync(c => c.LeaseId == leaseId, cancellationToken);
+    }
+
+    public async Task SaveLeaseScheduleConfigAsync(
+        Payment.Domain.Entities.LeaseScheduleConfig config,
+        CancellationToken cancellationToken = default)
+    {
+        var existing = await _context.LeaseScheduleConfigs
+            .FirstOrDefaultAsync(c => c.LeaseId == config.LeaseId, cancellationToken);
+
+        if (existing is null)
+            await _context.LeaseScheduleConfigs.AddAsync(config, cancellationToken);
+        // if already exists, no update needed — schedule is immutable after activation
+    }
 }

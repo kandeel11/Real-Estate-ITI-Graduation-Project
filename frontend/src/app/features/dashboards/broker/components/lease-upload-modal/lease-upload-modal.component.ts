@@ -109,6 +109,13 @@ export class LeaseUploadModalComponent implements OnInit, OnDestroy {
     const doCheck = () => {
       this.svc.getLeaseExtractionDebug(leaseId).subscribe({
         next: (debug) => {
+          if (debug.displayStatus === 'not_rent_lease') {
+            this.stopPolling();
+            this.uploading.set(false);
+            onSettled?.();
+            this.uploadError.set('OWNER.LEASE_UPLOAD.ERR_NOT_RENT_LEASE');
+            return;
+          }
           if (debug.displayStatus === 'pending') return;
 
           // Stop the interval immediately — don't let it fire again while the HTTP is in-flight.

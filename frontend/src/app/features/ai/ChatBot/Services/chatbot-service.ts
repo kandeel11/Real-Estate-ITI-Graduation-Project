@@ -1,9 +1,9 @@
 import { HttpClient } from '@angular/common/http';
 import { Injectable } from '@angular/core';
 import { BehaviorSubject, Observable, throwError } from 'rxjs';
-import { catchError } from 'rxjs/operators';
+import { catchError, map } from 'rxjs/operators';
 import { environment } from '../../../../../environments/environment';
-import { ChatRequest, ChatResponse, HistoryMessage, SessionSummary } from '../models';
+import { ChatRequest, ChatResponse, ChatRole, HistoryMessage, SessionSummary } from '../models';
 
 @Injectable({ providedIn: 'root' })
 export class ChatbotService {
@@ -52,14 +52,29 @@ export class ChatbotService {
 
   getSessions(): Observable<SessionSummary[]> {
     return this.http
-      .get<SessionSummary[]>(`${this.baseUrl}/sessions`)
-      .pipe(catchError(this.handleError));
+      .get<any[]>(`${this.baseUrl}/sessions`)
+      .pipe(
+        map(list => (list ?? []).map(s => ({
+          sessionId: s.id,
+          title: s.title,
+          createdAt: s.createdAt,
+          lastMessageAt: s.createdAt,
+        } as SessionSummary))),
+        catchError(this.handleError),
+      );
   }
 
   getHistory(sessionId: string): Observable<HistoryMessage[]> {
     return this.http
-      .get<HistoryMessage[]>(`${this.baseUrl}/sessions/${sessionId}/history`)
-      .pipe(catchError(this.handleError));
+      .get<any[]>(`${this.baseUrl}/sessions/${sessionId}/history`)
+      .pipe(
+        map(list => (list ?? []).map(m => ({
+          role: m.role as ChatRole,
+          message: m.content ?? m.message ?? '',
+          createdAt: m.createdAt,
+        } as HistoryMessage))),
+        catchError(this.handleError),
+      );
   }
 
   private handleError(error: any) {

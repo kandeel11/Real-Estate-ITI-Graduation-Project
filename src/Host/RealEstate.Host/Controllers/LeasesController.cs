@@ -195,6 +195,7 @@ public class LeasesController : ControllerBase
                 req.PaymentFrequency,
                 req.TotalRentAmount,
                 req.DurationInMonths,
+                req.PaymentDayOfMonth,
                 managerId), ct);
             return NoContent();
         }
@@ -204,8 +205,9 @@ public class LeasesController : ControllerBase
     private static string MapExtractionStatus(string? status) => status switch
     {
         "extracted" or "confirmed" => "done",
-        "failed" or "rejected" => "failed",
-        _ => "pending"
+        "failed" or "rejected"     => "failed",
+        "not_rent_lease"           => "not_rent_lease",
+        _                          => "pending"
     };
 
     [HttpDelete("{id}")]
@@ -437,5 +439,6 @@ public record SendLeaseToTenantRequest(
     string? PaymentFrequency = null,
     decimal? TotalRentAmount = null,
     int? DurationInMonths = null,
+    int? PaymentDayOfMonth = null,
     string? TenantEmail = null,
     string? TenantName = null);

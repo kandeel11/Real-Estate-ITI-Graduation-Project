@@ -7,6 +7,12 @@ public interface IBlobStorage
     Task<DocumentDownload> DownloadAsync(
       string blobPath,
       CancellationToken ct = default);
+
+    /// <summary>Generates a short-lived SAS URL for read access to a private blob.</summary>
+    Task<string> GetSecureUrlAsync(
+        string blobPath,
+        TimeSpan? expiry = null,
+        CancellationToken ct = default);
 }
 
 public sealed record BlobDownloadResult(

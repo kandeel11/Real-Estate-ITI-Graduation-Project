@@ -179,18 +179,16 @@
             <input class="form-control" type="number" [value]="extraction()!.deposit"
               (input)="updateField('deposit', +$any($event.target).value)" />
           </div>
-          @if (extraction()!.paymentDayOfMonth !== null && extraction()!.paymentDayOfMonth !== undefined) {
-            <div class="form-group">
-              <label>Payment Day of Month
-                @if (fieldConf('paymentDayOfMonth') !== undefined) {
-                  <span [class]="confBadgeClass(fieldConf('paymentDayOfMonth'))">{{ fieldConf('paymentDayOfMonth') }}%</span>
-                }
-              </label>
-              <input class="form-control" type="number" min="1" max="31"
-                [value]="extraction()!.paymentDayOfMonth"
-                (input)="updateField('paymentDayOfMonth', +$any($event.target).value)" />
-            </div>
-          }
+          <div class="form-group">
+            <label>Payment Day of Month
+              @if (fieldConf('paymentDayOfMonth') !== undefined) {
+                <span [class]="confBadgeClass(fieldConf('paymentDayOfMonth'))">{{ fieldConf('paymentDayOfMonth') }}%</span>
+              }
+            </label>
+            <input class="form-control" type="number" min="1" max="31"
+              [value]="extraction()!.paymentDayOfMonth ?? 1"
+              (input)="updateField('paymentDayOfMonth', +$any($event.target).value)" />
+          </div>
         </div>
 
         @if (dateError()) {

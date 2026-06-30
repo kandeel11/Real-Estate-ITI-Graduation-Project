@@ -86,6 +86,11 @@ export const adminRoutes: Routes = [
             (m) => m.DisputeDetailComponent,
           ),
       },
+      {
+        path: 'ownership',
+        loadComponent: () =>
+          import('./pages/ownership/ownership.component').then((m) => m.OwnershipComponent),
+      },
       // Placeholder redirects until pages are built
       { path: 'approvals', redirectTo: 'overview', pathMatch: 'full' },
       { path: 'reports', redirectTo: 'overview', pathMatch: 'full' },

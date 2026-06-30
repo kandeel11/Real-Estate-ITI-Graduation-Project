@@ -1,6 +1,7 @@
 import { Injectable, inject } from '@angular/core';
 import { HttpClient } from '@angular/common/http';
 import { Observable } from 'rxjs';
+import { map } from 'rxjs/operators';
 import { environment } from '../../../../../environments/environment';
 
 // ── Status / Priority ────────────────────────────────────────────────────────
@@ -236,7 +237,22 @@ export class MaintenanceService {
     );
   }
 
-  // 13. Get payment info
+  // 13. Pay from wallet — owner / company_manager only (auto-confirms, ticket → Completed)
+  payFromWallet(paymentId: string): Observable<void> {
+    return this.http.post<void>(
+      `${this.base}/maintenance/tickets/payments/${paymentId}/pay-from-wallet`,
+      {}
+    );
+  }
+
+  // 14. Get wallet balance for the current user (works for owner and company_manager)
+  getWalletBalance(): Observable<number> {
+    return this.http
+      .get<{ balance: number }>(`${this.base}/wallet/balance`)
+      .pipe(map(r => r?.balance ?? 0));
+  }
+
+  // 15. Get payment info
   getPayment(ticketId: string): Observable<TicketPayment> {
     return this.http.get<TicketPayment>(`${this.base}/maintenance/tickets/${ticketId}/payments`);
   }
