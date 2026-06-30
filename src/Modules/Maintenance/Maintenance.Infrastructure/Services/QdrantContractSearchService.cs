@@ -52,8 +52,10 @@ public sealed class QdrantContractSearchService : IContractClauseSearchService
 
         try
         {
-            // 1. Embed the issue description
-            var embResult = await _embedder.GenerateEmbeddingAsync(issueDescription, cancellationToken: ct);
+            // 1. Embed a maintenance-focused query so the vector matches contract obligation clauses
+            var embeddingQuery =
+                $"Who is responsible for maintenance and repair obligations regarding: {issueDescription}";
+            var embResult = await _embedder.GenerateEmbeddingAsync(embeddingQuery, cancellationToken: ct);
             var vector = embResult.Value.ToFloats();
 
             // 2. Filter by contractId = leaseId (indexed as keyword in Qdrant)

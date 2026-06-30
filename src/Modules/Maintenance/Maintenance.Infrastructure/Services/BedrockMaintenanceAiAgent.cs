@@ -56,15 +56,19 @@ public sealed class StudentApiMaintenanceAgent : IAiEvaluationService
 
         {
           "responsibleParty": "Landlord | Tenant | Unknown",
-          "category": "<issue category in English>",
+          "category": "<MUST be exactly one name from the Available categories list>",
           "confidenceScore": <0-100>,
           "reasoning": "<explanation in the contract language — Arabic if Arabic contract>"
         }
 
+        CATEGORY RULES
+        • The "category" field MUST be copied verbatim from the "Available categories" list in the user message.
+        • Do NOT invent, translate, or modify the category name.
+        • If unsure which category fits, pick the closest one from the list.
+
         LANGUAGE RULES
         • Detect the primary language of the retrieved contract clauses.
         • Generate reasoning in the same language as the contract (Arabic → Arabic reasoning).
-        • Category must always be in English.
         • responsibleParty must be exactly: "Landlord", "Tenant", or "Unknown".
         • When no clauses are found, write reasoning in the ticket's language.
         """;
@@ -86,6 +90,7 @@ public sealed class StudentApiMaintenanceAgent : IAiEvaluationService
     public async Task<AiEvaluationResultDto> EvaluateAsync(
         string ticketNumber, string leaseId,
         string description, string imageUrl,
+        IReadOnlyList<string> categoryNames,
         CancellationToken ct = default)
     {
         // 1. Retrieve relevant contract clauses from Qdrant
@@ -100,12 +105,20 @@ public sealed class StudentApiMaintenanceAgent : IAiEvaluationService
             ? string.Empty
             : $"\nAttached image URL (for context): {imageUrl}\n";
 
+        // 3. Include exact category names so the AI returns a precise match
+        var categoryList = categoryNames.Count > 0
+            ? "Available categories (use EXACTLY one of these as the 'category' field):\n" +
+              string.Join(", ", categoryNames)
+            : string.Empty;
+
         var userText = $"""
             Ticket #{ticketNumber}
 
             Maintenance Issue Description:
             {description}
             {imageNote}
+            {categoryList}
+
             {clauseSection}
 
             Please analyze this issue and determine the responsible party.

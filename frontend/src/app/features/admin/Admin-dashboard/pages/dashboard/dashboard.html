@@ -14,9 +14,9 @@
                 <div class="stat__icon"><i class="fa-regular fa-credit-card"></i></div>
             </div>
             <h2 class="stat__value">{{ formatMoney(s.monthlyRevenue) }} EGP</h2>
-            <span class="stat__trend up">
-                <i class="fa-solid fa-arrow-trend-up"></i>
-                {{ 'ADMIN.DASHBOARD.VS_LAST_MONTH' | translate: { value: s.revenueGrowth } }}
+            <span class="stat__trend" [class.up]="revenueGrowth() >= 0" [class.down]="revenueGrowth() < 0">
+                <i class="fa-solid" [class.fa-arrow-trend-up]="revenueGrowth() >= 0" [class.fa-arrow-trend-down]="revenueGrowth() < 0"></i>
+                {{ revenueGrowth() >= 0 ? '+' : '' }}{{ revenueGrowth() }}% vs last month
             </span>
         </div>
 
@@ -26,9 +26,9 @@
                 <div class="stat__icon"><i class="fa-regular fa-money-bill-1"></i></div>
             </div>
             <h2 class="stat__value">{{ formatMoney(s.totalWithdrawn) }} EGP</h2>
-            <span class="stat__trend down">
-                <i class="fa-solid fa-arrow-trend-up"></i>
-                {{ 'ADMIN.DASHBOARD.VS_LAST_MONTH' | translate: { value: '2.1' } }}
+            <span class="stat__trend" [class.up]="expenseGrowth() < 0" [class.down]="expenseGrowth() >= 0">
+                <i class="fa-solid" [class.fa-arrow-trend-up]="expenseGrowth() >= 0" [class.fa-arrow-trend-down]="expenseGrowth() < 0"></i>
+                {{ expenseGrowth() >= 0 ? '+' : '' }}{{ expenseGrowth() }}% vs last month
             </span>
         </div>
 
@@ -47,15 +47,102 @@
                 <div class="stat__icon"><i class="fa-solid fa-chart-simple"></i></div>
             </div>
             <h2 class="stat__value">{{ s.netYield }}%</h2>
-            <span class="stat__trend up">
-                <i class="fa-solid fa-arrow-trend-up"></i>
-                {{ 'ADMIN.DASHBOARD.YOY' | translate: { value: '0.4' } }}
+            <span class="stat__trend" [class.up]="revenueYoY() >= 0" [class.down]="revenueYoY() < 0">
+                <i class="fa-solid" [class.fa-arrow-trend-up]="revenueYoY() >= 0" [class.fa-arrow-trend-down]="revenueYoY() < 0"></i>
+                {{ revenueYoY() >= 0 ? '+' : '' }}{{ revenueYoY() }}% YoY
             </span>
         </div>
         } @else {
         @for (i of [1,2,3,4]; track i) { <div class="stat skeleton"></div> }
         }
     </div>
+
+    <!-- Money Coming In -->
+    @if (platformDash(); as p) {
+    <div class="income-row">
+        <!-- Rent -->
+        <div class="income-card income-card--rent">
+            <div class="income-card__header">
+                <div class="income-card__icon-wrap income-icon--rent">
+                    <i class="fa-solid fa-house"></i>
+                </div>
+                <div>
+                    <span class="income-card__label">Rent Collected</span>
+                    <h3 class="income-card__amount">{{ formatMoney(p.rent.totalCollected) }} EGP</h3>
+                </div>
+            </div>
+            <div class="income-card__row">
+                <span class="income-card__sub">Commission ({{ p.rent.commissionRate }})</span>
+                <span class="income-card__sub--val commission">+{{ formatMoney(p.rent.totalCommission) }} EGP</span>
+            </div>
+            <div class="income-card__row">
+                <span class="income-card__sub">Pending</span>
+                <span class="income-card__sub--val">{{ formatMoney(p.rent.totalPending) }} EGP</span>
+            </div>
+            @if (p.rent.overdueCount > 0) {
+            <div class="income-card__row">
+                <span class="income-card__sub">Overdue</span>
+                <span class="income-card__sub--val warn">{{ p.rent.overdueCount }} payments</span>
+            </div>
+            }
+        </div>
+
+        <!-- Maintenance -->
+        <div class="income-card income-card--maintenance">
+            <div class="income-card__header">
+                <div class="income-card__icon-wrap income-icon--maintenance">
+                    <i class="fa-solid fa-screwdriver-wrench"></i>
+                </div>
+                <div>
+                    <span class="income-card__label">Maintenance Collected</span>
+                    <h3 class="income-card__amount">{{ formatMoney(p.maintenance.totalCollected) }} EGP</h3>
+                </div>
+            </div>
+            <div class="income-card__row">
+                <span class="income-card__sub">Commission ({{ p.maintenance.commissionRate }})</span>
+                <span class="income-card__sub--val commission">+{{ formatMoney(p.maintenance.totalCommission) }} EGP</span>
+            </div>
+            <div class="income-card__row">
+                <span class="income-card__sub">Net to Vendors</span>
+                <span class="income-card__sub--val">{{ formatMoney(p.maintenance.totalNetToVendors) }} EGP</span>
+            </div>
+            <div class="income-card__row">
+                <span class="income-card__sub">Paid Tickets</span>
+                <span class="income-card__sub--val">{{ p.maintenance.paidPaymentsCount }}</span>
+            </div>
+        </div>
+
+        <!-- Platform Commission -->
+        <div class="income-card income-card--commission">
+            <div class="income-card__header">
+                <div class="income-card__icon-wrap income-icon--commission">
+                    <i class="fa-solid fa-sack-dollar"></i>
+                </div>
+                <div>
+                    <span class="income-card__label">Platform Commission</span>
+                    <h3 class="income-card__amount">{{ formatMoney(p.platform.totalCommissionEarned) }} EGP</h3>
+                </div>
+            </div>
+            <div class="income-streams">
+                <div class="income-stream">
+                    <span class="stream-dot stream-dot--rent"></span>
+                    <span class="income-stream__label">From Rent</span>
+                    <span class="income-stream__value">{{ formatMoney(p.platform.breakdown.fromRent) }} EGP</span>
+                </div>
+                <div class="income-stream">
+                    <span class="stream-dot stream-dot--maintenance"></span>
+                    <span class="income-stream__label">From Maintenance</span>
+                    <span class="income-stream__value">{{ formatMoney(p.platform.breakdown.fromMaintenance) }} EGP</span>
+                </div>
+                <div class="income-stream">
+                    <span class="stream-dot stream-dot--withdrawals"></span>
+                    <span class="income-stream__label">From Withdrawals</span>
+                    <span class="income-stream__value">{{ formatMoney(p.platform.breakdown.fromWithdrawals) }} EGP</span>
+                </div>
+            </div>
+        </div>
+    </div>
+    }
 
     <!-- Charts row -->
     <div class="charts-row">
@@ -109,11 +196,12 @@
 
     <!-- Bottom row -->
     <div class="bottom-row">
-        <!-- Recent Rent Activity -->
+        <!-- Recent Activity -->
         <div class="card">
             <div class="card__head">
                 <div>
-                    <h3>{{ 'ADMIN.DASHBOARD.RENT_TITLE' | translate }}</h3>
+                    <h3>Recent Activity</h3>
+                    <span class="muted">Latest rent payments across all properties</span>
                 </div>
                 <a class="link">{{ 'ADMIN.DASHBOARD.VIEW_ALL' | translate }}</a>
             </div>
@@ -121,24 +209,37 @@
                 @for (p of recentPayments(); track p.id) {
                 <div class="activity-row">
                     <div class="activity-icon" [class.paid]="p.status === 'paid'"
-                        [class.processed]="p.status !== 'paid'">
+                        [class.processed]="p.status !== 'paid'"
+                        [class.overdue]="p.status === 'overdue'">
                         @if (p.status === 'paid') {
-                        <i class="fa-regular fa-credit-card"></i>
+                        <i class="fa-solid fa-house-circle-check"></i>
+                        } @else if (p.status === 'overdue') {
+                        <i class="fa-solid fa-triangle-exclamation"></i>
                         } @else {
                         <i class="fa-regular fa-clock"></i>
                         }
                     </div>
                     <div class="activity-info">
-                        <strong>
-                            @if (p.status === 'paid') { {{ 'ADMIN.DASHBOARD.RENT_RECEIVED' | translate }} }
-                            @else { {{ 'ADMIN.DASHBOARD.PAYMENT_PROCESSED' | translate }} }
-                            {{ p.propertyTitle.split(' - ')[0] }}
-                        </strong>
+                        <strong>{{ p.propertyTitle.split(' - ')[0] }}</strong>
                         <span>{{ p.tenantName }} · {{ p.paidDate ? timeAgo(p.paidDate) : timeAgo(p.dueDate) }}</span>
                     </div>
-                    <div class="activity-amount" [class.up]="p.status === 'paid'" [class.down]="p.status !== 'paid'">
-                        {{ p.status === 'paid' ? '+' : '-' }}{{ formatMoney(p.amount) }} EGP
+                    <div class="activity-right">
+                        <span class="activity-amount" [class.up]="p.status === 'paid'" [class.down]="p.status === 'overdue'" [class.neutral]="p.status === 'pending'">
+                            {{ p.status === 'paid' ? '+' : '' }}{{ formatMoney(p.amount) }} EGP
+                        </span>
+                        <span class="activity-badge"
+                            [class.badge-paid]="p.status === 'paid'"
+                            [class.badge-overdue]="p.status === 'overdue'"
+                            [class.badge-pending]="p.status === 'pending'">
+                            {{ p.status === 'paid' ? 'Paid' : p.status === 'overdue' ? 'Overdue' : 'Pending' }}
+                        </span>
                     </div>
+                </div>
+                }
+                @if (recentPayments().length === 0) {
+                <div class="activity-empty">
+                    <i class="fa-solid fa-inbox"></i>
+                    <p>No recent payments</p>
                 </div>
                 }
             </div>

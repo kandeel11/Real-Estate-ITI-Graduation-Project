@@ -225,16 +225,44 @@
             {{ pay.status }}
           </span>
         </div>
+        @if (pay.status === 'Paid' && pay.paymentMethod) {
+          <p class="text-muted small mt-1"><i class="fa-solid fa-check-circle me-1 text-success"></i>Paid via {{ pay.paymentMethod }}</p>
+        }
         @if (pay.paidAt) {
           <p class="text-muted small mt-1"><i class="fa-regular fa-calendar-check me-1"></i>Paid on {{ pay.paidAt | date:'medium' }}</p>
         }
-        @if (pay.transactionId) {
+        @if (pay.transactionId && pay.transactionId !== 'WALLET') {
           <p class="text-muted small">Transaction ID: {{ pay.transactionId }}</p>
         }
         @if (pay.status !== 'Paid') {
-          <button class="btn btn-primary mt-3" (click)="showPayModal.set(true)">
-            <i class="fa-solid fa-money-bill-wave me-2"></i>Pay Now
-          </button>
+          <!-- Wallet balance info -->
+          @if (walletBalance() !== null) {
+            <div class="wallet-balance-row mt-3">
+              <i class="fa-solid fa-wallet me-2 text-primary"></i>
+              <span class="text-muted small">Wallet Balance: <strong>{{ walletBalance() | number:'1.2-2' }} EGP</strong></span>
+            </div>
+          }
+          <!-- Commission note -->
+          <p class="text-muted" style="font-size:0.75rem; margin-top:6px">
+            <i class="fa-solid fa-circle-info me-1"></i>
+            2% platform commission ({{ (pay.amount * 0.02) | number:'1.2-2' }} {{ pay.currency }}) applies. Net vendor payout: {{ (pay.amount * 0.98) | number:'1.2-2' }} {{ pay.currency }}.
+          </p>
+          <div class="pay-action-row mt-3">
+            <!-- Pay from Wallet (if balance sufficient) -->
+            @if (walletBalance() !== null && walletBalance()! >= pay.amount) {
+              <button class="btn btn-success me-2" (click)="payFromWallet()" [disabled]="walletPayLoading()">
+                @if (walletPayLoading()) {
+                  <span class="spinner-border spinner-border-sm me-2" role="status"></span>Processing…
+                } @else {
+                  <i class="fa-solid fa-wallet me-2"></i>Pay from Wallet ({{ walletBalance() | number:'1.2-2' }} EGP)
+                }
+              </button>
+            }
+            <!-- Pay externally via transaction ID -->
+            <button class="btn btn-outline-primary" (click)="showPayModal.set(true)">
+              <i class="fa-solid fa-money-bill-wave me-2"></i>Pay via Transfer
+            </button>
+          </div>
         }
       </div>
     }

@@ -129,14 +129,10 @@ public class MaintenanceTicketRepository(MaintenanceDbContext db) : IMaintenance
 
     public Task<List<MaintenanceTicket>> GetByRoutedCompanyIdAsync(Guid companyId, CancellationToken ct = default)
         => db.MaintenanceTickets
-            .AsSplitQuery()
-            .Include(t => t.Attachments)
-            .Include(t => t.Comments)
+            .AsNoTracking()
             .Include(t => t.AiEvaluation)
-            .Include(t => t.CurrentVendorAssignment)
-            .Include(t => t.StatusHistory)
             .Include(t => t.Payment)
-            .Where(t => t.RoutedToCompanyId == companyId)
+            .Where(t => t.RoutedToCompanyId == companyId && t.ParentTicketId != null)
             .OrderByDescending(t => t.CreatedAt)
             .ToListAsync(ct);
 

@@ -16,6 +16,11 @@ const MONTH_LABELS = ['Jan','Feb','Mar','Apr','May','Jun','Jul','Aug','Sep','Oct
 export class AdminDashboardService {
   private paymentService = inject(PaymentService);
 
+  // ── Raw platform dashboard ────────────────────────────────────────────────
+  getPlatformData(): Observable<PlatformDashboard> {
+    return this.paymentService.getPlatformDashboard();
+  }
+
   // ── Real financial stats from platform-dashboard ──────────────────────────
   getStats(): Observable<DashboardStats> {
     return this.paymentService.getPlatformDashboard().pipe(

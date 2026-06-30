@@ -13,6 +13,7 @@ public class AiEvaluationService(IHttpClientFactory httpClientFactory) : IAiEval
     public async Task<AiEvaluationResultDto> EvaluateAsync(
         string ticketNumber, string leaseId,
         string description, string imageUrl,
+        IReadOnlyList<string> categoryNames,
         CancellationToken ct = default)
     {
         var client = httpClientFactory.CreateClient("AiEvaluation");
