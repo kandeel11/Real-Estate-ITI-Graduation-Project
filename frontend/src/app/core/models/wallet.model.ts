@@ -18,7 +18,7 @@ export interface LedgerResponse {
   total: number;
 }
 
-export type WithdrawalStatus = 'Pending' | 'Completed' | 'Rejected';
+export type WithdrawalStatus = 'Pending' | 'Processing' | 'Completed' | 'Rejected';
 
 export interface WithdrawalRequest {
   id: string;

@@ -257,8 +257,13 @@ public class Property : BaseEntity
 
         if (OwnershipGate == GateStatus.Failed || DuplicateGate == GateStatus.Failed)
         {
-            Status = PropertyStatus.Rejected;
             VerificationStatus = VerificationStatus.Rejected;
+            // Do not hard-reject a Draft property — the owner may still be completing the
+            // wizard (photos, description).  The Rejected gate is visible via VerificationStatus
+            // and the admin queue; the property transitions to Rejected only once it has
+            // left the Draft state (e.g. submitted for admin review).
+            if (Status != PropertyStatus.Draft)
+                Status = PropertyStatus.Rejected;
         }
         else if (ownershipClear && duplicateClear)
         {

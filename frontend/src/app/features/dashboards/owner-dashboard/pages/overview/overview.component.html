@@ -47,6 +47,74 @@
       </div>
     }
 
+    <!-- Financial Summary -->
+    @if (financial(); as f) {
+      <div class="financial-section">
+        <h2 class="section-title"><i class="fa-solid fa-chart-line"></i> Financial Overview</h2>
+
+        <div class="fin-cards">
+          <div class="fin-card green">
+            <div class="fin-icon"><i class="fa-solid fa-money-bill-wave"></i></div>
+            <div>
+              <div class="fin-label">Total Revenue</div>
+              <div class="fin-value">{{ formatCurrency(f.totalRevenue) }}</div>
+              <div class="fin-sub">{{ f.totalPaidCount }} payments received</div>
+            </div>
+          </div>
+          <div class="fin-card amber">
+            <div class="fin-icon"><i class="fa-solid fa-clock"></i></div>
+            <div>
+              <div class="fin-label">Pending</div>
+              <div class="fin-value">{{ formatCurrency(f.totalPending) }}</div>
+              <div class="fin-sub">{{ f.totalPendingCount }} upcoming payments</div>
+            </div>
+          </div>
+          <div class="fin-card red">
+            <div class="fin-icon"><i class="fa-solid fa-percent"></i></div>
+            <div>
+              <div class="fin-label">Platform Fee (1%)</div>
+              <div class="fin-value">{{ formatCurrency(f.totalPlatformFee) }}</div>
+              <div class="fin-sub">Deducted from collected rent</div>
+            </div>
+          </div>
+          <div class="fin-card blue">
+            <div class="fin-icon"><i class="fa-solid fa-hand-holding-dollar"></i></div>
+            <div>
+              <div class="fin-label">Net Revenue</div>
+              <div class="fin-value">{{ formatCurrency(f.totalRevenue - f.totalPlatformFee) }}</div>
+              <div class="fin-sub">After platform deductions</div>
+            </div>
+          </div>
+        </div>
+
+        <!-- Monthly Revenue Chart -->
+        @if (f.monthly.length > 0) {
+          <div class="card monthly-chart-card">
+            <div class="chart-head">
+              <h3><i class="fa-solid fa-bar-chart"></i> Monthly Revenue</h3>
+              <span class="chart-sub">Last 12 months — rent payments received</span>
+            </div>
+            <div class="bar-chart">
+              @for (m of f.monthly; track m.month + m.year) {
+                <div class="bar-col">
+                  <div class="bar-label-top">{{ formatCurrency(m.revenue) }}</div>
+                  <div class="bar-wrap">
+                    <div class="bar-fill" [style.height.%]="barHeight(m.revenue)"></div>
+                  </div>
+                  <div class="bar-label-bot">{{ m.month }}</div>
+                </div>
+              }
+            </div>
+          </div>
+        } @else {
+          <div class="card empty-chart">
+            <i class="fa-solid fa-chart-bar"></i>
+            <p>No payment history yet. Chart will populate once rent payments are received.</p>
+          </div>
+        }
+      </div>
+    }
+
     <!-- Tasks + Activity -->
     <div class="two-col">
       <div class="card">

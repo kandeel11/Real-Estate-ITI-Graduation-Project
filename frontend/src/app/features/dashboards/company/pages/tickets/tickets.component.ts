@@ -68,8 +68,7 @@ export class CompanyTicketsComponent implements OnInit {
   }
 
   openTicket(id: string): void {
-    // Company managers view tickets via the owner ticket-detail route
-    this.router.navigate(['/dashboard/owner/maintenance', id]);
+    this.router.navigate(['/dashboard/company/tickets', id]);
   }
 
   statusClass(s: string): string {

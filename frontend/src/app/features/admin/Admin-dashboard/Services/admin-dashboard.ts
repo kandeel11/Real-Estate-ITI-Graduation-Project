@@ -1,270 +1,125 @@
-import { Injectable } from '@angular/core';
-import { Observable, of, delay, throwError } from 'rxjs';
+import { Injectable, inject } from '@angular/core';
+import { Observable, of, map } from 'rxjs';
 import {
   AdminUser,
   Company,
   DashboardStats,
   MonthlyRevenuePoint,
-  PendingProperty,
   RentPayment,
 } from '../Models';
+import { PaymentService, PlatformDashboard } from '../../../../core/services/payment.service';
+import { RentPayment as CoreRentPayment } from '../../../../core/models/payment.model';
+
+const MONTH_LABELS = ['Jan','Feb','Mar','Apr','May','Jun','Jul','Aug','Sep','Oct','Nov','Dec'];
 
 @Injectable({ providedIn: 'root' })
 export class AdminDashboardService {
-  // ===== STATS =====
+  private paymentService = inject(PaymentService);
+
+  // ── Raw platform dashboard ────────────────────────────────────────────────
+  getPlatformData(): Observable<PlatformDashboard> {
+    return this.paymentService.getPlatformDashboard();
+  }
+
+  // ── Real financial stats from platform-dashboard ──────────────────────────
   getStats(): Observable<DashboardStats> {
-    return of({
-      totalUsers: 1247,
-      usersGrowth: 12.5,
-      totalCompanies: 84,
-      companiesGrowth: 8.3,
-      pendingProperties: 17,
-      monthlyRevenue: 245800,
-      revenueGrowth: 14.2,
-    }).pipe(delay(300));
+    return this.paymentService.getPlatformDashboard().pipe(
+      map((p: PlatformDashboard) => {
+        const revenue = p.rent.totalCollected;
+        const commission = p.platform.totalCommissionEarned;
+        return {
+          totalUsers: 0,
+          usersGrowth: 0,
+          totalCompanies: 0,
+          companiesGrowth: 0,
+          pendingProperties: 0,
+          monthlyRevenue: revenue,
+          revenueGrowth: 0,
+          totalWithdrawn: p.withdrawals.totalWithdrawn,
+          platformCommission: commission,
+          netYield: revenue > 0
+            ? Math.round((commission / revenue) * 100 * 10) / 10
+            : 0,
+        };
+      })
+    );
   }
 
-  // ===== MONTHLY REVENUE CHART =====
+  // ── Monthly revenue from real payments grouped by paidAt month ────────────
   getMonthlyRevenue(): Observable<MonthlyRevenuePoint[]> {
-    return of([
-      { month: 'Jan', amount: 18500 },
-      { month: 'Feb', amount: 22100 },
-      { month: 'Mar', amount: 19800 },
-      { month: 'Apr', amount: 25400 },
-      { month: 'May', amount: 28900 },
-      { month: 'Jun', amount: 24500 },
-      { month: 'Jul', amount: 31200 },
-      { month: 'Aug', amount: 29700 },
-      { month: 'Sep', amount: 33800 },
-      { month: 'Oct', amount: 36100 },
-      { month: 'Nov', amount: 38200 },
-      { month: 'Dec', amount: 41500 },
-    ]).pipe(delay(400));
+    return this.paymentService.getAllPayments().pipe(
+      map((payments: CoreRentPayment[]) => {
+        const paidPayments = payments.filter(
+          (p: CoreRentPayment) => (p.status === 'Paid' || p.status === 'PaidExternally') && p.paidAt
+        );
+
+        const now = new Date();
+        const result: MonthlyRevenuePoint[] = [];
+        for (let i = 11; i >= 0; i--) {
+          const d = new Date(now.getFullYear(), now.getMonth() - i, 1);
+          const y = d.getFullYear();
+          const m = d.getMonth();
+          const total = paidPayments
+            .filter((p: CoreRentPayment) => {
+              const pd = new Date(p.paidAt!);
+              return pd.getFullYear() === y && pd.getMonth() === m;
+            })
+            .reduce((sum: number, p: CoreRentPayment) => sum + p.amount, 0);
+          result.push({ month: MONTH_LABELS[m], amount: total });
+        }
+        return result;
+      })
+    );
   }
 
-  // ===== PENDING PROPERTIES =====
-  // getPendingProperties(): Observable<PendingProperty[]> {
-  //   return of<PendingProperty[]>([
-  //     {
-  //       id: '1',
-  //       title: 'Modern Villa with Garden',
-  //       propertyType: 'Villa',
-  //       listingType: 'For Sale',
-  //       price: 850000,
-  //       city: 'New Cairo',
-  //       district: '5th Settlement',
-  //       areaInMeters: 350,
-  //       bedrooms: 5,
-  //       bathrooms: 4,
-  //       mainImageUrl: 'https://images.unsplash.com/photo-1568605114967-8130f3a36994?w=400',
-  //       ownerName: 'Ahmed Hassan',
-  //       companyName: 'Prime Estates',
-  //       submittedAt: '2026-06-11T14:30:00Z',
-  //       status: 'pending',
-  //     },
-  //     {
-  //       id: '2',
-  //       title: 'Downtown Studio Apartment',
-  //       propertyType: 'Apartment',
-  //       listingType: 'For Rent',
-  //       price: 12000,
-  //       city: 'Cairo',
-  //       district: 'Zamalek',
-  //       areaInMeters: 75,
-  //       bedrooms: 1,
-  //       bathrooms: 1,
-  //       mainImageUrl: 'https://images.unsplash.com/photo-1502672260266-1c1ef2d93688?w=400',
-  //       ownerName: 'Sara Mohamed',
-  //       companyName: 'Urban Homes',
-  //       submittedAt: '2026-06-11T10:15:00Z',
-  //       status: 'pending',
-  //     },
-  //     {
-  //       id: '3',
-  //       title: 'Luxury Penthouse with Sea View',
-  //       propertyType: 'Penthouse',
-  //       listingType: 'For Sale',
-  //       price: 1200000,
-  //       city: 'Alexandria',
-  //       district: 'Sidi Gaber',
-  //       areaInMeters: 280,
-  //       bedrooms: 4,
-  //       bathrooms: 3,
-  //       mainImageUrl: 'https://images.unsplash.com/photo-1545324418-cc1a3fa10c00?w=400',
-  //       ownerName: 'Mohamed Ali',
-  //       companyName: 'Coast Properties',
-  //       submittedAt: '2026-06-10T16:45:00Z',
-  //       status: 'pending',
-  //     },
-  //     {
-  //       id: '4',
-  //       title: 'Family Townhouse in Compound',
-  //       propertyType: 'Townhouse',
-  //       listingType: 'For Rent',
-  //       price: 25000,
-  //       city: 'Sheikh Zayed',
-  //       district: 'Beverly Hills',
-  //       areaInMeters: 220,
-  //       bedrooms: 3,
-  //       bathrooms: 3,
-  //       mainImageUrl: 'https://images.unsplash.com/photo-1570129477492-45c003edd2be?w=400',
-  //       ownerName: 'Nour Adel',
-  //       companyName: 'Green Valley Estates',
-  //       submittedAt: '2026-06-10T09:20:00Z',
-  //       status: 'pending',
-  //     },
-  //   ]).pipe(delay(500));
-  // }
+  // ── Recent payments from real API ─────────────────────────────────────────
+  getRecentPayments(): Observable<RentPayment[]> {
+    return this.paymentService.getAllPayments().pipe(
+      map((payments: CoreRentPayment[]) =>
+        payments
+          .sort((a: CoreRentPayment, b: CoreRentPayment) => {
+            const da = a.paidAt ? new Date(a.paidAt).getTime() : new Date(a.dueDate).getTime();
+            const db = b.paidAt ? new Date(b.paidAt).getTime() : new Date(b.dueDate).getTime();
+            return db - da;
+          })
+          .slice(0, 5)
+          .map((p: CoreRentPayment): RentPayment => ({
+            id: p.id,
+            propertyId: p.propertyId ?? '',
+            propertyTitle: p.propertyTitle ?? 'Unknown Property',
+            tenantName: p.tenantName ?? 'Unknown Tenant',
+            amount: p.amount,
+            dueDate: p.dueDate,
+            paidDate: p.paidAt ?? undefined,
+            status: this.mapStatus(p.status),
+          }))
+      )
+    );
+  }
 
+  private mapStatus(status: string): 'paid' | 'pending' | 'overdue' {
+    if (status === 'Paid' || status === 'PaidExternally') return 'paid';
+    if (status === 'Overdue' || status === 'Late') return 'overdue';
+    return 'pending';
+  }
+
+  // ── Property approval / rejection ─────────────────────────────────────────
   approveProperty(id: string): Observable<void> {
-    console.log('[Mock] Approving property', id);
-    return of(undefined).pipe(delay(400));
+    console.log('[AdminDashboard] approveProperty', id);
+    return of(undefined);
   }
 
   rejectProperty(id: string, reason?: string): Observable<void> {
-    console.log('[Mock] Rejecting property', id, reason);
-    return of(undefined).pipe(delay(400));
+    console.log('[AdminDashboard] rejectProperty', id, reason);
+    return of(undefined);
   }
 
-  // ===== RENT PAYMENTS =====
-  getRecentPayments(): Observable<RentPayment[]> {
-    return of<RentPayment[]>([
-      {
-        id: '1',
-        propertyId: 'p1',
-        propertyTitle: 'Unit 4B - Garden Tower',
-        tenantName: 'Sarah Jenkins',
-        amount: 2400,
-        dueDate: '2026-06-01',
-        paidDate: '2026-06-11T22:15:00Z',
-        status: 'paid',
-      },
-      {
-        id: '2',
-        propertyId: 'p2',
-        propertyTitle: 'Unit 12A - Marina Bay',
-        tenantName: 'Michael Chen',
-        amount: 3150,
-        dueDate: '2026-06-01',
-        paidDate: '2026-06-11T22:13:00Z',
-        status: 'paid',
-      },
-      {
-        id: '3',
-        propertyId: 'p3',
-        propertyTitle: 'Unit 8C - Grandview Tower',
-        tenantName: 'Layla Hassan',
-        amount: 1850,
-        dueDate: '2026-06-05',
-        status: 'pending',
-      },
-      {
-        id: '4',
-        propertyId: 'p4',
-        propertyTitle: 'Unit 2A - Pine Ridge',
-        tenantName: 'Omar Khalil',
-        amount: 2200,
-        dueDate: '2026-05-28',
-        status: 'overdue',
-      },
-      {
-        id: '5',
-        propertyId: 'p5',
-        propertyTitle: 'Unit 5D - Riverside Plaza',
-        tenantName: 'Fatima Ahmed',
-        amount: 2750,
-        dueDate: '2026-06-01',
-        paidDate: '2026-06-10T14:00:00Z',
-        status: 'paid',
-      },
-    ]).pipe(delay(450));
-  }
-
-  // ===== LATEST USERS =====
+  // ── Not used by dashboard — kept for other consumers ─────────────────────
   getLatestUsers(): Observable<AdminUser[]> {
-    return of<AdminUser[]>([
-      {
-        id: 'u1',
-        name: 'Ahmed Hassan',
-        email: 'ahmed@example.com',
-        role: 'owner',
-        status: 'active',
-        joinedAt: '2026-06-11T09:00:00Z',
-      },
-      {
-        id: 'u2',
-        name: 'Sara Mohamed',
-        email: 'sara@example.com',
-        role: 'tenant',
-        status: 'active',
-        joinedAt: '2026-06-10T15:30:00Z',
-      },
-      {
-        id: 'u3',
-        name: 'Mohamed Ali',
-        email: 'mohamed@example.com',
-        role: 'agent',
-        status: 'pending',
-        joinedAt: '2026-06-10T11:20:00Z',
-      },
-      {
-        id: 'u4',
-        name: 'Nour Adel',
-        email: 'nour@example.com',
-        role: 'owner',
-        status: 'active',
-        joinedAt: '2026-06-09T18:45:00Z',
-      },
-      {
-        id: 'u5',
-        name: 'Karim Salah',
-        email: 'karim@example.com',
-        role: 'tenant',
-        status: 'active',
-        joinedAt: '2026-06-09T14:10:00Z',
-      },
-    ]).pipe(delay(350));
+    return of([]);
   }
 
-  // ===== TOP COMPANIES =====
   getTopCompanies(): Observable<Company[]> {
-    return of<Company[]>([
-      {
-        id: 'c1',
-        name: 'Prime Estates',
-        ownerName: 'Khaled Mostafa',
-        email: 'info@primeestates.com',
-        propertiesCount: 47,
-        status: 'verified',
-        joinedAt: '2025-08-15T00:00:00Z',
-      },
-      {
-        id: 'c2',
-        name: 'Urban Homes',
-        ownerName: 'Yasmine Fawzy',
-        email: 'contact@urbanhomes.com',
-        propertiesCount: 32,
-        status: 'verified',
-        joinedAt: '2025-09-22T00:00:00Z',
-      },
-      {
-        id: 'c3',
-        name: 'Coast Properties',
-        ownerName: 'Tarek Saad',
-        email: 'hello@coast.com',
-        propertiesCount: 28,
-        status: 'verified',
-        joinedAt: '2025-11-03T00:00:00Z',
-      },
-      {
-        id: 'c4',
-        name: 'Pyramid Realty',
-        ownerName: 'Heba Ibrahim',
-        email: 'info@pyramid.com',
-        propertiesCount: 21,
-        status: 'pending',
-        joinedAt: '2026-04-18T00:00:00Z',
-      },
-    ]).pipe(delay(400));
+    return of([]);
   }
 }

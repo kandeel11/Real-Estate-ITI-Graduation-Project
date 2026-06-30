@@ -15,6 +15,7 @@ import {
   SelectPlanRequest,
   SelectPlanResponse,
   StartCheckoutOptions,
+  OwnerFinancialSummary,
 } from '../models/payment.model';
 
 // ── Admin platform dashboard ──────────────────────────────────────────────────
@@ -181,6 +182,21 @@ export class PaymentService {
   /** Admin refund — POST /api/payments/{id}/refund */
   refundPayment(id: string, reason: string): Observable<void> {
     return this.http.post<void>(`${this.base}${API_ENDPOINTS.PAYMENTS.REFUND(id)}`, { reason });
+  }
+
+  /** Admin: mark a payment as settled outside the platform — POST /api/payments/{id}/mark-external */
+  markAsPaidExternally(id: string, notes?: string): Observable<void> {
+    return this.http.post<void>(`${this.base}${API_ENDPOINTS.PAYMENTS.MARK_EXTERNAL(id)}`, { notes: notes ?? null });
+  }
+
+  /** Admin: generate (or regenerate) a Stripe checkout link for a rent payment */
+  generateRentPaymentLink(id: string): Observable<{ checkoutUrl: string }> {
+    return this.http.post<{ checkoutUrl: string }>(`${this.base}${API_ENDPOINTS.PAYMENTS.GENERATE_LINK(id)}`, {});
+  }
+
+  /** Owner: real financial summary — revenue, pending, monthly chart */
+  getOwnerFinancialSummary(): Observable<OwnerFinancialSummary> {
+    return this.http.get<OwnerFinancialSummary>(`${this.base}${API_ENDPOINTS.PAYMENTS.OWNER_FINANCIAL_SUMMARY}`);
   }
 
   /** Broker payments across all managed leases — GET /api/brokers/me/payments */

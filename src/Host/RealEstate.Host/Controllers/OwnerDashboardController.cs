@@ -262,16 +262,22 @@ public class OwnerDashboardController(
                 tenantEmail = tenant?.Email ?? string.Empty,
                 startDate = l.StartDate?.ToString("yyyy-MM-dd") ?? string.Empty,
                 endDate = l.EndDate?.ToString("yyyy-MM-dd") ?? string.Empty,
-                monthlyRent = l.InstallmentAmount ?? 0m,
-                deposit = l.SecurityDeposit ?? 0m,
+                // Field names must match the frontend BrokerLease shape (shared by the
+                // owner leases page) — otherwise rent shows 0 and contract/AI fields
+                // come back undefined. Kept identical to BrokerDashboardController.
+                installmentAmount = l.InstallmentAmount ?? 0m,
+                totalRentAmount = l.TotalRentAmount,
+                paymentFrequency = l.PaymentFrequency,
+                durationInMonths = l.DurationInMonths,
+                securityDeposit = l.SecurityDeposit ?? 0m,
                 status = MapLeaseStatus(l, today),
                 lifecycleStatus = l.Status,
                 renewalRequestedAt = l.RenewalRequestedAt,
                 renewalInProgress = renewalParents.Contains(l.Id),
                 terminationRequestedAt = l.TerminationRequestedAt,
                 terminationRequestedByTenant = l.TerminationRequestedById == l.TenantId,
-                pdfUrl = l.ContractFileUrl,
-                aiStatus = MapExtractionStatus(l.ExtractionStatus)
+                contractFileUrl = l.ContractFileUrl,
+                extractionStatus = l.ExtractionStatus
             });
         }
 
@@ -377,13 +383,6 @@ public class OwnerDashboardController(
         "Closed"   => "closed",
         // A pending inquiry counts as "replied" once the broker/owner has sent a message.
         _ => hasReply ? "replied" : "new"
-    };
-
-    private static string MapExtractionStatus(string? status) => status switch
-    {
-        "extracted" or "confirmed" => "done",
-        "failed" or "rejected" => "failed",
-        _ => "pending"
     };
 
     private static string MapLeaseStatus(Document.Application.Queries.Lease.GetLeaseById.LeaseDto l, DateOnly today)

@@ -8,6 +8,7 @@ using Wallet.Application.Commands.RequestWithdrawal;
 using Wallet.Application.Queries.GetAllWithdrawals;
 using Wallet.Application.Queries.GetLedger;
 using Wallet.Application.Queries.GetOwnerWithdrawals;
+using Wallet.Application.Queries.GetCompanyWalletBalance;
 using Wallet.Application.Queries.GetWalletBalance;
 
 namespace RealEstate.Host.Controllers;
@@ -23,10 +24,18 @@ public class WalletController(IMediator mediator, ICurrentUserService currentUse
         var userId = currentUser.UserId;
         if (userId is null) return Unauthorized();
 
-        var result = await mediator.Send(new GetWalletBalanceQuery(userId.Value), ct);
-        return result is null
+        if (currentUser.IsInRole("company_manager") && currentUser.CompanyId.HasValue)
+        {
+            var result = await mediator.Send(new GetCompanyWalletBalanceQuery(currentUser.CompanyId.Value), ct);
+            return result is null
+                ? Ok(new { companyId = currentUser.CompanyId, balance = 0m, currency = "AED" })
+                : Ok(result);
+        }
+
+        var ownerResult = await mediator.Send(new GetWalletBalanceQuery(userId.Value), ct);
+        return ownerResult is null
             ? Ok(new { ownerId = userId, balance = 0m, currency = "AED" })
-            : Ok(result);
+            : Ok(ownerResult);
     }
 
     [HttpGet("ledger")]

@@ -5,6 +5,7 @@ using System.Threading;
 using System.Threading.Tasks;
 using Azure.Storage;
 using Azure.Storage.Blobs;
+using Azure.Storage.Sas;
 using AI.Application.Common.Options;
 using AI.Application.Interfaces.Common;
 using Microsoft.Extensions.Logging;
@@ -15,6 +16,8 @@ namespace AI.Infrastructure.Storage;
 public sealed class AzureBlobStorage : IBlobStorage
 {
     private readonly BlobContainerClient _container;
+    private readonly StorageSharedKeyCredential _credential;
+    private readonly AzureBlobOptions _options;
     private readonly ILogger<AzureBlobStorage> _logger;
 
     public AzureBlobStorage(
@@ -23,11 +26,12 @@ public sealed class AzureBlobStorage : IBlobStorage
     {
         var o = opts.Value;
 
-        var credential = new StorageSharedKeyCredential(o.AccountName, o.AccountKey);
+        _credential = new StorageSharedKeyCredential(o.AccountName, o.AccountKey);
+        _options = o;
 
         var blobUri = new Uri($"https://{o.AccountName}.blob.core.windows.net");
 
-        var service = new BlobServiceClient(blobUri, credential);
+        var service = new BlobServiceClient(blobUri, _credential);
 
         _container = service.GetBlobContainerClient("property-documents");
         _logger = logger;
@@ -63,6 +67,34 @@ public sealed class AzureBlobStorage : IBlobStorage
             ContentType: contentType,
             FileName: Path.GetFileName(blobPath),
             SizeBytes: content.Length);
+    }
+
+    public Task<string> GetSecureUrlAsync(
+        string blobPath,
+        TimeSpan? expiry = null,
+        CancellationToken ct = default)
+    {
+        var duration = expiry ?? TimeSpan.FromMinutes(_options.SasExpiryMinutes > 0 ? _options.SasExpiryMinutes : 60);
+        var blobClient = _container.GetBlobClient(blobPath);
+
+        var sasBuilder = new BlobSasBuilder
+        {
+            BlobContainerName = "property-documents",
+            BlobName = blobPath,
+            Resource = "b",
+            ExpiresOn = DateTimeOffset.UtcNow.Add(duration),
+            Protocol = SasProtocol.Https
+        };
+        sasBuilder.SetPermissions(BlobSasPermissions.Read);
+
+        var sasToken = sasBuilder.ToSasQueryParameters(_credential).ToString();
+        var secureUrl = $"{blobClient.Uri}?{sasToken}";
+
+        _logger.LogInformation(
+            "Generated SAS URL for {BlobPath} | Expires in {Minutes} min",
+            blobPath, duration.TotalMinutes);
+
+        return Task.FromResult(secureUrl);
     }
 
     // Fallback if the blob has no Content-Type metadata

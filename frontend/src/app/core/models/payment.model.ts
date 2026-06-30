@@ -1,4 +1,4 @@
-export type PaymentStatus = 'Pending' | 'Paid' | 'Late' | 'Overdue' | 'Refunded';
+export type PaymentStatus = 'Pending' | 'Paid' | 'Late' | 'Overdue' | 'Refunded' | 'PaidExternally';
 export type PaymentMethod = 'BankTransfer' | 'Stripe' | 'Other';
 
 export interface RentPayment {
@@ -138,4 +138,21 @@ export interface PaymentSchedule {
   nextPeriod: PaymentPeriod | null;
   allPeriods: PaymentPeriod[];
   summary: PaymentScheduleSummary;
+}
+
+export interface MonthlyRevenue {
+  month: string;
+  year: number;
+  revenue: number;
+  count: number;
+}
+
+export interface OwnerFinancialSummary {
+  totalRevenue: number;
+  totalPending: number;
+  totalPlatformFee: number;
+  totalLateFees: number;
+  totalPaidCount: number;
+  totalPendingCount: number;
+  monthly: MonthlyRevenue[];
 }

@@ -13,7 +13,8 @@ public class GetOwnerWithdrawalsHandler : IRequestHandler<GetOwnerWithdrawalsQue
     {
         var items = await _repo.GetByOwnerIdAsync(query.OwnerId, ct);
         return items.Select(w => new WithdrawalDto(
-            w.Id, w.OwnerId, w.Amount, w.Currency, w.BankAccountDetails,
+            w.Id, w.OwnerId, w.Amount, w.CommissionAmount, w.NetAmount,
+            w.Currency, w.BankAccountDetails,
             w.Status.ToString(), w.RequestedAt, w.ProcessedAt, w.Notes)).ToList();
     }
 }

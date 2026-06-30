@@ -13,7 +13,7 @@ interface KanbanColumn { status: Lead['status']; labelKey: string; color: string
 @Component({
   selector: 'app-owner-leads',
   standalone: true,
-  imports: [CommonModule, FormsModule, RouterLink, TranslatePipe, DragDropModule, LeaseUploadModalComponent],
+  imports: [CommonModule, FormsModule, TranslatePipe, DragDropModule, LeaseUploadModalComponent],
   templateUrl: './leads.component.html',
   styleUrl: './leads.component.css',
 })

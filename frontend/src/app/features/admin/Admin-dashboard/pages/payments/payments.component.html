@@ -87,8 +87,11 @@
         <option value="All">All Status</option>
         <option value="Pending">Pending</option>
         <option value="Paid">Paid</option>
+        <option value="PaidExternally">Paid (External)</option>
         <option value="Overdue">Overdue</option>
+        <option value="Late">Late</option>
         <option value="Failed">Failed</option>
+        <option value="Refunded">Refunded</option>
       </select>
     </div>
 
@@ -140,6 +143,24 @@
                           <i class="fa-solid fa-check"></i> Process
                         }
                       </button>
+                      <button class="btn-action external" (click)="markAsPaidExternally(p)"
+                        [disabled]="processing() !== null" title="Mark as paid in cash/real-world (outside platform)">
+                        @if (processing() === p.id) {
+                          <i class="fa-solid fa-spinner fa-spin"></i>
+                        } @else {
+                          <i class="fa-solid fa-hand-holding-dollar"></i> Mark External
+                        }
+                      </button>
+                      <button class="btn-action link-btn" (click)="generatePaymentLink(p)"
+                        [disabled]="generatingLink() !== null" title="Generate / refresh Stripe payment link">
+                        @if (generatingLink() === p.id) {
+                          <i class="fa-solid fa-spinner fa-spin"></i>
+                        } @else {
+                          <i class="fa-solid fa-link"></i> Gen Link
+                        }
+                      </button>
+                    } @else if (p.status === 'PaidExternally') {
+                      <span class="paid-date"><i class="fa-solid fa-coins"></i> Cash / External</span>
                     } @else if (p.status === 'Paid' && p.paidAt) {
                       <span class="paid-date">{{ formatDate(p.paidAt) }}</span>
                     } @else {
@@ -196,14 +217,22 @@
                     </span>
                   </td>
                   <td>
-                    <button class="btn-action late-fee" (click)="applyLateFee(p)"
-                      [disabled]="processing() !== null">
-                      @if (processing() === p.id) {
-                        <i class="fa-solid fa-spinner fa-spin"></i>
-                      } @else {
-                        <i class="fa-solid fa-plus"></i> Late Fee
-                      }
-                    </button>
+                    @if (p.status !== 'PaidExternally') {
+                      <button class="btn-action late-fee" (click)="applyLateFee(p)"
+                        [disabled]="processing() !== null">
+                        @if (processing() === p.id) {
+                          <i class="fa-solid fa-spinner fa-spin"></i>
+                        } @else {
+                          <i class="fa-solid fa-plus"></i> Late Fee
+                        }
+                      </button>
+                      <button class="btn-action external" (click)="markAsPaidExternally(p)"
+                        [disabled]="processing() !== null" title="Mark as paid in cash/real-world">
+                        <i class="fa-solid fa-hand-holding-dollar"></i> Mark External
+                      </button>
+                    } @else {
+                      <span class="paid-date"><i class="fa-solid fa-coins"></i> Cash / External</span>
+                    }
                   </td>
                 </tr>
               }

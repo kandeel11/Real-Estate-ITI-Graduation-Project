@@ -259,9 +259,11 @@ Tasks:
 2) Detect signs of tampering or inconsistencies in the documents.
 3) Extract the property location mentioned in the contract/deed:
    - country, governorate, city, district, full address
-   - Look in both Arabic and English. Egyptian contracts often write 'محافظة', 'مدينة', 'حي', 'شارع', 'عنوان'.
+   - Search both Arabic and English sections. Egyptian contracts often use: 'محافظة' (governorate), 'مدينة' (city), 'حي' (district), 'شارع' (street), 'عنوان' (address).
+   - IMPORTANT: Always return location values in ENGLISH (translate or transliterate from Arabic).
+     Examples: 'الجيزة' → 'Giza', 'القاهرة' → 'Cairo', 'الإسكندرية' → 'Alexandria', 'مصر' → 'Egypt'.
    - Do NOT just copy the expected location; only extract what the contract actually says.
-   - If a field is not mentioned in the contract, return null for it.
+   - If a field is not mentioned anywhere in the contract, return null for it.
 
 Return ONLY valid JSON, no markdown:
 
@@ -300,6 +302,12 @@ Return ONLY valid JSON, no markdown:
                 var json = JsonDocument.Parse(cleanJson);
                 var root = json.RootElement;
 
+                static string? ReadNullableString(JsonElement root, string key)
+                {
+                    if (!root.TryGetProperty(key, out var el)) return null;
+                    return el.ValueKind == JsonValueKind.Null ? null : el.GetString();
+                }
+
                 var result = new AiVerificationResult
                 {
                     NameMatchScore = root.GetProperty("nameMatchScore").GetDecimal(),
@@ -309,7 +317,12 @@ Return ONLY valid JSON, no markdown:
                     Recommendation = root.GetProperty("recommendation").GetString() ?? "",
                     AnalysisNotes = root.GetProperty("analysisNotes").GetString() ?? "",
                     ExtractedOwnerName = extractedOwnerName,
-                    ExtractedIdExpiry = extractedIdExpiry ?? ""
+                    ExtractedIdExpiry = extractedIdExpiry ?? "",
+                    ExtractedCountry = ReadNullableString(root, "extractedCountry"),
+                    ExtractedGovernorate = ReadNullableString(root, "extractedGovernorate"),
+                    ExtractedCity = ReadNullableString(root, "extractedCity"),
+                    ExtractedDistrict = ReadNullableString(root, "extractedDistrict"),
+                    ExtractedAddress = ReadNullableString(root, "extractedAddress"),
                 };
 
                 return result;
@@ -377,16 +390,32 @@ private LocationMatchDetails ScoreLocation(
 
         private void AdjustConfidenceForLocation(AiVerificationResult r)
         {
-            // Final confidence is capped by location match
+            // Cap confidence based on location match quality
             r.ConfidenceScore = Math.Min(r.ConfidenceScore, r.LocationMatchScore + 20);
 
             if (r.LocationMatchScore < _verificationOptions.LocationRejectThreshold)
             {
-                r.Recommendation = "REJECT";
-                r.FakeDetectionFlag = true;
-                r.AnalysisNotes +=
-                    $"\n[Location] REJECTED — location mismatch " +
-                    $"({r.LocationMatchScore:F0}/100). {r.LocationMatch?.Notes}";
+                // Force REJECT only for confirmed mismatches (score > 0).
+                // A score of exactly 0 usually means the contract omitted the location or
+                // it could not be compared (e.g. language mismatch) — escalate to manual
+                // review rather than silently rejecting a valid document.
+                if (r.LocationMatchScore == 0)
+                {
+                    if (r.Recommendation == "AUTO_VERIFY")
+                        r.Recommendation = "MANUAL_REVIEW";
+                    r.AnalysisNotes +=
+                        $"\n[Location] Manual review — location could not be verified " +
+                        $"(score 0/100, likely not present in contract or language mismatch). {r.LocationMatch?.Notes}";
+                }
+                else
+                {
+                    r.Recommendation = "REJECT";
+                    // NOTE: FakeDetectionFlag is intentionally NOT set here — a wrong address
+                    // is a mismatch, not evidence of document forgery.
+                    r.AnalysisNotes +=
+                        $"\n[Location] REJECTED — confirmed location mismatch " +
+                        $"({r.LocationMatchScore:F0}/100). {r.LocationMatch?.Notes}";
+                }
             }
             else if (r.LocationMatchScore < _verificationOptions.LocationManualReviewThreshold)
             {

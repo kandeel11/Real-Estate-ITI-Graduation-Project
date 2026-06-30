@@ -153,6 +153,8 @@ export class CreatePropertyComponent implements OnInit {
   propertyId = signal<string | null>(null);
   nationalIdFile: File | null = null;
   ownershipProofFile: File | null = null;
+  nationalIdFileName = signal<string | null>(null);
+  ownershipProofFileName = signal<string | null>(null);
   filesError = signal<string | null>(null);
 
   form = this.fb.nonNullable.group({
@@ -207,6 +209,7 @@ export class CreatePropertyComponent implements OnInit {
 
   submitting = signal(false);
   submitError = signal<string | null>(null);
+  finalStatus = signal<string>('PendingReview');
 
   /** Edit mode: the property already exists (after create, or on resume). */
   isEditing = computed(() => this.propertyId() !== null);
@@ -313,11 +316,29 @@ export class CreatePropertyComponent implements OnInit {
   }
 
   onNationalId(event: Event): void {
-    this.nationalIdFile = (event.target as HTMLInputElement).files?.[0] ?? null;
+    const file = (event.target as HTMLInputElement).files?.[0] ?? null;
+    this.nationalIdFile = file;
+    this.nationalIdFileName.set(file?.name ?? null);
+    this.filesError.set(null);
   }
 
   onOwnershipProof(event: Event): void {
-    this.ownershipProofFile = (event.target as HTMLInputElement).files?.[0] ?? null;
+    const file = (event.target as HTMLInputElement).files?.[0] ?? null;
+    this.ownershipProofFile = file;
+    this.ownershipProofFileName.set(file?.name ?? null);
+    this.filesError.set(null);
+  }
+
+  clearNationalId(inputEl: HTMLInputElement): void {
+    this.nationalIdFile = null;
+    this.nationalIdFileName.set(null);
+    inputEl.value = '';
+  }
+
+  clearOwnershipProof(inputEl: HTMLInputElement): void {
+    this.ownershipProofFile = null;
+    this.ownershipProofFileName.set(null);
+    inputEl.value = '';
   }
 
   /**
@@ -660,11 +681,31 @@ export class CreatePropertyComponent implements OnInit {
     this.propertySvc.submitForReview(id).subscribe({
       next: () => {
         this.submitting.set(false);
+        this.finalStatus.set('PendingReview');
         this.step.set(3);
       },
       error: (err) => {
-        this.submitting.set(false);
-        this.submitError.set(err?.error?.error ?? 'Failed to submit the listing for review.');
+        const msg: string = err?.error?.error ?? '';
+        // The ownership AI runs asynchronously right after property creation.
+        // If it already moved the property past Draft (e.g. Active via auto-verify,
+        // or Rejected which stays Draft with our backend fix), submitForReview may
+        // return a 400/422. Fetch the actual status and proceed to the confirmation
+        // step if it is no longer a plain Draft — the listing was effectively submitted.
+        this.propertySvc.getById(id).subscribe({
+          next: (detail) => {
+            this.submitting.set(false);
+            if (detail.status !== 'Draft') {
+              this.finalStatus.set(detail.status);
+              this.step.set(3);
+            } else {
+              this.submitError.set(msg || 'Failed to submit the listing for review.');
+            }
+          },
+          error: () => {
+            this.submitting.set(false);
+            this.submitError.set(msg || 'Failed to submit the listing for review.');
+          },
+        });
       },
     });
   }

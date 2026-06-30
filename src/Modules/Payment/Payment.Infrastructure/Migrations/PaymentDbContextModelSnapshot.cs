@@ -22,6 +22,43 @@ namespace Payment.Infrastructure.Migrations
 
             SqlServerModelBuilderExtensions.UseIdentityColumns(modelBuilder);
 
+            modelBuilder.Entity("Payment.Domain.Entities.LeaseScheduleConfig", b =>
+                {
+                    b.Property<Guid>("LeaseId")
+                        .HasColumnType("uniqueidentifier");
+
+                    b.Property<DateOnly>("EndDate")
+                        .HasColumnType("date");
+
+                    b.Property<decimal>("InstallmentAmount")
+                        .HasPrecision(18, 2)
+                        .HasColumnType("decimal(18,2)");
+
+                    b.Property<Guid>("LandlordId")
+                        .HasColumnType("uniqueidentifier");
+
+                    b.Property<int>("PaymentDayOfMonth")
+                        .HasColumnType("int");
+
+                    b.Property<string>("PaymentFrequency")
+                        .IsRequired()
+                        .HasMaxLength(20)
+                        .HasColumnType("nvarchar(20)");
+
+                    b.Property<Guid>("PropertyId")
+                        .HasColumnType("uniqueidentifier");
+
+                    b.Property<DateOnly>("StartDate")
+                        .HasColumnType("date");
+
+                    b.Property<Guid>("TenantId")
+                        .HasColumnType("uniqueidentifier");
+
+                    b.HasKey("LeaseId");
+
+                    b.ToTable("lease_schedule_configs", "payment");
+                });
+
             modelBuilder.Entity("Payment.Domain.Entities.OutboxMessage", b =>
                 {
                     b.Property<Guid>("Id")

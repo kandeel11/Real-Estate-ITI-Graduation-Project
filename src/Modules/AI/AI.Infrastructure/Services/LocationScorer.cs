@@ -5,11 +5,16 @@ namespace AI.Infrastructure.Services;
 
 internal static class LocationScorer
 {
-    /// <summary>Returns 0–100 similarity between two strings.</summary>
+    /// <summary>
+    /// Returns 0–100 similarity between two strings.
+    /// Returns 50 (neutral) when one side is null/empty — the field was not found in the
+    /// contract, which is ambiguous rather than a confirmed mismatch.
+    /// Returns 100 when both are null/empty — neither side specified the field.
+    /// </summary>
     public static decimal Similarity(string? a, string? b)
     {
         if (string.IsNullOrWhiteSpace(a) && string.IsNullOrWhiteSpace(b)) return 100m;
-        if (string.IsNullOrWhiteSpace(a) || string.IsNullOrWhiteSpace(b)) return 0m;
+        if (string.IsNullOrWhiteSpace(a) || string.IsNullOrWhiteSpace(b)) return 50m;
 
         a = Normalize(a);
         b = Normalize(b);

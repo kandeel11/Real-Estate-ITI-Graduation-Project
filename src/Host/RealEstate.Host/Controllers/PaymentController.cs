@@ -8,6 +8,8 @@ using Payment.Application.Exceptions;
 using Payment.Application.Interfaces;
 using Property.Application.Features.Queries.GetPropertyById;
 using Payment.Application.Features.Commands.ApplyLateFee;
+using Payment.Application.Features.Commands.MarkAsPaidExternally;
+using Payment.Application.Features.Commands.GenerateRentPaymentLink;
 using Payment.Application.Features.Commands.WaiveLateFee;
 using Payment.Application.Features.Commands.CreateSubscriptionPayment;
 using Payment.Application.Features.Commands.GenerateLeasePayment;
@@ -17,6 +19,7 @@ using Payment.Application.Features.Commands.RefundPayment;
 using Payment.Application.Features.Commands.UpdateAiPrediction;
 using Payment.Application.Features.Queries.GetAllRentPayments;
 using Payment.Application.Features.Queries.GetFinancialSummary;
+using Payment.Application.Features.Queries.GetOwnerFinancialSummary;
 using Payment.Application.Features.Queries.GetMyRentPayments;
 using Payment.Application.Features.Queries.GetOverduePayments;
 using Payment.Application.Features.Queries.GetPaymentReceipt;
@@ -262,6 +265,16 @@ public sealed class PaymentController : ControllerBase
         return Ok(result);
     }
 
+    [HttpGet("owner/financial-summary")]
+    [Authorize(Roles = "owner,company_manager,admin")]
+    public async Task<ActionResult> GetOwnerFinancialSummary(CancellationToken cancellationToken)
+    {
+        var userId = _currentUser.UserId
+            ?? throw new UnauthorizedAccessException("User not authenticated.");
+        var result = await _mediator.Send(new GetOwnerFinancialSummaryQuery(userId), cancellationToken);
+        return Ok(result);
+    }
+
     /// <summary>
     /// Comprehensive platform-level financial dashboard.
     /// Aggregates rent commission (1%), maintenance commission (2%), and withdrawal commission (1%).
@@ -364,6 +377,26 @@ public sealed class PaymentController : ControllerBase
         return success ? Ok() : BadRequest(new { error = "Payment could not be refunded." });
     }
 
+    /// <summary>
+    /// Admin: marks a rent payment as settled outside the platform (cash / real-world).
+    /// Sets Status = PaidExternally, excludes it from the overdue queue, and blocks
+    /// future late-fee application.  Typical use: the first installment of a newly
+    /// registered lease that the tenant already paid before the system was set up.
+    /// </summary>
+    [HttpPost("{id:guid}/mark-external")]
+    [Authorize(Roles = "admin")]
+    public async Task<ActionResult> MarkAsPaidExternally(
+        Guid id,
+        [FromBody] MarkExternalRequestBody? body,
+        CancellationToken cancellationToken)
+    {
+        var success = await _mediator.Send(
+            new MarkAsPaidExternallyCommand(id, body?.Notes),
+            cancellationToken);
+
+        return success ? Ok() : NotFound(new { error = $"Payment {id} not found." });
+    }
+
     [HttpPost("{id:guid}/late-fee")]
     [Authorize(Roles = "admin")]
     public async Task<ActionResult> ApplyLateFee(
@@ -401,6 +434,28 @@ public sealed class PaymentController : ControllerBase
         ), cancellationToken);
 
         return success ? Ok() : BadRequest(new { error = "Late fee could not be waived. Check that you are the landlord and the payment has an active late fee." });
+    }
+
+    /// <summary>
+    /// Admin-only: generates (or regenerates) a Stripe checkout link for a rent payment.
+    /// Use this when the background job hasn't run yet or for demo/testing purposes.
+    /// </summary>
+    [HttpPost("{id:guid}/generate-link")]
+    [Authorize(Roles = "admin")]
+    public async Task<ActionResult> GenerateRentPaymentLink(
+        Guid id,
+        [FromServices] IOptions<RentLinkJobSettings> jobSettings,
+        CancellationToken cancellationToken)
+    {
+        var result = await _mediator.Send(new GenerateRentPaymentLinkCommand(
+            PaymentId:  id,
+            SuccessUrl: jobSettings.Value.SuccessUrl,
+            CancelUrl:  jobSettings.Value.CancelUrl
+        ), cancellationToken);
+
+        return result.Success
+            ? Ok(new { checkoutUrl = result.CheckoutUrl })
+            : BadRequest(new { error = result.Error });
     }
 
     [HttpPost("{id:guid}/ai-prediction")]
@@ -454,6 +509,7 @@ public sealed class PaymentController : ControllerBase
 
 // ── Request bodies (تبسيط الـ binding بدل ما الـ route param يتكرر في الـ command) ──
 public sealed record ConfirmSubscriptionPaymentRequest(string SessionId);
+public sealed record MarkExternalRequestBody(string? Notes);
 public sealed record ProcessPaymentRequestBody(string PaymentMethod, string? CardToken);
 public sealed record RefundPaymentRequestBody(string Reason);
 public sealed record ApplyLateFeeRequestBody(decimal LateFeeAmount);

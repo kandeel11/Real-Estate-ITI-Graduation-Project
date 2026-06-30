@@ -13,19 +13,18 @@ import {
   ApexLegend,
   ApexPlotOptions,
 } from 'ng-apexcharts';
-import { DecimalPipe } from '@angular/common';
 import { TranslatePipe } from '@ngx-translate/core';
 
-// مسارات السيرفيس والموديلز (تأكد إنها مطابقة لمشروعك)
 import { AdminDashboardService } from '../../Services/admin-dashboard';
 import { UserService } from '../../Services/user.service';
 import { PropertyService } from '../../Services/property.service';
 import { DashboardStats, PendingProperty, RentPayment, AdminUser } from '../../Models';
+import { PlatformDashboard } from '../../../../../core/services/payment.service';
 
 @Component({
   selector: 'app-admin-dashboard',
   standalone: true,
-  imports: [NgApexchartsModule, DecimalPipe, TranslatePipe],
+  imports: [NgApexchartsModule, TranslatePipe],
   templateUrl: './dashboard.html',
   styleUrls: ['./dashboard.scss'],
 })
@@ -43,6 +42,13 @@ export class DashboardComponent {
   // ===== Charts State =====
   financialChart: any = null;
   occupancyChart: any = null;
+
+  platformDash = signal<PlatformDashboard | null>(null);
+
+  // ===== Growth Trends =====
+  revenueGrowth = signal(0);   // MoM %
+  expenseGrowth = signal(0);   // MoM %
+  revenueYoY    = signal(0);   // YoY % (this month vs same month last year)
 
   // ===== Occupancy State =====
   occupiedCount = signal(0);
@@ -87,7 +93,7 @@ export class DashboardComponent {
 
       // تجهيز بيانات المفتاح (Legend) للـ HTML (هنفلتر الأصفار عشان متبقاش زحمة لو دور معين مفيهوش حد)
       const legendData = roleKeys
-        .map((key, index) => ({
+        .map((_key, index) => ({
           label: roleLabels[index],
           count: counts[index],
           color: roleColors[index],
@@ -142,14 +148,38 @@ export class DashboardComponent {
         } as ApexPlotOptions,
       };
     });
-    // 1. Get General Stats
+    // 1. Get General Stats + Platform Dashboard
     this.service.getStats().subscribe((s) => this.stats.set(s));
+    this.service.getPlatformData().subscribe((p) => this.platformDash.set(p));
 
-    // 2. Financial Chart Setup
+    // 2. Financial Chart Setup + Growth Calculations
     this.service.getMonthlyRevenue().subscribe((data) => {
-      const months = data.slice(0, 8).map((d) => d.month);
-      const revenue = data.slice(0, 8).map((d) => d.amount);
-      const expenses = revenue.map((v) => Math.round(v * 0.35 + Math.random() * 2000));
+      // ── Growth calculations ────────────────────────────────────────────────
+      // MoM: last two non-zero months
+      const nonZero = data.filter((d) => d.amount > 0);
+      if (nonZero.length >= 2) {
+        const curr = nonZero[nonZero.length - 1].amount;
+        const prev = nonZero[nonZero.length - 2].amount;
+        const mom = prev > 0 ? Math.round(((curr - prev) / prev) * 1000) / 10 : 0;
+        this.revenueGrowth.set(mom);
+        this.expenseGrowth.set(mom); // expenses ≈ track revenue (99% of rent flows to owners)
+      }
+      // YoY: this month vs same month 12 months ago
+      if (data.length >= 12) {
+        const thisMonth = data[data.length - 1].amount;
+        const sameMonthLastYear = data[0].amount;
+        const yoy = sameMonthLastYear > 0
+          ? Math.round(((thisMonth - sameMonthLastYear) / sameMonthLastYear) * 1000) / 10
+          : 0;
+        this.revenueYoY.set(yoy);
+      }
+      // ─────────────────────────────────────────────────────────────────────
+
+      const recent = data.slice(-8); // last 8 months (most recent)
+      const months = recent.map((d) => d.month);
+      const revenue = recent.map((d) => d.amount);
+      // Expenses = 99% of collected rent flows to owners via wallet credits
+      const expenses = revenue.map((v) => Math.round(v * 0.99));
 
       this.financialChart = {
         series: [
@@ -200,7 +230,7 @@ export class DashboardComponent {
         yaxis: {
           labels: {
             style: { colors: '#94a3b8', fontSize: '12px' },
-            formatter: (val: number) => '$' + (val / 1000).toFixed(0) + 'K',
+            formatter: (val: number) => (val / 1000).toFixed(0) + 'K EGP',
           },
         },
         grid: {
@@ -213,7 +243,7 @@ export class DashboardComponent {
         tooltip: {
           shared: true,
           intersect: false,
-          y: { formatter: (val: number) => '$' + val.toLocaleString() },
+          y: { formatter: (val: number) => val.toLocaleString('en-US') + ' EGP' },
         } as ApexTooltip,
       };
     });
@@ -290,7 +320,7 @@ export class DashboardComponent {
     });
 
     // 4. Recent Payments
-    this.service.getRecentPayments().subscribe((data) => this.recentPayments.set(data.slice(0, 3)));
+    this.service.getRecentPayments().subscribe((data) => this.recentPayments.set(data.slice(0, 5)));
 
     // uncomment if you need pending properties here:
     // this.service.getPendingProperties().subscribe((data) => this.pendingProperties.set(data.slice(0, 2)));

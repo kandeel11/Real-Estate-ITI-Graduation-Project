@@ -1,7 +1,7 @@
 import { Component, inject, signal, computed, OnInit } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { PaymentService } from '../../../../../core/services/payment.service';
-import { RentPayment, PaymentSchedule, PaymentPeriod } from '../../../../../core/models/payment.model';
+import { RentPayment, PaymentSchedule, PaymentPeriod, PaymentStatus } from '../../../../../core/models/payment.model';
 
 type ActiveTab = 'schedule' | 'history';
 
@@ -28,8 +28,36 @@ export class MyPaymentsComponent implements OnInit {
   historyError = signal<string | null>(null);
   payments = signal<RentPayment[]>([]);
 
+  // dueDate → payment status map (used to override date-based schedule labels)
+  private readonly paymentByDueDate = computed(() => {
+    const map = new Map<string, PaymentStatus>();
+    this.payments().forEach(p => { if (p.dueDate) map.set(p.dueDate, p.status); });
+    return map;
+  });
+
+  // Recompute isCurrent/isNext based on actual payment statuses, not just dates.
+  // A period whose payment is Paid/PaidExternally is treated as "Past".
+  // The first non-past period is "Current"; the one after it is "Next".
+  readonly enrichedPeriods = computed((): PaymentPeriod[] => {
+    const periods = this.schedule()?.allPeriods ?? [];
+    const statusMap = this.paymentByDueDate();
+    const PAID: PaymentStatus[] = ['Paid', 'PaidExternally', 'Refunded'];
+
+    const withPast = periods.map(p => {
+      const st = statusMap.get(p.dueDate);
+      return { ...p, isPast: p.isPast || (!!st && PAID.includes(st)), isCurrent: false, isNext: false };
+    });
+
+    const ci = withPast.findIndex(p => !p.isPast);
+    const ni = ci >= 0 ? ci + 1 : -1;
+    return withPast.map((p, i) => ({ ...p, isCurrent: i === ci, isNext: i === ni && ni >= 0 }));
+  });
+
+  readonly enrichedCurrentPeriod = computed(() => this.enrichedPeriods().find(p => p.isCurrent) ?? null);
+  readonly enrichedNextPeriod    = computed(() => this.enrichedPeriods().find(p => p.isNext)    ?? null);
+
   visiblePeriods = computed(() => {
-    const all = this.schedule()?.allPeriods ?? [];
+    const all = this.enrichedPeriods();
     return this.showAll() ? all : all.slice(0, 6);
   });
 

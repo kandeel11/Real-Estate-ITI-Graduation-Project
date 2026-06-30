@@ -4,7 +4,9 @@ import { CommonModule } from '@angular/common';
 import { TranslatePipe } from '@ngx-translate/core';
 import { AuthService } from '../../../../../core/services/auth.service';
 import { OwnerDataService } from '../../services/owner-data.service';
+import { PaymentService } from '../../../../../core/services/payment.service';
 import { BrokerStats, BrokerTask, BrokerActivity } from '../../models/owner.models';
+import { OwnerFinancialSummary } from '../../../../../core/models/payment.model';
 
 @Component({
   selector: 'app-owner-overview',
@@ -16,22 +18,25 @@ import { BrokerStats, BrokerTask, BrokerActivity } from '../../models/owner.mode
 export class OverviewComponent implements OnInit {
   private readonly auth = inject(AuthService);
   private readonly dataService = inject(OwnerDataService);
+  private readonly paymentService = inject(PaymentService);
 
   readonly isCompanyBroker = computed(() => !!this.auth.user()?.companyId);
-  readonly userName = computed(() => this.auth.user()?.fullName ?? 'Broker');
+  readonly userName = computed(() => this.auth.user()?.fullName ?? 'Owner');
 
-  readonly stats = signal<BrokerStats | null>(null);
-  readonly tasks = signal<BrokerTask[]>([]);
-  readonly activity = signal<BrokerActivity[]>([]);
-  readonly loading = signal(true);
+  readonly stats      = signal<BrokerStats | null>(null);
+  readonly tasks      = signal<BrokerTask[]>([]);
+  readonly activity   = signal<BrokerActivity[]>([]);
+  readonly financial  = signal<OwnerFinancialSummary | null>(null);
+  readonly loading    = signal(true);
 
   private loaded = 0;
-  private done(): void { if (++this.loaded >= 3) this.loading.set(false); }
+  private done(): void { if (++this.loaded >= 4) this.loading.set(false); }
 
   ngOnInit(): void {
     this.dataService.getStats().subscribe({ next: s => { this.stats.set(s); this.done(); }, error: () => this.done() });
     this.dataService.getTasks().subscribe({ next: t => { this.tasks.set(t); this.done(); }, error: () => this.done() });
     this.dataService.getRecentActivity().subscribe({ next: a => { this.activity.set(a); this.done(); }, error: () => this.done() });
+    this.paymentService.getOwnerFinancialSummary().subscribe({ next: f => { this.financial.set(f); this.done(); }, error: () => this.done() });
   }
 
   toggleTask(task: BrokerTask): void {
@@ -39,4 +44,14 @@ export class OverviewComponent implements OnInit {
   }
 
   get stars(): number[] { return [1, 2, 3, 4, 5]; }
+
+  formatCurrency(n: number): string {
+    return (n ?? 0).toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 }) + ' EGP';
+  }
+
+  /** Bar height % for the monthly chart — relative to the max month */
+  barHeight(revenue: number): number {
+    const max = Math.max(...(this.financial()?.monthly.map(m => m.revenue) ?? [1]), 1);
+    return Math.round((revenue / max) * 100);
+  }
 }

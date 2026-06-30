@@ -253,8 +253,25 @@ public class Payment
         UpdatedAt = DateTime.UtcNow;
     }
 
+    /// <summary>
+    /// Records that this installment was settled outside the platform (e.g. cash on
+    /// lease start).  Calling code should pass a short human-readable note so the
+    /// admin audit trail is clear.
+    /// </summary>
+    public void MarkAsPaidExternally(string? notes = null)
+    {
+        Status = PaymentStatus.PaidExternally;
+        PaidAt = DateTime.UtcNow;
+        if (!string.IsNullOrWhiteSpace(notes))
+            Notes = string.IsNullOrWhiteSpace(Notes) ? notes : $"{Notes} | {notes}";
+        UpdatedAt = DateTime.UtcNow;
+    }
+
     public void ApplyLateFee(decimal lateFeeAmount)
     {
+        if (Status == PaymentStatus.PaidExternally)
+            throw new InvalidOperationException("Cannot apply a late fee to a payment that was settled externally.");
+
         LateFee = lateFeeAmount;
         Status = PaymentStatus.Late;
         UpdatedAt = DateTime.UtcNow;

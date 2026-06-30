@@ -170,6 +170,9 @@
               <button class="btn plan-btn plan-btn-current" disabled>
                 <i class="fa-solid fa-circle-check me-1"></i>Current Plan
               </button>
+              <button class="btn plan-btn-cancel" [disabled]="cancelling()" (click)="openCancel()">
+                <i class="fa-solid fa-ban me-1"></i>Cancel Subscription
+              </button>
             } @else {
               <button class="btn plan-btn plan-btn-upgrade"
                       [disabled]="checkingOut()"
@@ -252,4 +255,15 @@
     }
 
   }
+
+  <!-- ── CANCEL CONFIRMATION ───────────────────────────── -->
+  <app-confirm-modal
+    [show]="showCancelConfirm()"
+    title="Cancel subscription?"
+    message="You'll be downgraded to the Free plan. You can upgrade again anytime."
+    confirmLabel="Cancel Subscription"
+    confirmClass="btn-danger"
+    [loading]="cancelling()"
+    (confirmed)="confirmCancel()"
+    (cancelled)="closeCancel()" />
 </div>
