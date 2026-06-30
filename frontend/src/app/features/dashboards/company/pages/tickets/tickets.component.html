@@ -13,15 +13,72 @@
     </button>
   </div>
 
+  <!-- Stats cards -->
+  @if (!loading() && !error()) {
+    <div class="stats-row">
+      <div class="stat-card stat-card--total">
+        <div class="stat-icon-wrap stat-icon--total">
+          <i class="fa-solid fa-ticket"></i>
+        </div>
+        <div class="stat-body">
+          <span class="stat-label">Total Tickets</span>
+          <span class="stat-value">{{ tickets().length }}</span>
+        </div>
+      </div>
+
+      <div class="stat-card stat-card--completed">
+        <div class="stat-icon-wrap stat-icon--completed">
+          <i class="fa-solid fa-circle-check"></i>
+        </div>
+        <div class="stat-body">
+          <span class="stat-label">Completed</span>
+          <span class="stat-value">{{ completedCount() }}</span>
+          <span class="stat-money stat-money--earned">
+            <i class="fa-solid fa-coins me-1"></i>
+            {{ totalEarned() | number:'1.2-2' }} {{ currency() }}
+          </span>
+        </div>
+      </div>
+
+      <div class="stat-card stat-card--pending">
+        <div class="stat-icon-wrap stat-icon--pending">
+          <i class="fa-solid fa-circle-dollar-to-slot"></i>
+        </div>
+        <div class="stat-body">
+          <span class="stat-label">Awaiting Payment</span>
+          <span class="stat-value">{{ awaitingPaymentCount() }}</span>
+          <span class="stat-money stat-money--pending">
+            <i class="fa-solid fa-hourglass-half me-1"></i>
+            {{ pendingRevenue() | number:'1.2-2' }} {{ currency() }}
+          </span>
+        </div>
+      </div>
+
+      <div class="stat-card stat-card--progress">
+        <div class="stat-icon-wrap stat-icon--progress">
+          <i class="fa-solid fa-gears"></i>
+        </div>
+        <div class="stat-body">
+          <span class="stat-label">In Progress</span>
+          <span class="stat-value">{{ inProgressCount() }}</span>
+        </div>
+      </div>
+    </div>
+  }
+
   <!-- Filter tabs -->
   <div class="filter-row">
     @for (f of FILTERS; track f.value) {
       <button class="filter-btn" [class.filter-btn-active]="activeFilter() === f.value"
               (click)="activeFilter.set(f.value)">
         {{ f.label }}
-        @if (f.value === 'all') {
-          <span class="filter-count">{{ tickets().length }}</span>
-        }
+        <span class="filter-count">
+          @if (f.value === 'all') {
+            {{ tickets().length }}
+          } @else {
+            {{ countByStatus()[f.value] ?? 0 }}
+          }
+        </span>
       </button>
     }
   </div>
@@ -73,11 +130,17 @@
           </div>
 
           <div class="ticket-right">
-            @if (t.payment && t.payment.status !== 'Paid') {
-              <span class="pay-needed">
-                <i class="fa-solid fa-circle-dollar-to-slot"></i>
-                Payment Needed
-              </span>
+            @if (t.payment) {
+              <div class="ticket-amount" [class.ticket-amount--paid]="t.payment.status === 'Paid'" [class.ticket-amount--pending]="t.payment.status !== 'Paid'">
+                <span class="amount-value">{{ t.payment.amount | number:'1.2-2' }} {{ t.payment.currency }}</span>
+                <span class="amount-status">
+                  @if (t.payment.status === 'Paid') {
+                    <i class="fa-solid fa-check-circle me-1"></i>Paid
+                  } @else {
+                    <i class="fa-solid fa-circle-dollar-to-slot me-1"></i>Unpaid
+                  }
+                </span>
+              </div>
             }
             <i class="fa-solid fa-chevron-right caret"></i>
           </div>

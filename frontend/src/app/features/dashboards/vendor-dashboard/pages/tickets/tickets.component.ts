@@ -43,6 +43,22 @@ export class MaintenanceTicketsComponent implements OnInit {
 
   busyId = signal<string | null>(null);
 
+  readonly totalEarned = computed(() =>
+    this.tickets()
+      .filter((t) => t.status === 'Completed' && t.payment?.status === 'Paid')
+      .reduce((sum, t) => sum + (t.payment?.amount ?? 0), 0),
+  );
+
+  readonly pendingRevenue = computed(() =>
+    this.tickets()
+      .filter((t) => t.payment && t.payment.status !== 'Paid')
+      .reduce((sum, t) => sum + (t.payment?.amount ?? 0), 0),
+  );
+
+  readonly currency = computed(() =>
+    this.tickets().find((t) => t.payment?.currency)?.payment?.currency ?? 'EGP',
+  );
+
   filteredTickets = computed(() => {
     const f = this.activeFilter();
     const list = this.tickets();
@@ -274,8 +290,11 @@ export class MaintenanceTicketsComponent implements OnInit {
     });
   }
 
-  formatNum(n: number): string {
-    return n.toLocaleString('en-US');
+  formatNum(n: number, decimals = 0): string {
+    return n.toLocaleString('en-US', {
+      minimumFractionDigits: decimals,
+      maximumFractionDigits: decimals,
+    });
   }
 
   viewDetail(id: string): void {

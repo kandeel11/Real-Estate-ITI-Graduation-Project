@@ -52,10 +52,32 @@
           <span class="stat__label">Completed Tickets</span>
           <div class="stat__icon completed-icon"><i class="fa-solid fa-circle-check"></i></div>
         </div>
-        <h2 class="stat__value">{{ p.completedTicketsCount }}</h2>
+        <h2 class="stat__value">{{ completedCount() || p.completedTicketsCount }}</h2>
         <span class="stat__trend up">
           <i class="fa-solid fa-check-double"></i> Total completed
         </span>
+      </div>
+
+      <!-- Revenue Earned -->
+      <div class="stat revenue-stat">
+        <div class="stat__head">
+          <span class="stat__label">Revenue Earned</span>
+          <div class="stat__icon revenue-icon"><i class="fa-solid fa-coins"></i></div>
+        </div>
+        @if (ticketsLoading()) {
+          <div class="sk-line sk-title"></div>
+        } @else {
+          <h2 class="stat__value stat__value--sm">{{ formatNum(totalEarned(), 2) }}</h2>
+          <span class="stat__trend up">
+            <i class="fa-solid fa-tag"></i> {{ currency() }} · from paid tickets
+          </span>
+          @if (pendingRevenue() > 0) {
+            <span class="stat__trend warn">
+              <i class="fa-solid fa-hourglass-half"></i>
+              {{ formatNum(pendingRevenue(), 2) }} {{ currency() }} pending
+            </span>
+          }
+        }
       </div>
 
       <!-- Active Tickets -->

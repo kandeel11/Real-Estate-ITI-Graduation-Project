@@ -82,6 +82,70 @@
   &:hover:not(:disabled) { background: #0284c7; }
 }
 
+// ── Revenue Strip ─────────────────────────────────────────────────────────────
+.revenue-strip {
+  display: flex;
+  align-items: center;
+  gap: 0;
+  background: #fff;
+  border: 1px solid #e2e8f0;
+  border-radius: 14px;
+  padding: 16px 24px;
+  margin-bottom: 1.25rem;
+  flex-wrap: wrap;
+}
+
+.revenue-divider {
+  width: 1px;
+  height: 40px;
+  background: #e2e8f0;
+  margin: 0 24px;
+  flex-shrink: 0;
+}
+
+.revenue-item {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  flex: 1;
+  min-width: 120px;
+
+  > i {
+    font-size: 20px;
+    flex-shrink: 0;
+  }
+
+  &--earned > i   { color: #f59e0b; }
+  &--pending > i  { color: #c2410c; }
+  &--completed > i { color: #10b981; }
+}
+
+.revenue-item__body {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+}
+
+.revenue-item__label {
+  font-size: 11px;
+  font-weight: 600;
+  color: #64748b;
+  text-transform: uppercase;
+  letter-spacing: .04em;
+}
+
+.revenue-item__value {
+  font-size: 1.15rem;
+  font-weight: 800;
+  color: #0f172a;
+  font-variant-numeric: tabular-nums;
+}
+
+@media (max-width: 600px) {
+  .revenue-strip { flex-direction: column; align-items: flex-start; gap: 12px; }
+  .revenue-divider { width: 100%; height: 1px; margin: 0; }
+}
+
 // ── Filter Tabs ───────────────────────────────────────────────────────────────
 .filter-tabs {
   display: flex;

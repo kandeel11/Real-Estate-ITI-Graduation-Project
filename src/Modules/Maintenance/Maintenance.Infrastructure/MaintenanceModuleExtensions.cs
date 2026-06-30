@@ -42,7 +42,7 @@ public static class MaintenanceModuleExtensions
         // Singletons: Qdrant/OpenAI clients are thread-safe and expensive to create.
         services.AddHttpClient("ITIStudentApi", (sp, client) =>
         {
-            var cfg    = sp.GetRequiredService<IConfiguration>();
+            var cfg = sp.GetRequiredService<IConfiguration>();
             var apiKey = cfg["ITIStudentApi:ApiKey"]
                          ?? throw new InvalidOperationException(
                              "Secret 'ITIStudentApi:ApiKey' is not configured.");

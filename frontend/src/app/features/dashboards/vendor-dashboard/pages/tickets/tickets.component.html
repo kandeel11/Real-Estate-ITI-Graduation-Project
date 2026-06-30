@@ -12,6 +12,35 @@
     </button>
   </div>
 
+  <!-- ── REVENUE SUMMARY ────────────────────────────────────────────── -->
+  @if (!loading() && tickets().length > 0) {
+    <div class="revenue-strip">
+      <div class="revenue-item revenue-item--earned">
+        <i class="fa-solid fa-coins"></i>
+        <div class="revenue-item__body">
+          <span class="revenue-item__label">Total Earned</span>
+          <span class="revenue-item__value">{{ formatNum(totalEarned(), 2) }} {{ currency() }}</span>
+        </div>
+      </div>
+      <div class="revenue-divider"></div>
+      <div class="revenue-item revenue-item--pending">
+        <i class="fa-solid fa-hourglass-half"></i>
+        <div class="revenue-item__body">
+          <span class="revenue-item__label">Pending Payment</span>
+          <span class="revenue-item__value">{{ formatNum(pendingRevenue(), 2) }} {{ currency() }}</span>
+        </div>
+      </div>
+      <div class="revenue-divider"></div>
+      <div class="revenue-item revenue-item--completed">
+        <i class="fa-solid fa-circle-check"></i>
+        <div class="revenue-item__body">
+          <span class="revenue-item__label">Completed Jobs</span>
+          <span class="revenue-item__value">{{ filterCounts().completed }}</span>
+        </div>
+      </div>
+    </div>
+  }
+
   <!-- ── FILTER TABS ─────────────────────────────────────────────────── -->
   <div class="filter-tabs">
     <button class="tab" [class.active]="activeFilter() === 'all'"

@@ -1,5 +1,5 @@
 import { Component, OnInit, inject, signal, computed } from '@angular/core';
-import { CommonModule } from '@angular/common';
+import { CommonModule, DecimalPipe } from '@angular/common';
 import { Router } from '@angular/router';
 import { AuthService } from '../../../../../core/services/auth.service';
 import {
@@ -11,7 +11,7 @@ import { finalize } from 'rxjs';
 @Component({
   selector: 'app-company-tickets',
   standalone: true,
-  imports: [CommonModule],
+  imports: [CommonModule, DecimalPipe],
   templateUrl: './tickets.component.html',
   styleUrl: './tickets.component.css',
 })
@@ -40,6 +40,42 @@ export class CompanyTicketsComponent implements OnInit {
     const all = this.tickets();
     return f === 'all' ? all : all.filter(t => t.status === f);
   });
+
+  readonly countByStatus = computed(() => {
+    const counts: Record<string, number> = {};
+    for (const t of this.tickets()) {
+      counts[t.status] = (counts[t.status] ?? 0) + 1;
+    }
+    return counts;
+  });
+
+  readonly completedCount = computed(() =>
+    this.tickets().filter(t => t.status === 'Completed').length
+  );
+
+  readonly awaitingPaymentCount = computed(() =>
+    this.tickets().filter(t => t.status === 'AwaitingPayment').length
+  );
+
+  readonly inProgressCount = computed(() =>
+    this.tickets().filter(t => t.status === 'InProgress' || t.status === 'AssignedToVendor' || t.status === 'VendorAccepted').length
+  );
+
+  readonly totalEarned = computed(() =>
+    this.tickets()
+      .filter(t => t.status === 'Completed' && t.payment?.status === 'Paid')
+      .reduce((sum, t) => sum + (t.payment?.amount ?? 0), 0)
+  );
+
+  readonly pendingRevenue = computed(() =>
+    this.tickets()
+      .filter(t => t.payment && t.payment.status !== 'Paid')
+      .reduce((sum, t) => sum + (t.payment?.amount ?? 0), 0)
+  );
+
+  readonly currency = computed(() =>
+    this.tickets().find(t => t.payment?.currency)?.payment?.currency ?? 'EGP'
+  );
 
   ngOnInit(): void {
     const companyId = this.auth.user()?.companyId;

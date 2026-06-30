@@ -48,6 +48,26 @@ export class OverviewComponent implements OnInit {
     ),
   );
 
+  readonly completedCount = computed(() =>
+    this.tickets().filter((t) => t.status === 'Completed').length,
+  );
+
+  readonly totalEarned = computed(() =>
+    this.tickets()
+      .filter((t) => t.status === 'Completed' && t.payment?.status === 'Paid')
+      .reduce((sum, t) => sum + (t.payment?.amount ?? 0), 0),
+  );
+
+  readonly pendingRevenue = computed(() =>
+    this.tickets()
+      .filter((t) => t.payment && t.payment.status !== 'Paid')
+      .reduce((sum, t) => sum + (t.payment?.amount ?? 0), 0),
+  );
+
+  readonly currency = computed(() =>
+    this.tickets().find((t) => t.payment?.currency)?.payment?.currency ?? 'EGP',
+  );
+
   ngOnInit(): void {
     this.loadProfile();
     this.loadTickets();
@@ -71,7 +91,7 @@ export class OverviewComponent implements OnInit {
 
   private loadTickets(): void {
     this.ticketsLoading.set(true);
-    this.ticketsService.getMyAssignments().subscribe({
+    this.ticketsService.getVendorDashboard().subscribe({
       next: (list) => {
         this.tickets.set(list);
         this.ticketsLoading.set(false);
