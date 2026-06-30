@@ -55,6 +55,14 @@ public sealed class LeaseExtractionService : ILeaseExtractionService
             "Azure DI OCR complete — {Pages} pages, {Length} characters",
             extraction.TotalPages, fullText.Length);
 
+        // ── Step 1.5: Validate this is a rental lease contract ────────────────
+        var isRentLease = await IsRentLeaseAsync(fullText, cancellationToken);
+        if (!isRentLease)
+        {
+            _logger.LogWarning("Document rejected — not a rental lease contract.");
+            throw new InvalidOperationException("NOT_RENT_LEASE");
+        }
+
         // ── Step 2: Claude extracts structured fields with confidence scores ───
         var result = await ExtractFieldsWithClaudeAsync(fullText, cancellationToken);
 
@@ -211,6 +219,49 @@ public sealed class LeaseExtractionService : ILeaseExtractionService
             var failed = new ExtractedLeaseField(null, 0, true);
             return new ExtractedLeaseData(
                 failed, failed, failed, failed, failed, failed, failed, failed, failed, failed, 0, raw);
+        }
+    }
+
+    /// <summary>
+    /// Quick LLM check: is this document a rental lease contract (عقد إيجار)?
+    /// Uses only the first 2000 characters of OCR text for speed.
+    /// </summary>
+    private async Task<bool> IsRentLeaseAsync(string documentText, CancellationToken ct)
+    {
+        var snippet = documentText.Length > 2000 ? documentText[..2000] : documentText;
+
+        var prompt = $"""
+            You are a document classifier. Analyze the document text below and determine if it is a rental lease contract (عقد إيجار / tenancy agreement / rent agreement).
+
+            A genuine rental lease contract must contain ALL of the following:
+            - Two parties: a landlord/owner (مؤجر) and a tenant (مستأجر)
+            - A property being rented
+            - A rental period (start and end dates or duration)
+            - A rent amount (إيجار)
+
+            Document text:
+            ===
+            {snippet}
+            ===
+
+            Is this document a rental lease contract? Reply with ONLY one word: yes or no.
+            """;
+
+        var history = new ChatHistory();
+        history.AddUserMessage(prompt);
+
+        try
+        {
+            var response = await _chat.GetChatMessageContentAsync(history, kernel: _kernel, cancellationToken: ct);
+            var answer = (response.Content ?? "").Trim().ToLowerInvariant();
+            _logger.LogInformation("[LeaseValidation] LLM response: '{Answer}'", answer);
+            return answer.StartsWith("yes");
+        }
+        catch (Exception ex)
+        {
+            // If validation itself fails, allow the document through (don't block on infra error)
+            _logger.LogWarning(ex, "[LeaseValidation] Validation check failed — allowing document through.");
+            return true;
         }
     }
 }

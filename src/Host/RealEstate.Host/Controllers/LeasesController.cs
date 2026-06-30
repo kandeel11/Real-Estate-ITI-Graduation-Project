@@ -205,8 +205,9 @@ public class LeasesController : ControllerBase
     private static string MapExtractionStatus(string? status) => status switch
     {
         "extracted" or "confirmed" => "done",
-        "failed" or "rejected" => "failed",
-        _ => "pending"
+        "failed" or "rejected"     => "failed",
+        "not_rent_lease"           => "not_rent_lease",
+        _                          => "pending"
     };
 
     [HttpDelete("{id}")]
