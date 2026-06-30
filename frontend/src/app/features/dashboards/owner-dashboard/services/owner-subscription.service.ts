@@ -24,4 +24,9 @@ export class OwnerSubscriptionService {
       .get<BrokerActiveSubscription>(`${this.base}/subscriptions/mine`)
       .pipe(timeout(10000), catchError(() => of(null)));
   }
+
+  /** POST /api/subscriptions/mine/cancel — drops the owner back to the Free plan. */
+  cancel(reason: string): Observable<void> {
+    return this.http.post<void>(`${this.base}/subscriptions/mine/cancel`, { reason });
+  }
 }

@@ -2,12 +2,14 @@ import { Component, OnInit, inject, signal, computed } from '@angular/core';
 import { finalize } from 'rxjs';
 import { AuthService } from '../../../../../core/services/auth.service';
 import { PaymentService } from '../../../../../core/services/payment.service';
+import { BILLING_MONTHLY, BILLING_ANNUAL } from '../../../../../core/models/payment.model';
+import { ConfirmModalComponent } from '../../../../../shared/components/modal/confirm-modal.component';
 import { OwnerSubscriptionService, BrokerPlan, BrokerActiveSubscription } from '../../services/owner-subscription.service';
 
 @Component({
   selector: 'app-owner-subscription',
   standalone: true,
-  imports: [],
+  imports: [ConfirmModalComponent],
   templateUrl: './subscription.component.html',
   styleUrl: './subscription.component.css',
 })
@@ -27,6 +29,10 @@ export class OwnerSubscriptionComponent implements OnInit {
   checkingOut = signal(false);
   checkoutError = signal<string | null>(null);
 
+  // ── Cancellation (premium → Free) ───────────────────────────────
+  showCancelConfirm = signal(false);
+  cancelling = signal(false);
+
   // Individual plans: tier 0 (Free Individual) and tier 1 (Premium Individual)
   readonly freePlan = computed(() => this.plans().find(p => p.tier === 0) ?? null);
   readonly premiumPlan = computed(() => this.plans().find(p => p.tier === 1) ?? null);
@@ -34,6 +40,34 @@ export class OwnerSubscriptionComponent implements OnInit {
 
   ngOnInit(): void {
     this.load();
+    this.handleCheckoutReturn();
+  }
+
+  /**
+   * After returning from Stripe with `?checkout=success&session_id=...`,
+   * confirm the payment server-side (finalizes the upgrade without needing the
+   * webhook), then refresh. Idempotent — safe even if the webhook already ran.
+   */
+  private handleCheckoutReturn(): void {
+    const params = new URLSearchParams(window.location.search);
+    const checkout = params.get('checkout');
+    const sessionId = params.get('session_id');
+    window.history.replaceState({}, '', window.location.pathname);
+
+    if (checkout !== 'success' || !sessionId) return;
+
+    this.checkingOut.set(true);
+    this.paymentService.confirmSubscription(sessionId).subscribe({
+      next: () => {
+        this.checkingOut.set(false);
+        this.load();
+        setTimeout(() => this.load(), 1500);
+      },
+      error: (err) => {
+        this.checkingOut.set(false);
+        this.checkoutError.set(err?.error?.error ?? 'Could not confirm your payment. Please refresh.');
+      },
+    });
   }
 
   load(): void {
@@ -79,15 +113,17 @@ export class OwnerSubscriptionComponent implements OnInit {
     this.checkingOut.set(true);
     this.checkoutError.set(null);
 
-    const userId = this.auth.user()?.id ?? '';
     const origin = window.location.origin;
     const base = '/dashboard/owner/subscription';
 
-    this.paymentService.checkoutSubscription({
-      userId,
-      subscriptionId: this.active()?.id ?? null,
+    // Full flow: SelectPlan creates a PendingPayment subscription for the chosen
+    // plan, then Stripe checkout. Without SelectPlan the success webhook/confirm
+    // has no PendingPayment row to activate, so the plan never changes.
+    this.paymentService.startSubscriptionCheckout({
+      userId: this.auth.user()?.id ?? '',
+      companyId: this.auth.user()?.companyId ?? null,
       planId: plan.id,
-      billingCycle: this.billingCycle() === 'monthly' ? 0 : 1,
+      billingCycle: this.billingCycle() === 'monthly' ? BILLING_MONTHLY : BILLING_ANNUAL,
       successRedirectUrl: `${origin}${base}?checkout=success`,
       cancelRedirectUrl:  `${origin}${base}?checkout=cancel`,
     }).subscribe({
@@ -96,7 +132,36 @@ export class OwnerSubscriptionComponent implements OnInit {
       },
       error: (err) => {
         this.checkingOut.set(false);
-        this.checkoutError.set(err?.error?.message ?? 'Checkout failed. Please try again.');
+        this.checkoutError.set(err?.error?.error ?? err?.error?.message ?? 'Checkout failed. Please try again.');
+      },
+    });
+  }
+
+  // ── Cancellation ────────────────────────────────────────────────
+
+  openCancel(): void {
+    this.checkoutError.set(null);
+    this.showCancelConfirm.set(true);
+  }
+
+  closeCancel(): void {
+    if (!this.cancelling()) this.showCancelConfirm.set(false);
+  }
+
+  /** Cancel the premium subscription — the backend drops the owner to Free. */
+  confirmCancel(): void {
+    if (this.cancelling()) return;
+    this.cancelling.set(true);
+    this.svc.cancel('Cancelled from the dashboard').subscribe({
+      next: () => {
+        this.cancelling.set(false);
+        this.showCancelConfirm.set(false);
+        this.load();
+      },
+      error: (err) => {
+        this.cancelling.set(false);
+        this.showCancelConfirm.set(false);
+        this.checkoutError.set(err?.error?.error ?? 'Failed to cancel the subscription.');
       },
     });
   }
