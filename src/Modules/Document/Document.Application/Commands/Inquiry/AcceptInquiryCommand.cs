@@ -3,6 +3,7 @@ using Document.Application.Interfaces;
 using Document.Domain.Enums;
 using Document.Domain.Events;
 using MediatR;
+using Microsoft.EntityFrameworkCore;
 using RealEstate.Shared.Kernel.Shared.IntegrationEvents;
 
 namespace Document.Application.Commands.Inquiry;
@@ -57,19 +58,28 @@ public class AcceptInquiryCommandHandler : IRequestHandler<AcceptInquiryCommand,
         };
         _db.Leads.Add(lead);
 
-        // عمل Conversation أوتوماتيك
-        var conversation = new Document.Domain.Entities.Conversation
+        // عمل Conversation أوتوماتيك — بس لو مفيش واحدة موجودة بالفعل.
+        // لو الـ owner/broker رد على الـ inquiry قبل التحويل، الرد بيكون اتسجّل في
+        // conversation موجودة؛ إنشاء واحدة جديدة هنا بيخلق نسخة فاضية تانية لنفس الـ
+        // inquiry، وساعتها GetMessagesByInquiry (FirstOrDefault) ممكن يرجّع الفاضية
+        // وتختفي الرسائل. فبنعيد استخدام الموجودة بدل ما نكرّر.
+        var existing = await _db.Conversations
+            .FirstOrDefaultAsync(c => c.InquiryId == inquiry.Id, ct);
+
+        if (existing is null)
         {
-            Id = Guid.NewGuid(),
-            InquiryId = inquiry.Id,
-            PropertyId = inquiry.PropertyId,
-            TenantId = inquiry.TenantId,
-            BrokerOrOwnerId = cmd.AcceptedById,
-            IsActive = true,
-            CreatedAt = DateTime.UtcNow,
-            UpdatedAt = DateTime.UtcNow
-        };
-        _db.Conversations.Add(conversation);
+            _db.Conversations.Add(new Document.Domain.Entities.Conversation
+            {
+                Id = Guid.NewGuid(),
+                InquiryId = inquiry.Id,
+                PropertyId = inquiry.PropertyId,
+                TenantId = inquiry.TenantId,
+                BrokerOrOwnerId = cmd.AcceptedById,
+                IsActive = true,
+                CreatedAt = DateTime.UtcNow,
+                UpdatedAt = DateTime.UtcNow
+            });
+        }
 
         await _db.SaveChangesAsync(ct);
 

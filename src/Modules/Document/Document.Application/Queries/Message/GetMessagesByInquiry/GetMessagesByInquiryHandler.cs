@@ -15,16 +15,19 @@ public class GetMessagesByInquiryHandler
     public async Task<List<MessageDto>> Handle(
         GetMessagesByInquiryQuery query, CancellationToken ct)
     {
-        var conversationId = await _db.Conversations
+        // Gather messages across ALL conversations for this inquiry, not just the
+        // first. Historically a duplicate conversation could be created on accept,
+        // splitting replies across rows; aggregating keeps every message visible.
+        var conversationIds = await _db.Conversations
             .Where(c => c.InquiryId == query.InquiryId)
-            .Select(c => (Guid?)c.Id)
-            .FirstOrDefaultAsync(ct);
+            .Select(c => c.Id)
+            .ToListAsync(ct);
 
-        if (conversationId is null)
+        if (conversationIds.Count == 0)
             return new List<MessageDto>();
 
         return await _db.Messages
-            .Where(m => m.ConversationId == conversationId && m.DeletedAt == null)
+            .Where(m => conversationIds.Contains(m.ConversationId) && m.DeletedAt == null)
             .OrderBy(m => m.CreatedAt)
             .Select(m => new MessageDto(
                 m.Id, m.ConversationId, m.SenderId,
