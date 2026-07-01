@@ -603,7 +603,8 @@
     "ROLE": "Property Owner",
     "SETTINGS": "Settings",
     "MESSAGES": "Messages",
-    "WALLET": "Wallet"
+    "WALLET": "Wallet",
+    "PAYMENTS": "Payments"
   },
   "OWNER": {
     "OVERVIEW": {

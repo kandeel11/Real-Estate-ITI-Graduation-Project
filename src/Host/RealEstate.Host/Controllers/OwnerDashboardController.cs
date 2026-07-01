@@ -3,6 +3,7 @@ using Document.Application.Queries.Lead.GetLeadsByProperties;
 using Document.Application.Queries.Lease;
 using Document.Application.Queries.Lease.GetLeadsWithLeases;
 using Document.Application.Queries.Lease.GetLeadLeaseStates;
+using Document.Application.Queries.Lease.GetLeasePaymentSchedule;
 using Document.Application.Queries.Message.GetInquiriesWithReply;
 using Document.Application.Queries.Message.GetInquiryLastMessages;
 using Document.Application.Queries.Notification;
@@ -337,6 +338,42 @@ public class OwnerDashboardController(
         return Ok(result);
     }
 
+    /// <summary>
+    /// Payment schedule for every active lease on the owner's properties.
+    /// Returns one schedule entry per lease enriched with property title and tenant ID.
+    /// </summary>
+    [HttpGet("payments/schedule")]
+    public async Task<IActionResult> GetPaymentsSchedule(CancellationToken ct)
+    {
+        var properties = await sender.Send(new GetPropertiesByOwnerQuery(UserId), ct);
+        if (properties.Count == 0) return Ok(Array.Empty<object>());
+
+        var propertyIds = properties.Select(p => p.Id).ToList();
+        var leases = await sender.Send(new GetLeasesByPropertyIdsQuery(propertyIds), ct);
+        var activeLeases = leases.Where(l => l.IsActive).ToList();
+        if (activeLeases.Count == 0) return Ok(Array.Empty<object>());
+
+        var propertyTitles = properties.ToDictionary(p => p.Id, p => p.Title);
+
+        var result = new List<object>(activeLeases.Count);
+        foreach (var lease in activeLeases)
+        {
+            var schedule = await sender.Send(new GetLeasePaymentScheduleQuery(lease.Id), ct);
+            result.Add(new
+            {
+                leaseId = lease.Id,
+                propertyId = lease.PropertyId,
+                propertyTitle = propertyTitles.GetValueOrDefault(lease.PropertyId, string.Empty),
+                tenantId = lease.TenantId,
+                startDate = lease.StartDate,
+                endDate = lease.EndDate,
+                schedule
+            });
+        }
+
+        return Ok(result);
+    }
+
     // ── Maintenance ───────────────────────────────────────────────────────────────
 
     /// <summary>
@@ -380,7 +417,7 @@ public class OwnerDashboardController(
     private static string MapInquiryStatus(string status, bool hasReply) => status switch
     {
         "Accepted" => "converted",   // inquiry accepted = lead was created
-        "Closed"   => "closed",
+        "Closed" => "closed",
         // A pending inquiry counts as "replied" once the broker/owner has sent a message.
         _ => hasReply ? "replied" : "new"
     };

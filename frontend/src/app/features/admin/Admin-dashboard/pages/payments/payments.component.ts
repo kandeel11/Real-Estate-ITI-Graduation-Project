@@ -195,6 +195,13 @@ export class AdminPaymentsComponent implements OnInit {
     return Math.floor(diff / (1000 * 60 * 60 * 24));
   }
 
+  copyLink(url: string) {
+    navigator.clipboard.writeText(url).then(
+      () => this.showToast('success', 'Payment link copied to clipboard'),
+      () => this.showToast('error', 'Could not copy — please copy the URL manually'),
+    );
+  }
+
   showToast(type: 'success' | 'error', text: string) {
     this.toast.set({ type, text });
     setTimeout(() => this.toast.set(null), 3500);

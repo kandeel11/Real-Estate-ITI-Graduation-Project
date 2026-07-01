@@ -133,38 +133,51 @@
                   <td>
                     <span class="badge" [attr.data-color]="statusColor(p.status)">{{ p.status }}</span>
                   </td>
-                  <td>
+                  <td class="actions-cell">
                     @if (p.status === 'Pending') {
-                      <button class="btn-action approve" (click)="processPayment(p)"
-                        [disabled]="processing() !== null">
-                        @if (processing() === p.id) {
-                          <i class="fa-solid fa-spinner fa-spin"></i>
-                        } @else {
-                          <i class="fa-solid fa-check"></i> Process
-                        }
-                      </button>
-                      <button class="btn-action external" (click)="markAsPaidExternally(p)"
-                        [disabled]="processing() !== null" title="Mark as paid in cash/real-world (outside platform)">
-                        @if (processing() === p.id) {
-                          <i class="fa-solid fa-spinner fa-spin"></i>
-                        } @else {
-                          <i class="fa-solid fa-hand-holding-dollar"></i> Mark External
-                        }
-                      </button>
-                      <button class="btn-action link-btn" (click)="generatePaymentLink(p)"
-                        [disabled]="generatingLink() !== null" title="Generate / refresh Stripe payment link">
-                        @if (generatingLink() === p.id) {
-                          <i class="fa-solid fa-spinner fa-spin"></i>
-                        } @else {
-                          <i class="fa-solid fa-link"></i> Gen Link
-                        }
-                      </button>
+                      <div class="btn-row">
+                        <button class="btn-action approve" (click)="processPayment(p)"
+                          [disabled]="processing() !== null">
+                          @if (processing() === p.id) {
+                            <i class="fa-solid fa-spinner fa-spin"></i>
+                          } @else {
+                            <i class="fa-solid fa-check"></i> Process
+                          }
+                        </button>
+                        <button class="btn-action external" (click)="markAsPaidExternally(p)"
+                          [disabled]="processing() !== null" title="Mark as paid in cash/real-world (outside platform)">
+                          @if (processing() === p.id) {
+                            <i class="fa-solid fa-spinner fa-spin"></i>
+                          } @else {
+                            <i class="fa-solid fa-hand-holding-dollar"></i> External
+                          }
+                        </button>
+                        <button class="btn-action link-btn" (click)="generatePaymentLink(p)"
+                          [disabled]="generatingLink() !== null" title="Generate / refresh Stripe payment link">
+                          @if (generatingLink() === p.id) {
+                            <i class="fa-solid fa-spinner fa-spin"></i>
+                          } @else {
+                            <i class="fa-solid fa-link"></i> Gen Link
+                          }
+                        </button>
+                      </div>
                     } @else if (p.status === 'PaidExternally') {
                       <span class="paid-date"><i class="fa-solid fa-coins"></i> Cash / External</span>
                     } @else if (p.status === 'Paid' && p.paidAt) {
                       <span class="paid-date">{{ formatDate(p.paidAt) }}</span>
                     } @else {
                       <span class="muted">—</span>
+                    }
+                    @if (p.checkoutUrl) {
+                      <div class="checkout-link-row">
+                        <a class="checkout-link" [href]="p.checkoutUrl" target="_blank" rel="noopener"
+                          title="Open Stripe payment page in new tab">
+                          <i class="fa-solid fa-arrow-up-right-from-square"></i> Open Link
+                        </a>
+                        <button class="btn-copy" (click)="copyLink(p.checkoutUrl!)" title="Copy link to clipboard">
+                          <i class="fa-solid fa-copy"></i>
+                        </button>
+                      </div>
                     }
                   </td>
                 </tr>

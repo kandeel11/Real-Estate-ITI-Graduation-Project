@@ -186,6 +186,7 @@ export const API_ENDPOINTS = {
   // ==================== OWNER PAYMENTS ====================
   OWNER_PAYMENTS: {
     GET_ALL: '/owners/me/payments',
+    GET_SCHEDULE: '/owners/me/payments/schedule',
   },
 
   // ==================== BROKER PAYMENTS ====================

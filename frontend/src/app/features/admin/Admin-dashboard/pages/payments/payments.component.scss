@@ -324,6 +324,63 @@
   &:disabled { opacity: 0.5; cursor: not-allowed; }
 }
 
+/* Actions cell layout */
+.actions-cell {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  align-items: flex-start;
+}
+
+.btn-row {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  flex-wrap: wrap;
+}
+
+/* Checkout link row (shown when a Stripe link exists) */
+.checkout-link-row {
+  display: flex;
+  align-items: center;
+  gap: 5px;
+  margin-top: 2px;
+}
+
+.checkout-link {
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+  padding: 4px 10px;
+  border-radius: 6px;
+  background: #f0fdf4;
+  color: #15803d;
+  font-size: 11px;
+  font-weight: 600;
+  text-decoration: none;
+  border: 1px solid #bbf7d0;
+  white-space: nowrap;
+  transition: background .15s;
+  &:hover { background: #dcfce7; }
+}
+
+.btn-copy {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 24px;
+  height: 24px;
+  border-radius: 6px;
+  border: 1px solid #bbf7d0;
+  background: #f0fdf4;
+  color: #15803d;
+  cursor: pointer;
+  font-size: 11px;
+  flex-shrink: 0;
+  transition: background .15s;
+  &:hover { background: #dcfce7; }
+}
+
 /* Buttons */
 .btn-outline {
   display: inline-flex;

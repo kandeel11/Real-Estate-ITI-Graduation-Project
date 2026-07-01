@@ -165,7 +165,8 @@ public sealed class PaymentController : ControllerBase
             p.Amount, p.DueDate, p.PaidAt, p.Status,
             p.PaymentMethod, p.TransactionId, p.LateFee,
             p.AiPredictedLate, p.ReceiptUrl, p.Notes,
-            p.CreatedAt, p.UpdatedAt
+            p.CreatedAt, p.UpdatedAt,
+            p.CheckoutUrl, p.CheckoutSessionId
         });
 
         return Ok(result);

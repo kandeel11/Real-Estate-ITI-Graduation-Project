@@ -145,6 +145,11 @@ export class PaymentService {
     return this.http.get<RentPayment[]>(`${this.base}${API_ENDPOINTS.OWNER_PAYMENTS.GET_ALL}`);
   }
 
+  /** Owner multi-lease schedule — GET /api/owners/me/payments/schedule */
+  getOwnerPaymentSchedules(): Observable<BrokerLeaseSchedule[]> {
+    return this.http.get<BrokerLeaseSchedule[]>(`${this.base}${API_ENDPOINTS.OWNER_PAYMENTS.GET_SCHEDULE}`);
+  }
+
   /** Role-aware shortcut — GET /api/payments/my */
   getMyPayments(): Observable<RentPayment[]> {
     return this.http.get<RentPayment[]>(`${this.base}${API_ENDPOINTS.PAYMENTS.GET_MY}`);

@@ -1,143 +1,348 @@
 <div class="op-page">
 
+  <!-- ── Header ── -->
   <div class="page-head">
     <div>
       <h1><i class="fa-solid fa-money-bill-wave"></i> Rent Payments</h1>
       <p>Incoming rent from your tenants. Waive late fees when appropriate.</p>
     </div>
-    <button class="btn-refresh" (click)="load()">
-      <i class="fa-solid fa-arrows-rotate"></i> Refresh
+    <button class="btn-refresh" (click)="reload()" [disabled]="paymentsLoading()">
+      <i class="fa-solid fa-arrows-rotate" [class.spin]="paymentsLoading()"></i> Refresh
     </button>
   </div>
 
-  @if (loading()) {
-    <div class="loading-state">
-      <i class="fa-solid fa-spinner fa-spin"></i>
-      <p>Loading payments…</p>
-    </div>
-  } @else if (error()) {
-    <div class="error-state">
-      <i class="fa-solid fa-circle-exclamation"></i>
-      <p>{{ error() }}</p>
-    </div>
-  } @else if (payments().length === 0) {
-    <div class="empty-state">
-      <i class="fa-solid fa-receipt empty-icon"></i>
-      <p>No rent payment records found yet. Payments appear here once a lease is active.</p>
-    </div>
-  } @else {
+  <!-- ── Tabs ── -->
+  <div class="tabs-bar">
+    <button class="tab" [class.tab--active]="activeTab() === 'payments'"
+      (click)="activeTab.set('payments')">
+      <i class="fa-solid fa-table-list"></i> All Payments
+    </button>
+    <button class="tab" [class.tab--active]="activeTab() === 'schedule'"
+      (click)="activeTab.set('schedule')">
+      <i class="fa-solid fa-calendar-days"></i> Schedule
+    </button>
+  </div>
 
-    <!-- ── Summary cards ── -->
-    <div class="summary-grid">
-      <div class="summary-card primary">
-        <div class="sc-icon"><i class="fa-solid fa-coins"></i></div>
-        <div>
-          <span>Total Collected</span>
-          <strong>{{ fmt(stats().totalCollected) }}</strong>
-          <small>{{ stats().paid }} paid</small>
+  <!-- ═══════════════════════ PAYMENTS TAB ═══════════════════════ -->
+  @if (activeTab() === 'payments') {
+
+    @if (paymentsLoading()) {
+      <div class="loading-state">
+        <i class="fa-solid fa-spinner fa-spin"></i>
+        <p>Loading payments…</p>
+      </div>
+    } @else if (paymentsError()) {
+      <div class="error-state">
+        <i class="fa-solid fa-circle-exclamation"></i>
+        <p>{{ paymentsError() }}</p>
+        <button class="btn-retry" (click)="loadPayments()">Retry</button>
+      </div>
+    } @else if (payments().length === 0) {
+      <div class="empty-state">
+        <i class="fa-solid fa-receipt empty-icon"></i>
+        <p>No rent payment records found yet. Payments appear here once a lease is active.</p>
+      </div>
+    } @else {
+
+      <!-- Summary cards -->
+      <div class="summary-grid">
+        <div class="summary-card primary">
+          <div class="sc-icon"><i class="fa-solid fa-coins"></i></div>
+          <div>
+            <span>Total Collected</span>
+            <strong>{{ fmt(stats().totalCollected) }}</strong>
+            <small>{{ stats().paidCount }} paid</small>
+          </div>
+        </div>
+        <div class="summary-card">
+          <div class="sc-icon amber"><i class="fa-solid fa-clock"></i></div>
+          <div>
+            <span>Pending</span>
+            <strong>{{ stats().pending }}</strong>
+          </div>
+        </div>
+        <div class="summary-card">
+          <div class="sc-icon red"><i class="fa-solid fa-triangle-exclamation"></i></div>
+          <div>
+            <span>Late / Overdue</span>
+            <strong>{{ stats().overdue }}</strong>
+            @if (stats().totalLateFees > 0) {
+              <small>+{{ fmt(stats().totalLateFees) }} fees</small>
+            }
+          </div>
+        </div>
+        <div class="summary-card">
+          <div class="sc-icon green"><i class="fa-solid fa-check-circle"></i></div>
+          <div>
+            <span>Total Records</span>
+            <strong>{{ stats().totalRecords }}</strong>
+          </div>
         </div>
       </div>
-      <div class="summary-card">
-        <div class="sc-icon amber"><i class="fa-solid fa-clock"></i></div>
-        <div>
-          <span>Pending</span>
-          <strong>{{ stats().pending }}</strong>
+
+      <!-- Property Breakdown (multi-property owners) -->
+      @if (propertyEntries().length > 1) {
+        <div class="schedule-card property-breakdown">
+          <div class="schedule-head">
+            <h3><i class="fa-solid fa-building"></i> By Property</h3>
+          </div>
+          <div class="property-grid">
+            @for (entry of propertyEntries(); track entry[0]) {
+              <div class="prop-stat">
+                <span class="prop-title">{{ entry[0] }}</span>
+                <div class="prop-badges">
+                  <span class="pb paid">{{ entry[1].paid }} paid</span>
+                  @if (entry[1].pending > 0) {
+                    <span class="pb pending">{{ entry[1].pending }} pending</span>
+                  }
+                </div>
+                <span class="prop-amount">{{ fmt(entry[1].amount) }}</span>
+              </div>
+            }
+          </div>
+        </div>
+      }
+
+      <!-- Payments table -->
+      <div class="schedule-card">
+        <div class="schedule-head">
+          <h3><i class="fa-solid fa-table-list"></i> All Payments</h3>
+          <span class="record-count">{{ payments().length }} records</span>
+        </div>
+        <div class="table-wrap">
+          <table class="data-table">
+            <thead>
+              <tr>
+                <th>Property</th>
+                <th>Tenant</th>
+                <th>Due Date</th>
+                <th>Rent Amount</th>
+                <th>Late Fee</th>
+                <th>Paid On</th>
+                <th>Status</th>
+                <th>Actions</th>
+              </tr>
+            </thead>
+            <tbody>
+              @for (p of payments(); track p.id) {
+                <tr>
+                  <td>{{ p.propertyTitle || '—' }}</td>
+                  <td>{{ p.tenantName || '—' }}</td>
+                  <td>{{ fmtDate(p.dueDate) }}</td>
+                  <td><strong>{{ fmt(p.amount) }}</strong></td>
+                  <td>
+                    @if (p.lateFee && p.lateFee > 0) {
+                      <span class="late-fee-cell">+{{ fmt(p.lateFee) }}</span>
+                    } @else {
+                      <span class="muted-cell">—</span>
+                    }
+                  </td>
+                  <td>{{ p.paidAt ? fmtDate(p.paidAt) : '—' }}</td>
+                  <td>
+                    <span class="badge" [attr.data-color]="statusColor(p.status)">
+                      @switch (p.status) {
+                        @case ('Paid')          { <i class="fa-solid fa-check"></i> }
+                        @case ('PaidExternally'){ <i class="fa-solid fa-cash-register"></i> }
+                        @case ('Pending')       { <i class="fa-solid fa-clock"></i> }
+                        @case ('Late')          { <i class="fa-solid fa-triangle-exclamation"></i> }
+                        @case ('Overdue')       { <i class="fa-solid fa-circle-exclamation"></i> }
+                        @case ('Refunded')      { <i class="fa-solid fa-rotate-left"></i> }
+                      }
+                      {{ p.status === 'PaidExternally' ? 'External' : p.status }}
+                    </span>
+                  </td>
+                  <td>
+                    @if (canWaive(p)) {
+                      <button class="btn-waive" [disabled]="waivedLoading() === p.id"
+                        (click)="waiveLateFee(p)">
+                        @if (waivedLoading() === p.id) {
+                          <i class="fa-solid fa-spinner fa-spin"></i>
+                        } @else {
+                          <i class="fa-solid fa-circle-xmark"></i>
+                        }
+                        Waive Fee
+                      </button>
+                    } @else {
+                      <span class="muted-cell">—</span>
+                    }
+                  </td>
+                </tr>
+              }
+            </tbody>
+          </table>
+        </div>
+        <div class="waive-notice">
+          <i class="fa-solid fa-circle-info"></i>
+          Waiving a late fee removes it completely and regenerates the tenant's payment link at the base rent amount.
         </div>
       </div>
-      <div class="summary-card">
-        <div class="sc-icon red"><i class="fa-solid fa-triangle-exclamation"></i></div>
-        <div>
-          <span>Late / Overdue</span>
-          <strong>{{ stats().late }}</strong>
-          @if (stats().totalLateFees > 0) {
-            <small>+{{ fmt(stats().totalLateFees) }} fees</small>
+
+    }
+  }
+
+  <!-- ═══════════════════════ SCHEDULE TAB ═══════════════════════ -->
+  @if (activeTab() === 'schedule') {
+
+    @if (scheduleLoading()) {
+      <div class="loading-state">
+        <i class="fa-solid fa-spinner fa-spin"></i>
+        <p>Loading schedules…</p>
+      </div>
+    } @else if (scheduleError()) {
+      <div class="error-state">
+        <i class="fa-solid fa-circle-exclamation"></i>
+        <p>{{ scheduleError() }}</p>
+        <button class="btn-retry" (click)="loadSchedules()">Retry</button>
+      </div>
+    } @else if (leaseSchedules().length === 0) {
+      <div class="empty-state">
+        <i class="fa-solid fa-calendar-xmark empty-icon"></i>
+        <p>No active lease schedules found. Schedules appear once a lease is confirmed and active.</p>
+      </div>
+    } @else {
+
+      <!-- Lease selector cards -->
+      <div class="lease-selector">
+        @for (ls of leaseSchedules(); track ls.leaseId) {
+          <div class="lease-card" [class.lease-card--active]="selectedLeaseId() === ls.leaseId"
+            (click)="selectLease(ls.leaseId)" role="button" tabindex="0"
+            (keydown.enter)="selectLease(ls.leaseId)">
+            <div class="lease-card__head">
+              <span class="lease-prop-title">{{ ls.propertyTitle }}</span>
+              <span class="lease-pct">{{ progressPercent(ls) }}%</span>
+            </div>
+            <div class="lease-dates">
+              <i class="fa-regular fa-calendar"></i>
+              {{ fmtDate(ls.startDate) }} → {{ fmtDate(ls.endDate) }}
+            </div>
+            <div class="lease-progress-bar">
+              <div class="lease-progress-fill" [style.width.%]="progressPercent(ls)"></div>
+            </div>
+          </div>
+        }
+      </div>
+
+      <!-- Selected lease schedule -->
+      @if (selectedLeaseSchedule(); as ls) {
+        <!-- Schedule summary cards -->
+        <div class="sched-summary">
+          <div class="sched-card sched-card--primary">
+            <i class="fa-solid fa-wallet"></i>
+            <div>
+              <span>Monthly Installment</span>
+              <strong>{{ fmt(ls.schedule.installmentAmount) }}</strong>
+              <small>{{ ls.schedule.paymentFrequency }}</small>
+            </div>
+          </div>
+          <div class="sched-card">
+            <i class="fa-solid fa-circle-check sched-icon--paid"></i>
+            <div>
+              <span>Received So Far</span>
+              <strong>{{ fmt(ls.schedule.summary.amountDueSoFar) }}</strong>
+              <small>{{ ls.schedule.summary.pastInstallments }} / {{ ls.schedule.summary.totalInstallments }} installments</small>
+            </div>
+          </div>
+          <div class="sched-card">
+            <i class="fa-solid fa-hourglass-half sched-icon--remaining"></i>
+            <div>
+              <span>Remaining</span>
+              <strong>{{ fmt(ls.schedule.summary.amountRemaining) }}</strong>
+              <small>{{ ls.schedule.summary.futureInstallments }} installments left</small>
+            </div>
+          </div>
+          <div class="sched-card">
+            <i class="fa-solid fa-coins sched-icon--total"></i>
+            <div>
+              <span>Total Rent</span>
+              <strong>{{ fmt(ls.schedule.totalRentAmount) }}</strong>
+              <small>{{ ls.schedule.durationInMonths }} months · {{ ls.schedule.paymentFrequency }}</small>
+            </div>
+          </div>
+        </div>
+
+        <!-- Progress bar -->
+        <div class="progress-card">
+          <div class="progress-head">
+            <span class="progress-label">Lease Progress</span>
+            <span class="progress-pct">{{ progressPercent(ls) }}% complete</span>
+          </div>
+          <div class="progress-track">
+            <div class="progress-fill" [style.width.%]="progressPercent(ls)"></div>
+          </div>
+          <div class="progress-dates">
+            <span>{{ fmtDate(ls.startDate) }}</span>
+            <span>{{ fmtDate(ls.endDate) }}</span>
+          </div>
+        </div>
+
+        <!-- Period table -->
+        @if (ls.schedule.currentPeriod || ls.schedule.nextPeriod) {
+          <div class="period-highlights">
+            @if (ls.schedule.currentPeriod; as cur) {
+              <div class="period-hl period-hl--current">
+                <span class="period-hl__badge">CURRENT PERIOD</span>
+                <strong class="period-hl__amount">{{ fmt(cur.amount) }}</strong>
+                <span>{{ fmtDate(cur.periodStart) }} → {{ fmtDate(cur.periodEnd) }}</span>
+                <span class="period-hl__due">Due: <strong>{{ fmtDate(cur.dueDate) }}</strong></span>
+              </div>
+            }
+            @if (ls.schedule.nextPeriod; as nxt) {
+              <div class="period-hl period-hl--next">
+                <span class="period-hl__badge">NEXT PERIOD</span>
+                <strong class="period-hl__amount">{{ fmt(nxt.amount) }}</strong>
+                <span>{{ fmtDate(nxt.periodStart) }} → {{ fmtDate(nxt.periodEnd) }}</span>
+                <span class="period-hl__due">Due: <strong>{{ fmtDate(nxt.dueDate) }}</strong></span>
+              </div>
+            }
+          </div>
+        }
+
+        <div class="schedule-card">
+          <div class="schedule-head">
+            <h3><i class="fa-solid fa-calendar-days"></i> Full Schedule</h3>
+            <span class="record-count">{{ ls.schedule.summary.totalInstallments }} installments</span>
+          </div>
+          <div class="table-wrap">
+            <table class="data-table">
+              <thead>
+                <tr>
+                  <th>#</th>
+                  <th>Period</th>
+                  <th>Due Date</th>
+                  <th>Amount</th>
+                  <th>Status</th>
+                </tr>
+              </thead>
+              <tbody>
+                @for (p of visiblePeriods(); track p.periodNumber) {
+                  <tr [class.row--current]="p.isCurrent" [class.row--past]="p.isPast">
+                    <td class="period-num">{{ p.periodNumber }}</td>
+                    <td>{{ fmtDate(p.periodStart) }} – {{ fmtDate(p.periodEnd) }}</td>
+                    <td>{{ fmtDate(p.dueDate) }}</td>
+                    <td><strong>{{ fmt(p.amount) }}</strong></td>
+                    <td>
+                      <span class="period-badge" [attr.data-color]="periodColor(p)">
+                        @if (p.isCurrent) { <i class="fa-solid fa-circle-dot"></i> }
+                        @else if (p.isPast) { <i class="fa-solid fa-check"></i> }
+                        @else if (p.isNext) { <i class="fa-solid fa-arrow-right"></i> }
+                        @else { <i class="fa-regular fa-calendar"></i> }
+                        {{ periodStatusLabel(p) }}
+                      </span>
+                    </td>
+                  </tr>
+                }
+              </tbody>
+            </table>
+          </div>
+          @if (!showAll() && ls.schedule.allPeriods.length > 6) {
+            <button class="btn-show-all" (click)="showAll.set(true)">
+              <i class="fa-solid fa-chevron-down"></i>
+              Show all {{ ls.schedule.allPeriods.length }} installments
+            </button>
           }
         </div>
-      </div>
-      <div class="summary-card">
-        <div class="sc-icon green"><i class="fa-solid fa-check-circle"></i></div>
-        <div>
-          <span>Total Records</span>
-          <strong>{{ stats().total }}</strong>
-        </div>
-      </div>
-    </div>
-
-    <!-- ── Payments table ── -->
-    <div class="schedule-card">
-      <div class="schedule-head">
-        <h3><i class="fa-solid fa-table-list"></i> All Payments</h3>
-        <span class="record-count">{{ payments().length }} records</span>
-      </div>
-      <div class="table-wrap">
-        <table class="data-table">
-          <thead>
-            <tr>
-              <th>Property</th>
-              <th>Tenant</th>
-              <th>Due Date</th>
-              <th>Rent Amount</th>
-              <th>Late Fee</th>
-              <th>Paid On</th>
-              <th>Status</th>
-              <th>Actions</th>
-            </tr>
-          </thead>
-          <tbody>
-            @for (p of payments(); track p.id) {
-              <tr>
-                <td>{{ p.propertyTitle || '—' }}</td>
-                <td>{{ p.tenantName || '—' }}</td>
-                <td>{{ fmtDate(p.dueDate) }}</td>
-                <td><strong>{{ fmt(p.amount) }}</strong></td>
-                <td>
-                  @if (p.lateFee && p.lateFee > 0) {
-                    <span class="late-fee-cell">+{{ fmt(p.lateFee) }}</span>
-                  } @else {
-                    <span class="muted-cell">—</span>
-                  }
-                </td>
-                <td>{{ p.paidAt ? fmtDate(p.paidAt) : '—' }}</td>
-                <td>
-                  <span class="badge" [attr.data-color]="statusColor(p.status)">
-                    @switch (p.status) {
-                      @case ('Paid')    { <i class="fa-solid fa-check"></i> }
-                      @case ('Pending') { <i class="fa-solid fa-clock"></i> }
-                      @case ('Late')    { <i class="fa-solid fa-triangle-exclamation"></i> }
-                      @case ('Overdue') { <i class="fa-solid fa-circle-exclamation"></i> }
-                      @case ('Refunded'){ <i class="fa-solid fa-rotate-left"></i> }
-                    }
-                    {{ p.status }}
-                  </span>
-                </td>
-                <td>
-                  @if (canWaive(p)) {
-                    <button
-                      class="btn-waive"
-                      [disabled]="waivedLoading() === p.id"
-                      (click)="waiveLateFee(p)">
-                      @if (waivedLoading() === p.id) {
-                        <i class="fa-solid fa-spinner fa-spin"></i>
-                      } @else {
-                        <i class="fa-solid fa-circle-xmark"></i>
-                      }
-                      Waive Fee
-                    </button>
-                  } @else {
-                    <span class="muted-cell">—</span>
-                  }
-                </td>
-              </tr>
-            }
-          </tbody>
-        </table>
-      </div>
-      <div class="waive-notice">
-        <i class="fa-solid fa-circle-info"></i>
-        Waiving a late fee removes it completely and regenerates the tenant's payment link at the base rent amount.
-      </div>
-    </div>
-
+      }
+    }
   }
 
 </div>
