@@ -1,0 +1,10 @@
+frontend/
+.git/
+.github/
+.vs/
+docs/
+**/bin/
+**/obj/
+**/node_modules/
+**/dist/
+*.md

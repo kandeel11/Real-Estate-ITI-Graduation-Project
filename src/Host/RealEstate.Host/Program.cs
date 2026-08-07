@@ -55,15 +55,6 @@ public class Program
         builder.Services.AddControllers();
         builder.Services.AddHttpContextAccessor();
 
-        // Allow the Angular dev server to call the API from the browser
-        builder.Services.AddCors(options =>
-        {
-            options.AddPolicy("Frontend", policy => policy
-                .WithOrigins("http://localhost:4200")
-                .AllowAnyHeader()
-                .AllowAnyMethod());
-        });
-
         builder.Services.AddEndpointsApiExplorer();
 
         builder.Services.AddSwaggerGen(options =>
@@ -197,10 +188,15 @@ public class Program
         builder.Services.AddSignalR();
 
 
+        // Allow the Angular app to call the API from the browser.
+        // Configure via Cors:AllowedOrigins (env var: Cors__AllowedOrigins__0, __1, ...)
+        var allowedOrigins = builder.Configuration.GetSection("Cors:AllowedOrigins").Get<string[]>()
+            ?? ["http://localhost:4200"];
+
         builder.Services.AddCors(options =>
         {
             options.AddPolicy("AllowAngular", policy =>
-                policy.WithOrigins("http://localhost:4200")
+                policy.WithOrigins(allowedOrigins)
                       .AllowAnyHeader()
                       .AllowAnyMethod()
                       .AllowCredentials());
