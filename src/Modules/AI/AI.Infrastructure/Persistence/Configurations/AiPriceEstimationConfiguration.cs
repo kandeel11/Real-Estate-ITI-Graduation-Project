@@ -10,7 +10,7 @@ namespace AI.Infrastructure.Persistence.Configurations
         {
             builder.ToTable("ai_price_estimations", "ai");
             builder.HasKey(x => x.Id);
-            builder.Property(x => x.Id).HasDefaultValueSql("NEWSEQUENTIALID()");
+            builder.Property(x => x.Id).HasDefaultValueSql("gen_random_uuid()");
 
             builder.Property(x => x.EstimatedPriceMin).HasPrecision(18, 2);
             builder.Property(x => x.EstimatedPriceMax).HasPrecision(18, 2);

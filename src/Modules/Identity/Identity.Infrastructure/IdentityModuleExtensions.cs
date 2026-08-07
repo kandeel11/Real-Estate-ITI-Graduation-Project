@@ -22,7 +22,7 @@ public static class IdentityModuleExtensions
         IConfiguration configuration)
     {
         services.AddDbContext<IdentityDbContext>(options =>
-            options.UseSqlServer(
+            options.UseNpgsql(
                 configuration.GetConnectionString("DefaultConnection"),
                 sql => sql.MigrationsHistoryTable("__EFMigrationsHistory", "identity")
                           .MigrationsAssembly(typeof(IdentityDbContext).Assembly.FullName)));

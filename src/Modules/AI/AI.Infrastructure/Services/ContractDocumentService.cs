@@ -12,7 +12,7 @@ namespace AI.Infrastructure.Services;
 
 public sealed class ContractDocumentService : IContractDocumentService
 {
-    private const int EmbeddingDimension = 1536;
+    private const int EmbeddingDimension = 768; // Gemini text-embedding-004 (was 1536 for Azure ada-002)
     private const int BatchSize = 100;
 
     private readonly QdrantClient _qdrant;

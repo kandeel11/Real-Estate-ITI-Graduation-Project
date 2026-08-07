@@ -11,7 +11,7 @@ namespace AI.Infrastructure.Persistence.Configurations
             builder.ToTable("ownership_verification_requests", "ai");
 
             builder.HasKey(r => r.Id);
-            builder.Property(x => x.Id).HasDefaultValueSql("NEWSEQUENTIALID()");
+            builder.Property(x => x.Id).HasDefaultValueSql("gen_random_uuid()");
 
             builder.Property(x => x.Status)
             .HasConversion<string>()

@@ -1,11 +1,10 @@
-using Azure.Storage.Blobs;
-using Azure.Storage.Blobs.Models;
 using Identity.Application.Interfaces;
 using Identity.Domain.Entities;
 using Identity.Domain.Enums;
 using Identity.Infrastructure.Persistence;
 using MediatR;
 using Microsoft.EntityFrameworkCore;
+using Property.Application.Interfaces;
 using Property.Domain.Entities;
 using Property.Domain.Enums;
 using Property.Infrastructure.Persistence.Contexts;
@@ -29,8 +28,6 @@ public static class PropertyDataSeed
         "hassan.ramzy@seeddata.com",
     ];
 
-    private const string BlobContainer = "property-media";
-
     // Returns true when at least one seed user is already in the DB.
     public static Task<bool> IsSeededAsync(IdentityDbContext identityDb)
         => identityDb.Users.AnyAsync(u => SeedEmails.Contains(u.Email));
@@ -40,7 +37,7 @@ public static class PropertyDataSeed
         PropertyDbContext propertyDb,
         IdentityDbContext identityDb,
         IPasswordHasher hasher,
-        BlobServiceClient? blobServiceClient,
+        IMediaStorageService? mediaStorage,
         string? webRootPath)
     {
         // Run only once — if any seed user already exists, the DB is seeded; skip entirely.
@@ -105,7 +102,7 @@ public static class PropertyDataSeed
         // ════════════════════════════════════════════════════════════════════════
 
         // P1 — Owner, Zamalek, 3BR, 15,000/mo — FEATURED
-        await AddPropertyAsync(propertyDb, blobServiceClient, webRootPath, propertyIndex: 1,
+        await AddPropertyAsync(propertyDb, mediaStorage, webRootPath, propertyIndex: 1,
             ownerCairo.Id, null, null,
             "Furnished Apartment for Rent in Zamalek", "شقة مفروشة للإيجار في الزمالك",
             "Stunning fully-furnished 3-bedroom apartment on the 8th floor in prestigious Zamalek. Panoramic Nile views, central AC, 24-hour security, and underground parking. Available immediately.",
@@ -116,7 +113,7 @@ public static class PropertyDataSeed
             ListingSource.Owner, "Ahmed Hassan Khalil", featured: true);
 
         // P2 — Owner, New Cairo, 4BR, 20,000/mo
-        await AddPropertyAsync(propertyDb, blobServiceClient, webRootPath, propertyIndex: 2,
+        await AddPropertyAsync(propertyDb, mediaStorage, webRootPath, propertyIndex: 2,
             ownerCairo.Id, null, null,
             "Spacious Apartment for Rent in New Cairo", "شقة واسعة للإيجار في القاهرة الجديدة",
             "Premium 4-bedroom apartment in a prestigious New Cairo compound with gym, pool, and 24-hr security. Italian tiles and smart home automation throughout.",
@@ -127,7 +124,7 @@ public static class PropertyDataSeed
             ListingSource.Owner, "Ahmed Hassan Khalil", featured: false);
 
         // P3 — Company, Heliopolis, 2BR, 10,000/mo
-        await AddPropertyAsync(propertyDb, blobServiceClient, webRootPath, propertyIndex: 3,
+        await AddPropertyAsync(propertyDb, mediaStorage, webRootPath, propertyIndex: 3,
             brokerUser1.Id, companyCairo.Id, brokerUser1.Id,
             "Modern Apartment for Rent in Heliopolis", "شقة عصرية للإيجار في مصر الجديدة",
             "Well-maintained 2-bedroom apartment in Heliopolis. Open-plan living and dining, modern kitchen, balcony. Close to City Stars Mall and metro station.",
@@ -138,7 +135,7 @@ public static class PropertyDataSeed
             ListingSource.Company, "Cairo Elite Properties", featured: false);
 
         // P4 — Company, Maadi, 3BR, 14,000/mo — FEATURED
-        await AddPropertyAsync(propertyDb, blobServiceClient, webRootPath, propertyIndex: 4,
+        await AddPropertyAsync(propertyDb, mediaStorage, webRootPath, propertyIndex: 4,
             brokerUser2.Id, companyCairo.Id, brokerUser2.Id,
             "Bright Apartment for Rent in Maadi", "شقة مشرقة للإيجار في المعادي",
             "Charming 3-bedroom apartment in a lush garden building in Maadi. High ceilings, parquet floors, large balcony. Walking distance to Maadi Corniche and international schools.",
@@ -153,7 +150,7 @@ public static class PropertyDataSeed
         // ════════════════════════════════════════════════════════════════════════
 
         // P5 — Owner, Montaza, 3BR, 13,000/mo — FEATURED
-        await AddPropertyAsync(propertyDb, blobServiceClient, webRootPath, propertyIndex: 5,
+        await AddPropertyAsync(propertyDb, mediaStorage, webRootPath, propertyIndex: 5,
             ownerAlex.Id, null, null,
             "Sea View Apartment for Rent in Montaza", "شقة بإطلالة بحرية للإيجار في المنتزه",
             "Stunning 3-bedroom apartment with direct Mediterranean sea views in Montaza. Large wrap-around balcony, 24-hr doorman, and dedicated parking space.",
@@ -164,7 +161,7 @@ public static class PropertyDataSeed
             ListingSource.Owner, "Mona Ibrahim Saad", featured: true);
 
         // P6 — Owner, Stanley, 2BR, 11,000/mo
-        await AddPropertyAsync(propertyDb, blobServiceClient, webRootPath, propertyIndex: 6,
+        await AddPropertyAsync(propertyDb, mediaStorage, webRootPath, propertyIndex: 6,
             ownerAlex.Id, null, null,
             "Cozy Apartment for Rent in Stanley", "شقة مريحة للإيجار في ستانلي",
             "Neat 2-bedroom apartment steps from Stanley Beach with partial sea view. Newly painted, granite kitchen counters, and security intercom. Quiet residential street.",
@@ -175,7 +172,7 @@ public static class PropertyDataSeed
             ListingSource.Owner, "Mona Ibrahim Saad", featured: false);
 
         // P7 — Company, Smouha, 2BR, 10,500/mo
-        await AddPropertyAsync(propertyDb, blobServiceClient, webRootPath, propertyIndex: 7,
+        await AddPropertyAsync(propertyDb, mediaStorage, webRootPath, propertyIndex: 7,
             brokerUser3.Id, companyAlex.Id, brokerUser3.Id,
             "Modern Apartment for Rent in Smouha", "شقة عصرية للإيجار في سموحة",
             "Well-designed 2-bedroom apartment in the vibrant Smouha district. Modern fixtures, split ACs in all rooms, and a covered balcony. Near Sporting Club.",
@@ -186,7 +183,7 @@ public static class PropertyDataSeed
             ListingSource.Company, "Alex Premier Realty", featured: false);
 
         // P8 — Company, Gleem, 3BR, 17,000/mo
-        await AddPropertyAsync(propertyDb, blobServiceClient, webRootPath, propertyIndex: 8,
+        await AddPropertyAsync(propertyDb, mediaStorage, webRootPath, propertyIndex: 8,
             brokerUser3.Id, companyAlex.Id, brokerUser3.Id,
             "Luxury Apartment for Rent in Gleem", "شقة فاخرة للإيجار في جليم",
             "Prestigious 3-bedroom apartment in the upscale Gleem district. European-style kitchen, en-suite master bedroom, two balconies with sea glimpse, 24-hr concierge.",
@@ -201,7 +198,7 @@ public static class PropertyDataSeed
         // ════════════════════════════════════════════════════════════════════════
 
         // P9 — Owner, El Geish, 3BR, 12,000/mo
-        await AddPropertyAsync(propertyDb, blobServiceClient, webRootPath, propertyIndex: 9,
+        await AddPropertyAsync(propertyDb, mediaStorage, webRootPath, propertyIndex: 9,
             ownerTanta.Id, null, null,
             "Apartment for Rent in Central Tanta", "شقة للإيجار في وسط طنطا",
             "Comfortable 3-bedroom apartment in central Tanta on a high floor. Split ACs in all rooms, modern kitchen, building intercom. Walking distance to Tanta University.",
@@ -212,7 +209,7 @@ public static class PropertyDataSeed
             ListingSource.Owner, "Youssef Gamal Nasser", featured: false);
 
         // P10 — Owner, El Motasem, 3BR, 13,500/mo
-        await AddPropertyAsync(propertyDb, blobServiceClient, webRootPath, propertyIndex: 10,
+        await AddPropertyAsync(propertyDb, mediaStorage, webRootPath, propertyIndex: 10,
             ownerTanta.Id, null, null,
             "Bright Apartment for Rent in Tanta", "شقة مشرقة للإيجار في طنطا",
             "Spacious 3-bedroom apartment in a new building in Tanta. High-quality finishes, large kitchen with dining area, and a sunny balcony. Quiet residential area.",
@@ -223,7 +220,7 @@ public static class PropertyDataSeed
             ListingSource.Owner, "Youssef Gamal Nasser", featured: false);
 
         // P11 — Company, City Center, 2BR, 10,000/mo
-        await AddPropertyAsync(propertyDb, blobServiceClient, webRootPath, propertyIndex: 11,
+        await AddPropertyAsync(propertyDb, mediaStorage, webRootPath, propertyIndex: 11,
             brokerUser1.Id, companyCairo.Id, brokerUser1.Id,
             "Affordable Apartment for Rent in Downtown Tanta", "شقة بسعر مناسب للإيجار في وسط طنطا",
             "Good-value 2-bedroom apartment in Tanta's commercial core. Building security, close to major banks, government offices, and public transport. Ideal for working professionals.",
@@ -234,7 +231,7 @@ public static class PropertyDataSeed
             ListingSource.Company, "Cairo Elite Properties", featured: false);
 
         // P12 — Company, El Geish, 3BR, 14,000/mo
-        await AddPropertyAsync(propertyDb, blobServiceClient, webRootPath, propertyIndex: 12,
+        await AddPropertyAsync(propertyDb, mediaStorage, webRootPath, propertyIndex: 12,
             brokerUser2.Id, companyCairo.Id, brokerUser2.Id,
             "Semi-Furnished Apartment for Rent in Tanta", "شقة نصف مفروشة للإيجار في طنطا",
             "Modern 3-bedroom semi-furnished apartment in a recently completed tower. Italian-finish tiles, fitted kitchen with appliances, ACs in all rooms, covered parking.",
@@ -332,7 +329,7 @@ public static class PropertyDataSeed
     // ── Create one property and upload its 5 images ───────────────────────────
     private static async Task AddPropertyAsync(
         PropertyDbContext db,
-        BlobServiceClient? blobClient,
+        IMediaStorageService? blobClient,
         string? webRootPath,
         int propertyIndex,
         Guid ownerId,
@@ -393,15 +390,15 @@ public static class PropertyDataSeed
         await db.SaveChangesAsync();
     }
 
-    // ── Upload one local image file to Azure Blob Storage ────────────────────
+    // ── Upload one local image file to blob storage ──────────────────────────
     private static async Task<string> UploadLocalImageAsync(
-        BlobServiceClient? blobClient,
+        IMediaStorageService? blobClient,
         Guid propertyId,
         string localFilePath,
         int propertyIndex,
         int imageNumber)
     {
-        // Fallback static-file URL (served from wwwroot if Azure is unavailable)
+        // Fallback static-file URL (served from wwwroot if blob storage is unavailable)
         var staticUrl = $"/ImageSeed/Property{propertyIndex}/Prop{propertyIndex}.{imageNumber}.jpg";
 
         if (!File.Exists(localFilePath))
@@ -413,25 +410,14 @@ public static class PropertyDataSeed
         try
         {
             var imageBytes = await File.ReadAllBytesAsync(localFilePath);
-
-            var containerClient = blobClient.GetBlobContainerClient(BlobContainer);
-            await containerClient.CreateIfNotExistsAsync(PublicAccessType.Blob);
-
-            // blob name: {propertyId}/{imageNumber:D2}-photo.jpg
-            var blobName = $"{propertyId}/{imageNumber:D2}-photo.jpg";
-            var blobRef  = containerClient.GetBlobClient(blobName);
+            var fileName = $"{imageNumber:D2}-photo.jpg";
 
             using var stream = new MemoryStream(imageBytes);
-            await blobRef.UploadAsync(stream, new BlobUploadOptions
-            {
-                HttpHeaders = new BlobHttpHeaders { ContentType = "image/jpeg" }
-            });
-
-            return blobRef.Uri.ToString(); // full Azure CDN URL
+            return await blobClient.UploadAsync(propertyId, stream, fileName, "image/jpeg");
         }
         catch
         {
-            return staticUrl; // Azure unreachable — serve from wwwroot
+            return staticUrl; // blob storage unreachable — serve from wwwroot
         }
     }
 

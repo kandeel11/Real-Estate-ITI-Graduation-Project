@@ -12,7 +12,7 @@ public class MessageConfiguration : IEntityTypeConfiguration<Message>
         b.HasKey(x => x.Id);
         b.Property(x => x.Id).ValueGeneratedNever();
         b.Property(x => x.SenderId).IsRequired();
-        b.Property(x => x.Content).HasColumnType("nvarchar(max)").IsRequired();
+        b.Property(x => x.Content).HasColumnType("text").IsRequired();
         b.Property(x => x.IsRead).HasDefaultValue(false);
         b.Property(x => x.CreatedAt).IsRequired();
         b.HasQueryFilter(x => x.DeletedAt == null);

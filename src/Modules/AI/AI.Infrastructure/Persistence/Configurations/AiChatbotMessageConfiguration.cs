@@ -21,7 +21,7 @@ public sealed class AiChatbotMessageConfiguration
 
         b.Property(x => x.Content)
          .IsRequired()
-         .HasColumnType("nvarchar(max)");
+         .HasColumnType("text");
 
         b.HasIndex(x => x.SessionId)
          .HasDatabaseName("IX_AiChatbotMessages_SessionId");

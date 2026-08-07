@@ -16,7 +16,7 @@ public class LeadConfiguration : IEntityTypeConfiguration<Lead>
         b.Property(x => x.TenantId).IsRequired();
         b.Property(x => x.Status).HasConversion<string>().HasMaxLength(50).IsRequired();
         b.Property(x => x.DealValue).HasColumnType("decimal(12,2)");
-        b.Property(x => x.Notes).HasColumnType("nvarchar(max)");
+        b.Property(x => x.Notes).HasColumnType("text");
         b.Property(x => x.CreatedAt).IsRequired();
         b.Property(x => x.UpdatedAt).IsRequired();
         b.HasIndex(x => x.Status);

@@ -17,7 +17,7 @@ public class WalletBalanceConfiguration : IEntityTypeConfiguration<WalletBalance
         builder.HasIndex(w => w.OwnerId).IsUnique();
 
         builder.Property(w => w.CompanyId);
-        builder.HasIndex(w => w.CompanyId).IsUnique().HasFilter("[CompanyId] IS NOT NULL");
+        builder.HasIndex(w => w.CompanyId).IsUnique().HasFilter("\"CompanyId\" IS NOT NULL");
 
         builder.Property(w => w.Balance).HasColumnType("decimal(18,4)").IsRequired();
         builder.Property(w => w.Currency).HasMaxLength(3).IsRequired();

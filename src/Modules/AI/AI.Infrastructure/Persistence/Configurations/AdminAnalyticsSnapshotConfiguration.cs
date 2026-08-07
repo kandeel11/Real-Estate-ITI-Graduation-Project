@@ -10,7 +10,7 @@ namespace AI.Infrastructure.Persistence.Configurations
         {
             builder.ToTable("admin_analytics_snapshots", "ai");
             builder.HasKey(x => x.Id);
-            builder.Property(x => x.Id).HasDefaultValueSql("NEWSEQUENTIALID()");
+            builder.Property(x => x.Id).HasDefaultValueSql("gen_random_uuid()");
             builder.Property(x => x.TotalRevenue).HasPrecision(18, 2);
             //  JSON
             builder.Property(x => x.MostActiveCities).IsRequired();

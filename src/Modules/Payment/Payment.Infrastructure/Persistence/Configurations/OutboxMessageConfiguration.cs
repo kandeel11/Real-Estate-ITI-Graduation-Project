@@ -17,7 +17,7 @@ public sealed class OutboxMessageConfiguration : IEntityTypeConfiguration<Outbox
         builder.Property(x => x.Id).ValueGeneratedNever();
 
         builder.Property(x => x.Type).HasMaxLength(200).IsRequired();
-        builder.Property(x => x.Content).HasColumnType("nvarchar(max)").IsRequired();
+        builder.Property(x => x.Content).HasColumnType("text").IsRequired();
         builder.Property(x => x.OccurredOn).IsRequired();
         builder.Property(x => x.ProcessedOn).IsRequired(false);
         builder.Property(x => x.Error).HasMaxLength(2000).IsRequired(false);
@@ -26,6 +26,6 @@ public sealed class OutboxMessageConfiguration : IEntityTypeConfiguration<Outbox
         // الـ OutboxPublisherJob بيفلتر عليه كل 10 ثواني
         builder.HasIndex(x => x.ProcessedOn)
             .HasDatabaseName("IX_outbox_messages_unprocessed")
-            .HasFilter("[ProcessedOn] IS NULL");
+            .HasFilter("\"ProcessedOn\" IS NULL");
     }
 }

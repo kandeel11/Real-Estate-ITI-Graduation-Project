@@ -15,7 +15,7 @@ public static class WalletModuleExtensions
         IConfiguration configuration)
     {
         services.AddDbContext<WalletDbContext>(options =>
-            options.UseSqlServer(
+            options.UseNpgsql(
                 configuration.GetConnectionString("DefaultConnection"),
                 sql => sql.MigrationsHistoryTable("__EFMigrationsHistory", "wallet")
                           .MigrationsAssembly(typeof(WalletDbContext).Assembly.FullName)));

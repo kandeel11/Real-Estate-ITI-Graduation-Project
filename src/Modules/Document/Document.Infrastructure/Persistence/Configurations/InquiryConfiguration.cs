@@ -14,7 +14,7 @@ public class InquiryConfiguration : IEntityTypeConfiguration<Domain.Entities.Inq
         b.Property(x => x.PropertyId).IsRequired();
         b.Property(x => x.TenantId).IsRequired();
         b.Property(x => x.OwnerId).IsRequired();
-        b.Property(x => x.Message).HasColumnType("nvarchar(max)").IsRequired();
+        b.Property(x => x.Message).HasColumnType("text").IsRequired();
         b.Property(x => x.Status).HasConversion<string>().HasMaxLength(50).IsRequired();
         b.Property(x => x.CreatedAt).IsRequired();
         b.Property(x => x.UpdatedAt).IsRequired();

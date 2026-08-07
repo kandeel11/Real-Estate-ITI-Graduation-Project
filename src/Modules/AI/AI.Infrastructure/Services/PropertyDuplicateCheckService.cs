@@ -31,7 +31,7 @@ public sealed class PropertyDuplicateCheckService : IPropertyDuplicateCheckServi
 
     // ── Configuration ─────────────────────────────────────────────────────────
     private const string CollectionName = "properties";
-    private const int EmbeddingDimension = 1536;
+    private const int EmbeddingDimension = 768; // Gemini text-embedding-004 (was 1536 for Azure ada-002)
 
     // Adjusted thresholds based on best practices for embeddings
     private const double SimilarityThreshold = 0.82;   // Min score to fetch from Qdrant

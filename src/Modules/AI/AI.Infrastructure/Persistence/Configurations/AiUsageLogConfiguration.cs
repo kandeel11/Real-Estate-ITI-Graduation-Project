@@ -10,7 +10,7 @@ namespace AI.Infrastructure.Persistence.Configurations
         {
             builder.ToTable("ai_usage_logs", "ai");
             builder.HasKey(x => x.Id);
-            builder.Property(x => x.Id).HasDefaultValueSql("NEWSEQUENTIALID()");
+            builder.Property(x => x.Id).HasDefaultValueSql("gen_random_uuid()");
 
             builder.Property(x => x.UserId).IsRequired();
             builder.Property(x => x.CompanyId).IsRequired(false);

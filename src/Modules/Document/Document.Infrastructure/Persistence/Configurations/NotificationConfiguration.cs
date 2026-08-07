@@ -13,7 +13,7 @@ public class NotificationConfiguration : IEntityTypeConfiguration<Document.Domai
         b.Property(x => x.UserId).IsRequired();
         b.Property(x => x.Type).HasConversion<string>().HasMaxLength(100).IsRequired();
         b.Property(x => x.Title).HasMaxLength(255).IsRequired();
-        b.Property(x => x.Body).HasColumnType("nvarchar(max)").IsRequired();
+        b.Property(x => x.Body).HasColumnType("text").IsRequired();
         b.Property(x => x.RelatedEntityType).HasMaxLength(100);
         b.Property(x => x.IsRead).HasDefaultValue(false);
         b.Property(x => x.CreatedAt).IsRequired();

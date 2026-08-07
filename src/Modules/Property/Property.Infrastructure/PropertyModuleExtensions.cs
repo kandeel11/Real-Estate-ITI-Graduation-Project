@@ -1,5 +1,7 @@
+using AI.Application.Common.Options;
 using AI.Application.Interfaces;
-using Azure.Storage.Blobs;
+using Amazon.Runtime;
+using Amazon.S3;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
@@ -29,7 +31,7 @@ public static class PropertyModuleExtensions
 
         services.AddDbContext<PropertyDbContext>((sp, options) =>
             options
-                .UseSqlServer(
+                .UseNpgsql(
                     configuration.GetConnectionString("DefaultConnection"),
                     sql => sql.MigrationsAssembly(typeof(PropertyDbContext).Assembly.FullName))
                 .AddInterceptors(sp.GetRequiredService<DispatchDomainEventsInterceptor>()));
@@ -39,11 +41,26 @@ public static class PropertyModuleExtensions
         services.AddScoped<IPropertyAnalyticsRepository, PropertyAnalyticsRepository>();
         services.AddScoped<IPropertyAnalyticsService, PropertyAnalyticsService>();
 
-        var azureBlobConnectionString = configuration.GetConnectionString("AzureBlobStorage");
-        if (!string.IsNullOrEmpty(azureBlobConnectionString))
+        services.AddOptions<R2Options>().BindConfiguration(R2Options.SectionName);
+
+        var r2Endpoint = configuration["R2:Endpoint"];
+        if (!string.IsNullOrEmpty(r2Endpoint))
         {
-            services.AddSingleton(new BlobServiceClient(azureBlobConnectionString));
-            services.AddScoped<IMediaStorageService, AzureBlobMediaService>();
+            services.AddSingleton<IAmazonS3>(sp =>
+            {
+                var r2 = sp.GetRequiredService<Microsoft.Extensions.Options.IOptions<R2Options>>().Value;
+                return new AmazonS3Client(
+                    new BasicAWSCredentials(r2.AccessKeyId, r2.SecretAccessKey),
+                    new AmazonS3Config
+                    {
+                        ServiceURL = r2.Endpoint,
+                        ForcePathStyle = true,
+                        AuthenticationRegion = r2.Region,
+                        RequestChecksumCalculation = RequestChecksumCalculation.WHEN_REQUIRED,
+                        ResponseChecksumValidation = ResponseChecksumValidation.WHEN_REQUIRED
+                    });
+            });
+            services.AddScoped<IMediaStorageService, R2MediaService>();
         }
         else
         {

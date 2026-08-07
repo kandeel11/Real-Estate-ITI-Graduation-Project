@@ -16,7 +16,7 @@ public sealed class AiSearchQueryConfiguration
 
         b.Property(x => x.RawQuery).IsRequired().HasMaxLength(1000);
         b.Property(x => x.Language).IsRequired().HasMaxLength(10);
-        b.Property(x => x.ParsedFilters).IsRequired().HasColumnType("nvarchar(Max)");
+        b.Property(x => x.ParsedFilters).IsRequired().HasColumnType("text");
         b.Property(x => x.ParsingConfidence).HasPrecision(5, 4);
 
         b.HasIndex(x => x.UserId).HasDatabaseName("ix_ai_search_queries_user");

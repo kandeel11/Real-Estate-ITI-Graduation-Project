@@ -28,13 +28,13 @@ public static class DependencyInjection
         this IServiceCollection services,
         IConfiguration configuration)
     {
-        services.AddOptions<AzureBlobOptions>()
-                .BindConfiguration(AzureBlobOptions.SectionName)
+        services.AddOptions<R2Options>()
+                .BindConfiguration(R2Options.SectionName)
                 .ValidateDataAnnotations()
                 .ValidateOnStart();
 
-        // ✅ Registered as Singleton — BlobContainerClient is thread-safe
-        services.AddSingleton<IDocumentStorageService, AzureBlobDocumentStorageService>();
+        // ✅ Registered as Singleton — the S3 client is thread-safe
+        services.AddSingleton<IDocumentStorageService, R2DocumentStorageService>();
 
         return services;
     }
@@ -50,7 +50,7 @@ public static class DependencyInjection
         services.AddDbContext<AiDbContext>((sp, options) =>
         {
             var interceptor = sp.GetRequiredService<AuditEntitiesInterceptor>();
-            options.UseSqlServer(connectionString).AddInterceptors(interceptor);
+            options.UseNpgsql(connectionString).AddInterceptors(interceptor);
         });
         services
     .AddStorageServices(configuration);
@@ -65,44 +65,21 @@ public static class DependencyInjection
            ;
 
         // ====================================================================
-        // 1. Register Azure OpenAI Embeddings (text-embedding-ada-002)
-        //    CHANGED: was OpenAI "text-embedding-3-small" — OpenAI quota ended
+        // 1. Register Gemini Embeddings (text-embedding-004)
+        //    CHANGED: was Azure OpenAI — Azure subscription got disabled
         // ====================================================================
+        services.AddHttpClient(nameof(GeminiTextEmbeddingGenerationService));
         services.AddSingleton<ITextEmbeddingGenerationService>(sp =>
         {
             var aiSettings = sp.GetRequiredService<IOptions<AiOptions>>().Value;
+            var http = sp.GetRequiredService<IHttpClientFactory>().CreateClient(nameof(GeminiTextEmbeddingGenerationService));
 
-            // Graceful degradation: when Azure OpenAI embeddings aren't configured in this
-            // environment, the endpoint is empty and `new Uri("")` would throw a
-            // UriFormatException — which breaks DI for EVERY consumer of this singleton,
-            // including the LeaseUploadedEvent handler graph (so lease uploads 500). Fall
-            // back to syntactically-valid placeholders so construction succeeds; embeddings
-            // (RAG/chatbot search) simply stay inert until real values are configured, while
-            // lease extraction and the rest of the app keep working.
-            var endpoint = aiSettings.AzureEmbeddingEndpoint;
-            if (string.IsNullOrWhiteSpace(endpoint) || !Uri.IsWellFormedUriString(endpoint, UriKind.Absolute))
-                endpoint = "https://embeddings-not-configured.invalid/";
-
-            var deployment = string.IsNullOrWhiteSpace(aiSettings.AzureEmbeddingDeploymentName)
-                ? "not-configured"
-                : aiSettings.AzureEmbeddingDeploymentName;
-
-            var apiKey = string.IsNullOrWhiteSpace(aiSettings.AzureEmbeddingApiKey)
-                ? "not-configured"
-                : aiSettings.AzureEmbeddingApiKey;
-
-            // CHANGED: Azure embedding — replaced OpenAITextEmbeddingGenerationService
-            return new Microsoft.SemanticKernel.Connectors.AzureOpenAI.AzureOpenAITextEmbeddingGenerationService(
-                deploymentName: deployment,
-                endpoint: endpoint,
-                apiKey: apiKey
-            );
-
-            // OLD (OpenAI — quota ended):
-            // return new Microsoft.SemanticKernel.Connectors.OpenAI.OpenAITextEmbeddingGenerationService(
-            //     aiSettings.EmbeddingModelVersion,
-            //     aiSettings.OpenAiApiKey
-            // );
+            // Graceful degradation: an empty API key just returns empty embeddings —
+            // RAG/chatbot search stays inert until configured, everything else keeps working.
+            return new GeminiTextEmbeddingGenerationService(
+                http,
+                aiSettings.GeminiApiKey,
+                aiSettings.GeminiEmbeddingModel);
         });
 
         // ====================================================================
@@ -111,7 +88,7 @@ public static class DependencyInjection
         services.AddScoped<PropertySearchPlugin>();
         services.AddScoped<ContractRetrievalPlugin>();
         services.AddScoped<IContractDocumentService, ContractDocumentService>();
-        services.AddScoped<IBlobStorage,AzureBlobStorage>();
+        services.AddScoped<IBlobStorage, R2BlobStorage>();
         //services.AddScoped<IOwnershipAiService, OwnershipAiService>();
 
         // ====================================================================
@@ -163,11 +140,8 @@ public static class DependencyInjection
             return kernel.GetRequiredService<IChatCompletionService>();
         });
 
-        services.AddOptions<AzureDocumentIntelligenceOptions>()
-                .BindConfiguration(AzureDocumentIntelligenceOptions.SectionName)
-                .ValidateDataAnnotations();
-
-        services.AddSingleton<IDocumentExtractor, AzureDocumentIntelligenceExtractor>();
+        services.AddHttpClient(nameof(GeminiDocumentExtractor));
+        services.AddSingleton<IDocumentExtractor, GeminiDocumentExtractor>();
         services.AddSingleton<ISessionStore, InMemorySessionStore>();
         services.AddScoped<ILeaseExtractionService, LeaseExtractionService>();
 
@@ -204,7 +178,8 @@ public static class DependencyInjection
                 .BindConfiguration(VerificationOptions.SectionName)
                 .ValidateDataAnnotations();
 
-        services.AddScoped<IOwnershipAiService, AzureDocumentIntelligenceOwnershipAiService>();
+        services.AddHttpClient(nameof(GeminiOwnershipAiService));
+        services.AddScoped<IOwnershipAiService, GeminiOwnershipAiService>();
         services.AddScoped<IOwnershipVerifyRepository, OwnershipVerifyRepository>();
         //services.AddScoped<IDocumentStorageService, InMemoryDocumentStorageService>();
 

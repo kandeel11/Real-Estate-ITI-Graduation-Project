@@ -16,11 +16,11 @@ public static class DocumentModule
         this IServiceCollection services, IConfiguration config)
     {
         services.AddDbContext<DocumentDbContext>(options =>
-            options.UseSqlServer(config.GetConnectionString("DefaultConnection")));
+            options.UseNpgsql(config.GetConnectionString("DefaultConnection")));
 
         // Register interfaces
         services.AddScoped<IDocumentDbContext>(sp => sp.GetRequiredService<DocumentDbContext>());
-        services.AddScoped<IAzureBlobService, AzureBlobService>();
+        services.AddScoped<IAzureBlobService, R2BlobService>();
         services.AddScoped<IInquiryRepository, InquiryRepository>();
         services.AddScoped<IInquiryStatsRepository, InquiryStatsRepository>();
         services.AddScoped<IRatingStatsRepository, RatingStatsRepository>();

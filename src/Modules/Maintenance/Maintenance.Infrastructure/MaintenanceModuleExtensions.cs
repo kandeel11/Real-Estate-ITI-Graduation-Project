@@ -18,7 +18,7 @@ public static class MaintenanceModuleExtensions
     {
         // DbContext
         services.AddDbContext<MaintenanceDbContext>(options =>
-            options.UseSqlServer(
+            options.UseNpgsql(
                 configuration.GetConnectionString("DefaultConnection"),
                 sql => sql.MigrationsAssembly(typeof(MaintenanceDbContext).Assembly.FullName)));
 
@@ -28,11 +28,9 @@ public static class MaintenanceModuleExtensions
         services.AddScoped<IVendorAssignmentRepository, VendorAssignmentRepository>();
         services.AddScoped<IMaintenancePaymentRepository, MaintenancePaymentRepository>();
 
-        // Azure Blob Storage — reads ConnectionString from User Secrets,
-        // ContainerName from appsettings.json
-        //services.Configure<AzureStorageSettings>(configuration.GetSection("AzureStorage"));
-        services.Configure<AzureStorageSettings>(configuration.GetSection("AzureBlob"));
-        services.AddScoped<IFileStorageService, AzureBlobFileStorageService>();
+        // R2 (Cloudflare) object storage — credentials from User Secrets / env vars
+        services.Configure<R2StorageSettings>(configuration.GetSection("R2"));
+        services.AddScoped<IFileStorageService, R2FileStorageService>();
 
         // Other services
         services.AddScoped<IAutoVendorAssignmentService, AutoVendorAssignmentService>();

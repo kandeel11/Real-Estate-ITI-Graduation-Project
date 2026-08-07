@@ -13,7 +13,7 @@ public class RatingConfiguration : IEntityTypeConfiguration<Rating>
         b.Property(x => x.Id).ValueGeneratedNever();
         b.Property(x => x.ReviewerId).IsRequired();
         b.Property(x => x.RatingValue).IsRequired();
-        b.Property(x => x.ReviewText).HasColumnType("nvarchar(max)");
+        b.Property(x => x.ReviewText).HasColumnType("text");
         b.Property(x => x.ModerationStatus).HasConversion<string>().HasMaxLength(50).IsRequired();
         b.Property(x => x.CreatedAt).IsRequired();
         b.Property(x => x.UpdatedAt).IsRequired();

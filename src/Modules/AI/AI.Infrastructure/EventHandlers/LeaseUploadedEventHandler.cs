@@ -52,35 +52,22 @@ public sealed class LeaseUploadedEventHandler
 
         try
         {
-            //var uri = new Uri(notification.ContractFileUrl);
-            //var blobUriBuilder = new Azure.Storage.Blobs.BlobUriBuilder(uri);
-
-            // ده هيطلعلك اسم الملف بس (مثلاً: file.pdf أو leases/file.pdf)
-            //string cleanBlobName = blobUriBuilder.BlobName;
-
-            //// 2. ابعت الاسم النظيف لدالة التحميل
-            //var pdfBytes = await _storage.DownloadAsync(
-            //    cleanBlobName, cancellationToken);
             string cleanBlobName;
 
             // Safely check if the incoming string is an absolute URI
             if (Uri.TryCreate(notification.ContractFileUrl, UriKind.Absolute, out Uri uri))
             {
-                // It's a full URL (e.g., https://...), extract the blob name safely
-                var blobUriBuilder = new Azure.Storage.Blobs.BlobUriBuilder(uri);
-                cleanBlobName = blobUriBuilder.BlobName;
+                // Full path-style R2/S3 URL: /{bucket}/{key...} — skip "/" and "{bucket}/" segments.
+                cleanBlobName = Uri.UnescapeDataString(string.Concat(uri.Segments.Skip(2)));
             }
             else
             {
-                // It's already a file name or relative path (e.g., "file.pdf" or "leases/file.pdf")
+                // It's already an object key (e.g., "file.pdf" or "leases/file.pdf")
                 cleanBlobName = notification.ContractFileUrl;
             }
 
-            // Pass the clean blob name to the storage service
+            // Pass the clean key to the storage service
             var pdfBytes = await _storage.DownloadAsync(cleanBlobName, cancellationToken);
-            // ── 2. Download PDF from Azure Blob ───────────────────────────────
-            //var pdfBytes = await _storage.DownloadAsync(
-            //    notification.ContractFileUrl, cancellationToken);
 
             _logger.LogInformation(
                 "Downloaded PDF for lease {LeaseId} — {Size} bytes",

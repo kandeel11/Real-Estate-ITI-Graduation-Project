@@ -32,7 +32,6 @@ using Subscription.Infrastructure.Persistence;
 using Subscription.Infrastructure.Seed;
 using Wallet.Infrastructure;
 using Wallet.Infrastructure.Persistence;
-using Azure.Storage.Blobs;
 using System.IdentityModel.Tokens.Jwt;
 using System.Text;
 using MaintenanceCompanies.Infrastructure;
@@ -227,7 +226,7 @@ public class Program
             var hasher = scope.ServiceProvider.GetRequiredService<Identity.Application.Interfaces.IPasswordHasher>();
             await AdminSeed.SeedAsync(identityDb, hasher);
 
-            var blobServiceClient = scope.ServiceProvider.GetService<BlobServiceClient>();
+            var mediaStorage = scope.ServiceProvider.GetService<Property.Application.Interfaces.IMediaStorageService>();
             var seedPublisher = scope.ServiceProvider.GetRequiredService<MediatR.IPublisher>();
             var seedSubscriptionRepo = scope.ServiceProvider
                 .GetRequiredService<Subscription.Application.Interfaces.ISubscriptionRepository>();
@@ -236,7 +235,7 @@ public class Program
             if (!await RealEstate.Host.Seeds.PropertyDataSeed.IsSeededAsync(identityDb))
             {
                 await RealEstate.Host.Seeds.PropertyDataSeed.SeedAsync(
-                    propertyDb, identityDb, hasher, blobServiceClient,
+                    propertyDb, identityDb, hasher, mediaStorage,
                     app.Environment.WebRootPath);
                 await RealEstate.Host.Seeds.PropertyDataSeed.BackfillSubscriptionsAsync(
                     identityDb, seedSubscriptionRepo, seedPublisher);

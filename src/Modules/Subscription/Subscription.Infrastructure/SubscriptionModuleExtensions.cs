@@ -26,7 +26,7 @@ public static class SubscriptionModuleExtensions
 
         services.AddDbContext<SubscriptionDbContext>((sp, options) =>
             options
-                .UseSqlServer(
+                .UseNpgsql(
                     configuration.GetConnectionString("DefaultConnection"),
                     sql => sql.MigrationsHistoryTable("__EFMigrationsHistory", "subscription")
                               .MigrationsAssembly(typeof(SubscriptionDbContext).Assembly.FullName))

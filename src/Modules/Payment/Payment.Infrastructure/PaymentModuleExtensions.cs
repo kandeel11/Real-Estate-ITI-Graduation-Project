@@ -24,7 +24,7 @@ public static class PaymentModuleExtensions
         services.AddPaymentApplication();
 
         services.AddDbContext<PaymentDbContext>(options =>
-            options.UseSqlServer(
+            options.UseNpgsql(
                 configuration.GetConnectionString("DefaultConnection"),
                 sql => sql.MigrationsHistoryTable("__EFMigrationsHistory", "payment")));
 
