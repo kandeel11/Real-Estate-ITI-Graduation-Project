@@ -4,7 +4,7 @@
 
 export const environment = {
   production: true,
-  // TODO: replace with your Render backend URL once deployed, e.g.
-  // 'https://real-estate-api.onrender.com/api'
-  apiUrl: 'https://api.realestate-platform.com/api',
+  // Backend is running locally, exposed via a Cloudflare quick tunnel — this URL
+  // changes if the tunnel restarts. Update here and redeploy when that happens.
+  apiUrl: 'https://metres-forever-messenger-troubleshooting.trycloudflare.com/api',
 };
