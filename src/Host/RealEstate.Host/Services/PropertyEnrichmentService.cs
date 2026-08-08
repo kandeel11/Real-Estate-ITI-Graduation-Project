@@ -27,13 +27,10 @@ public class PropertyEnrichmentService
         var companyIds = list.Where(p => p.CompanyId.HasValue).Select(p => p.CompanyId!.Value).Distinct();
         var companyNames = await _companyRepo.GetNamesByIdsAsync(companyIds, ct);
 
-        // Batch-fetch broker full names (only for properties that have a broker assigned)
-        var brokerUserIds = list.Where(p => p.ListingBrokerId.HasValue).Select(p => p.ListingBrokerId!.Value).Distinct();
-        var brokerNames = await _userRepo.GetFullNamesByIdsAsync(brokerUserIds, ct);
-
-        // For listings with no company and no broker, fetch owner names
-        var ownerIds = list.Where(p => !p.CompanyId.HasValue && !p.ListingBrokerId.HasValue).Select(p => p.OwnerId).Distinct();
-        var ownerNames = await _userRepo.GetFullNamesByIdsAsync(ownerIds, ct);
+        // Broker and owner names both live in the same Users table — merge into one round-trip
+        var brokerUserIds = list.Where(p => p.ListingBrokerId.HasValue).Select(p => p.ListingBrokerId!.Value);
+        var ownerIds = list.Where(p => !p.CompanyId.HasValue && !p.ListingBrokerId.HasValue).Select(p => p.OwnerId);
+        var userNames = await _userRepo.GetFullNamesByIdsAsync(brokerUserIds.Concat(ownerIds).Distinct(), ct);
 
         foreach (var property in list)
         {
@@ -41,16 +38,16 @@ public class PropertyEnrichmentService
             {
                 property.ListingDisplayName = companyName;
             }
-            else if (property.ListingBrokerId.HasValue && brokerNames.TryGetValue(property.ListingBrokerId.Value, out var brokerDisplayName))
+            else if (property.ListingBrokerId.HasValue && userNames.TryGetValue(property.ListingBrokerId.Value, out var brokerDisplayName))
             {
                 property.ListingDisplayName = brokerDisplayName;
             }
-            else if (ownerNames.TryGetValue(property.OwnerId, out var ownerName))
+            else if (userNames.TryGetValue(property.OwnerId, out var ownerName))
             {
                 property.ListingDisplayName = ownerName;
             }
 
-            if (property.ListingBrokerId.HasValue && brokerNames.TryGetValue(property.ListingBrokerId.Value, out var brokerName))
+            if (property.ListingBrokerId.HasValue && userNames.TryGetValue(property.ListingBrokerId.Value, out var brokerName))
             {
                 property.ListingBrokerName = brokerName;
             }
