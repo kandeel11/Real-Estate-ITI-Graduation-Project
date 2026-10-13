@@ -6,6 +6,15 @@ A production-grade **modular monolith** built on .NET 10 + Angular 18+, covering
 
 ---
 
+## Screenshots
+
+Captured from a local run with seed data. The full write-up is on [my portfolio](https://kandeel11.github.io/#estateflow).
+
+<table>
+<tr><td width="50%"><img src="docs/screenshots/estateflow-home.webp" alt="EstateFlow public home page with a property search box and type and bedroom filters"/><br/><sub>The public site. The search box on the home page accepts plain-language queries.</sub></td><td width="50%"><img src="docs/screenshots/estateflow-market.webp" alt="Admin market trends page showing average rent, active listings and a rent trend chart"/><br/><sub>Admin market trends: average rent, active listings and price per square metre.</sub></td></tr>
+<tr><td width="50%"><img src="docs/screenshots/estateflow-ai.webp" alt="Admin AI insights chat with suggested questions about revenue, properties, users and subscriptions"/><br/><sub>The admin analytics assistant, with suggested questions about the platform’s own data.</sub></td></tr>
+</table>
+
 ## Table of Contents
 
 1. [Project Overview](#1-project-overview)
